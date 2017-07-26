@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!--  The top margin allows to keep some extra space above the items because the up arrow bitmap is higher
+        than the shadow of the popup => layout_marginTop = arrow up bitmap height - popup shadow height -->
+    <LinearLayout
+        android:id="@+id/popup_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="8dip"
+        android:background="@drawable/quick_action_popup"
+        android:orientation="vertical">
+
+        <!-- empty container : the items will be added when creating the popup -->
+        <LinearLayout
+            android:id="@+id/tracks"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="0dip"
+            android:layout_weight="1"
+            android:padding="0dip"/>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/arrow_up"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/quick_action_arrow_up"/>
+
+    <ImageView
+        android:id="@+id/arrow_down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/popup_container"
+        android:src="@drawable/quick_action_arrow_down" />
+
+</RelativeLayout>

@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="textAppearanceSmall">
+        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="textAppearanceMedium">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="textAppearanceLarge">
+        <item name="android:textAppearance">?android:attr/textAppearanceLarge</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="Animations" />
+
+    <style name="Animations.HelpOverlayAnimation">
+        <item name="@android:windowEnterAnimation">@anim/fade_in</item>
+        <item name="@android:windowExitAnimation">@anim/fade_out</item>
+    </style>
+
+    <!-- PopDownMenu -->
+    <style name="Animations.PopDownMenu" />
+
+    <style name="Animations.PopDownMenu.Center">
+        <item name="@android:windowEnterAnimation">@anim/grow_from_top</item>
+        <item name="@android:windowExitAnimation">@anim/shrink_from_bottom</item>
+    </style>
+
+    <style name="Animations.PopDownMenu.Left">
+        <item name="@android:windowEnterAnimation">@anim/grow_from_topleft_to_bottomright</item>
+        <item name="@android:windowExitAnimation">@anim/shrink_from_bottomright_to_topleft</item>
+    </style>
+
+    <style name="Animations.PopDownMenu.Right">
+        <item name="@android:windowEnterAnimation">@anim/grow_from_topright_to_bottomleft</item>
+        <item name="@android:windowExitAnimation">@anim/shrink_from_bottomleft_to_topright</item>
+    </style>
+
+    <style name="Animations.PopDownMenu.Reflect">
+        <item name="@android:windowEnterAnimation">@anim/pump_top</item>
+        <item name="@android:windowExitAnimation">@anim/disappear</item>
+    </style>
+
+    <!-- PopUpMenu -->
+    <style name="Animations.PopUpMenu" />
+
+    <style name="Animations.PopUpMenu.Center">
+        <item name="@android:windowEnterAnimation">@anim/grow_from_bottom</item>
+        <item name="@android:windowExitAnimation">@anim/shrink_from_top</item>
+    </style>
+
+    <style name="Animations.PopUpMenu.Left">
+        <item name="@android:windowEnterAnimation">@anim/grow_from_bottomleft_to_topright</item>
+        <item name="@android:windowExitAnimation">@anim/shrink_from_topright_to_bottomleft</item>
+    </style>
+
+    <style name="Animations.PopUpMenu.Right">
+        <item name="@android:windowEnterAnimation">@anim/grow_from_bottomright_to_topleft</item>
+        <item name="@android:windowExitAnimation">@anim/shrink_from_topleft_to_bottomright</item>
+    </style>
+
+    <style name="Animations.PopUpMenu.Reflect">
+        <item name="@android:windowEnterAnimation">@anim/pump_bottom</item>
+        <item name="@android:windowExitAnimation">@anim/disappear</item>
+    </style>
+
+    <!-- Now playing -->
+    <style name="NowPlaying">
+        <item name="@android:textAppearance">@android:style/TextAppearance.Small</item>
+        <item name="android:typeface">sans</item>
+        <item name="android:shadowColor">#000000</item>
+        <item name="android:shadowRadius">2</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="NowPlaying.Music">
+        <item name="android:singleLine">true</item>
+    </style>
+
+    <style name="NowPlaying.Video">
+        <item name="android:singleLine">false</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
+    <!-- Info dialog -->
+    <style name="InfoDialogButton" parent="android:Widget.Holo.Button.Small">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingRight">15dip</item>
+        <item name="android:paddingLeft">15dip</item>
+    </style>
+
+    <!-- Archos GridView theme for the browser -->
+    <style name="ArchosGridView">
+        <item name="android:id">@+id/browser_items</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:drawSelectorOnTop">false</item>
+        <item name="android:fastScrollEnabled">true</item>
+        <item name="android:scrollbarStyle">outsideInset</item>
+        <item name="android:cacheColorHint">#00000000</item>
+        <item name="android:textFilterEnabled">true</item>
+        <item name="android:listSelector">@drawable/list_selector_categories</item>
+    </style>
+
+    <style name="Theme.Holo.Transparent" parent="android:Theme.Holo.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
+    <style name="Theme.HelpOverlay" parent="Theme.Holo.Transparent">
+        <item name="android:windowAnimationStyle">@style/Animations.HelpOverlayAnimation</item>
+    </style>
+
+    <!-- Cover text descriptions -->
+    <style name="CoverDescription">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:typeface">sans</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="CoverDescription.Title">
+        <item name="android:maxLines">3</item>
+        <item name="android:textSize">@dimen/cover_description_floating_large</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="CoverDescription.Secondary">
+        <item name="android:maxLines">1</item>
+        <item name="android:textSize">@dimen/cover_description_floating_small</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="CoverDescription.Duration">
+        <item name="android:maxLines">1</item>
+        <item name="android:textSize">@dimen/cover_description_floating_small</item>
+        <item name="android:textColor">@color/lightblue500</item>
+    </style>
+
+    <style name="CoverDescription.Overlay">
+        <item name="android:background">#BB555555</item>
+        <item name="android:paddingLeft">10dip</item>
+    </style>
+
+    <!-- ArchosProgressSlider -->
+    <style name="ArchosProgressSliderHorizontalBlue">
+        <item name="android:progressDrawable">@drawable/progress_slider_horizontal_blue</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:minHeight">6dip</item>
+        <item name="android:maxHeight">6dip</item>
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:paddingTop">6dip</item>
+        <item name="android:paddingBottom">6dip</item>
+        <item name="android:thumb">@null</item>
+    </style>
+
+    <style name="ArchosProgressSliderVerticalBlue">
+        <item name="android:progressDrawable">@drawable/progress_slider_vertical_blue</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:minWidth">6dip</item>
+        <item name="android:maxWidth">6dip</item>
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:paddingLeft">6dip</item>
+        <item name="android:paddingRight">6dip</item>
+    </style>
+
+    <style name="VideoInfoButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingLeft">20dip</item>
+        <item name="android:paddingRight">20dip</item>
+    </style>
+
+    <style name="VideoInfoFileInfo" parent="textAppearanceMedium">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+    </style>
+
+    <style name="VideoInfoFileInfo.Title">
+        <item name="android:textColor">@color/lightblue500</item>
+        <item name="android:drawablePadding">6dip</item>
+    </style>
+
+    <style name="VideoInfoFileInfo.Smaller" parent="textAppearanceSmall"></style>
+
+    <style name="HelpOverlayTextAppearance">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+    </style>
+    <style name="Widget.Holo.ActionBar.Archos2" parent="@style/Widget.AppCompat.ActionBar">
+        <item name="background">@null</item>
+    </style>
+</resources>

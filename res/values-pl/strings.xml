@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"Brak karty SD"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"Brak karty SD w telefonie."</string>
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"Karta SD jest niedostępna"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"Niestety, karta SD jest zajęta."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"Błąd karty SD"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Napotkano błąd na karcie SD."</string>
+
+    <string name="storage_missing_title">Pamięć wewnętrzna niedostępna</string>
+    <string name="storage_missing_message">Pamięć wewnętrzna urządzenia jest niedostępna.</string>
+    <string name="storage_busy_title">Pamięć wewnętrzna niedostępna</string>
+    <string name="storage_busy_message">Nie można korzystać z pamięci wewnętrznej, gdy urządzenie jest podłączone za pomocą USB.</string>
+    <string name="storage_error_title">Błąd pamięci wewnętrznej</string>
+    <string name="storage_error_message">Wystąpił błąd pamięci wewnętrznej.</string>
+</resources>

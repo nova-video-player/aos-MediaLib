@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+    
+<com.archos.mediacenter.utils.HelpOverlayBackground
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <ImageView
+        android:id="@+id/help_focus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/help_focus_shadow"
+        android:scaleType="fitXY" />
+    
+    <com.archos.mediacenter.utils.HelpOverlayPopup
+        android:id="@+id/help_popup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+        
+</com.archos.mediacenter.utils.HelpOverlayBackground>    

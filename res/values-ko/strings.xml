@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"SD 카드 없음"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"휴대전화에 SD 카드가 삽입되어 있지 않습니다."</string>
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"SD 카드를 사용할 수 없음"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"SD 카드가 사용 중입니다."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"SD 카드 오류"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"SD 카드에 오류가 발생했습니다."</string>
+
+    <string name="storage_missing_title">내부 저장공간 사용불가</string>
+    <string name="storage_missing_message">단말기 내부 저장공간을 사용할 수 없습니다.</string>
+    <string name="storage_busy_title">내부 저장공간 사용불가</string>
+    <string name="storage_busy_message">USB로 연결되어 있는 동안에는 내부 저장공간을 사용할 수 없습니다.</string>
+    <string name="storage_error_title">내부 저장공간 오류</string>
+    <string name="storage_error_message">내부 저장공간에서 오류가 발행하였습니다.</string>
+</resources>

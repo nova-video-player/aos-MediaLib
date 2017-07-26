@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Mediabestanden indexeren</string>
+    <string name="network_unscan_msg">Mediabestanden verwijderen uit bibliotheek</string>
+
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"SD-kaart niet beschikbaar"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"De SD-kaart is in gebruik."</string>
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"Geen SD-kaart"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"Er is geen SD-kaart in het apparaat geplaatst."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"Fout met SD-kaart"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Er is een fout opgetreden met de SD-kaart."</string>
+
+    <string name="storage_missing_title">Opslagruimte niet beschikbaar</string>
+    <string name="storage_missing_message">De interne opslagruimte van uw apparaat is niet beschikbaar.</string>
+    <string name="storage_busy_title">Opslagruimte niet beschikbaar</string>
+    <string name="storage_busy_message">Het apparaat dat u voor de USB-massaopslag hebt geplaatst, kan de interne opslagruimte niet gebruiken.</string>
+    <string name="storage_error_title">Opslagruimte fout</string>
+    <string name="storage_error_message">Er is een fout opgetreden bij de interne opslagruimte.</string>
+
+    <string name="scraper_no_settings">Geen instellingen beschikbaar voor deze bron.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart: Fanart inschakelen</item>
+        <item>info_language:Taal</item>
+    </string-array>
+
+</resources>

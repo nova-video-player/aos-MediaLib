@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <string name="tvdb_api_key"></string>
+    <string name="tmdb_api_key"></string>
+    <string name="trakt_api_key"></string>
+    <string name="trakt_api_secret"></string>
+</resources>

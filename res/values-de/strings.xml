@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Multimedia wird indiziert</string>
+    <string name="network_unscan_msg">Multimedia wird aus Bibliothek entfernt</string>
+
+    <!-- .nfo export options -->
+    <string name="nfo_export_category">Export der Bibliothek</string>
+    <string name="nfo_export_auto_title">Automatischer Export</string>
+    <string name="nfo_export_auto_summary">Automatisch nach erfolgreicher Onlinesuche als .nfo exportieren</string>
+    <string name="nfo_export_button">Export als .nfo</string>
+    <string name="nfo_export_folder">Alles in diesem Ordner als .nfo exportieren</string>
+    <string name="nfo_export_all">Die komplette Bibliothek als .nfo exportieren</string>
+    <string name="nfo_export_exporting">Exportiere .nfo</string>
+    <string name="nfo_export_exporting_all">komplette Bibliothek</string>
+
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"Keine SD-Karte"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"Es befindet sich keine SD-Karte im Gerät."</string>
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"SD-Karte nicht verfügbar"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"SD-Karte wird benutzt"</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"SD-Kartenfehler"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Bei der SD-Karte ist ein Fehler aufgetreten."</string>
+
+    <string name="storage_missing_title">Interner Speicher nicht verfügbar</string>
+    <string name="storage_missing_message">Der interne Speicher auf Ihrem Gerät ist nicht verfügbar.</string>
+    <string name="storage_busy_title">Interner Speicher nicht verfügbar</string>
+    <string name="storage_busy_message">Sie können den internen Speicher nicht nutzen, während er als USB Massenspeicher verwendet wird.</string>
+    <string name="storage_error_title">Fehler im internen Speicher</string>
+    <string name="storage_error_message">Im internen Speicher ist ein Fehler aufgetreten.</string>
+
+    <string name="scraper_no_settings">Für diese Quelle gibt es keine Einstellungen.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Aktiviere Fanart</item><!--TODO better than that-->
+        <item>info_language:Sprache</item>
+    </string-array>
+
+</resources>

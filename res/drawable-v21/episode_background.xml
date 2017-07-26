@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@android:color/white" >
+
+    <item>
+        <selector>
+
+            <item
+                android:drawable="@color/my_holo_blue_very_dark"
+                android:state_activated="true"/>
+        </selector>
+    </item>
+
+</ripple>

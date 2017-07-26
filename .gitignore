@@ -1,0 +1,14 @@
+gen/
+bin/
+build/
+.settings/
+local.properties
+proguard-project.txt
+libs/armeabi-v7a
+libs/armeabi
+libs/x86
+libs/mips
+libs/arm64-v8a
+libs/x86_64
+libs/mips64
+*.iml

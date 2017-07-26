@@ -1,0 +1,16 @@
+-keep class com.archos.medialib.AvosMediaPlayer {
+  private void postEventFromNative(java.lang.Object, int, int, int, java.lang.Object);
+}
+-keep class com.archos.medialib.subtitle.TextSubtitle {
+  public java.lang.Object create(int, int, java.lang.String);
+}
+-keep class com.archos.medialib.subtitle.BitmapSubtitle {
+  public java.lang.Object create(int, int, int, int, android.graphics.Bitmap);
+}
+-keep class com.archos.medialib.AvosMediaMetadataRetriever {
+  private int mMediaMetadataRetrieverHandle;
+}
+-keep class com.archos.medialib.AvosMediaPlayer {
+  private int mMediaPlayerHandle;
+  private int mNativeWindowHandle;
+}

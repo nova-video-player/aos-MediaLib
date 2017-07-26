@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- parse nfo files while indexing smb - default value -->
+    <item name="network_nfo_parse_default" format="boolean" type="bool">true</item>
+    <!-- parse nfo files while indexing smb - preference key -->
+    <string name="network_nfo_parse_prefkey">network_nfo_parse</string>
+
+    <!-- auto export nfo after online search - default value -->
+    <item name="nfo_export_auto_default" format="boolean" type="bool">false</item>
+    <!-- auto export nfo after online search - preference key -->
+    <string name="nfo_export_auto_prefkey">nfo_export_auto</string>
+
+
+</resources>

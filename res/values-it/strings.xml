@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Indicizzazione file multimediali in corso</string>
+    <string name="network_unscan_msg">Rimozione file multimediali dal catalogo in corso</string>
+
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"Scheda SD non disponibile"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"Spiacenti. La scheda SD è già in uso."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"Errore della scheda SD"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Si è verificato un errore nella scheda SD."</string>
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"Nessuna scheda SD"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"Il dispositivo non contiene una scheda SD."</string>
+
+    <string name="storage_missing_title">Archiviazione interna non disponibile</string>
+    <string name="storage_missing_message">L\'archiviazione interna non è disponibile.</string>
+    <string name="storage_busy_title">Archiviazione interna non disponibile</string>
+    <string name="storage_busy_message">Dispositivo inserito come memoria di massa USB, impossibile Non potete usare l\'archiviazione interna.</string>
+    <string name="storage_error_title">Errore di archiviazione interna</string>
+    <string name="storage_error_message">Errore di archiviazione interna.</string>
+
+    <string name="scraper_no_settings">Nessuna impostazione disponibile per questa origine.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Attiva Fanart</item>
+        <item>info_language:Lingua</item>
+    </string-array>
+
+</resources>

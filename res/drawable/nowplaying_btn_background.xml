@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:dither="true">
+
+    <!-- Use the same background as for quick actions when the button is selected -->
+    <item 
+    	android:state_pressed="true"
+        android:drawable="@drawable/quick_action_item_selected"/>
+    <item 
+    	android:state_focused="true"
+        android:drawable="@drawable/quick_action_item_selected"/>
+        
+    <item android:drawable="@drawable/nowplaying_icon_background" />
+</selector>

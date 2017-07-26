@@ -1,0 +1,3 @@
+<resources>
+    <integer name="video_info_pane_width_ratio">78</integer> <!-- the percentage of the screen width used by the Video Info Panel -->
+</resources>

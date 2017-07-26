@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal|center_vertical"
+    android:orientation="vertical" >
+
+    <ProgressBar android:id="@+id/music_loading"
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+        		android:visibility="gone"/>
+
+    <TextView android:id="@+id/music_empty_text"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:textAppearance="?android:attr/textAppearanceLarge"
+          android:layout_gravity="center_horizontal|center_vertical"
+          android:gravity="center"
+          android:singleLine="false"
+          android:clickable="false"
+          android:focusable="false" />
+</LinearLayout>

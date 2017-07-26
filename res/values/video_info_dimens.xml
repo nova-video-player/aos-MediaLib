@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="video_info_backdrop_chooser_image_width">178dip</dimen>
+    <dimen name="video_info_backdrop_chooser_image_height">100dip</dimen>
+
+</resources>

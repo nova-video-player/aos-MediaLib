@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"SD-карта отсутствует."</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"В аппарате отсутствует SD-карта."</string>
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"SD-карта недоступна"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"SD-карта занята."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"Ошибка SD-карты"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Ошибка SD-карты."</string>
+
+    <string name="storage_missing_title">Встроенная память недоступна</string>
+    <string name="storage_missing_message">Встроенная память недоступна.</string>
+    <string name="storage_busy_title">Встроенная память недоступна</string>
+    <string name="storage_busy_message">Вы не можете использовать встроенную память при подключении через USB.</string>
+    <string name="storage_error_title">Ошибка встроенного ЗУ</string>
+    <string name="storage_error_message">Ошибка встроенного ЗУ.</string>
+
+</resources>

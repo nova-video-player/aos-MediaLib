@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+    
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/help_popup_container"
+    android:layout_width="@dimen/help_overlay_popup_width"
+    android:layout_height="wrap_content"
+    android:background="@drawable/help_overlay_box"
+    android:orientation="vertical">
+        
+    <com.archos.mediacenter.utils.HelpOverlayPopupContent
+        android:id="@+id/help_popup_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1" />
+
+
+    <Button
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/help_overlay_button_height"
+        android:minWidth="120dip"
+        android:layout_marginTop="24dip"
+        android:layout_marginBottom="12dip"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/help_overlay_button_background_selector"
+        style="@style/HelpOverlayTextAppearance"
+        android:text="@android:string/ok" />
+    
+</LinearLayout>    

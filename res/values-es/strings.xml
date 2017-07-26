@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Indexando archivos multimedia</string>
+    <string name="network_unscan_msg">Eliminando archivos multimedia de la biblioteca</string>
+
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"Falta la tarjeta SD"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"Falta la tarjeta SD en el dispositivo"</string>
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"Tarjeta SD no disponible"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"La tarjeta SD está ocupada."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"Error de tarjeta SD"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Se ha producido un error al acceder a la tarjeta SD."</string>
+
+    <string name="storage_missing_title">Espacio de almacenamiento no disponible</string>
+    <string name="storage_missing_message">El espacio de almacenamiento no está disponible.</string>
+    <string name="storage_busy_title">Espacio de almacenamiento no disponible</string>
+    <string name="storage_busy_message">Dispositivo montado como almacenamiento masivo USB, no puede utilizar el espacio de almacenamiento.</string>
+    <string name="storage_error_title">Error del espacio de almacenamiento</string>
+    <string name="storage_error_message">Se ha producido un error en su espacio de almacenamiento interno.</string>
+
+    <string name="scraper_no_settings">No hay ajustes disponibles para esta fuente.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Habilitar Fanart</item>
+        <item>info_language:Idioma</item>
+    </string-array>
+
+</resources>

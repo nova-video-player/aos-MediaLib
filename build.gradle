@@ -1,0 +1,117 @@
+apply plugin: 'com.android.library'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url 'http://4thline.org/m2'
+    }
+}
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion '25.0.3'
+
+    useLibrary 'org.apache.http.legacy'
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+            //tmp prebuilt jni
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 25
+    }
+    publishNonDefault true
+    productFlavors {
+        normal {}
+        free {}
+        community {}
+    }
+
+    task bootstrapFFmpeg(type:Exec) {
+       workingDir = "../native/ffmpeg-android-builder"
+       List<String> myCmd = new ArrayList<String>()
+       myCmd.add("bash")
+       myCmd.add("bootstrap_avp_ffmpeg.sh")
+       commandLine myCmd
+    }
+
+    task ndkBuild(type:Exec) {
+        workingDir = "../"
+        List<String> myCmd = new ArrayList<String>()
+        myCmd.add("make")
+        myCmd.add("native_libyuv")
+        myCmd.add("native_libnativehelper")
+        myCmd.add("native_avos_base")
+        myCmd.add("native_torrentd")
+        commandLine myCmd
+    }
+
+    ndkBuild.dependsOn bootstrapFFmpeg
+
+    task ndkClean(type:Exec) {
+        workingDir = "../"
+        List<String> myCmd = new ArrayList<String>()
+        myCmd.add("make")
+        myCmd.add("native_clean")
+        commandLine myCmd
+    }
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+    clean.dependsOn 'ndkClean'
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/beans.xml'
+        exclude 'META-INF/maven'
+        exclude 'README'
+    }
+}
+
+dependencies {
+    compile project(':FileCoreLibrary')
+    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile 'com.google.code.gson:gson:2.4'
+    compile 'com.android.support:multidex:1.0.1'
+    compile 'joda-time:joda-time:2.4'
+    compile files('libs/cardboard.jar')
+    compile files('libs/commons-codec-1.8.jar')
+    compile files('libs/joda-convert-1.7.jar')
+    compile files('libs/org.apache.oltu.oauth2.client-1.0.0.jar')
+    compile files('libs/org.apache.oltu.oauth2.common-1.0.0.jar')
+    compile files('libs/in-app-purchasing-2.0.76.jar')
+    compile files('libs/org.json-20120521.jar')
+    compile files('libs/retrofit-1.8.0.jar')
+    compile files('libs/juniversalchardet-1.0.3.jar')
+    compile group: 'org.fourthline.cling', name: 'cling-core', version:'2.0.1'
+    compile group: 'org.fourthline.cling', name: 'cling-support', version:'2.0.1'
+    compile group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.12.v20130726'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
+    compile group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
+    compile group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.5'
+}

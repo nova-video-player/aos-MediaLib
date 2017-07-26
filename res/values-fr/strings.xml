@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Indexation des fichiers Média</string>
+    <string name="network_unscan_msg">Suppression du contenu de la bibliothèque</string>
+
+    <!-- .nfo export options -->
+    <string name="nfo_export_category">Export des informations multimédia</string>
+    <string name="nfo_export_auto_title">Export automatique après la recherche</string>
+    <string name="nfo_export_auto_summary">Exporter automatiquement au format .nfo lorsque des informations ont été trouvées</string>
+    <string name="nfo_export_button">Exporter le \'.nfo\'</string>
+    <string name="nfo_export_folder">Exporter toutes les informations de ce dossier au format .nfo</string>
+    <string name="nfo_export_all">Exporter toute la bibliothèque au format .nfo</string>
+    <string name="nfo_export_exporting">Export en \'.nfo\' en cours</string>
+    <string name="nfo_export_exporting_all">tout</string>
+
+    <string msgid="9008284946643270850" name="sdcard_missing_title">"Aucune carte SD trouvée"</string>
+    <string msgid="1169260755336159747" name="sdcard_missing_message">"Aucune carte SD n\'est insérée dans votre appareil."</string>
+    <string msgid="1162763571147174655" name="sdcard_busy_title">"Carte SD non disponible"</string>
+    <string msgid="8071868348072728830" name="sdcard_busy_message">"Désolé, votre carte SD n\'est pas disponible."</string>
+    <string msgid="165682155008600643" name="sdcard_error_title">"Erreur de carte SD"</string>
+    <string msgid="4574563894036627855" name="sdcard_error_message">"Une erreur s\'est produite sur votre carte SD."</string>
+
+    <string name="storage_busy_title">"Stockage interne indisponible"</string>
+    <string name="storage_busy_message">"Vous ne pouvez pas utiliser le stockage interne de l'appareil pendant qu'il est connecté et monté par USB"</string>
+    <string name="storage_missing_title">"Stockage interne indisponible"</string>
+    <string name="storage_missing_message">"Le stockage interne de votre appareil est indisponible."</string>
+    <string name="storage_error_title">"Erreur de stockage interne"</string>
+    <string name="storage_error_message">"Une erreur s\'est produite sur le stockage interne."</string>
+
+    <string name="scraper_no_settings">Aucune option disponible pour cette source.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Activer Fanart</item>
+        <item>info_language:Langue</item>
+    </string-array>
+
+</resources>

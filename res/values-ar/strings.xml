@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="sdcard_missing_title">لا يوجد بطاقة SD</string>
+    <string name="sdcard_missing_message">جهازك لا يحتوى على بطاقة SD</string>
+    <string name="sdcard_busy_title">SD بطاقةغير متاحة</string>
+    <string name="sdcard_busy_message">عفوا,SD بطاقة مشغولة</string>
+    <string name="sdcard_error_title">خطأ فى بطاقة SD</string>
+    <string name="sdcard_error_message">يوجد خطأ فى بطاقة SD.</string>
+
+    <string name="storage_missing_title">وحدة التخزين الداخلية غير متاحة</string>
+    <string name="storage_missing_message">وحدة تخزين جهازك الداخلية غير متاحة.</string>
+    <string name="storage_busy_title">وحدة التخزين الداخليه غير متاحة</string>
+    <string name="storage_busy_message">لا يمكنك استخدام وحدة التخزين الداخلية في حالة التوصيل بواسطة USB.</string>
+    <string name="storage_error_title">خطأ فى وحدة التخزين</string>
+    <string name="storage_error_message">يوجد خطأ فى وحدة التخزين الداخلية.</string>
+
+</resources>

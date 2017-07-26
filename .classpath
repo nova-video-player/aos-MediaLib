@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="lib" path="../mc-utils/framework-noproguard.classes.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://developer.android.com/reference/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Environment"/>
+	<classpathentry kind="lib" path="libs/cling-core-2.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="libs/cling-support-2.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="libs/seamless-http-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="libs/seamless-util-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="libs/seamless-xml-1.0-SNAPSHOT.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/FileCoreLibrary"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
+	<classpathentry kind="lib" path="libs/gson-2.3.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-repackaged-4.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-repackaged-4.1.1.jar"/>
+	<classpathentry kind="lib" path="libs/joda-convert-1.7.jar"/>
+	<classpathentry kind="lib" path="libs/joda-time-2.4.jar"/>
+	<classpathentry kind="lib" path="libs/org.apache.oltu.oauth2.client-1.0.0.jar"/>
+	<classpathentry kind="lib" path="libs/org.apache.oltu.oauth2.common-1.0.0.jar"/>
+	<classpathentry kind="lib" path="libs/org.json-20120521.jar"/>
+	<classpathentry kind="lib" path="libs/retrofit-1.8.0.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="libs/commons-codec-1.8.jar"/>
+	<classpathentry kind="output" path="bin/classes"/>
+</classpath>
