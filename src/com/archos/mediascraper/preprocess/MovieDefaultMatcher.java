@@ -149,7 +149,7 @@ class MovieDefaultMatcher implements InputMatcher {
             "COMPLETE", "PROPER", "iNTERNAL", "INTERNAL",
 	    "SUBBED", "ANiME", "LIMITED", "REMUX", "DCPRip",
             "TS", "TC", "REAL", "HD", "DDR",
-            "EN", "ENG", "DE", "FR", "ES", "IT", "NL", "VFQ", "VF", "VO", "Eng",
+            "EN", "ENG", "DE", "FR", "ES", "IT", "NL", "VFQ", "VF", "VO", "VOSTFR", "Eng",
     };
 
     private static final Pattern[] GARBAGE_CASESENSITIVE_PATTERNS = new Pattern[GARBAGE_CASESENSITIVE.length];
