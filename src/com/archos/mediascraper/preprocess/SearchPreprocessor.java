@@ -42,6 +42,7 @@ public class SearchPreprocessor {
     static {
         // 1st priority is tv shows
         PARSERS.add(TvShowMatcher.instance());
+        PARSERS.add(TvShowFolderMatcher.instance());
         PARSERS.add(TvShowPathMatcher.instance());
         // then movies
         PARSERS.add(MovieVerbatimMatcher.instance());

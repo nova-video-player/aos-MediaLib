@@ -1,17 +1,3 @@
-// Copyright 2017 Archos SA
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 
 package com.archos.mediascraper.preprocess;
 
@@ -23,20 +9,22 @@ import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
 
 import java.util.Map;
+import java.net.URI;
+import java.io.File;
 
 /**
- * Matches all sorts of "Tv Show title S01E01" and similar things
+ * Matches all sorts of "Tv Show title S01E01/randomgarbage.mkv" and similar things
  */
-class TvShowMatcher implements InputMatcher {
+class TvShowFolderMatcher extends TvShowMatcher {
 
-    public static TvShowMatcher instance() {
+    public static TvShowFolderMatcher instance() {
         return INSTANCE;
     }
 
-    private static final TvShowMatcher INSTANCE =
-            new TvShowMatcher();
+    private static final TvShowFolderMatcher INSTANCE =
+            new TvShowFolderMatcher();
 
-    protected TvShowMatcher() {
+    private TvShowFolderMatcher() {
         // singleton
     }
 
@@ -46,18 +34,14 @@ class TvShowMatcher implements InputMatcher {
     }
 
     @Override
-    public boolean matchesUserInput(String userInput) {
-        return ShowUtils.isTvShow(null, userInput);
-    }
-
-    @Override
     public SearchInfo getFileInputMatch(Uri file) {
-        return getMatch(Utils.getName(file), file);
-    }
+        try {
+	    File f = new File(new URI(file.toString()));
 
-    @Override
-    public SearchInfo getUserInputMatch(String userInput, Uri file) {
-        return getMatch(userInput, file);
+            return getMatch(f.getParentFile().getName(), file);
+	} catch(java.net.URISyntaxException e) {
+	    return null;
+	}
     }
 
     private static SearchInfo getMatch(String matchString, Uri file) {
@@ -75,7 +59,7 @@ class TvShowMatcher implements InputMatcher {
 
     @Override
     public String getMatcherName() {
-        return "TVShow";
+        return "TVShowFolder";
     }
 
 }
