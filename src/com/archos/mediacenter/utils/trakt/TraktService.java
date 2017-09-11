@@ -25,6 +25,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -53,6 +54,7 @@ import com.uwetrottmann.trakt.v2.entities.BaseShow;
 import com.uwetrottmann.trakt.v2.entities.EpisodeIds;
 import com.uwetrottmann.trakt.v2.entities.GenericProgress;
 import com.uwetrottmann.trakt.v2.entities.LastActivities;
+import com.uwetrottmann.trakt.v2.entities.ListEntry;
 import com.uwetrottmann.trakt.v2.entities.MovieIds;
 import com.uwetrottmann.trakt.v2.entities.SyncEpisode;
 import com.uwetrottmann.trakt.v2.entities.SyncItems;
@@ -62,6 +64,7 @@ import org.joda.time.DateTime;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import retrofit.RetrofitError;
 
@@ -935,6 +938,7 @@ public class TraktService extends Service {
         if(Trakt.getSyncPlaybackPreference(mPreferences)){
         	syncPlaybackStatus();
         }
+        syncLists();
         
         if (!syncShowsFromTrakt && !syncMoviesFromTrakt) {
             if (DBG) Log.d(TAG, "sync: no movie/show flag, abort");
@@ -977,6 +981,205 @@ public class TraktService extends Service {
 
 
         return handleSyncStatus(Trakt.Status.SUCCESS,null, flag, null);
+    }
+
+    private void syncLists() {
+        Log.d(TAG, "syncLists");
+        Cursor cursor = getContentResolver().query(VideoStore.List.LIST_CONTENT_URI,VideoStore.List.Columns.COLUMNS, null, null, null);
+        List<VideoStore.List.ListObj> localLists = new ArrayList<>();
+        if(cursor.getCount() > 0){
+            int titleCol = cursor.getColumnIndex(VideoStore.List.Columns.TITLE);
+            int traktIdCol = cursor.getColumnIndex(VideoStore.List.Columns.TRAKT_ID);
+            int syncStatusCol = cursor.getColumnIndex(VideoStore.List.Columns.SYNC_STATUS);
+            int idCol = cursor.getColumnIndex(VideoStore.List.Columns.ID);
+            while(cursor.moveToNext()){
+                localLists.add(new VideoStore.List.ListObj(cursor.getInt(idCol), cursor.getString(titleCol), cursor.getInt(traktIdCol), cursor.getInt(syncStatusCol)));
+            }
+        }
+        cursor.close();
+        List<VideoStore.List.ListObj> originalLocalLists = new ArrayList<>(localLists);
+
+
+        Trakt.Result result = mTrakt.getLists(0);
+        List<com.uwetrottmann.trakt.v2.entities.List> listLists;
+        if(result.status == Status.SUCCESS){
+            listLists= (List<com.uwetrottmann.trakt.v2.entities.List>) result.obj;
+        }else return;
+
+        //trakt to DB
+        for(com.uwetrottmann.trakt.v2.entities.List list : listLists) {
+            boolean isIn = false;
+            boolean needsRenaming = false;
+            boolean wasLocallyDeleted = false;
+            for (VideoStore.List.ListObj localList : originalLocalLists) {
+                if (localList.traktId == list.ids.trakt) {
+                    isIn = true;
+                    wasLocallyDeleted = localList.syncStatus == VideoStore.List.SyncStatus.STATUS_DELETED;
+                    if (!localList.title.equals(list.name)) {
+                        needsRenaming = true;
+                    }
+                    break;
+                }
+            }
+
+            if(!isIn){
+                //add to DB
+                Log.d(TAG, "add new list to DB "+list.name);
+                VideoStore.List.ListObj item = new VideoStore.List.ListObj(list.name, list.ids.trakt, VideoStore.List.SyncStatus.STATUS_OK);
+                localLists.add(item);
+                getContentResolver().insert(VideoStore.List.LIST_CONTENT_URI, item.toContentValues());
+            }
+
+            if(needsRenaming){
+                //update DB
+
+            }
+
+            if(wasLocallyDeleted){
+                //delete remote + remove from DB
+                Trakt.Result result1 = mTrakt.deleteList(0, String.valueOf(list.ids.trakt));
+                Log.d(TAG, "delete remote list "+list.name);
+                if(result1.status == Status.SUCCESS){
+                    getContentResolver().delete(VideoStore.List.LIST_CONTENT_URI, VideoStore.List.Columns.TRAKT_ID +"= ?", new String[]{String.valueOf(list.ids.trakt)});
+                }
+            }
+        }
+
+        //DB to trakt
+        for (VideoStore.List.ListObj localList : originalLocalLists) {
+            boolean isIn = false;
+            for(com.uwetrottmann.trakt.v2.entities.List list : listLists) {
+                if (localList.traktId == list.ids.trakt) {
+                    isIn = true;
+                    break;
+                }
+            }
+            if(!isIn) {
+                //might not have been deleted, just new
+                if(localList.syncStatus==VideoStore.List.SyncStatus.STATUS_NOT_SYNC){
+                    //add to trakt
+                    Log.d(TAG," add List To Trakt "+localList.title);
+                    Trakt.Result result1 = mTrakt.addList(0,localList.title);
+                    if(result1.status==Status.SUCCESS){
+                        Log.d(TAG," add List To Trakt Status.SUCCESS");
+
+                        com.uwetrottmann.trakt.v2.entities.List list = (com.uwetrottmann.trakt.v2.entities.List) result1.obj;
+                        localList.syncStatus = VideoStore.List.SyncStatus.STATUS_OK;
+                        localList.traktId = list.ids.trakt;
+                        getContentResolver().update(VideoStore.List.LIST_CONTENT_URI, localList.toContentValues(), VideoStore.List.Columns.ID +"= ?", new String[]{String.valueOf(localList.id)});
+
+                    }
+                } else{
+                    //was deleted
+                    Log.d(TAG," deleting list from DB "+localList.title);
+
+                    getContentResolver().delete(VideoStore.List.LIST_CONTENT_URI, VideoStore.List.Columns.TRAKT_ID +"= ?", new String[]{String.valueOf(localList.traktId)});
+                }
+            }
+        }
+
+
+        //Sync videos
+        //reload local and distant
+        cursor = getContentResolver().query(VideoStore.List.LIST_CONTENT_URI,VideoStore.List.Columns.COLUMNS, null, null, null);
+        localLists = new ArrayList<>();
+        if(cursor.getCount() > 0){
+            int titleCol = cursor.getColumnIndex(VideoStore.List.Columns.TITLE);
+            int traktIdCol = cursor.getColumnIndex(VideoStore.List.Columns.TRAKT_ID);
+            int listIdCol = cursor.getColumnIndex(VideoStore.List.Columns.ID);
+            int syncStatusCol = cursor.getColumnIndex(VideoStore.List.Columns.SYNC_STATUS);
+            while(cursor.moveToNext()){
+                int traktId = cursor.getInt(traktIdCol);
+                int localId = cursor.getInt(listIdCol);
+                if(traktId>0){
+                    Uri listUri = VideoStore.List.getListUri(localId);
+                    //sync list content
+                    Trakt.Result result1 = mTrakt.getListContent(0, traktId);
+                    if(result1.status == Status.SUCCESS){
+                        List<ListEntry> traktListItems = (List<ListEntry>) result1.obj;
+                        ArrayList<VideoStore.VideoList.VideoItem> localListItems = new ArrayList<>();
+
+                        Cursor cursorVideos = getContentResolver().query(VideoStore.List.getListUri(localId), VideoStore.VideoList.Columns.COLUMNS, null, null, null);
+                        if(cursorVideos.getCount() > 0) {
+                            int movieIdCol = cursorVideos.getColumnIndex(VideoStore.VideoList.Columns.M_ONLINE_ID);
+                            int episodeIdCol = cursorVideos.getColumnIndex(VideoStore.VideoList.Columns.E_ONLINE_ID);
+                            int syncStatusCol2 = cursorVideos.getColumnIndex(VideoStore.List.Columns.SYNC_STATUS);
+                            while (cursorVideos.moveToNext()) {
+                                VideoStore.VideoList.VideoItem videoItem = new VideoStore.VideoList.VideoItem(localId,
+                                        cursorVideos.getInt(movieIdCol),
+                                        cursorVideos.getInt(episodeIdCol),
+                                        cursorVideos.getInt(syncStatusCol2));
+                                boolean isIn = false;
+                                for(ListEntry onlineItem : traktListItems){
+                                    if(videoItem.episodeId > 0
+                                            && onlineItem.episode!=null
+                                            && onlineItem.episode.ids.tvdb.equals(videoItem.episodeId)
+                                            || videoItem.movieId>0
+                                            && onlineItem.movie!=null
+                                            && onlineItem.movie.ids.tmdb.equals(videoItem.movieId)){
+                                        isIn = true;
+                                        break;
+                                    }
+                                }
+
+                                if(!isIn){
+                                    //check status
+                                    if(videoItem.syncStatus == VideoStore.List.SyncStatus.STATUS_NOT_SYNC){
+                                        //send
+                                        Trakt.Result r = mTrakt.addVideoToList(0, traktId, videoItem);
+                                        if(r.status == Status.SUCCESS) {
+                                            videoItem.syncStatus = VideoStore.List.SyncStatus.STATUS_OK;
+                                            getContentResolver().update(listUri, videoItem.toContentValues(), videoItem.getDBWhereString(), videoItem.getDBWhereArgs());
+                                        }
+                                        localListItems.add(videoItem);
+                                    }
+                                    else {
+                                        videoItem.deleteFromDb(this);
+                                    }
+                                }else
+                                    localListItems.add(videoItem);
+                            }
+                        }
+
+                        cursorVideos.close();
+                        for(ListEntry onlineItem : traktListItems){
+                            if(onlineItem.episode == null && onlineItem.movie == null)
+                                continue; //skip everything that is not movies or episodes
+                            boolean isIn = false;
+                            for(VideoStore.VideoList.VideoItem videoItem : localListItems){
+                                if(videoItem.episodeId > 0
+                                        && onlineItem.episode!=null
+                                        && onlineItem.episode.ids.tvdb.equals(videoItem.episodeId)
+                                        || videoItem.movieId>0
+                                        && onlineItem.movie!=null
+                                        && onlineItem.movie.ids.tmdb.equals(videoItem.movieId)) {
+                                    isIn = true;
+                                    if(videoItem.syncStatus == VideoStore.List.SyncStatus.STATUS_DELETED) {
+                                        //delete from trakt and DB
+                                        mTrakt.removeVideoFromList(0, traktId, onlineItem);
+                                        videoItem.deleteFromDb(this);
+                                    }
+                                    break;
+                                }
+                            }
+                            if(!isIn){
+                                //add to DB
+
+
+                                boolean isEpisode = onlineItem.episode != null;
+                                VideoStore.VideoList.VideoItem videoItem  =
+                                        new VideoStore.VideoList.VideoItem(localId,!isEpisode?onlineItem.movie.ids.tmdb:-1, isEpisode?onlineItem.episode.ids.tvdb:-1, VideoStore.List.SyncStatus.STATUS_OK);
+
+                                getContentResolver().insert(listUri, videoItem.toContentValues());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        cursor.close();
+
+
     }
 
     private void showToast(final CharSequence text) {
