@@ -521,6 +521,143 @@ public final class VideoStore {
         }
     }
 
+
+    public static class VideoList{
+        public interface Columns {
+            String LIST_ID = "list_id";
+            String M_ONLINE_ID = Video.Media.SCRAPER_M_ONLINE_ID;
+            String E_ONLINE_ID = Video.Media.SCRAPER_E_ONLINE_ID;
+            String[] COLUMNS = {M_ONLINE_ID, E_ONLINE_ID, List.Columns.SYNC_STATUS};
+            String ID = "_id";
+        }
+        public static class VideoItem {
+            public long listId = -1;
+            public int movieId;
+            public int episodeId;
+            public int syncStatus = List.SyncStatus.STATUS_NOT_SYNC;
+
+            public VideoItem(long listId, int movieId, int episodeId, int syncStatus){
+                this.listId = listId;
+                this.movieId = movieId;
+                this.episodeId = episodeId;
+                this.syncStatus = syncStatus;
+            }
+
+            public ContentValues toContentValues() {
+                ContentValues contentValues = new ContentValues();
+                if(listId != -1)
+                    contentValues.put(Columns.LIST_ID, listId);
+                contentValues.put(Columns.M_ONLINE_ID, movieId);
+                contentValues.put(Columns.E_ONLINE_ID, episodeId);
+                contentValues.put(List.Columns.SYNC_STATUS, syncStatus);
+                return contentValues;
+            }
+
+            public String getDBWhereString(){
+                String whereString;
+                if(episodeId > 0){
+                    whereString = VideoStore.VideoList.Columns.E_ONLINE_ID + " = ?";
+                }
+                else{
+                    whereString = VideoStore.VideoList.Columns.M_ONLINE_ID + " = ?";
+                }
+                return whereString;
+            }
+
+            public String[] getDBWhereArgs(){
+                String [] whereArgs;
+                if(episodeId > 0){
+                    whereArgs = new String[]{String.valueOf(episodeId)};
+                }
+                else{
+                    whereArgs = new String[]{String.valueOf(movieId)};
+                }
+                return whereArgs;
+            }
+
+            public int deleteFromDb(Context context){
+                //was deleted online
+                String whereString = getDBWhereString();
+                String [] whereArgs = getDBWhereArgs();
+                return context.getContentResolver().delete(List.getListUri(listId), whereString, whereArgs);
+            }
+        }
+    }
+    public static class List {
+
+        public interface Columns {
+
+            /**
+             * unique id needed : title can change and
+             * trakt-id might not been set.
+             * <P>Type: Integer</P>
+             */
+            String ID = "_id";
+
+            /**
+             * List title.
+             * <P>Type: String</P>
+             */
+            String TITLE = "title";
+
+            /**
+             * Trakt sync status, values from SyncStatus
+             * <P>Type: Integer</P>
+             */
+            String SYNC_STATUS = "sync_status";
+
+            /**
+             * Trakt Id0
+             * <P>Type: Integer</P>
+             */
+            String TRAKT_ID = "trakt_id";
+
+            String[] COLUMNS = {ID, TITLE, TRAKT_ID, SYNC_STATUS};
+
+        }
+
+        public static class SyncStatus{
+            public static final int STATUS_OK = 0;
+            public static final int STATUS_NOT_SYNC = 1;
+            public static final int STATUS_DELETED = 2;
+            public static final int STATUS_RENAMED = 3;
+        }
+
+        public static class ListObj {
+            public String title;
+            public int traktId;
+            public int syncStatus = SyncStatus.STATUS_NOT_SYNC;
+            public int id;
+
+            public ListObj(String title, int traktId, int syncStatus){
+                this(-1, title, traktId, syncStatus);
+            }
+
+            public ListObj(int id, String title, int traktId, int syncStatus){
+                this.id = id;
+                this.title = title;
+                this.traktId = traktId;
+                this.syncStatus = syncStatus;
+            }
+
+            public ContentValues toContentValues() {
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(Columns.TITLE, title);
+                contentValues.put(Columns.SYNC_STATUS, syncStatus);
+                if(traktId != -1) //must be unique
+                    contentValues.put(Columns.TRAKT_ID, traktId);
+                return contentValues;
+            }
+        }
+
+        public static final Uri LIST_CONTENT_URI = Uri.parse(CONTENT_AUTHORITY_SLASH+"list");
+
+        public static Uri getListUri(long listID) {
+
+            return Uri.withAppendedPath(LIST_CONTENT_URI, String.valueOf(listID));
+        }
+    }
+
     public static final class Subtitle {
         public interface SubtitleColumns extends BaseColumns {
             // _id - BaseColumns
@@ -1386,6 +1523,12 @@ public final class VideoStore {
              */
             public static final Uri EXTERNAL_CONTENT_URI =
                     getContentUri("external");
+
+            /**
+             * The content:// style URI for lists
+             */
+            public static final Uri LIST_CONTENT_URI =
+                    Uri.withAppendedPath(getContentUri("external"),"list");
 
             /**
              * The MIME type for this table.

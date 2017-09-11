@@ -71,6 +71,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -253,6 +254,16 @@ public class VideoProvider extends ContentProvider {
             case VIDEO_MEDIA:
                 qb.setTables(VideoOpenHelper.VIDEO_VIEW_NAME);
                 break;
+            case VIDEO_LIST: {
+                qb.setTables(ListTables.VIDEO_LIST_TABLE);
+                qb.appendWhere(VideoStore.List.Columns.ID+"=?");
+                prependArgs.add(uri.getLastPathSegment());
+                break;
+            }
+            case LIST:{
+                qb.setTables(ListTables.LIST_TABLE);
+                break;
+            }
             case VIDEO_THUMBNAILS_ID:
                 hasThumbnailId = true;
                 //$FALL-THROUGH$
@@ -283,7 +294,6 @@ public class VideoProvider extends ContentProvider {
             default:
                 throw new IllegalStateException("Unknown Uri : " + uri);
         }
-
         Cursor c = qb.query(db, projectionIn, selection,
                 combine(prependArgs, selectionArgs), groupby, having, sort, limit);
 
@@ -402,6 +412,22 @@ public class VideoProvider extends ContentProvider {
                 }
                 break;
             }
+            case VIDEO_LIST: {
+                int listId = Integer.valueOf(uri.getLastPathSegment());
+                values.put(VideoStore.VideoList.Columns.LIST_ID,listId);
+                db.insertWithOnConflict(ListTables.VIDEO_LIST_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+                newUri = uri;
+                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                break;
+            }
+            case LIST:{
+                rowId = db.insert(ListTables.LIST_TABLE, null, values);
+                if (rowId > 0) {
+                    newUri = VideoStore.List.getListUri(rowId);
+                }
+                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                break;
+            }
             default:
                 throw new IllegalStateException("Unknown Uri : " + uri);
         }
@@ -517,6 +543,17 @@ public class VideoProvider extends ContentProvider {
                     mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
                 }
                 return result;
+            case VIDEO_LIST:
+                selection+= " AND "+ VideoStore.VideoList.Columns.LIST_ID+" = ?";
+                List<String> whereArgs = new ArrayList<String>(Arrays.asList(selectionArgs));
+                whereArgs.add(uri.getLastPathSegment());
+                result = db.delete(ListTables.VIDEO_LIST_TABLE, selection, whereArgs.toArray(new String[0]));
+                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                return result;
+            case LIST:
+                result = db.delete(ListTables.LIST_TABLE, selection, selectionArgs);
+                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                return result;
         }
 
         // the rest uses the usual way as in Android
@@ -560,6 +597,19 @@ public class VideoProvider extends ContentProvider {
                 if (result > 0 && !db.inTransaction()) {
                     mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
                 }
+                return result;
+            }
+            case VIDEO_LIST: {
+                userWhere+= " AND "+ VideoStore.VideoList.Columns.LIST_ID+" = ?";
+                List<String> whereArgs2 = new ArrayList<String>(Arrays.asList(whereArgs));
+                whereArgs2.add(uri.getLastPathSegment());
+                int result = db.update(ListTables.VIDEO_LIST_TABLE, initialValues, userWhere, whereArgs2.toArray(new String[0]));
+                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                return result;
+            }
+            case LIST: {
+                int result = db.update(ListTables.LIST_TABLE, initialValues, userWhere, whereArgs);
+                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
                 return result;
             }
             case VIDEO_MEDIA:
@@ -937,10 +987,15 @@ public class VideoProvider extends ContentProvider {
     private static final int SUBS_MEDIA_ID = 1001;
     private static final int SUBS_MEDIA_VIDEO_ID = 1002;
 
+    private static final int LIST = 1100;
+    private static final int VIDEO_LIST = 1101;
+
     static {
         URI_MATCHER.addURI(VideoStore.AUTHORITY, "raw/*", RAW);
         URI_MATCHER.addURI(VideoStore.AUTHORITY, "rawquery", RAWQUERY);
 
+        URI_MATCHER.addURI(VideoStore.AUTHORITY, "list", LIST);
+        URI_MATCHER.addURI(VideoStore.AUTHORITY, "list/#", VIDEO_LIST);
         URI_MATCHER.addURI(VideoStore.AUTHORITY, "*/video/media", VIDEO_MEDIA);
         URI_MATCHER.addURI(VideoStore.AUTHORITY, "*/video/media/#", VIDEO_MEDIA_ID);
         URI_MATCHER.addURI(VideoStore.AUTHORITY, "*/video/thumbnails", VIDEO_THUMBNAILS);

@@ -45,7 +45,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 10;
     // that is the current version
-    private static final int DATABASE_VERSION = 34;
+    private static final int DATABASE_VERSION = 35;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -2748,6 +2748,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             db.execSQL(CREATE_FILES_SCANNED_TRIGGER_STORAGE_ID);
             db.execSQL("UPDATE " + FILES_SCANNED_TABLE_NAME + " SET storage_id = storage_id + 16961 WHERE " + FileColumns._ID + " > " + SCANNED_ID_OFFSET);
             db.execSQL(DROP_TRIGGER_STORAGE_ID);
+        }
+        if(oldVersion<35){
+            ListTables.upgradeTo(db, 34);
         }
     }
 
