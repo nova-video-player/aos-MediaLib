@@ -75,6 +75,13 @@ public class HttpDownloadWrapper implements Closeable {
                 mUrlConnection.addRequestProperty(header.getKey(), header.getValue());
             }
         }
+        int status = mUrlConnection.getResponseCode();
+        if (status == HttpURLConnection.HTTP_MOVED_TEMP   || status == HttpURLConnection.HTTP_MOVED_PERM)
+        {
+            String newUrl = mUrlConnection.getHeaderField("Location");
+            mUrlConnection = (HttpURLConnection) new URL(newUrl).openConnection();
+            mUrlConnection.connect();
+        }
         return mUrlConnection.getInputStream();
     }
 
