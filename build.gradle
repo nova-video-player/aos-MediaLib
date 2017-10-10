@@ -114,4 +114,7 @@ dependencies {
     compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
     compile group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
     compile group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.5'
+    compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.3.0'
+    compile 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.5.0'
 }

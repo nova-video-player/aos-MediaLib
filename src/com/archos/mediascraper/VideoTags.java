@@ -109,4 +109,8 @@ public abstract class VideoTags extends BaseTags {
         out.writeStringList(mStudios);
         out.writeStringList(mGenres);
     }
+
+    public void addAllGenres(List<String> genres){
+        mGenres.addAll(genres);
+    }
 }
