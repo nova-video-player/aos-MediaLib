@@ -272,7 +272,7 @@ public class DefaultContentScraper extends BaseScraper2 {
     }
 
     protected static ScraperSettings generatePreferences(Context context) {
-        synchronized (ShowScraper2.class) {
+        synchronized (ShowScraper2TVDB2.class) {
             if (sSettings != null) {
                 return sSettings;
             }
