@@ -221,24 +221,32 @@ public class ShowScraper2TVDB2 extends BaseScraper2 {
 
 
                 Response<EpisodesResponse> resEpisodes = theTvdb.series().episodes((int) showTags.getOnlineId(), 0, resultLanguage+",en").execute();
+                List<Episode> episodes = new ArrayList<>();
+                int lastPage = 0;
                 if(resEpisodes.isSuccessful()) {
-                    if(resEpisodes.body().data!=null)
-                        for(Episode episode : resEpisodes.body().data){
-                            EpisodeTags episodeTags = new EpisodeTags();
-                            episodeTags.setOnlineId(episode.id);
-                            episodeTags.setTitle(episode.episodeName);
-                            episodeTags.setAired(episode.firstAired);
-                            episodeTags.setEpisode(episode.airedEpisodeNumber);
-                            //missing imdb
-                            //missing mCurrentData.addDirectorIfAbsent(getString(), '|', ',');
-                            //mCurrentData.setRating(getFloat());
-                            //mCurrentData.setEpisodePicture(getString(), mContext);
-                            //mCurrentData.addActorIfAbsent(getString(), '|', ',');
-                            episodeTags.setPlot(episode.overview);
-                            episodeTags.setSeason(episode.airedSeason);
-                            episodeTags.setShowTags(showTags);
-                            allEpisodes.put(ShowAllDetailsHandler.getKey(episode.airedSeason, episode.airedEpisodeNumber),episodeTags);
-                        }
+                    while(resEpisodes.isSuccessful() && resEpisodes.body().data !=null){
+                        episodes.addAll(resEpisodes.body().data);
+                        lastPage ++;
+                        resEpisodes = theTvdb.series().episodes((int) showTags.getOnlineId(), lastPage, resultLanguage+",en").execute();
+                    }
+
+
+                    for(Episode episode : episodes){
+                        EpisodeTags episodeTags = new EpisodeTags();
+                        episodeTags.setOnlineId(episode.id);
+                        episodeTags.setTitle(episode.episodeName);
+                        episodeTags.setAired(episode.firstAired);
+                        episodeTags.setEpisode(episode.airedEpisodeNumber);
+                        //missing imdb
+                        //missing mCurrentData.addDirectorIfAbsent(getString(), '|', ',');
+                        //mCurrentData.setRating(getFloat());
+                        //mCurrentData.setEpisodePicture(getString(), mContext);
+                        //mCurrentData.addActorIfAbsent(getString(), '|', ',');
+                        episodeTags.setPlot(episode.overview);
+                        episodeTags.setSeason(episode.airedSeason);
+                        episodeTags.setShowTags(showTags);
+                        allEpisodes.put(ShowAllDetailsHandler.getKey(episode.airedSeason, episode.airedEpisodeNumber),episodeTags);
+                    }
                 } else return error();
 
 
