@@ -35,6 +35,7 @@ import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.MovieScraper2;
+import com.archos.mediascraper.xml.ShowScraper2;
 import com.archos.mediascraper.xml.ShowScraper2TVDB2;
 
 import java.io.IOException;
@@ -305,8 +306,8 @@ public class AutoScrapeService extends Service {
                                             Log.d(TAG,"rescraping episode "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
-                                            searchResult.setScraper(new ShowScraper2TVDB2(AutoScrapeService.this));
-                                            result = ShowScraper2TVDB2.getDetails(new SearchResult(0,title, (int) videoID), null);
+                                            searchResult.setScraper(new ShowScraper2(AutoScrapeService.this));
+                                            result = ShowScraper2.getDetails(new SearchResult(0,title, (int) videoID), null);
 
                                         } else if (scraperType==BaseTags.MOVIE) {
                                             Log.d(TAG,"rescraping movie "+videoID);
