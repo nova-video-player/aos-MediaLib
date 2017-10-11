@@ -32,6 +32,7 @@ import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
 import com.archos.mediascraper.xml.DefaultContentScraper;
 import com.archos.mediascraper.xml.MovieScraper2;
+import com.archos.mediascraper.xml.ShowScraper2;
 import com.archos.mediascraper.xml.ShowScraper2TVDB2;
 
 public class Scraper {
@@ -49,11 +50,11 @@ public class Scraper {
     public Scraper(Context context) {
         if (DBG) Log.d(TAG, "CTOR");
         mContext = context;
-        mShowScraper = new ShowScraper2TVDB2(mContext);
+        mShowScraper = new ShowScraper2(mContext);
         mMovieScraper = new MovieScraper2(mContext);
     }
 
-    private final ShowScraper2TVDB2 mShowScraper;
+    private final ShowScraper2 mShowScraper;
     private final MovieScraper2 mMovieScraper;
 
     private ScrapeSearchResult getMatches(SearchInfo info, int maxItems) {

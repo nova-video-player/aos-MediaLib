@@ -84,7 +84,7 @@ public abstract class BaseScraper2 {
             case BaseTags.MOVIE:
                 return MovieScraper2.generatePreferences(context);
             case BaseTags.TV_SHOW:
-                return ShowScraper2TVDB2.generatePreferences(context);
+                return ShowScraper2.generatePreferences(context);
             default:
                 return null;
         }
@@ -116,7 +116,7 @@ public abstract class BaseScraper2 {
             case BaseTags.MOVIE:
                 return new MovieScraper2(context);
             case BaseTags.TV_SHOW:
-                return new ShowScraper2TVDB2(context);
+                return new ShowScraper2(context);
             default:
                 return null;
         }
