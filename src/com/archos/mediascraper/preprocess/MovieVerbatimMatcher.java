@@ -17,8 +17,6 @@ package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.MetaFile;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +41,7 @@ class MovieVerbatimMatcher implements InputMatcher {
     private static final Pattern VERBATIM_GROUP_PATTERN = Pattern.compile(VERBATIM_GROUP);
 
     @Override
-    public boolean matchesFileInput(Uri fileInput) {
+    public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
         // does not match file intput, verbatim may come only from user input
         return false;
     }
@@ -54,7 +52,7 @@ class MovieVerbatimMatcher implements InputMatcher {
     }
 
     @Override
-    public SearchInfo getFileInputMatch(Uri file) {
+    public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
         // does not match file input, user input only
         return null;
     }

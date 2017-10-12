@@ -53,7 +53,7 @@ class MovieDefaultMatcher implements InputMatcher {
     }
 
     @Override
-    public boolean matchesFileInput(Uri fileInput) {
+    public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
         // this is the fallback matcher that matches everything
         return true;
     }
@@ -65,7 +65,9 @@ class MovieDefaultMatcher implements InputMatcher {
     }
 
     @Override
-    public SearchInfo getFileInputMatch(Uri file) {
+    public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            file = simplifiedUri;
         return getMatch(Utils.getFileNameWithoutExtension(file), file);
     }
 

@@ -40,7 +40,9 @@ class MovieSceneMatcher implements InputMatcher {
     }
 
     @Override
-    public boolean matchesFileInput(Uri fileInput) {
+    public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            fileInput = simplifiedUri;
         return matches(Utils.getFileNameWithoutExtension(fileInput));
     }
 
@@ -56,7 +58,9 @@ class MovieSceneMatcher implements InputMatcher {
     }
 
     @Override
-    public SearchInfo getFileInputMatch(Uri file) {
+    public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            file = simplifiedUri;
         return getSearchInfo(Utils.getFileNameWithoutExtension(file), file);
     }
 

@@ -17,7 +17,6 @@ package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediascraper.StringUtils;
 
 import java.util.regex.Matcher;
@@ -54,7 +53,9 @@ class TvShowPathMatcher implements InputMatcher {
     }
 
     @Override
-    public boolean matchesFileInput(Uri fileInput) {
+    public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            fileInput = simplifiedUri;
         return PATTERN_.matcher(fileInput.toString()).matches();
     }
 
@@ -64,7 +65,9 @@ class TvShowPathMatcher implements InputMatcher {
     }
 
     @Override
-    public SearchInfo getFileInputMatch(Uri file) {
+    public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            file = simplifiedUri;
         Matcher matcher = PATTERN_.matcher(file.toString());
         if (matcher.matches()) {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));

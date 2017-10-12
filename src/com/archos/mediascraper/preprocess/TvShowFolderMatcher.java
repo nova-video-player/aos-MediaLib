@@ -2,15 +2,13 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
+import android.util.Log;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.filecorelibrary.Utils;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
 
 import java.util.Map;
-import java.net.URI;
-import java.io.File;
 
 /**
  * Matches all sorts of "Tv Show title S01E01/randomgarbage.mkv" and similar things
@@ -29,19 +27,15 @@ class TvShowFolderMatcher extends TvShowMatcher {
     }
 
     @Override
-    public boolean matchesFileInput(Uri fileInput) {
-        return ShowUtils.isTvShow(fileInput, null);
+    public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
+
+        return ShowUtils.isTvShow(Utils.getParentUrl(fileInput), null);
     }
 
     @Override
-    public SearchInfo getFileInputMatch(Uri file) {
-        try {
-	    File f = new File(new URI(file.toString()));
+    public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
+        return getMatch(Utils.getName(Utils.getParentUrl(file)), file);
 
-            return getMatch(f.getParentFile().getName(), file);
-	} catch(java.net.URISyntaxException e) {
-	    return null;
-	}
     }
 
     private static SearchInfo getMatch(String matchString, Uri file) {

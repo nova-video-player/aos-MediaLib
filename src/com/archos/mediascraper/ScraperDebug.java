@@ -110,7 +110,7 @@ public class ScraperDebug extends Thread{
             }
             log("scraping : " + entry.getKey());
 
-            SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(Uri.parse("/"+entry.getKey()));
+            SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(null, Uri.parse("/"+entry.getKey()));
             Scraper scraper = new Scraper(mContext);
             ScrapeDetailResult result = scraper.getAutoDetails(searchInfo);
             if(result.tag!=null){
