@@ -110,7 +110,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
             }
             if (isCancelled())
                 return null;
-            SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(mFile);
+            SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(mFile, mFile);
             if (isCancelled())
                 return null;
 

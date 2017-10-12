@@ -58,10 +58,10 @@ public class SearchPreprocessor {
      * @param uri must not be null
      * @return Either {@link MovieSearchInfo} or {@link TvShowSearchInfo}
      */
-    public SearchInfo parseFileBased(Uri uri) {
+    public SearchInfo parseFileBased(Uri uri, Uri simplifiedUri) {
         for (InputMatcher matcher : PARSERS) {
-            if (matcher.matchesFileInput(uri)) {
-                SearchInfo result = matcher.getFileInputMatch(uri);
+            if (matcher.matchesFileInput(uri, simplifiedUri)) {
+                SearchInfo result = matcher.getFileInputMatch(uri, simplifiedUri);
                 if (result == null) {
                     throw new AssertionError("Matcher:" + matcher.getMatcherName() + " returned null file:" + uri.toString());
                 }

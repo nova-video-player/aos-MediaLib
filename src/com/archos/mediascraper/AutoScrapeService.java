@@ -321,7 +321,7 @@ public class AutoScrapeService extends Service {
                                     }
                                     if(searchOnline) {
                                         Log.d(TAG,"searching online "+title);
-                                        SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(scrapUri);
+                                        SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri,scrapUri);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         result = scraper.getAutoDetails(searchInfo);
 

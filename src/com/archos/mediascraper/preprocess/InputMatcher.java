@@ -22,11 +22,11 @@ import com.archos.filecorelibrary.MetaFile;
 interface InputMatcher {
     boolean matchesUserInput(String userInput);
 
-    boolean matchesFileInput(Uri fileInput);
+    boolean matchesFileInput(Uri fileInput, Uri simplifiedUri);
 
     SearchInfo getUserInputMatch(String userInput, Uri file);
 
-    SearchInfo getFileInputMatch(Uri file);
+    SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri);
 
     String getMatcherName();
 }

@@ -17,8 +17,6 @@ package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.MetaFile;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +38,9 @@ class MovieDVDMatcher implements InputMatcher {
     }
 
     @Override
-    public boolean matchesFileInput(Uri fileInput) {
+    public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            fileInput = simplifiedUri;
         return DVD_PATH_PATTERN.matcher(fileInput.toString()).matches();
     }
 
@@ -51,7 +51,9 @@ class MovieDVDMatcher implements InputMatcher {
     }
 
     @Override
-    public SearchInfo getFileInputMatch(Uri file) {
+    public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
+        if(simplifiedUri!=null)
+            file = simplifiedUri;
         Matcher matcher = DVD_PATH_PATTERN.matcher(file.toString());
         if (matcher.matches()) {
             SearchInfo result = new MovieSearchInfo(file, matcher.group(1), null);
