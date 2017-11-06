@@ -715,6 +715,17 @@ public class Trakt {
             } else
                 return Result.getError();
         }
+        catch (RetrofitError error) {
+            if (!error.isNetworkError() && trial < MAX_TRIAL) {
+                try {
+                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
+                    return addList(trial+1,title);
+                } catch (InterruptedException e) {
+                    return Result.getError();
+                }
+            } else
+                return Result.getError();
+        }
     }
 
     public Result deleteList(int trial, String id) {
@@ -730,6 +741,17 @@ public class Trakt {
             } else
                 return Result.getError();
         }
+        catch (RetrofitError error) {
+            if (!error.isNetworkError() && trial < MAX_TRIAL) {
+                try {
+                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
+                    return deleteList(trial + 1,id);
+                } catch (InterruptedException e) {
+                    return Result.getError();
+                }
+            } else
+                return Result.getError();
+        }
     }
 
     public Result getLists(int trial) {
@@ -739,6 +761,17 @@ public class Trakt {
         } catch (OAuthUnauthorizedException e) {
             if (trial < 1 && refreshAccessToken()) {
                 return getLists(trial + 1);
+            } else
+                return Result.getError();
+        }
+        catch (RetrofitError error) {
+            if (!error.isNetworkError() && trial < MAX_TRIAL) {
+                try {
+                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
+                    return getLists(trial + 1);
+                } catch (InterruptedException e) {
+                    return Result.getError();
+                }
             } else
                 return Result.getError();
         }
@@ -758,7 +791,7 @@ public class Trakt {
         }
         catch (retrofit.RetrofitError e) {
             e.printStackTrace();
-            if (trial < MAX_TRIAL) {
+            if (!e.isNetworkError() && trial < MAX_TRIAL) {
                 return getListContent(trial + 1, listId);
             } else
                 return Result.getError();
@@ -786,6 +819,13 @@ public class Trakt {
         }catch (OAuthUnauthorizedException e) {
             e.printStackTrace();
             if (trial < 1 && refreshAccessToken()) {
+                return removeVideoFromList(trial + 1, listId, onlineItem);
+            } else
+                return Result.getError();
+        }
+        catch (retrofit.RetrofitError e) {
+            e.printStackTrace();
+            if (!e.isNetworkError() && trial < MAX_TRIAL) {
                 return removeVideoFromList(trial + 1, listId, onlineItem);
             } else
                 return Result.getError();
@@ -824,6 +864,13 @@ public class Trakt {
                 return addVideoToList(trial+1, listId, videoItem);
             }
             else
+                return Result.getError();
+        }
+        catch (retrofit.RetrofitError e) {
+            e.printStackTrace();
+            if (!e.isNetworkError() &&  trial < MAX_TRIAL) {
+                return addVideoToList(trial + 1, listId, videoItem);
+            } else
                 return Result.getError();
         }
     }
