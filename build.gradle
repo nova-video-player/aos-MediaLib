@@ -125,15 +125,14 @@ dependencies {
     compile 'com.google.code.gson:gson:2.4'
     compile 'com.android.support:multidex:1.0.1'
     compile 'joda-time:joda-time:2.4'
-    compile files('libs/cardboard.jar')
-    compile files('libs/commons-codec-1.8.jar')
-    compile files('libs/joda-convert-1.7.jar')
-    compile files('libs/org.apache.oltu.oauth2.client-1.0.0.jar')
-    compile files('libs/org.apache.oltu.oauth2.common-1.0.0.jar')
-    compile files('libs/in-app-purchasing-2.0.76.jar')
-    compile files('libs/org.json-20120521.jar')
-    compile files('libs/retrofit-1.8.0.jar')
-    compile files('libs/juniversalchardet-1.0.3.jar')
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.8'
+    compile group: 'org.joda', name: 'joda-convert', version: '1.7'
+    compile group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
+    compile group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
+    privlibsCompile files('libs/in-app-purchasing-2.0.76.jar')
+    compile group: 'org.json', name: 'json', version: '20131018'
+    compile group: 'com.squareup.retrofit', name: 'retrofit', version: '1.8.0'
+    compile group: 'com.googlecode.juniversalchardet', name: 'juniversalchardet', version: '1.0.3'
     compile group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.12.v20130726'
     compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
     compile group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
