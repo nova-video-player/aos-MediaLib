@@ -21,6 +21,10 @@ import org.fourthline.cling.transport.spi.NetworkAddressFactory;
  * Created by alexandre on 29/04/16.
  */
 public class ArchosUpnpServiceConfiguration extends AndroidUpnpServiceConfiguration {
+    ArchosUpnpServiceConfiguration() {
+        super();
+    }
+
     @Override
     protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort) {
         return new ArchosNetworkAddressFactory(streamListenPort);
