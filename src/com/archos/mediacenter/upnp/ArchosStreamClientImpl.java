@@ -289,8 +289,7 @@ public class ArchosStreamClientImpl extends AbstractStreamClient<StreamClientCon
             UpnpResponse responseOperation =
                     new UpnpResponse(
                             getResponseStatus(),
-                            UpnpResponse.Status.getByStatusCode(getResponseStatus()).getStatusMsg()
-                    );
+                            UpnpResponse.Status.getByStatusCode(getResponseStatus()).getStatusMsg());
 
             if (log.isLoggable(Level.FINE))
                 log.fine("Received response: " + responseOperation);

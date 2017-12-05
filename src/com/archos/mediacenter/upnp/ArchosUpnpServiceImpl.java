@@ -32,6 +32,7 @@ import org.fourthline.cling.protocol.ProtocolFactory;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.impl.jetty.StreamClientConfigurationImpl;
+import org.fourthline.cling.transport.spi.InitializationException;
 import org.fourthline.cling.transport.spi.StreamClient;
 
 /**
@@ -87,7 +88,7 @@ public class ArchosUpnpServiceImpl extends Service {
         return new ArchosUpnpServiceConfiguration() {
 
             @Override
-            public StreamClient createStreamClient() {
+            public StreamClient createStreamClient() throws InitializationException {
                 // Use Jetty
                 return new ArchosStreamClientImpl(
                         new StreamClientConfigurationImpl(
