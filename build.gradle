@@ -140,7 +140,7 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
     compile 'com.squareup.retrofit2:converter-gson:2.3.0'
     compile 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.5.0'
-    openCompile 'com.github.archos-sa:aos-FakeLibs:master-SNAPSHOT'
+    openCompile 'com.github.archos-sa:aos-FakeLibs:9e22f163b0ce1e50445e866c0644ae029f10f812'
     privlibsCompile group: 'org.fourthline.cling', name: 'cling-core', version:'2.0.1'
     privlibsCompile group: 'org.fourthline.cling', name: 'cling-support', version:'2.0.1'
 }
