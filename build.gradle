@@ -45,7 +45,7 @@ android {
         targetSdkVersion 25
     }
 
-    flavorDimensions "version"
+    flavorDimensions "version", "privDeps"
 
     productFlavors {
         normal {
@@ -58,10 +58,10 @@ android {
             dimension "version"
         }
         open {
-            dimension "privlibs"
+            dimension "privDeps"
         }
         privlibs {
-            dimension "privlibs"
+            dimension "privDeps"
         }
 
     }
@@ -121,28 +121,29 @@ android {
 }
 
 dependencies {
-    compile project(':FileCoreLibrary')
-    compile 'com.android.support:support-v4:23.3.0'
-    compile 'com.android.support:appcompat-v7:23.3.0'
-    compile 'com.google.code.gson:gson:2.4'
-    compile 'com.android.support:multidex:1.0.1'
-    compile 'joda-time:joda-time:2.4'
-    compile group: 'commons-codec', name: 'commons-codec', version: '1.8'
-    compile group: 'org.joda', name: 'joda-convert', version: '1.7'
-    compile group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
-    compile group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
-    privlibsCompile files('libs/in-app-purchasing-2.0.76.jar')
-    compile group: 'org.json', name: 'json', version: '20131018'
-    compile group: 'com.squareup.retrofit', name: 'retrofit', version: '1.8.0'
-    compile group: 'com.googlecode.juniversalchardet', name: 'juniversalchardet', version: '1.0.3'
-    compile group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.12.v20130726'
-    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
-    compile group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
-    compile group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.5'
-    compile 'com.squareup.retrofit2:retrofit:2.3.0'
-    compile 'com.squareup.retrofit2:converter-gson:2.3.0'
-    compile 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.5.0'
-    openCompile 'com.github.archos-sa:AOS-FakeLibs:517a7ca02f'
-    privlibsCompile group: 'org.fourthline.cling', name: 'cling-core', version:'2.0.1'
-    privlibsCompile group: 'org.fourthline.cling', name: 'cling-support', version:'2.0.1'
+    implementation project(':FileCoreLibrary')
+    implementation 'com.android.support:support-v4:23.3.0'
+    implementation 'com.android.support:appcompat-v7:23.3.0'
+    implementation 'com.google.code.gson:gson:2.4'
+    implementation 'com.android.support:multidex:1.0.1'
+    implementation 'joda-time:joda-time:2.4'
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.8' 
+    implementation group: 'org.joda', name: 'joda-convert', version: '1.7' 
+    api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
+    api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
+    implementation group: 'org.json', name: 'json', version: '20131018'
+    implementation group: 'com.squareup.retrofit', name: 'retrofit', version: '1.8.0'
+    api group: 'com.googlecode.juniversalchardet', name: 'juniversalchardet', version: '1.0.3'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.12.v20130726'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
+    implementation group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.5'
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
+    implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.5.0'
+
+    privlibsApi files('libs/in-app-purchasing-2.0.76.jar')
+    openApi 'com.github.archos-sa:AOS-FakeLibs:517a7ca02f'
+    privlibsApi group: 'org.fourthline.cling', name: 'cling-core', version:'2.0.1'
+    privlibsImplementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.0.1'
 }
