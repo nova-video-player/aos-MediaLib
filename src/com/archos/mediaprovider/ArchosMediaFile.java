@@ -16,7 +16,6 @@
 
 package com.archos.mediaprovider;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.filecorelibrary.MetaFile2;
 
 import java.util.HashMap;

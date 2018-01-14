@@ -33,8 +33,6 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import com.archos.environment.ArchosUtils;
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 import com.archos.mediaprovider.ArchosMediaCommon;
@@ -66,24 +64,9 @@ public final class VideoStore {
      * or to our network scanner. In both cases new data should show up
      * soon in the database. Can take quite some time if scanner is busy.
      * Requests are queued up.
-     * @param file see {@link MetaFile#from(java.io.File)} and related
+     * @param uri
      * @param context
      */
-    public static void requestIndexing(MetaFile file, Context context) {
-        if (file == null || context == null) {
-            Log.w(TAG, "requestIndexing: file or context null");
-            return;
-        }
-        String action;
-        if (file.isSmbFile())
-            action = ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE;
-        else
-            action = Intent.ACTION_MEDIA_SCANNER_SCAN_FILE;
-        Intent scanIntent = new Intent(action);
-        scanIntent.setData(file.getUri());
-        scanIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-        context.sendBroadcast(scanIntent);
-    }
 
     public static void requestIndexing(Uri uri, Context context) {
         requestIndexing(uri, context, true);
