@@ -24,7 +24,7 @@ import com.archos.mediacenter.filecoreextension.UriUtils;
 import java.io.IOException;
 import java.util.Map;
 
-import jcifs2.smb.SmbFile;
+import jcifs.smb.SmbFile;
 
 public class SmbProxy extends Proxy{
     private StreamOverHttp mStream;
