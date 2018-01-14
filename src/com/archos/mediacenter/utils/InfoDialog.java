@@ -14,7 +14,6 @@
 
 package com.archos.mediacenter.utils;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.medialib.R;
 
 import android.app.Dialog;
@@ -566,16 +565,6 @@ public class InfoDialog extends Dialog {
         }
 
         return res;
-    }
-
-    static public String getFilenameWithoutExtension(MetaFile file) {
-        final String fullName = file.getName();
-        int dotPos = fullName.lastIndexOf('.');
-        if (dotPos >= 0 && dotPos < fullName.length()) {
-            return fullName.substring(0, dotPos);
-        } else {
-            return fullName;
-        }
     }
 
     static public String getMimeType(File file) {

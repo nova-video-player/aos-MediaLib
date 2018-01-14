@@ -17,7 +17,6 @@ package com.archos.mediascraper.saxhandler;
 import android.content.Context;
 import android.net.Uri;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediascraper.NfoParser;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ShowTags;
