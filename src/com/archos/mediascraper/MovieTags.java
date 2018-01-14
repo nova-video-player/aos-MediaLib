@@ -30,11 +30,9 @@ import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.ScraperImage.Type;
-import com.archos.mediascraper.themoviedb3.SearchMovieTrailerResult;
 
 
 import java.io.File;
