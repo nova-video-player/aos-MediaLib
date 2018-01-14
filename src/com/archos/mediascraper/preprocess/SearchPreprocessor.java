@@ -19,7 +19,6 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.archos.filecorelibrary.FileUtils;
-import com.archos.filecorelibrary.MetaFile;
 
 import java.util.ArrayList;
 import java.util.List;

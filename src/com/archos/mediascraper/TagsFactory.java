@@ -20,11 +20,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.LongSparseArray;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;

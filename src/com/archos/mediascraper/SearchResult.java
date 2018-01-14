@@ -19,7 +19,6 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediascraper.xml.BaseScraper2;
 
 public class SearchResult implements Parcelable {
