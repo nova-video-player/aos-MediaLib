@@ -19,8 +19,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import com.archos.mediaprovider.music.MusicStore;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,8 +43,6 @@ public abstract class CoverProvider {
 	protected static final int VIDEO_ALL_MOVIES_LOADER_ID = 202;
 	protected static final int VIDEO_ALL_TV_SHOWS_LOADER_ID = 203;
 	protected static final int VIDEO_RECENTLY_ADDED_LOADER_ID = 204;
-
-	protected static final Uri ALBUM_ARTWORK_URI = MusicStore.Audio.Albums.ALBUM_ART_URI;
 
 	protected Context mContext;
 	protected LoaderManager mLoaderManager;

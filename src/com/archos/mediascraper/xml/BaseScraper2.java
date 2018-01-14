@@ -16,11 +16,9 @@
 package com.archos.mediascraper.xml;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;

@@ -22,7 +22,6 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.NfoParser;

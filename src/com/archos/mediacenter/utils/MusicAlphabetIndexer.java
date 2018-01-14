@@ -19,9 +19,6 @@ package com.archos.mediacenter.utils;
 import android.database.Cursor;
 import android.widget.AlphabetIndexer;
 
-import com.archos.mediaprovider.music.MusicStore;
-
-
 /**
  * Handles comparisons in a different way because the Album, Song and Artist name
  * are stripped of some prefixes such as "a", "an", "the" and some symbols.
@@ -35,7 +32,7 @@ public class MusicAlphabetIndexer extends AlphabetIndexer {
 
     @Override
     protected int compare(String word, String letter) {
-        String strippedWord = MusicStore.Audio.removePrefixesAndSymbols( word );
+        String strippedWord = removePrefixesAndSymbols( word );
         String firstLetter;
         if (strippedWord.length() == 0) {
             firstLetter = " ";
@@ -43,5 +40,25 @@ public class MusicAlphabetIndexer extends AlphabetIndexer {
             firstLetter = strippedWord.toUpperCase().substring(0, 1);
         }
         return firstLetter.compareTo(letter);
+    }
+
+    private static String removePrefixesAndSymbols(String name) {
+        name = name.trim().toLowerCase();
+        if (name.startsWith("the ")) {
+            name = name.substring(4);
+        }
+        if (name.startsWith("an ")) {
+            name = name.substring(3);
+        }
+        if (name.startsWith("a ")) {
+            name = name.substring(2);
+        }
+        if (name.endsWith(", the") || name.endsWith(",the") ||
+                name.endsWith(", an") || name.endsWith(",an") ||
+                name.endsWith(", a") || name.endsWith(",a")) {
+            name = name.substring(0, name.lastIndexOf(','));
+        }
+        name = name.replaceAll("[\\[\\]\\(\\)\"'.,?!]", "").trim();
+        return name;
     }
 }
