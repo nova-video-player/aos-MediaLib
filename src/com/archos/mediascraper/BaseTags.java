@@ -24,8 +24,6 @@ import android.os.Parcelable;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
 
-import com.archos.filecorelibrary.MetaFile;
-import com.archos.filecorelibrary.MetaFile2;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
@@ -426,17 +424,12 @@ public abstract class BaseTags implements Parcelable {
     protected final static String nonNull(String source) {
         return (source == null ? "" : source);
     }
-    protected final static String nonNull(MetaFile source) {
-        return (source == null ? "" : source.getAccessPath());
-    }
+
     protected final static long nonNull(Date source) {
         return (source == null ? 0L : source.getTime());
     }
     protected final static Date readDate(long source) {
         return (source == 0 ? null : new Date(source));
-    }
-    protected final static MetaFile readFile(String source) {
-        return (TextUtils.isEmpty(source) ? null : MetaFile.from(source));
     }
 
     protected static final <T> List<T> safeList(List<T> list) {

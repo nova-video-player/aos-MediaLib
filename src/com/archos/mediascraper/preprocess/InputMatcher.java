@@ -17,8 +17,6 @@ package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.MetaFile;
-
 interface InputMatcher {
     boolean matchesUserInput(String userInput);
 

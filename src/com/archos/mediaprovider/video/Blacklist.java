@@ -19,10 +19,7 @@ import android.net.Uri;
 import android.os.Environment;
 
 import com.archos.filecorelibrary.ExtStorageManager;
-import com.archos.filecorelibrary.MetaFile;
 
-import com.archos.environment.ArchosUtils;
-import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.FileUtils;
 
 import java.util.regex.Matcher;

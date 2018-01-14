@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 import com.archos.mediaprovider.video.VideoStore.Video;
 import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
@@ -33,7 +32,6 @@ import com.archos.mediascraper.xml.BaseScraper2;
 import com.archos.mediascraper.xml.DefaultContentScraper;
 import com.archos.mediascraper.xml.MovieScraper2;
 import com.archos.mediascraper.xml.ShowScraper2;
-import com.archos.mediascraper.xml.ShowScraper2TVDB2;
 
 public class Scraper {
     private static final String TAG = "Scraper";
