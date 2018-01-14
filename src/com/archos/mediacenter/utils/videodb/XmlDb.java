@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jcifs2.smb.SmbException;
+import jcifs.smb.SmbException;
 
 public class XmlDb  implements Callback {
     private final static String TAG = "XmlDb";
