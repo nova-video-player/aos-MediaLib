@@ -48,7 +48,7 @@ android {
     flavorDimensions "version", "privDeps"
 
     productFlavors {
-        normal {
+        premium {
             dimension "version"
         }
         free {
