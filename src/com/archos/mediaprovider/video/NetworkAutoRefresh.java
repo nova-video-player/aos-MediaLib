@@ -146,6 +146,7 @@ public class NetworkAutoRefresh extends BroadcastReceiver {
                     refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_SCAN_LOG_EXTRA, true);
                     refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_ON_FAIL_PREFERENCE, AUTO_RESCAN_ERROR);
                     refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_END_OF_SCAN_PREFERENCE, AUTO_RESCAN_LAST_SCAN);
+                    refreshIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
                     context.sendBroadcast(refreshIntent);
                 }
             }
@@ -170,6 +171,7 @@ public class NetworkAutoRefresh extends BroadcastReceiver {
     public static void forceRescan(Context context){
         Intent intent = new Intent(context, NetworkAutoRefresh.class);
         intent.setAction(ACTION_FORCE_RESCAN_INDEXED_FOLDERS);
+        intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
         context.sendBroadcast(intent);
     }
     public static FileWriter getDebugFileWriter(Context context) throws IOException {

@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
+import com.archos.environment.ArchosUtils;
 import com.archos.filecorelibrary.MetaFile;
 
 public class NetworkScanner {
@@ -39,6 +40,7 @@ public class NetworkScanner {
     public static void scanVideos(Context context, Uri uri) {
         if (context != null && uri != null) {
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE, uri);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             context.sendBroadcast(intent);
         }
     }
@@ -59,6 +61,7 @@ public class NetworkScanner {
     public static void removeVideos(Context context, Uri uri) {
         if (context != null && uri != null) {
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_REMOVE_FILE, uri);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             context.sendBroadcast(intent);
         }
     }

@@ -22,6 +22,7 @@ import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.trakt.Trakt.Result.ObjectType;
 import com.archos.mediacenter.utils.trakt.TraktAPI.AuthParam;
 import com.archos.mediacenter.utils.trakt.TraktAPI.MovieWatchingParam;
@@ -551,7 +552,9 @@ public class Trakt {
             SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
             String refreshToken = getRefreshTokenFromPreferences(pref);
             if(refreshToken==null|| refreshToken.isEmpty()){
-                mContext.sendBroadcast(new Intent(TRAKT_ISSUE_REFRESH_TOKEN));
+                Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
+                intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                mContext.sendBroadcast(intent);
             }
             else {
                 OAuthClientRequest request = TraktV2.getAccessTokenRefreshRequest(API_KEY, API_SECRET, "http://localhost", refreshToken);
@@ -567,9 +570,13 @@ public class Trakt {
             }
 
         } catch (OAuthSystemException e) {
-            mContext.sendBroadcast(new Intent(TRAKT_ISSUE_REFRESH_TOKEN));
+            Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            mContext.sendBroadcast(intent);
         } catch (OAuthProblemException e) {
-            mContext.sendBroadcast(new Intent(TRAKT_ISSUE_REFRESH_TOKEN));
+            Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            mContext.sendBroadcast(intent);
         }
         return false;
     }

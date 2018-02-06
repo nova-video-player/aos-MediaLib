@@ -39,6 +39,7 @@ import android.provider.BaseColumns;
 import android.util.Log;
 import android.util.Pair;
 
+import com.archos.environment.ArchosUtils;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.MetaFileFactoryWithUpnp;
@@ -299,7 +300,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         // cancel the sticky broadcast
         removeStickyBroadcast(scannerIntent);
         // send a "done" notification
-        sendBroadcast(new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, data));
+        Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, data);
+        intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+        sendBroadcast(intent);
         // and cancel the Notification
         hideNotification(nm);
     }
@@ -443,7 +446,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             // cancel the sticky broadcast
             removeStickyBroadcast(scannerIntent);
             // send a "done" notification
-            sendBroadcast(new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what));
+            Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            sendBroadcast(intent);
             // and cancel the Notification
             hideNotification(nm);
             if(mRecordLog) {
