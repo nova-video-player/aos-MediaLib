@@ -221,7 +221,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
      * allows to "bind" to this service, will cause the service to be listening to
      * content changed events while bound
      * */
-    public static void bind(Context context) {
+    public static void start(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
         context.startService(intent);
        // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);

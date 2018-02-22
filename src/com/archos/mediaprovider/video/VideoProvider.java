@@ -132,7 +132,12 @@ public class VideoProvider extends ContentProvider {
             }
         };
         PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(mPreferencechChangeListener);
-        VideoStoreImportService.bind(context);
+
+        try {
+            VideoStoreImportService.start(context);
+        }catch(java.lang.IllegalStateException e){
+
+        }
         // handles connectivity changes
         AppState.addOnForeGroundListener(mForeGroundListener);
         handleForeGround(AppState.isForeGround());
@@ -1375,6 +1380,8 @@ static class MediaThumbRequest {
 
         @Override
         public void onForeGroundState(Context applicationContext, boolean foreground) {
+            if(foreground)
+                VideoStoreImportService.start(applicationContext);
             handleForeGround(foreground);
         }
     };
