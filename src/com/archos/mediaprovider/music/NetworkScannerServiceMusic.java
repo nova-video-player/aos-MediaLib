@@ -45,6 +45,7 @@ import com.archos.mediaprovider.ArchosMediaFile.MediaFileType;
 import com.archos.mediaprovider.music.MusicStore.Audio.AudioColumns;
 import com.archos.mediaprovider.music.MusicStore.MediaColumns;
 import com.archos.mediaprovider.music.MusicStore.Files.FileColumns;
+import com.archos.environment.ArchosUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -211,7 +212,9 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
         // cancel the sticky broadcast
         removeStickyBroadcast(scannerIntent);
         // send a "done" notification
-        sendBroadcast(new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FINISHED, data));
+        Intent intent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FINISHED, data);
+        intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+        sendBroadcast(intent);
         // and cancel the Notification
         hideNotification(nm);
     }
@@ -322,7 +325,9 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
             // cancel the sticky broadcast
             removeStickyBroadcast(scannerIntent);
             // send a "done" notification
-            sendBroadcast(new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FINISHED, what));
+            Intent intent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FINISHED, what);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            sendBroadcast(intent);
             // and cancel the Notification
             hideNotification(nm);
         }

@@ -29,11 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.archos.environment.ArchosUtils;
 
 public enum FTPShortcutDbAdapter {
-
-	
-	
 	
 	//made for SFTP and FTP
     VIDEO(FTPShortcutDbAdapter.DATABASE_VIDEO_TABLE, FTPShortcutDbAdapter.DATABASE_CREATE_VIDEO);
@@ -385,7 +383,9 @@ public enum FTPShortcutDbAdapter {
             mShortcutDbIdList.add(rowId);
 
             // Tell all instances of browsers to update their display if needed
-            mContext.sendBroadcast(new Intent(ACTION_SHORTCUTS_CHANGED));
+            Intent intent = new Intent(ACTION_SHORTCUTS_CHANGED);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            mContext.sendBroadcast(intent);
         }
 
 		@Override
@@ -406,7 +406,9 @@ public enum FTPShortcutDbAdapter {
 
         protected void onPostExecute(Void args) {
             // Tell all instances of browsers to update their display if needed
-            mContext.sendBroadcast(new Intent(ACTION_SHORTCUTS_CHANGED));
+            Intent intent = new Intent(ACTION_SHORTCUTS_CHANGED);
+            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            mContext.sendBroadcast(intent);
         }
     }
 }
