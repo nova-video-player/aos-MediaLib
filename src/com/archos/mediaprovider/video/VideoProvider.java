@@ -655,7 +655,6 @@ public class VideoProvider extends ContentProvider {
                         return 0;
                     }
                     count = db.update(table, values, where, whereArgs);
-		    Log.d("archos", "db.update still alive");
                     // if this is a request from MediaScanner, DATA should contains file path
                     // we only process update request from media scanner, otherwise the requests
                     // could be duplicate.
