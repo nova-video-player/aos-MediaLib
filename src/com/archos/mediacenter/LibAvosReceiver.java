@@ -39,6 +39,7 @@ public class LibAvosReceiver extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (action.equals("com.archos.mediacenter.NEW_PLUGINS")) {
+            Log.d("LibAvosReceiver", "NEW_PLUGINS: relaunching");
             System.exit(0);
         } else if (action.equals("com.archos.mediacenter.DEBUG")) {
             LibAvos.init(context);
