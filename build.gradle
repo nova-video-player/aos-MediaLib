@@ -15,7 +15,7 @@ ext {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 27
     buildToolsVersion '27.0.3'
 
     useLibrary 'org.apache.http.legacy'
@@ -42,7 +42,7 @@ android {
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 25
+        targetSdkVersion 27
     }
 
     flavorDimensions "version", "privDeps"
