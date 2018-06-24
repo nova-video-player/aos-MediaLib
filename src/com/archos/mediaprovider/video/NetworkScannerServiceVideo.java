@@ -16,7 +16,10 @@ package com.archos.mediaprovider.video;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.support.v4.app.NotificationCompat;
 import android.app.Service;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
@@ -28,6 +31,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -58,7 +62,6 @@ import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
 import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.NfoParser;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -829,16 +832,29 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     // -- Utility logic                                                    -- //
     // ---------------------------------------------------------------------- //
     private static final int NOTIFICATION_ID = 1;
+    private static final String notifChannelId = "NetworkScannerServiceVideo_id";
+    private static final String notifChannelName = "NetworkScannerServiceVideo";
+    private static final String notifChannelDescr = "NetworkScannerServiceVideo";
     /** shows a notification */
     private void showNotification(NotificationManager nm, String path, int titleId){
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(mNotifChannel);
+        }
+        Intent notificationIntent = new Intent(this, NetworkScannerServiceVideo.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         String notifyPath = path;
-        Notification n = new Notification.Builder(this)
-            .setContentTitle(getString(titleId))
-            .setContentText(notifyPath)
-            .setSmallIcon(android.R.drawable.stat_notify_sync)
-            .setOngoing(true)
-            .getNotification();
-        nm.notify(NOTIFICATION_ID, n);
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(titleId))
+                .setContentText(notifyPath)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+        nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */
     private static void hideNotification(NotificationManager nm) {

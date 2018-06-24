@@ -15,7 +15,9 @@
 package com.archos.mediaprovider.music;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
@@ -26,6 +28,7 @@ import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -34,6 +37,7 @@ import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile;
@@ -428,16 +432,29 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
     // -- Utility logic                                                    -- //
     // ---------------------------------------------------------------------- //
     private static final int NOTIFICATION_ID = 1;
+    private static final String notifChannelId = "NetworkScannerServiceMusic_id";
+    private static final String notifChannelName = "NetworkScannerServiceMusic";
+    private static final String notifChannelDescr = "NetworkScannerServiceMusic";
     /** shows a notification */
     private void showNotification(NotificationManager nm, String path, int titleId){
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(mNotifChannel);
+        }
         String notifyPath = path;
-        Notification n = new Notification.Builder(this)
-            .setContentTitle(getString(titleId))
-            .setContentText(notifyPath)
-            .setSmallIcon(android.R.drawable.stat_notify_sync)
-            .setOngoing(true)
-            .getNotification();
-        nm.notify(NOTIFICATION_ID, n);
+        Intent notificationIntent = new Intent(this, NetworkScannerServiceMusic.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(titleId))
+                .setContentText(notifyPath)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+        nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */
     private static void hideNotification(NotificationManager nm) {

@@ -17,13 +17,16 @@ package com.archos.mediascraper;
 
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.NetworkOnMainThreadException;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile2;
@@ -223,27 +226,34 @@ public class NfoExportService extends IntentService {
     }
 
     private static final int NOTIFICATION_ID = 1;
+    private static final String notifChannelId = "NfoExportService_id";
+    private static final String notifChannelName = "NfoExportService";
+    private static final String notifChannelDescr = "NfoExportService";
     /** shows a notification */
     private void showNotification(String contentText){
-        Notification n = getNotification(contentText);
-        mNotificationManager.notify(NOTIFICATION_ID, n);
+        NotificationCompat.Builder n = getNotification(contentText);
+        mNotificationManager.notify(NOTIFICATION_ID, n.build());
     }
 
     /** cancels the notification */
     private void hideNotification() {
         mNotificationManager.cancel(NOTIFICATION_ID);
     }
-    private Notification getNotification(String contentText) {
-        Notification n = new Notification.Builder(this)
-        .setContentTitle(getString(R.string.nfo_export_exporting))
-        .setContentText(contentText)
-        // TODO use a real export icon
-        .setSmallIcon(android.R.drawable.stat_notify_sync)
-        .setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .getNotification();
-        n.tickerText = null;
-        n.tickerView = null; // this one prevents showing the annoying popup
+    private NotificationCompat.Builder getNotification(String contentText) {
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    mNotificationManager.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (mNotificationManager != null)
+                mNotificationManager.createNotificationChannel(mNotifChannel);
+        }
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.nfo_export_exporting))
+                .setContentText(contentText)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
         return n;
     }
 
