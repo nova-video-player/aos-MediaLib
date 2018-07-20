@@ -35,6 +35,7 @@ import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -116,8 +117,7 @@ public class VideoProvider extends ContentProvider {
         mImageThumbFolder = context.getDir(IMAGE_THUMB_FOLDER_NAME, Context.MODE_PRIVATE).getPath();
 
         mVobHandler = new VobHandler(context);
-        VobUpdateCallback vobCb = new VobUpdateCallback(mVobHandler);
-        mDbHolder = new DbHolder(new VideoOpenHelper(context, vobCb));
+        mDbHolder = new DbHolder(new VideoOpenHelper(context));
 
         mCr = context.getContentResolver();
         // implementation that handles scraper requests

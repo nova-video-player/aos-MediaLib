@@ -22,6 +22,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
+import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -36,6 +39,8 @@ import android.util.Log;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
+import com.archos.mediaprovider.DbHolder;
+import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.ImportState;
 import com.archos.mediaprovider.VolumeState;
 import com.archos.mediaprovider.ImportState.State;
@@ -312,6 +317,61 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             mImporter.doIncrementalImport();
         long end = System.currentTimeMillis();
         if (DBG) Log.d(TAG, "doImport took:" + (end - start) + "ms full:" + fullMode);
+
+        // perform no longer possible delete_file and vob_insert db callbacks after incr or full import
+        // this will also flush delete_files and vob_insert buffer tables
+        processDeleteFileAndVobCallback();
+    }
+
+    private void processDeleteFileAndVobCallback() {
+        Cursor c = null;
+        DbHolder mDbHolder;
+        VobHandler mVobHandler;
+        mVobHandler = new VobHandler(this);
+        VobUpdateCallback vobCb = new VobUpdateCallback(mVobHandler);
+        mDbHolder = new DbHolder(new VideoOpenHelper(this));
+        SQLiteDatabase db = mDbHolder.get();
+        DeleteFileCallback delCb = new DeleteFileCallback();
+        String[] DeleteFileCallbackArgs = null;
+        String[] VobUpdateCallbackArgs = null;
+        // note: seems that the delete is performed not as a table trigger anymore but elsewhere
+        try {
+            c = db.rawQuery("SELECT * FROM delete_files", null);
+        } catch (SQLException e) {
+            Log.e(TAG, "SQLException",e);
+        } finally {
+            c.moveToFirst();
+            while (c.moveToNext()) {
+                long id = c.getLong(0);
+                String path = c.getString(1);
+                long count = c.getLong(2);
+                if (DBG) Log.d(TAG, "delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
+                // delete callback
+                DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
+                delCb.callback(DeleteFileCallbackArgs);
+                // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+            }
+            c.close();
+        }
+        try {
+            c = db.rawQuery("SELECT * FROM vob_insert", null);
+        } catch (SQLException e) {
+            Log.e(TAG, "SQLException",e);
+        } finally {
+            c.moveToFirst();
+            while (c.moveToNext()) {
+                long id = c.getLong(0);
+                String path = c.getString(1);
+                if (DBG) Log.d(TAG, "vob_insert " + String.valueOf(id) + " path " + path);
+                // delete callback
+                VobUpdateCallbackArgs = new String[] {path};
+                vobCb.callback(VobUpdateCallbackArgs);
+                // purge the db: delete row
+                db.execSQL("DELETE FROM vob_insert WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+            }
+            c.close();
+        }
     }
 
     /** removes all messages from handler */

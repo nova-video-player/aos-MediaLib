@@ -17,6 +17,7 @@ package com.archos.mediaprovider.video;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.Files.FileColumns;
@@ -45,7 +46,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 10;
     // that is the current version
-    private static final int DATABASE_VERSION = 35;
+    private static final int DATABASE_VERSION = 36;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -566,19 +567,25 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             "NEW.bucket_id IS NOT NULL AND NEW.date_modified > 0 AND ( " +
             "NEW._data LIKE '%/vts!___!__.vob' ESCAPE '!' OR " +
             "NEW._data LIKE '%/video!_ts.vob' ESCAPE '!') " +
-            "BEGIN SELECT _VOB_INSERT(NEW.bucket_id);END";
+            "BEGIN INSERT INTO vob_insert(name) VALUES(NEW.bucket_id);END";
+    private static final String DROP_FILES_TRIGGER_VOB_INSERT =
+            "DROP TRIGGER IF EXISTS vob_insert_import";
     // trigger to callback java VobHandler when a vob is updated
     private static final String CREATE_FILES_TRIGGER_VOB_UPDATE =
             "CREATE TRIGGER vob_update_import AFTER UPDATE OF date_modified ON " + FILES_TABLE_NAME + " WHEN " +
             "NEW.date_modified > 0 AND (" +
             "NEW._data LIKE '%/vts!___!__.vob' ESCAPE '!' OR " +
             "NEW._data LIKE '%/video!_ts.vob' ESCAPE '!') " +
-            "BEGIN SELECT _VOB_INSERT(NEW.bucket_id);END";
+            "BEGIN INSERT INTO vob_insert(name) VALUES(NEW.bucket_id);END";
+    private static final String DROP_FILES_TRIGGER_VOB_UPDATE =
+            "DROP TRIGGER IF EXISTS vob_update_import";
     private static final String CREATE_FILES_TRIGGER_VOB_DELETE =
             "CREATE TRIGGER vob_delete_import AFTER DELETE ON " + FILES_TABLE_NAME + " WHEN " +
             "OLD._data LIKE '%/vts!___!__.vob' ESCAPE '!' OR " +
             "OLD._data LIKE '%/video!_ts.vob' ESCAPE '!' " +
-            "BEGIN SELECT _VOB_INSERT(OLD.bucket_id);END";
+            "BEGIN INSERT INTO vob_insert(name) VALUES(OLD.bucket_id);END";
+    private static final String DROP_FILES_TRIGGER_VOB_DELETE =
+            "DROP TRIGGER IF EXISTS vob_delete_import";
     // indices TODO: test how these affect performance, just copied from android db.
     private static final String CREATE_FILES_IDX_MEDIA_TYPE =
             "CREATE INDEX media_type_index ON " + FILES_TABLE_NAME + " (media_type)";
@@ -2415,6 +2422,12 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             "     WHERE _id = OLD.video_id;\n" +
             "END";
 
+    private static final String CREATE_FILES_DELETE_TABLE =
+            "CREATE TABLE delete_files (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE ON CONFLICT REPLACE, use_count INTEGER);";
+
+    private static final String CREATE_VOB_INSERT_TABLE =
+            "CREATE TABLE vob_insert (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE ON CONFLICT REPLACE);";
+
     /* ---------------------------------------------------------------------- */
     /* --                    STUFF TO DROP - AUDIO REMOVED                    */
     /* ---------------------------------------------------------------------- */
@@ -2462,15 +2475,11 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         }
     }
 
-    private final VobUpdateCallback mVobInsertCallback;
-    private final DeleteFileCallback mDeletFileCallback;
     private final Context mContext;
 
-    public VideoOpenHelper(Context context, VobUpdateCallback vobCb) {
+    public VideoOpenHelper(Context context) {
         super(context, DATABASE_NAME, new CustomCursorFactory(), DATABASE_VERSION);
         mContext = context;
-        mVobInsertCallback = vobCb;
-        mDeletFileCallback = new DeleteFileCallback();
     }
 
     @Override
@@ -2480,11 +2489,6 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         db.enableWriteAheadLogging();
         // turn on foreign key support used in scraper tables
         db.execSQL("PRAGMA foreign_keys = ON");
-
-        // add callbacks to the database so we get notified about updated vobs
-        mVobInsertCallback.addToDb(db);
-        mDeletFileCallback.addToDb(db);
-        mDeletFileCallback.addToDbCheckNotUsed(db);
     }
 
     @Override
@@ -2751,6 +2755,18 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         }
         if(oldVersion<35){
             ListTables.upgradeTo(db, 34);
+        }
+        if(oldVersion<36) {
+            // delete files table
+            db.execSQL(CREATE_FILES_DELETE_TABLE);
+            db.execSQL(CREATE_VOB_INSERT_TABLE);
+            db.execSQL(DROP_FILES_TRIGGER_VOB_INSERT);
+            db.execSQL(CREATE_FILES_TRIGGER_VOB_INSERT);
+            db.execSQL(DROP_FILES_TRIGGER_VOB_UPDATE);
+            db.execSQL(CREATE_FILES_TRIGGER_VOB_UPDATE);
+            db.execSQL(DROP_FILES_TRIGGER_VOB_DELETE);
+            db.execSQL(CREATE_FILES_TRIGGER_VOB_DELETE);
+            ScraperTables.upgradeTo(db, 36);
         }
     }
 

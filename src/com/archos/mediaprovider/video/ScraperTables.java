@@ -568,7 +568,9 @@ public final class ScraperTables {
             // set scraper type / id to -1 if something is refering this episode
             "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
-            "SELECT _DELETE_FILE_IF_NOT_USED_J( OLD.cover_movie,COUNT("+ScraperStore.Movie.COVER+")) FROM " + MOVIE_TABLE_NAME +"  WHERE "+ScraperStore.Movie.COVER+" = OLD.cover_movie;" +
+            "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
+            + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
+            + " = OLD.cover_movie));" +
             "END";
     private static final String SHOW_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS show_delete";
     private static final String SHOW_DELETE_TRIGGER_CREATE =
@@ -578,7 +580,7 @@ public final class ScraperTables {
             "delete from director where _id in (select _id from v_director_deletable); " +
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
-            "SELECT _DELETE_FILE_J(OLD.cover_show);" +
+            "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +
             "END";
     private static final String MOVIE_INSERT_TRIGGER_DROP = "DROP TRIGGER IF EXISTS movie_insert";
     private static final String MOVIE_INSERT_TRIGGER_CREATE =
@@ -953,8 +955,10 @@ public final class ScraperTables {
             "CREATE TRIGGER " + MOVIE_POSTERS_TABLE_NAME + "_delete\n" +
                     "       BEFORE DELETE ON " + MOVIE_POSTERS_TABLE_NAME + "\n" +
                     "BEGIN\n" +
-                    "    SELECT _DELETE_FILE_IF_NOT_USED_J( OLD.m_po_large_file,COUNT("+ScraperStore.Movie.COVER+")) FROM " + MOVIE_TABLE_NAME +"  WHERE "+ScraperStore.Movie.COVER+" = OLD.m_po_large_file;\n" +
-                    "    SELECT _DELETE_FILE_J( OLD.m_po_thumb_file);\n" +
+                    "    INSERT INTO delete_files(name,use_count) VALUES(OLD.m_po_large_file,(SELECT COUNT("
+                    + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
+                    + " = OLD.m_po_large_file));\n" + "    INSERT INTO delete_files(name) VALUES(OLD.m_po_thumb_file);\n"
+                    +
                     "END";
     private static final String DROP_MOVIE_POSTERS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + MOVIE_POSTERS_TABLE_NAME + "_delete";
@@ -984,8 +988,8 @@ public final class ScraperTables {
             "CREATE TRIGGER " + MOVIE_BACKDROPS_TABLE_NAME + "_delete\n" +
             "       AFTER DELETE ON " + MOVIE_BACKDROPS_TABLE_NAME + "\n" +
             "BEGIN\n" +
-            "    SELECT _DELETE_FILE_J( OLD.m_bd_large_file );\n" +
-            "    SELECT _DELETE_FILE_J( OLD.m_bd_thumb_file );\n" +
+            "    INSERT INTO delete_files(name) VALUES ( OLD.m_bd_large_file );\n"
+            + "    INSERT INTO delete_files(name) VALUES ( OLD.m_bd_thumb_file );\n" +
             "END";
     private static final String DROP_MOVIE_BACKDROPS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + MOVIE_BACKDROPS_TABLE_NAME + "_delete";
@@ -1005,8 +1009,8 @@ public final class ScraperTables {
             "CREATE TRIGGER " + SHOW_POSTERS_TABLE_NAME + "_delete\n" +
             "       AFTER DELETE ON " + SHOW_POSTERS_TABLE_NAME + "\n" +
             "BEGIN\n" +
-            "    SELECT _DELETE_FILE_J( OLD.s_po_large_file );\n" +
-            "    SELECT _DELETE_FILE_J( OLD.s_po_thumb_file );\n" +
+            "    INSERT INTO delete_files(name) VALUES ( OLD.s_po_large_file );\n"
+            + "    INSERT INTO delete_files(name) VALUES ( OLD.s_po_thumb_file );\n" +
             "END";
     private static final String DROP_SHOW_POSTERS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_POSTERS_TABLE_NAME + "_delete";
@@ -1025,8 +1029,8 @@ public final class ScraperTables {
             "CREATE TRIGGER " + SHOW_BACKDROPS_TABLE_NAME + "_delete\n" +
             "       AFTER DELETE ON " + SHOW_BACKDROPS_TABLE_NAME + "\n" +
             "BEGIN\n" +
-            "    SELECT _DELETE_FILE_J( OLD.s_bd_large_file );\n" +
-            "    SELECT _DELETE_FILE_J( OLD.s_bd_thumb_file );\n" +
+            "    INSERT INTO delete_files(name) VALUES ( OLD.s_bd_large_file );\n"
+            + "    INSERT INTO delete_files(name) VALUES ( OLD.s_bd_thumb_file );\n" +
             "END";
     private static final String DROP_SHOW_BACKDROPS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_BACKDROPS_TABLE_NAME + "_delete";
@@ -1519,6 +1523,21 @@ public final class ScraperTables {
             db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
             db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
             db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
+        }
+        if (toVersion == 36) {
+            // tables touched MOVIE_DELETE_TRIGGER_CREATE HOW_DELETE_TRIGGER_CREATE CREATE_MOVIE_POSTERS_DELETE_TRIGGER CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER CREATE_SHOW_POSTERS_DELETE_TRIGGER CREATE_SHOW_BACKDROPS_DELETE_TRIGGER
+            db.execSQL(DROP_MOVIE_POSTERS_DELETE_TRIGGER);
+            db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
+            db.execSQL(DROP_MOVIE_BACKDROPS_DELETE_TRIGGER);
+            db.execSQL(CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER);
+            db.execSQL(DROP_SHOW_POSTERS_DELETE_TRIGGER);
+            db.execSQL(CREATE_SHOW_POSTERS_DELETE_TRIGGER);
+            db.execSQL(DROP_SHOW_BACKDROPS_DELETE_TRIGGER);
+            db.execSQL(CREATE_SHOW_BACKDROPS_DELETE_TRIGGER);
+            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
+            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
+            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
+            db.execSQL(SHOW_DELETE_TRIGGER_CREATE);
         }
     }
 }
