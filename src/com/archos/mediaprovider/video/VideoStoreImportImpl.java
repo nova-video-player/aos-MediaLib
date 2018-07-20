@@ -21,6 +21,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
+import android.os.Build;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
@@ -425,33 +426,64 @@ public class VideoStoreImportImpl {
         return ret;
     }
 
-    private static final String NOT_NETWORKINDEXED = "storage_id & 1 AND _data NOT NULL AND _data != ''";
-    private static final String WHERE_MIN_ID = NOT_NETWORKINDEXED + " AND _id > ?";
-    private static final String WHERE_ALL = NOT_NETWORKINDEXED;
-    private final static String[] FILES_PROJECTION = new String[] {
-        BaseColumns._ID,
-        MediaColumns.DATA,
-        MediaColumns.DISPLAY_NAME,
-        MediaColumns.SIZE,
-        MediaColumns.DATE_ADDED,
-        MediaColumns.DATE_MODIFIED,
-        ImageColumns.BUCKET_ID,
-        ImageColumns.BUCKET_DISPLAY_NAME,
-        "format",
-        FileColumns.PARENT,
-        "storage_id"
+    private static final String NOT_NETWORKINDEXED_BP = "storage_id & 1 AND _data NOT NULL AND _data != ''";
+    private static final String NOT_NETWORKINDEXED_AP = "_data NOT NULL AND _data != ''";
+    private static final String WHERE_MIN_ID_BP = NOT_NETWORKINDEXED_BP + " AND _id > ?";
+    private static final String WHERE_MIN_ID_AP = NOT_NETWORKINDEXED_AP + " AND _id > ?";
+    private static final String WHERE_ALL_BP = NOT_NETWORKINDEXED_BP;
+    private static final String WHERE_ALL_AP = NOT_NETWORKINDEXED_AP;
+    //storage_id does not exist in Android P causing a crash
+    //two versions: before Android P (BP) and after Android P (AP)
+    private final static String[] FILES_PROJECTION_AP = new String[]{
+            BaseColumns._ID,
+            MediaColumns.DATA,
+            MediaColumns.DISPLAY_NAME,
+            MediaColumns.SIZE,
+            MediaColumns.DATE_ADDED,
+            MediaColumns.DATE_MODIFIED,
+            ImageColumns.BUCKET_ID,
+            ImageColumns.BUCKET_DISPLAY_NAME,
+            "format",
+            FileColumns.PARENT
     };
+    private final static String[] FILES_PROJECTION_BP = new String[]{
+            BaseColumns._ID,
+            MediaColumns.DATA,
+            MediaColumns.DISPLAY_NAME,
+            MediaColumns.SIZE,
+            MediaColumns.DATE_ADDED,
+            MediaColumns.DATE_MODIFIED,
+            ImageColumns.BUCKET_ID,
+            ImageColumns.BUCKET_DISPLAY_NAME,
+            "format",
+            FileColumns.PARENT,
+            "storage_id"
+    };
+
     /** copies data from Android's media db to ours */
     private static int copyData (ContentResolver cr, String minId) {
         int imported = 0;
-        String where = WHERE_ALL;
+        String where = null;
         String[] whereArgs = null;
-        if (minId != null)  {
-            where = WHERE_MIN_ID;
-            whereArgs = new String[] { minId };
+        Cursor allFiles = null;
+        ContentValues cv = null;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            where = WHERE_ALL_AP;
+            if (minId != null) {
+                where = WHERE_MIN_ID_AP;
+                whereArgs = new String[]{minId};
+            }
+            allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
+                    FILES_PROJECTION_AP, where, whereArgs, BaseColumns._ID));
+        } else {
+            where = WHERE_ALL_BP;
+            if (minId != null)  {
+                where = WHERE_MIN_ID_BP;
+                whereArgs = new String[] { minId };
+            }
+            allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
+                    FILES_PROJECTION_BP, where, whereArgs, BaseColumns._ID));
         }
-        Cursor allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
-                FILES_PROJECTION, where, whereArgs, BaseColumns._ID));
         if (allFiles != null) {
             int count = allFiles.getCount();
             int ccount = allFiles.getColumnCount();
@@ -461,8 +493,15 @@ public class VideoStoreImportImpl {
                 if (DBG) Log.d(TAG, "found items to import:" + count);
                 while (allFiles.moveToNext()) {
                     try {
-                        ContentValues cv = new ContentValues(ccount);
-                        DatabaseUtils.cursorRowToContentValues(allFiles, cv);
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+                            cv = new ContentValues(ccount + 1);
+                            DatabaseUtils.cursorRowToContentValues(allFiles, cv);
+                            // since storage_id does not exist on P and above, set it to 1, not sure it is really used now
+                            cv.put("storage_id", 1);
+                        } else {
+                            cv = new ContentValues(ccount);
+                            DatabaseUtils.cursorRowToContentValues(allFiles, cv);
+                        }
                         inserter.add(cv);
                     } catch (IllegalStateException ignored) {} //we silently ignore empty lines - it means content has been deleted while scanning
                 }
