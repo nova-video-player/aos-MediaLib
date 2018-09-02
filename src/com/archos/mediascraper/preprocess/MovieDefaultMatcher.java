@@ -138,7 +138,7 @@ class MovieDefaultMatcher implements InputMatcher {
             " avi ", " mkv ", " xvid ", " divx ", " wmv ", " mpg ", " mpeg ", " flv ", " f4v ",
             " asf ", " vob ", " mp4 ", " mov ",
             " directors cut ", " dircut ", " readnfo ", " read nfo ", " repack ", " rerip ", " multi ", " remastered ",
-	    " truefrench ", " srt ", " extended cut ",
+            " truefrench ", " srt ", " extended cut ",
             " sbs ", " hsbs ", " side by side ", " sidebyside ", /* Side-By-Side 3d stuff */
             " 3d ", " h sbs ", " h tb " , " tb ", " htb ", " top bot ", " topbot ", " top bottom ", " topbottom ", " tab ", " htab ", /* Top-Bottom 3d stuff */
             " anaglyph ", " anaglyphe ", /* Anaglyph 3d stuff */
@@ -149,9 +149,10 @@ class MovieDefaultMatcher implements InputMatcher {
     private static final String[] GARBAGE_CASESENSITIVE = {
             "FRENCH", "TRUEFRENCH", "DUAL", "MULTI", "MULTi", "SUBFORCED", "SUBFORCES", "UNRATED", "UNRATED[ ._-]DC", "EXTENDED", "IMAX",
             "COMPLETE", "PROPER", "iNTERNAL", "INTERNAL",
-	    "SUBBED", "ANiME", "LIMITED", "REMUX", "DCPRip",
+            "SUBBED", "ANiME", "LIMITED", "REMUX", "DCPRip",
             "TS", "TC", "REAL", "HD", "DDR",
             "EN", "ENG", "DE", "FR", "ES", "IT", "NL", "VFQ", "VF", "VO", "VOSTFR", "Eng",
+            "VFF", "VF2", "VFI", "VFSTFR",
     };
 
     private static final Pattern[] GARBAGE_CASESENSITIVE_PATTERNS = new Pattern[GARBAGE_CASESENSITIVE.length];
