@@ -91,6 +91,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     @Override
     public void onCreate() {
+
         if (DBG) Log.d(TAG, "onCreate");
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
@@ -229,7 +230,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public static void start(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
         context.startService(intent);
-       // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
+        // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
+    }
+
+    public static void stop(Context context) {
+        Intent intent = new Intent(context, VideoStoreImportService.class);
+        context.stopService(intent);
     }
 
     @Override

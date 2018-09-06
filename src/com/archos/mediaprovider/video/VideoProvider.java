@@ -1382,6 +1382,8 @@ static class MediaThumbRequest {
         public void onForeGroundState(Context applicationContext, boolean foreground) {
             if(foreground)
                 VideoStoreImportService.start(applicationContext);
+            else
+                VideoStoreImportService.stop(applicationContext);
             handleForeGround(foreground);
         }
     };
