@@ -12,3 +12,4 @@ libs/arm64-v8a
 libs/x86_64
 libs/mips64
 *.iml
+crowdin.properties
