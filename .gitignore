@@ -13,3 +13,4 @@ libs/x86_64
 libs/mips64
 *.iml
 crowdin.properties
+crowdin.yml
