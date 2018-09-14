@@ -10,7 +10,6 @@
     4 - seconds
     5 - second%60
     -->
-  <skip></skip>
   <!-- Do not translate. Duration format for duration < 1 hour -->
   <!-- Do not translate. Duration format for duration >= 1 hour -->
   <!-- Notification Message when Indexing Network -->
@@ -19,17 +18,13 @@
   <!-- .nfo export options -->
   <string name="nfo_export_category">Export der Bibliothek</string>
   <string name="nfo_export_auto_title">Automatischer Export</string>
-  <string name="nfo_export_manual_title">Export already scraped videos</string>
   <string name="nfo_export_auto_summary">Automatisch nach erfolgreicher Onlinesuche als .nfo exportieren</string>
-  <string name="nfo_export_manual_summary">Export .nfo files of every already scraped videos</string>
   <string name="nfo_export_button">Export als .nfo</string>
   <string name="nfo_export_folder">Alles in diesem Ordner als .nfo exportieren</string>
   <string name="nfo_export_all">Die komplette Bibliothek als .nfo exportieren</string>
   <string name="nfo_export_exporting">Exportiere .nfo</string>
   <string name="nfo_export_exporting_all">komplette Bibliothek</string>
-  <string name="rescrap_all_title">Rescrap all</string>
   <!-- trakt.tv -->
-  <string name="trakt_toast_syncing_error">Impossible to sync with trakt</string>
   <!-- Title of screen when no sd card is present -->
   <string name="sdcard_missing_title">Keine SD-Karte</string>
   <!-- label underneath icon used to indicate that no sd card is present -->
@@ -65,5 +60,4 @@
       BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
     -->
   <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
-  <string name="artist_label">Artist</string>
 </resources>
