@@ -18,13 +18,17 @@
   <!-- .nfo export options -->
   <string name="nfo_export_category">Export des informations multimédia</string>
   <string name="nfo_export_auto_title">Export automatique après la recherche</string>
+  <string name="nfo_export_manual_title">Exporter toutes les descriptions des vidéos</string>
   <string name="nfo_export_auto_summary">Exporter automatiquement au format .nfo lorsque des informations ont été trouvées</string>
+  <string name="nfo_export_manual_summary">Exporter toutes les descriptions des vidéos en fichiers .nfo</string>
   <string name="nfo_export_button">Exporter le \'.nfo\'</string>
   <string name="nfo_export_folder">Exporter toutes les informations de ce dossier au format .nfo</string>
   <string name="nfo_export_all">Exporter toute la bibliothèque au format .nfo</string>
   <string name="nfo_export_exporting">Export en \'.nfo\' en cours</string>
   <string name="nfo_export_exporting_all">tout</string>
+  <string name="rescrap_all_title">Actualiser les descriptions</string>
   <!-- trakt.tv -->
+  <string name="trakt_toast_syncing_error">La synchronisation avec trakt est impossible</string>
   <!-- Title of screen when no sd card is present -->
   <string name="sdcard_missing_title">Aucune carte SD trouvée</string>
   <!-- label underneath icon used to indicate that no sd card is present -->
@@ -60,4 +64,5 @@
       BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
     -->
   <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
+  <string name="artist_label">Artiste</string>
 </resources>
