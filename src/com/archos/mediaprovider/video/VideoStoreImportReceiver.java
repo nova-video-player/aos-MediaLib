@@ -19,6 +19,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.archos.mediacenter.utils.AppState;
 import com.archos.mediaprovider.ArchosMediaCommon;
 
 /**
@@ -37,12 +38,13 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
         if (DBG) Log.d(TAG, "onReceive:" + intent);
         // start network scan / removal service
         NetworkScannerServiceVideo.startIfHandles(context, intent);
-
-        // in addition and all other cases inform import service about the event
-        Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
-        serviceIntent.setAction(intent.getAction());
-        serviceIntent.setData(intent.getData());
-        context.startService(serviceIntent);
+        if (AppState.isForeGround()) {
+            // in addition and all other cases inform import service about the event
+            Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
+            serviceIntent.setAction(intent.getAction());
+            serviceIntent.setData(intent.getData());
+            context.startService(serviceIntent);
+        }
     }
 
 }
