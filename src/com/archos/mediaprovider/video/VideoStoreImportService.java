@@ -229,7 +229,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
      * */
     public static void start(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
-        context.startService(intent);
+        if (AppState.isForeGround()) {
+            context.startService(intent);
+        }
         // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }
 
