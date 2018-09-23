@@ -54,7 +54,12 @@ public class Blacklist {
     };
 
     private static final String[] BLACKLISTED_CAM_DIRS = {
-           "/DCIM",   "/Camera",
+            "/DCIM", "/Camera",
+            "/WhatsApp", "/GooglePlus",
+            "/Allo", "/Pictures",
+            "/Snapchat", "/Telegram",
+            "/com.facebook.katana",
+            "/com.facebook.orca",
     };
 
     public boolean isBlacklisted(Uri file) {
