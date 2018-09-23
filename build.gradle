@@ -124,8 +124,8 @@ dependencies {
     implementation project(':FileCoreLibrary')
     implementation 'com.android.support:support-v4:27.0.2'
     implementation 'com.android.support:appcompat-v7:27.0.2'
-    implementation 'com.google.code.gson:gson:2.4'
-    implementation 'com.android.support:multidex:1.0.1'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.android.support:multidex:1.0.3'
     implementation 'joda-time:joda-time:2.4'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.8' 
     implementation group: 'org.joda', name: 'joda-convert', version: '1.7' 
@@ -138,8 +138,8 @@ dependencies {
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.12.v20130726'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.12.v20130726'
     implementation group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.5'
-    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.4.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
     implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.5.0'
 
     privlibsApi files('libs/in-app-purchasing-2.0.76.jar')
