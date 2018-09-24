@@ -27,9 +27,8 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
-import com.archos.mediacenter.upnp.ArchosUpnpServiceImpl;
-
 import org.fourthline.cling.android.AndroidUpnpService;
+import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.controlpoint.ActionCallback;
 import org.fourthline.cling.model.message.header.UDADeviceTypeHeader;
 import org.fourthline.cling.model.meta.Action;
@@ -189,7 +188,7 @@ public class UpnpServiceManager extends BroadcastReceiver {
      */
     public void start() {
         if (mState == State.NOT_RUNNING || mState == State.ERROR) {
-            boolean result = mContext.bindService(new Intent(mContext, ArchosUpnpServiceImpl.class), mServiceConnection, Context.BIND_AUTO_CREATE);
+            boolean result = mContext.bindService(new Intent(mContext, AndroidUpnpServiceImpl.class), mServiceConnection, Context.BIND_AUTO_CREATE);
             if (result) {
                 mState = State.STARTING;
                 if(DBG) Log.d(TAG, "State STARTING");
