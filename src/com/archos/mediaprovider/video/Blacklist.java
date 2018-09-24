@@ -60,6 +60,8 @@ public class Blacklist {
             "/Snapchat", "/Telegram",
             "/com.facebook.katana",
             "/com.facebook.orca",
+            "/Movies/Instagram", "/Movies/Messenger",
+            "/Movies/Twitter",
     };
 
     public boolean isBlacklisted(Uri file) {
