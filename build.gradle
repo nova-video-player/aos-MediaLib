@@ -144,6 +144,6 @@ dependencies {
 
     privlibsApi files('libs/in-app-purchasing-2.0.76.jar')
     openApi 'com.github.archos-sa:AOS-FakeLibs:517a7ca02f'
-    privlibsApi group: 'org.fourthline.cling', name: 'cling-core', version:'2.0.1'
-    privlibsImplementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.0.1'
+    privlibsApi group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
+    privlibsImplementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
 }
