@@ -48,7 +48,7 @@
   <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
   <string name="storage_busy_title">Stockage interne indisponible</string>
   <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
-  <string name="storage_busy_message">Vous ne pouvez pas utiliser le stockage interne de l\'appareil pendant qu\'il est connecté et monté par USB</string>
+  <string name="storage_busy_message">Vous ne pouvez pas utiliser le stockage interne de l\'appareil pendant qu\'il est connecté et monté par USB.</string>
   <!-- Title of screen when there was an error accessing the internal storage -->
   <string name="storage_error_title">Erreur de stockage interne</string>
   <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
