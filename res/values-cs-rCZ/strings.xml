@@ -26,7 +26,7 @@
   <string name="nfo_export_all">Exportovat celou knihovnu do .nfo</string>
   <string name="nfo_export_exporting">Exportování .nfo</string>
   <string name="nfo_export_exporting_all">vše</string>
-  <string name="rescrap_all_title">Získat znovu informace pro všechny položky</string>
+  <string name="rescrap_all_title">Opětovné získání informací pro všechny položky</string>
   <!-- trakt.tv -->
   <string name="trakt_toast_syncing_error">Chyba synchronizace s Trakt</string>
   <!-- Title of screen when no sd card is present -->
