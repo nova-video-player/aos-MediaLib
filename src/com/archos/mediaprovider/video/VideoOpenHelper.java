@@ -2781,13 +2781,13 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + " > 0";
     private static final String SELECTION_ID = BaseColumns._ID + "=?";
     private static final String SHOW_LARGE =
-            "http://www.thetvdb.com/banners/fanart/original/";
+            "https://www.thetvdb.com/banners/fanart/original/";
     private static final String SHOW_THUMB =
-            "http://www.thetvdb.com/banners/_cache/fanart/original/";
+            "https://www.thetvdb.com/banners/_cache/fanart/original/";
     private static final String MOVIE_LARGE =
-            "http://cf2.imgobject.com/t/p/w1280/";
+            "https://cf2.imgobject.com/t/p/w1280/";
     private static final String MOVIE_THUMB =
-            "http://cf2.imgobject.com/t/p/w300/";
+            "https://cf2.imgobject.com/t/p/w300/";
     /** Converts all backdrop urls already in the db to the new format */
     private static void convertBackdrops(SQLiteDatabase db, Context context) {
         if (DBG) Log.d(TAG, "convertBackdrops");

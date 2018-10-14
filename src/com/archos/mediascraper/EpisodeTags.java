@@ -422,8 +422,8 @@ public class EpisodeTags extends BaseTags {
 
     public void setEpisodePicture(String string, Context ct) {
         ScraperImage image = new ScraperImage(Type.EPISODE_POSTER, "");
-        image.setLargeUrl("http://www.thetvdb.com/banners/" + string);
-        image.setThumbUrl("http://www.thetvdb.com/banners/" + string);
+        image.setLargeUrl("https://www.thetvdb.com/banners/" + string);
+        image.setThumbUrl("https://www.thetvdb.com/banners/" + string);
         image.setLanguage("en");
         image.setSeason(-1);
         image.generateFileNames(ct);

@@ -123,13 +123,13 @@ public class ShowScraper2 extends BaseScraper2 {
     private static String generateSearchUrl(String showName, String language) {
         String encode = ShowUtils.urlEncode(showName);
         String langencode = ShowUtils.urlEncode(language);
-        String url = "http://www.thetvdb.com/api/GetSeries.php?seriesname=" + encode
+        String url = "https://www.thetvdb.com/api/GetSeries.php?seriesname=" + encode
                 + "&language=" + langencode;
         return url;
     }
 
     private static String generateDetailsUrl(int showId, String language) {
-        return "http://www.thetvdb.com/api/"+ ArchosUtils.getGlobalContext().getString(R.string.tvdb_api_key)+"/series/" + showId + "/all/"
+        return "https://www.thetvdb.com/api/"+ ArchosUtils.getGlobalContext().getString(R.string.tvdb_api_key)+"/series/" + showId + "/all/"
                 + language + ".zip";
     }
 

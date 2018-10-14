@@ -306,7 +306,7 @@ public class NfoShowHandler extends BasicHandler {
         return result;
     }
 
-    private static final Pattern URL_PATTERN = Pattern.compile("http://(?:www\\.)?thetvdb\\.com/banners/(?!_)(.+)");
+    private static final Pattern URL_PATTERN = Pattern.compile("https://(?:www\\.)?thetvdb\\.com/banners/(?!_)(.+)");
     private static String rewriteUrl(String url) {
         String result = url;
         if (url != null) {

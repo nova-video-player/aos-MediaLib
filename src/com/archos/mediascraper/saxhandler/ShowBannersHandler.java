@@ -102,10 +102,10 @@ public class ShowBannersHandler extends BasicHandler {
     private final static String ELEMENT_2BANNER_TYPE2_SEASON_BANNER = "seasonwide";
     private final static String ELEMENT_2SEASON = "Season";
 
-    private final static String COVER_START = "http://www.thetvdb.com/banners/_cache/";
-    private final static String COVER_THUMB_START = "http://www.thetvdb.com/banners/";
-    private final static String BACKDROP_START = "http://www.thetvdb.com/banners/";
-    private final static String BACKDROP_THUMB_START = "http://www.thetvdb.com/banners/_cache/";
+    private final static String COVER_START = "https://www.thetvdb.com/banners/_cache/";
+    private final static String COVER_THUMB_START = "https://www.thetvdb.com/banners/";
+    private final static String BACKDROP_START = "https://www.thetvdb.com/banners/";
+    private final static String BACKDROP_THUMB_START = "https://www.thetvdb.com/banners/_cache/";
     private String mLanguage="";
 
     public static class CoverResult {

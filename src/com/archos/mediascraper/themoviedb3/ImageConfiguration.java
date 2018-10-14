@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * ],
  */
 public class ImageConfiguration {
-    private static final String BASE_URL = "http://image.tmdb.org/t/p/";
+    private static final String BASE_URL = "https://image.tmdb.org/t/p/";
     public enum PosterSize {
         W92("w92"),
         W154("w154"),
@@ -94,7 +94,7 @@ public class ImageConfiguration {
     }
 
     // pattern that accepts those imgobject urls
-    private static final Pattern URL_PATTERN = Pattern.compile("http://\\w+\\.imgobject\\.com/t/p/([^/]+)/.*");
+    private static final Pattern URL_PATTERN = Pattern.compile("https://\\w+\\.imgobject\\.com/t/p/([^/]+)/.*");
     private static String rewriteUrl(String url, String replacement) {
         String result = url;
         if (url != null) {

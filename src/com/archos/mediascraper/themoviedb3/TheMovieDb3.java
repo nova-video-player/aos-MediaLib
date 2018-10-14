@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class TheMovieDb3 {
-    private static final String API_BASE_URL = "http://api.themoviedb.org/3";
+    private static final String API_BASE_URL = "https://api.themoviedb.org/3";
 
     private static final String API_KEY_KEY = "api_key";
 
