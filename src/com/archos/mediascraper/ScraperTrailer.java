@@ -100,7 +100,7 @@ public class ScraperTrailer {
     public Uri getUrl() {
         String urlScheme = "";
         if(mSite.equals("YouTube")){
-            urlScheme = "http://www.youtube.com/watch?v=%s";
+            urlScheme = "https://www.youtube.com/watch?v=%s";
         }
         Log.d("urldebug",  mVideoKey);
         Log.d("urldebug", String.format(urlScheme, mVideoKey));

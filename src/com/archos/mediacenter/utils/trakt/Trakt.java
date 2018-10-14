@@ -75,7 +75,7 @@ public class Trakt {
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
     public static final String TRAKT_ISSUE_REFRESH_TOKEN = "TRAKT_ISSUE_REFRESH_TOKEN";
-    private static final String API_URL = "http://api.trakt.tv";
+    private static final String API_URL = "https://api.trakt.tv";
     private static String API_KEY;
     private static String API_SECRET;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
