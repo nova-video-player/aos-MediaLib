@@ -26,7 +26,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.format.Formatter;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -349,15 +348,11 @@ public class InfoDialog extends Dialog {
                     + mC.getText(write));
 
             // Modification date
-            Time time = new Time();
             SimpleDateFormat sdf = new SimpleDateFormat();
             Date date = new Date(file.lastModified());
-            time.set(file.lastModified());
-            sdf = new SimpleDateFormat("d M y HH:mm:ss");
+            sdf = new SimpleDateFormat("d MMMM yyyy, HH:mm:ss");
             String res = sdf.format(date);
-            Log.d("MARC",time.format("%d %B %Y, %H:%M:%S") + "=" + res);
-            ((TextView) findViewById(R.id.archos_info_last_modified)).setText(time
-                    .format("%d %B %Y, %H:%M:%S"));
+            ((TextView) findViewById(R.id.archos_info_last_modified)).setText(res);
 
             // Mime type
             TextView mimeTypeTv = (TextView) findViewById(R.id.archos_info_mime_type);
