@@ -29,7 +29,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.text.format.Time;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -444,28 +443,6 @@ public class ArtworkFactory {
 		} else {
 			return 1024;
 		}
-	}
-
-	public String formatTime(long ms) {
-		String res;
-		if (ms == 0) {
-			res = "";
-		} else {
-			Time t = new Time();
-			t.set(ms);
-			t.switchTimezone(Time.TIMEZONE_UTC);
-			if (ms >= 3600000) {
-				res = t.format("%kh%M'");
-			} else if (ms < 60000)
-				res = t.format("%S''");
-			else
-				res = t.format("%M'%S''");
-
-			if (res.charAt(0) == '0') {
-				res = res.substring(1);
-			}
-		}
-		return res;
 	}
 
 	/**
