@@ -21,7 +21,7 @@ import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
@@ -251,7 +251,7 @@ public class ScraperDebug extends Thread{
             int onlineShowColumn = cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_S_ONLINE_ID);
             int titleColumn = cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_TITLE);
             do {
-                String name = Utils.getName(Uri.parse(cursor.getString(fileColumn)));
+                String name = FileUtils.getName(Uri.parse(cursor.getString(fileColumn)));
                 String onlineImdbId = cursor.getString(onlineImdbMovieIdColumn);
                 String onlineEImdbId = cursor.getString(onlineImdbEpisodeIdColumn);
                 String onlineSimdbId = cursor.getString(onlineImdbShowColumn);

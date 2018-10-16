@@ -51,7 +51,7 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Locale;
 
-public class Utils {
+public class MediaUtils {
     private final static String TAG = "Utils";
     private final static int SUBS_LIMIT = 100;
 
@@ -90,19 +90,19 @@ public class Utils {
 
             // Get the current joystick state depending on the position
             if (valueX <= -farZoneThreshold) {
-                joystickZone = Utils.JOYSTICK_ZONE_FAR_LEFT;
+                joystickZone = MediaUtils.JOYSTICK_ZONE_FAR_LEFT;
             }
             else if (valueX <= -deadZoneThreshold) {
-                joystickZone = Utils.JOYSTICK_ZONE_LEFT;
+                joystickZone = MediaUtils.JOYSTICK_ZONE_LEFT;
             }
             else if (valueX < deadZoneThreshold) {
-                joystickZone = Utils.JOYSTICK_ZONE_CENTER;
+                joystickZone = MediaUtils.JOYSTICK_ZONE_CENTER;
             }
             else if (valueX < farZoneThreshold) {
-                joystickZone = Utils.JOYSTICK_ZONE_RIGHT;
+                joystickZone = MediaUtils.JOYSTICK_ZONE_RIGHT;
             }
             else {
-                joystickZone = Utils.JOYSTICK_ZONE_FAR_RIGHT;
+                joystickZone = MediaUtils.JOYSTICK_ZONE_FAR_RIGHT;
             }
         }
 

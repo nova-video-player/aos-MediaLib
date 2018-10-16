@@ -25,7 +25,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.archos.mediacenter.utils.Utils;
+import com.archos.mediacenter.utils.MediaUtils;
 
 
 public abstract class SingleCursorCoverProvider extends CoverProvider implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -108,7 +108,7 @@ public abstract class SingleCursorCoverProvider extends CoverProvider implements
         mCursor = data; // Keep it locally to handle updates later
 
         if (mCursor == null || !LibraryUtils.hasStorage()) {
-            mErrorMessage = Utils.getDatabaseErrorMessage(mContext);
+            mErrorMessage = MediaUtils.getDatabaseErrorMessage(mContext);
             Log.e(TAG,"Error: " + mErrorMessage);
             mListener.coversLoadingError(this, mErrorMessage);
             return;

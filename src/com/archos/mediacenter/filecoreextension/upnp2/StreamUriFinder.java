@@ -21,7 +21,7 @@ import android.os.Looper;
 
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.RawLister;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 
 import org.fourthline.cling.model.meta.Device;
 
@@ -90,7 +90,7 @@ public class StreamUriFinder {
     }
 
     private Uri startListing() {
-        String containerPath = Utils.getParentUrl(mUri.toString());
+        String containerPath = FileUtils.getParentUrl(mUri.toString());
         containerPath = containerPath.substring(0,containerPath.length()-1);
         RawLister lister = RawListerFactoryWithUpnp.getRawListerForUrl(Uri.parse(containerPath));
         Uri uri = null;

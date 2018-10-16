@@ -4,7 +4,7 @@ package com.archos.mediascraper.preprocess;
 import android.net.Uri;
 import android.util.Log;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
 
@@ -29,12 +29,12 @@ class TvShowFolderMatcher extends TvShowMatcher {
     @Override
     public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
 
-        return ShowUtils.isTvShow(Utils.getParentUrl(fileInput), null);
+        return ShowUtils.isTvShow(FileUtils.getParentUrl(fileInput), null);
     }
 
     @Override
     public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
-        return getMatch(Utils.getName(Utils.getParentUrl(file)), file);
+        return getMatch(FileUtils.getName(FileUtils.getParentUrl(file)), file);
 
     }
 

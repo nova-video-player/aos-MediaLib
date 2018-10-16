@@ -21,7 +21,7 @@ import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.MimeUtils;
 import com.archos.filecorelibrary.RawLister;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.filecorelibrary.ftp.AuthenticationException;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
@@ -212,7 +212,7 @@ public class UpnpFile2 extends MetaFile2 {
      *
      */
     public static MetaFile2 fromUri(Uri uri){ // to build ONLY from indexable Uri !!
-        Uri parentUri = Utils.getParentUrl(uri);
+        Uri parentUri = FileUtils.getParentUrl(uri);
         //we try to list parent, if we can't, we assume this is a folder
         if(parentUri!=null&&parentUri.getPath()!=null){
             RawLister lister = RawListerFactoryWithUpnp.getRawListerForUrl(parentUri);

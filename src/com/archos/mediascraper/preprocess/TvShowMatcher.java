@@ -17,7 +17,7 @@ package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
 
@@ -55,7 +55,7 @@ class TvShowMatcher implements InputMatcher {
     public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
         if(simplifiedUri!=null)
             file = simplifiedUri;
-        return getMatch(Utils.getName(file), file);
+        return getMatch(FileUtils.getName(file), file);
     }
 
     @Override

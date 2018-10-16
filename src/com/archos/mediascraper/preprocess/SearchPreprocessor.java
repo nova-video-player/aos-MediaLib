@@ -18,6 +18,7 @@ package com.archos.mediascraper.preprocess;
 import android.net.Uri;
 import android.util.Log;
 
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.filecorelibrary.MetaFile;
 
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class SearchPreprocessor {
         }
         // default to something - should not happen
         Log.e(TAG, "parse error, no matcher");
-        return new MovieSearchInfo(uri, com.archos.filecorelibrary.Utils.getFileNameWithoutExtension(uri), null);
+        return new MovieSearchInfo(uri, FileUtils.getFileNameWithoutExtension(uri), null);
     }
 
     /**

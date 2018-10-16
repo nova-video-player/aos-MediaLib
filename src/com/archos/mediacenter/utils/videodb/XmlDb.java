@@ -25,7 +25,7 @@ import android.util.Log;
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.RawLister;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.filecorelibrary.ftp.AuthenticationException;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.RawListerFactoryWithUpnp;
@@ -319,7 +319,7 @@ public class XmlDb  implements Callback {
      * @return
      */
     public static List<MetaFile2> getListOfDBForUri(Uri videoFile){
-        Uri toList = Utils.getParentUrl(videoFile);
+        Uri toList = FileUtils.getParentUrl(videoFile);
         if(toList!=null){
            RawLister rl = RawListerFactoryWithUpnp.getRawListerForUrl(toList);
             try {
@@ -348,7 +348,7 @@ public class XmlDb  implements Callback {
      */
     public static List<MetaFile2> extractAssociatedWithUriDbXmlMetafileFromList(List<MetaFile2> metaFile2List, Uri videoFile){
         List<MetaFile2> toReturn = new ArrayList<>();
-        String name = Utils.getName(videoFile);
+        String name = FileUtils.getName(videoFile);
             for(MetaFile2 mf : metaFile2List){
                 if(mf.getName().matches("^\\."+ Pattern.quote(name)+"\\.[0-9]*\\"+FILE_NAME)){
                     toReturn.add(mf);
@@ -387,13 +387,13 @@ public class XmlDb  implements Callback {
     public static VideoDbInfo extractBasicVideoInfoFromXmlFileName(Uri fileUri){
         String pattern = ".*\\.(\\d+)\\"+FILE_NAME;
         Pattern r = Pattern.compile(pattern);
-        String filename = Utils.getName(fileUri);
+        String filename = FileUtils.getName(fileUri);
         Matcher m = r.matcher(filename);
         if (m.find()) {
 
             int resume = Integer.parseInt(m.group(1));
             String videoFile = extractVideoFileNameFromNFOFileName(filename);
-            Uri parentUri = Utils.getParentUrl(fileUri);
+            Uri parentUri = FileUtils.getParentUrl(fileUri);
             Uri videoFileUri = Uri.withAppendedPath(parentUri, videoFile);
             VideoDbInfo info = null;
             if((info=sRemoteCache.get(videoFileUri))!=null){ //update resume
@@ -522,7 +522,7 @@ public class XmlDb  implements Callback {
     private static Uri getFilePath(Uri xmlLocation, String videoPath) {
         if (videoPath == null)
             return null;
-        Uri parentUri = Utils.getParentUrl(xmlLocation);
+        Uri parentUri = FileUtils.getParentUrl(xmlLocation);
         if(parentUri!=null && parentUri.getPath()!=null && !parentUri.getPath().isEmpty()){
             Uri xml = Uri.withAppendedPath(parentUri, videoPath);
             return xml;
@@ -532,11 +532,11 @@ public class XmlDb  implements Callback {
     private static Uri getXmlPath(VideoDbInfo videoFile) {
         if (videoFile == null)
             return null;
-        Uri parentUri = Utils.getParentUrl(videoFile.uri);
+        Uri parentUri = FileUtils.getParentUrl(videoFile.uri);
         if(parentUri!=null && parentUri.getPath()!=null && !parentUri.getPath().isEmpty()){
             //calculating percent
             double percent = (float) videoFile.resume/(float)videoFile.duration * 100.0;
-            Uri xml = Uri.withAppendedPath(parentUri, "."+Utils.getName(videoFile.uri)+"."+((int)percent)+FILE_NAME);
+            Uri xml = Uri.withAppendedPath(parentUri, "."+FileUtils.getName(videoFile.uri)+"."+((int)percent)+FILE_NAME);
             return xml;
         }
         return null;
@@ -556,7 +556,7 @@ public class XmlDb  implements Callback {
 
     private static void writeXmlEntry(StringWriter writer, VideoDbInfo entry) {
         writer.append("<path>");
-        escapeAndAppendString(Utils.getName(entry.uri), writer);
+        escapeAndAppendString(FileUtils.getName(entry.uri), writer);
         writer.append("</path>\n");
         if (entry.resume == -2 || entry.resume >= 0)
             writeXmlEntryElement(writer, "last_position", Integer.toString(entry.resume));

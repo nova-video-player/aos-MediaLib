@@ -28,7 +28,7 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 import com.archos.mediaprovider.video.LoaderUtils;
 import com.archos.mediaprovider.video.VideoStore;
@@ -171,9 +171,9 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
                                 values, where, null);
             }
             XmlDb xmlDb = null;
-            if (DBG) Log.d(TAG, "mExportDb: "+mExportDb+" - isLocal: "+Utils.isLocal(mVideoInfo.uri)+" isSlowRemote "+Utils.isSlowRemote(mVideoInfo.uri));
+            if (DBG) Log.d(TAG, "mExportDb: "+mExportDb+" - isLocal: "+FileUtils.isLocal(mVideoInfo.uri)+" isSlowRemote "+FileUtils.isSlowRemote(mVideoInfo.uri));
             if (mExportDb &&
-                    !Utils.isLocal(mVideoInfo.uri)&&
+                    !FileUtils.isLocal(mVideoInfo.uri)&&
                     mVideoInfo.duration>0
                     &&UriUtils.isCompatibleWithRemoteDB(mVideoInfo.uri)) { //save on network
                 if (xmlDb == null)
@@ -201,7 +201,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
             VideoDbInfo videoInfo = null;
             if (result.success)
                 videoInfo = xmlDb.getEntry(mLocation);
-            onVideoDbInfo(videoInfo, !Utils.isLocal(mLocation));
+            onVideoDbInfo(videoInfo, !FileUtils.isLocal(mLocation));
             xmlDb.removeParseListener(this);
             mRemoteXmlObserver = null;
         }
@@ -317,7 +317,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
             }
         }
         if (mWaitRemote && (mRemoteVideoInfo == null || mLocalVideoInfo == null)&&
-                !Utils.isLocal(videoInfo.uri)
+                !FileUtils.isLocal(videoInfo.uri)
                 &&UriUtils.isCompatibleWithRemoteDB(videoInfo.uri)) { //if we haven't remote info yet (we can check this only when we have remote uri
             //if we haven't launched remote xml parsing
             if(!mHasRetrieveRemote){
