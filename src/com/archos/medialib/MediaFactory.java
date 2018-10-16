@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
 
-import com.archos.mediacenter.utils.Utils;
+import com.archos.mediacenter.utils.MediaUtils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -87,7 +87,7 @@ public class MediaFactory {
 
     private static boolean preInit(Context ctx, boolean isPlayer, boolean forceSoftwareDecoding) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String subtitlePath = Utils.getSubsDir(ctx).getPath()+"/";
+        String subtitlePath = MediaUtils.getSubsDir(ctx).getPath()+"/";
         int decoder, codepage = 0;
 
         String str = prefs.getString(KEY_DEC_CHOICE, null);

@@ -22,6 +22,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.LruCache;
 
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.mediacenter.filecoreextension.upnp2.MetaFileFactoryWithUpnp;
@@ -180,8 +181,8 @@ public class NfoParser {
         NfoFile result = new NfoFile();
         result.videoFile = video;
 
-        Uri videoParent = result.videoFolder = com.archos.filecorelibrary.Utils.getParentUrl(video);
-        String videoNameNoExt = result.videoFileNameNoExt = com.archos.filecorelibrary.Utils.getFileNameWithoutExtension(video);
+        Uri videoParent = result.videoFolder = FileUtils.getParentUrl(video);
+        String videoNameNoExt = result.videoFileNameNoExt = FileUtils.getFileNameWithoutExtension(video);
         if (videoParent == null)
             return result;
 
@@ -201,7 +202,7 @@ public class NfoParser {
                 } else {
                     // check in parent folder, "Simpsons/Season 1/Ep1.avi" could have
                     // "Simpsons/tvshow.nfo"
-                    Uri parentParent = com.archos.filecorelibrary.Utils.getParentUrl(videoParent);
+                    Uri parentParent = FileUtils.getParentUrl(videoParent);
                     if (parentParent != null) {
                         showNfoFile = Uri.withAppendedPath(parentParent, TV_SHOW_NFO);
                         if (fileOk(showNfoFile)) {
@@ -322,7 +323,7 @@ public class NfoParser {
     }
 
     private static Uri findSeasonPosterCached(Uri videoFile, String showTitle, int season, ImportContext importContext) {
-        Uri parent = com.archos.filecorelibrary.Utils.getParentUrl(videoFile);
+        Uri parent = FileUtils.getParentUrl(videoFile);
 
         if (parent == null)
             return null;

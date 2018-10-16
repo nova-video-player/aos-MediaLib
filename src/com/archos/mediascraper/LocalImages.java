@@ -20,7 +20,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.archos.filecorelibrary.FileEditor;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 
 import java.io.File;
@@ -129,12 +129,12 @@ public class LocalImages {
 
         // video = e.g. smb://server/share/Movies/The Movie/The Movie.avi
 
-        Uri parent = com.archos.filecorelibrary.Utils.getParentUrl(video);
-        String nameNoExt =com.archos.filecorelibrary.Utils.getFileNameWithoutExtension(video);
+        Uri parent = FileUtils.getParentUrl(video);
+        String nameNoExt =FileUtils.getFileNameWithoutExtension(video);
         if (parent != null && nameNoExt != null&&!nameNoExt.isEmpty()) {
             // check for smb://server/share/Movies/The Movie/The Movie.tbn
             for (String test : MATCH_LIST_DYNAMIC) {
-                if(!Utils.isSlowRemote(parent)&&Utils.isOnAShare(parent)) {
+                if(!FileUtils.isSlowRemote(parent)&&FileUtils.isOnAShare(parent)) {
                     Uri result = getIfAvailable(parent, nameNoExt + test);
                     if (result != null)
                         return result;
@@ -142,16 +142,16 @@ public class LocalImages {
             }
             // check for smb://server/share/Movies/The Movie/folder.jpg
             for (String test : MATCH_LIST_STATIC) {
-                if(!Utils.isSlowRemote(parent)&&Utils.isOnAShare(parent)) {
+                if(!FileUtils.isSlowRemote(parent)&&FileUtils.isOnAShare(parent)) {
                     Uri result = getIfAvailable(parent, test);
                     if (result != null)
                         return result;
                 }
             }
             // check for smb://server/share/Movies/The Movie.tbn (folder thumbnail)
-            Uri grandParent =com.archos.filecorelibrary.Utils.getParentUrl(parent);
-            if (grandParent != null&&Utils.isOnAShare(grandParent)) {
-                if(!Utils.isSlowRemote(parent)) {
+            Uri grandParent = FileUtils.getParentUrl(parent);
+            if (grandParent != null&&FileUtils.isOnAShare(grandParent)) {
+                if(!FileUtils.isSlowRemote(parent)) {
                     Uri result = getIfAvailable(grandParent, parent.getLastPathSegment() + ".tbn");
                     if (result != null)
                         return result;
@@ -173,7 +173,7 @@ public class LocalImages {
         if (video == null)
             return null;
 
-        Uri parent = com.archos.filecorelibrary.Utils.getParentUrl(video);
+        Uri parent = com.archos.filecorelibrary.FileUtils.getParentUrl(video);
         boolean testShowTitle = !TextUtils.isEmpty(showTitle);
         // we create "show name-poster.jpg" files
         String showTitleFile = testShowTitle ? NfoParser.getCustomShowPosterName(showTitle) : "";
@@ -196,7 +196,7 @@ public class LocalImages {
             // smb://server/share/TvShows/The Simpsons/Season 01/TheSimpsons.S01E01.avi
             // so check for images like
             // smb://server/share/TvShows/The Simpsons/poster.jpg
-            Uri grandParent = com.archos.filecorelibrary.Utils.getParentUrl(parent);
+            Uri grandParent = FileUtils.getParentUrl(parent);
             if (grandParent != null) {
                 for (String filename : SHOW_POSTERS) {
                     Uri result = getIfAvailable(grandParent, filename);
@@ -212,7 +212,7 @@ public class LocalImages {
         if (video == null || season <= 0)
             return null;
 
-        Uri parent = com.archos.filecorelibrary.Utils.getParentUrl(video);
+        Uri parent = FileUtils.getParentUrl(video);
         boolean testShowTitle = !TextUtils.isEmpty(showTitle);
         // we create "show name-season03.jpg" files
         String showTitleFile = testShowTitle ? NfoParser.getCustomSeasonPosterName(showTitle, season) : "";
@@ -243,7 +243,7 @@ public class LocalImages {
             // smb://server/share/TvShows/The Simpsons/season01.tbn
 
             //TODO test
-            Uri grandParent = com.archos.filecorelibrary.Utils.getParentUrl(parent);
+            Uri grandParent = FileUtils.getParentUrl(parent);
             if (grandParent != null) {
                 Uri result = getIfAvailable(grandParent, parent.getLastPathSegment() + ".tbn");
                 if (result != null)
@@ -279,10 +279,10 @@ public class LocalImages {
         // video = e.g. smb://server/share/Movies/Transformers/Tansformers.3.1080p.avi
 
         // parent = smb://server/share/Movies/Transformers/
-        Uri parent = com.archos.filecorelibrary.Utils.getParentUrl(video);
+        Uri parent = FileUtils.getParentUrl(video);
 
         // nameNoExt = Tansformers.3.1080p
-        String nameNoExt =  com.archos.filecorelibrary.Utils.getFileNameWithoutExtension(video);
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
 
         if (parent != null && nameNoExt != null) {
             boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);

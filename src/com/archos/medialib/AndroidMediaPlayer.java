@@ -19,7 +19,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Parcel;
 
-import com.archos.mediacenter.utils.Utils;
+import com.archos.mediacenter.utils.MediaUtils;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -385,7 +385,7 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
             String videoPath = videoFile.getName();
 
             addAllTimedTextsInDir(videoFile.getParentFile(), videoPath, timedTextLangList);
-            addAllTimedTextsInDir(Utils.getSubsDir(mContext), videoPath, timedTextLangList);
+            addAllTimedTextsInDir(MediaUtils.getSubsDir(mContext), videoPath, timedTextLangList);
             mTimedTextLangs = timedTextLangList.toArray(new String[timedTextLangList.size()]);
         }
     }

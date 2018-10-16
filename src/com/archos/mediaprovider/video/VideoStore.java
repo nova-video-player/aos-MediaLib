@@ -34,7 +34,7 @@ import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
 import com.archos.filecorelibrary.MetaFile;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
@@ -110,7 +110,7 @@ public final class VideoStore {
             context.getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cvR, whereR, new String[]{tmp.toString()});
         }
         String action;
-        if ((!Utils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
+        if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
             action = ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE;
         }
         else {

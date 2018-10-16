@@ -24,7 +24,7 @@ import android.util.Xml;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.medialib.R;
 
 import org.xmlpull.v1.XmlSerializer;
@@ -262,8 +262,8 @@ public class NfoWriter {
 
     private static void exportInternal(Uri video, MovieTags tag) throws IOException {
 
-        String videoName = Utils.getFileNameWithoutExtension(video);
-        Uri parent = Utils.getParentUrl(video);
+        String videoName = FileUtils.getFileNameWithoutExtension(video);
+        Uri parent = FileUtils.getParentUrl(video);
         Uri exportTarget =  Uri.withAppendedPath(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION);
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget, null);
@@ -297,8 +297,8 @@ public class NfoWriter {
     }
 
     private static void exportInternal(Uri video, EpisodeTags tag) throws IOException {
-        String videoName = Utils.getFileNameWithoutExtension(video);
-        Uri parent = Utils.getParentUrl(video);
+        String videoName = FileUtils.getFileNameWithoutExtension(video);
+        Uri parent = FileUtils.getParentUrl(video);
         Uri exportTarget =  Uri.withAppendedPath(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION);
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget,null);
@@ -333,8 +333,8 @@ public class NfoWriter {
     }
 
     private static void exportInternal(Uri video, ShowTags tag, ExportContext exportContext) throws IOException {
-        String videoName = Utils.getFileNameWithoutExtension(video);
-        Uri parent = Utils.getParentUrl(video);
+        String videoName = FileUtils.getFileNameWithoutExtension(video);
+        Uri parent = FileUtils.getParentUrl(video);
         String showTitle = StringUtils.fileSystemEncode(tag.getTitle());
         Uri exportTarget =  Uri.withAppendedPath(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION);
         try {

@@ -17,7 +17,7 @@ package com.archos.mediascraper;
 import android.net.Uri;
 import android.util.Log;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.preprocess.ParseUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -122,7 +122,7 @@ public final class ShowUtils {
         } else {
             if (file == null)
                 return false;
-            filename = Utils.getName(file);
+            filename = FileUtils.getName(file);
         }
         for(Pattern regexp: patternsShowFirst) {
             Matcher m = regexp.matcher(filename);

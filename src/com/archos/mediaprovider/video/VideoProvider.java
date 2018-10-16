@@ -49,7 +49,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.archos.filecorelibrary.FileEditor;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
 import com.archos.mediacenter.utils.AppState;
@@ -158,7 +158,7 @@ public class VideoProvider extends ContentProvider {
                         Log.w(TAG, "Have message but no request?");
                     } else {
                         try {
-                            Uri encodedUri = Utils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath));
+                            Uri encodedUri = FileUtils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath));
                             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(encodedUri, null);
                             if(DBG)
                                 Log.d(TAG_DOCTOR_WHO,mCurrentThumbRequest.mPath+" does file exists ? "+ String.valueOf(editor.exists()));
@@ -889,7 +889,7 @@ public class VideoProvider extends ContentProvider {
 
             long magic = c.getLong(2);
             int nbTry = c.getInt(3);
-            if (magic == 0 && nbTry >= THUMB_TRY_MAX|| !Utils.isLocal(Uri.parse(path))&&!PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREFERENCE_CREATE_REMOTE_THUMBS, false)) {
+            if (magic == 0 && nbTry >= THUMB_TRY_MAX|| !FileUtils.isLocal(Uri.parse(path))&&!PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREFERENCE_CREATE_REMOTE_THUMBS, false)) {
                 // thumbnail creation failed more than one time: abort.
                 if(DBG) Log.d(TAG_DOCTOR_WHO, "thumbnail creation failed more than "+THUMB_TRY_MAX+" times: abort. ");
 

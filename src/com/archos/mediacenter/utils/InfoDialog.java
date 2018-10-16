@@ -38,7 +38,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class InfoDialog extends Dialog {
 
@@ -348,7 +350,12 @@ public class InfoDialog extends Dialog {
 
             // Modification date
             Time time = new Time();
+            SimpleDateFormat sdf = new SimpleDateFormat();
+            Date date = new Date(file.lastModified());
             time.set(file.lastModified());
+            sdf = new SimpleDateFormat("d M y HH:mm:ss");
+            String res = sdf.format(date);
+            Log.d("MARC",time.format("%d %B %Y, %H:%M:%S") + "=" + res);
             ((TextView) findViewById(R.id.archos_info_last_modified)).setText(time
                     .format("%d %B %Y, %H:%M:%S"));
 

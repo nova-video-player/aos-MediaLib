@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.medialib.R;
 import com.archos.mediascraper.FileFetcher;
 import com.archos.mediascraper.HttpCache;
@@ -104,7 +104,7 @@ public class DefaultContentScraper extends BaseScraper2 {
         if (searchString != null && !searchString.isEmpty()) {
             search = searchString;
         } else {
-            search = stripExtension(Utils.getName(file));
+            search = stripExtension(FileUtils.getName(file));
         }
         // if we have a Movie.Name.2012.XZY.avi like name use regex
         if (matchesScene(search)) {

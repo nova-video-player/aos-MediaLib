@@ -16,7 +16,7 @@ package com.archos.mediacenter.filecoreextension;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +59,7 @@ public class UriUtils {
      */
 
     public static boolean isImplementedByFileCore(Uri uri){
-        return Utils.isLocal(uri)||uri.getScheme().equals("smb")||
+        return FileUtils.isLocal(uri)||uri.getScheme().equals("smb")||
                 uri.getScheme().equals("upnp")||
                 uri.getScheme().equals("ftps")||
                 uri.getScheme().equals("ftp")||

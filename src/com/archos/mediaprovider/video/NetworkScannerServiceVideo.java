@@ -44,6 +44,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.archos.environment.ArchosUtils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.MetaFileFactoryWithUpnp;
@@ -125,7 +126,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         return false;
     }
     public static boolean willBeScanned(Uri uri){ //returns whether or not a video will be scanned by NetworkScannerServiceVideo
-        return (!com.archos.filecorelibrary.Utils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri);
+        return (!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri);
     }
     private static boolean isSmbUri(Uri uri) {
         String schema = uri != null ? uri.getScheme() : null;
@@ -865,7 +866,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
      * transforms '/mnt/network/smb/GROUP/SERVER/..' into 'GROUP/SERVER'
      */
     public static String extractSmbServer(Uri uri) {
-        if (!com.archos.filecorelibrary.Utils.isLocal(uri)) {
+        if (!FileUtils.isLocal(uri)) {
             //special for smb :
             //for
             /*if(uri.getScheme().equals("smb://")){
@@ -986,7 +987,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 return;
             }
             boolean isDir = f.isDirectory();
-            Uri parentUri = com.archos.filecorelibrary.Utils.getParentUrl(f.getUri());
+            Uri parentUri = FileUtils.getParentUrl(f.getUri());
             if (parentUri == null) {
                 parentUri = Uri.parse("/");
             }
@@ -1004,7 +1005,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             long last_modified = f.lastModified();
             date_modified = last_modified > 0 ? last_modified / 1000L : date_added;
             title = f.getNameWithoutExtension();
-            bucket_id = com.archos.filecorelibrary.Utils.getBucketId(parentUri);
+            bucket_id = FileUtils.getBucketId(parentUri);
             bucket_display_name = parentUri.getLastPathSegment();
             format = isDir ? FORMAT_ASSOCIATION : FORMAT_UNDEFINED;
             // do not want that - it's slow

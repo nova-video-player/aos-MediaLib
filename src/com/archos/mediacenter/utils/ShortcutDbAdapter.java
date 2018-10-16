@@ -25,6 +25,8 @@ import android.net.Uri;
 import android.util.Log;
 
 
+import com.archos.filecorelibrary.FileUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +74,7 @@ public enum ShortcutDbAdapter {
             uriToCheck.add(uriString);
             if(uriString.endsWith("/")) //also removing last "/"
                 uriToCheck.add(uriString.substring(0, uriString.length() - 1));
-            uri = com.archos.filecorelibrary.Utils.getParentUrl(uri);
+            uri = FileUtils.getParentUrl(uri);
 
         }
         if (!uriToCheck.isEmpty()) { //building where string : " path in {?, ?, ?}

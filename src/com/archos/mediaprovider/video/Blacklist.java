@@ -23,7 +23,7 @@ import com.archos.filecorelibrary.MetaFile;
 
 import com.archos.environment.ArchosUtils;
 import com.archos.filecorelibrary.MetaFile2;
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,11 +67,11 @@ public class Blacklist {
     public boolean isBlacklisted(Uri file) {
         if (file == null) return true;
         for (String blacklisted : BLACKLISTED_CAMERA) {
-            if (Utils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
+            if (FileUtils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
         }
         for (String extPath: ExtStorageManager.getExtStorageManager().getExtSdcards()) {
             for (String blacklistedDir : BLACKLISTED_CAM_DIRS)  {
-                if (Utils.isLocal(file) && file.getPath().startsWith(extPath+blacklistedDir)) return true;
+                if (FileUtils.isLocal(file) && file.getPath().startsWith(extPath+blacklistedDir)) return true;
             }
         }
         return isFilenameBlacklisted(file.getLastPathSegment());

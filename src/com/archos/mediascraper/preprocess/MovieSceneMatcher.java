@@ -17,7 +17,7 @@ package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
 
-import com.archos.filecorelibrary.Utils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.StringUtils;
 
 import java.util.regex.Matcher;
@@ -43,7 +43,7 @@ class MovieSceneMatcher implements InputMatcher {
     public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
         if(simplifiedUri!=null)
             fileInput = simplifiedUri;
-        return matches(Utils.getFileNameWithoutExtension(fileInput));
+        return matches(FileUtils.getFileNameWithoutExtension(fileInput));
     }
 
     @Override
@@ -61,7 +61,7 @@ class MovieSceneMatcher implements InputMatcher {
     public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
         if(simplifiedUri!=null)
             file = simplifiedUri;
-        return getSearchInfo(Utils.getFileNameWithoutExtension(file), file);
+        return getSearchInfo(FileUtils.getFileNameWithoutExtension(file), file);
     }
 
     @Override
