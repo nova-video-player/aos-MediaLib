@@ -362,6 +362,24 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
         }
     }
 
+    static public String formatTime(long ms) {
+        String res;
+        if (ms <= 0)
+            res = "";
+        else {
+            if (ms >= 3600000)
+                // %Hh%m'
+                res = String.valueOf(ms / 3600000) + "h" + String.valueOf((ms % 3600000) / 60000) + "'";
+            else if (ms < 60000)
+                // %m'%s''
+                res = String.valueOf((ms % 60000) / 1000) + "''";
+            else
+                // %s''
+                res = String.valueOf((ms % 3600000) / 60000) + "'" + String.valueOf((ms % 60000) / 1000) + "''";
+        }
+        return res;
+    }
+
     private static String mLastSdStatus;
 
     // Simplified version of MusicUtils.displayDatabaseError
