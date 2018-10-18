@@ -443,6 +443,7 @@ public class ArtworkFactory {
 		} else {
 			return 1024;
 		}
+		//return i == 1 ? 1 : Integer.highestOneBit(i - 1) << 1;
 	}
 
 	/**
