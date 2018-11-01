@@ -20,8 +20,15 @@ allprojects {
     }
 }
 
+configurations {
+    all {
+        exclude group: 'org.json', module: 'json'
+    }
+}
+
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
+    buildToolsVersion '27.0.3'
 
     useLibrary 'org.apache.http.legacy'
 
@@ -47,7 +54,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 27
+        targetSdkVersion 28
     }
 
     flavorDimensions "version"
@@ -103,8 +110,13 @@ android {
 
 dependencies {
     implementation project(':FileCoreLibrary')
-    implementation 'com.android.support:support-v4:27.1.1'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    //implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:support-compat:28.0.0'
+    implementation 'com.android.support:support-core-utils:28.0.0'
+    implementation 'com.android.support:support-media-compat:28.0.0'
+    implementation 'com.android.support:support-fragment:28.0.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:preference-v7:28.0.0'
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'joda-time:joda-time:2.10'

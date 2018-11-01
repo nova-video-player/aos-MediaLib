@@ -18,7 +18,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.preference.PreferenceManager;
+import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 
 
