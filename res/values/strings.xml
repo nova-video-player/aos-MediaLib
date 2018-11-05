@@ -59,7 +59,7 @@
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">Internal storage unavailable</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
-    <string name="storage_busy_message">You can not use the internal storage while it is connected and mounted through USB.</string>
+    <string name="storage_busy_message">You cannot use the internal storage while it is connected and mounted through USB.</string>
     <!-- Title of screen when there was an error accessing the internal storage -->
     <string name="storage_error_title">Internal storage error</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
