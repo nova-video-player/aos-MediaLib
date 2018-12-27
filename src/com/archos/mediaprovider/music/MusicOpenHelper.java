@@ -21,7 +21,6 @@ import android.util.Log;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.CustomCursorFactory;
 import com.archos.mediaprovider.SQLiteUtils;
-import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.DeleteOnDowngradeSQLiteOpenHelper;
 
 /**
@@ -793,11 +792,9 @@ public class MusicOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             "              ON searchhelpertitle.album_id = album_art.album_id\n" +
             " WHERE ( title != '' )";
 
-    private final DeleteFileCallback mDeletFileCallback;
 
     public MusicOpenHelper(Context context) {
         super(context, DATABASE_NAME, new CustomCursorFactory(), DATABASE_VERSION);
-        mDeletFileCallback = new DeleteFileCallback();
     }
 
     @Override
@@ -807,9 +804,6 @@ public class MusicOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         db.enableWriteAheadLogging();
         // turn on foreign key support used in scraper tables
         db.execSQL("PRAGMA foreign_keys = ON");
-
-        // add callbacks to the database
-        mDeletFileCallback.addToDb(db);
     }
 
     @Override
