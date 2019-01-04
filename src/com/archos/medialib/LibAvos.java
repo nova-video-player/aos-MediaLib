@@ -187,6 +187,7 @@ public class LibAvos {
         installExtLibs(ctx, armHasNeon);
 
         loadLibrary(ctx, "avutil", armHasNeon, false);
+        loadLibrary(ctx, "swresample", armHasNeon, false);
         loadLibrary(ctx, "avcodec", armHasNeon, true);
         loadLibrary(ctx, "avformat", armHasNeon, false);
 
