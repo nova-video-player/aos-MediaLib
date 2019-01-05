@@ -16,29 +16,17 @@
     <!-- .nfo export options -->
     <!-- trakt.tv -->
     <!-- Title of screen when no sd card is present -->
-    <string name="sdcard_missing_title">SD-карта отсутствует.</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
-    <string name="sdcard_missing_message">В аппарате отсутствует SD-карта.</string>
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
-    <string name="sdcard_busy_title">SD-карта недоступна</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
-    <string name="sdcard_busy_message">SD-карта занята.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
-    <string name="sdcard_error_title">Ошибка SD-карты</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
-    <string name="sdcard_error_message">Ошибка SD-карты.</string>
     <!-- Title of screen when no storage is present -->
-    <string name="storage_missing_title">Встроенная память недоступна</string>
     <!-- label underneath icon used to indicate that no storage is present -->
-    <string name="storage_missing_message">Встроенная память недоступна.</string>
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
-    <string name="storage_busy_title">Встроенная память недоступна</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
-    <string name="storage_busy_message">Вы не можете использовать встроенную память при подключении через USB.</string>
     <!-- Title of screen when there was an error accessing the internal storage -->
-    <string name="storage_error_title">Ошибка встроенного ЗУ</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
-    <string name="storage_error_message">Ошибка встроенного ЗУ.</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

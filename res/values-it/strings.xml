@@ -13,8 +13,8 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
-    <string name="network_scan_msg">Indicizzazione file multimediali in corso</string>
-    <string name="network_unscan_msg">Rimozione file multimediali dal catalogo in corso</string>
+    <string name="network_scan_msg">Indicizzazione dei file multimediali in corso</string>
+    <string name="network_unscan_msg">Rimozione dei file multimediali dalla libreria</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Esporta le informazioni multimediali</string>
     <string name="nfo_export_auto_title">Esporta automaticamente dopo la ricerca</string>
@@ -36,24 +36,24 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">Scheda SD non disponibile</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
-    <string name="sdcard_busy_message">Spiacenti. La scheda SD è già in uso.</string>
+    <string name="sdcard_busy_message">Spiacenti, la tua scheda SD è già in uso</string>
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">Errore della scheda SD</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
-    <string name="sdcard_error_message">Si è verificato un errore nella scheda SD.</string>
+    <string name="sdcard_error_message">Si è verificato un errore nella scheda SD</string>
     <!-- Title of screen when no storage is present -->
-    <string name="storage_missing_title">Archiviazione interna non disponibile</string>
+    <string name="storage_missing_title">Memoria interna non disponibile</string>
     <!-- label underneath icon used to indicate that no storage is present -->
-    <string name="storage_missing_message">L\'archiviazione interna non è disponibile.</string>
+    <string name="storage_missing_message">La memoria interna non è disponibile</string>
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">Memoria interna non disponibile</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
     <string name="storage_busy_message">Impossibile usare la memoria interna quando è connesso e montato tramite USB</string>
     <!-- Title of screen when there was an error accessing the internal storage -->
-    <string name="storage_error_title">Errore di archiviazione interna</string>
+    <string name="storage_error_title">Errore nella memoria interna</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
-    <string name="storage_error_message">Errore di archiviazione interna.</string>
-    <string name="scraper_no_settings">Nessuna impostazione disponibile per questa origine.</string>
+    <string name="storage_error_message">Si è verificato un errore nella memoria interna</string>
+    <string name="scraper_no_settings">Nessuna impostazione disponibile per questa sorgente</string>
     <string-array name="scraper_labels_array">
         <item>enable_fanart:Attiva Fanart</item>
         <item>info_language:Lingua</item>
