@@ -74,14 +74,6 @@ android {
 
     }
 
-    task bootstrapFFmpeg(type:Exec) {
-       workingDir = "../native/ffmpeg-android-builder"
-       List<String> myCmd = new ArrayList<String>()
-       myCmd.add("bash")
-       myCmd.add("bootstrap_avp_ffmpeg.sh")
-       commandLine myCmd
-    }
-
     task ndkBuild(type:Exec) {
         workingDir = "../"
         List<String> myCmd = new ArrayList<String>()
@@ -93,8 +85,6 @@ android {
             myCmd.add("native_torrentd")
         commandLine myCmd
     }
-
-    ndkBuild.dependsOn bootstrapFFmpeg
 
     task ndkClean(type:Exec) {
         workingDir = "../"
