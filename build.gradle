@@ -80,8 +80,8 @@ android {
         myCmd.add("native_libyuv")
         myCmd.add("native_libnativehelper")
         myCmd.add("native_avos_full")
-        if(!groupOpen)
-            myCmd.add("native_torrentd")
+        //if(!groupOpen)
+        //    myCmd.add("native_torrentd")
         commandLine myCmd
     }
 
