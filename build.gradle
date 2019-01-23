@@ -24,7 +24,6 @@ allprojects {
 
 android {
     compileSdkVersion 27
-    buildToolsVersion '27.0.3'
 
     useLibrary 'org.apache.http.legacy'
 
@@ -49,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 21
         targetSdkVersion 27
     }
 
@@ -74,14 +73,6 @@ android {
 
     }
 
-    task bootstrapFFmpeg(type:Exec) {
-       workingDir = "../native/ffmpeg-android-builder"
-       List<String> myCmd = new ArrayList<String>()
-       myCmd.add("bash")
-       myCmd.add("bootstrap_avp_ffmpeg.sh")
-       commandLine myCmd
-    }
-
     task ndkBuild(type:Exec) {
         workingDir = "../"
         List<String> myCmd = new ArrayList<String>()
@@ -89,12 +80,9 @@ android {
         myCmd.add("native_libyuv")
         myCmd.add("native_libnativehelper")
         myCmd.add("native_avos_full")
-        if(!groupOpen)
-            myCmd.add("native_torrentd")
+        myCmd.add("native_torrentd")
         commandLine myCmd
     }
-
-    ndkBuild.dependsOn bootstrapFFmpeg
 
     task ndkClean(type:Exec) {
         workingDir = "../"
