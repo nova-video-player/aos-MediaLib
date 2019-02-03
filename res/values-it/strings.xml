@@ -13,7 +13,7 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
-    <string name="network_scan_msg">Indicizzazione dei file multimediali in corso</string>
+    <string name="network_scan_msg">Indicizzazione file multimediali in corso</string>
     <string name="network_unscan_msg">Rimozione dei file multimediali dalla libreria</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Esporta le informazioni multimediali</string>
