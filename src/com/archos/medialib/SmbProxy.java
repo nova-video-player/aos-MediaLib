@@ -16,15 +16,15 @@ package com.archos.medialib;
 
 import android.net.Uri;
 
+import com.archos.filecorelibrary.MetaFile2;
+import com.archos.filecorelibrary.MetaFile2Factory;
 import com.archos.filecorelibrary.MimeUtils;
 import com.archos.filecorelibrary.StreamOverHttp;
-import com.archos.filecorelibrary.samba.SambaConfiguration;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 
 import java.io.IOException;
 import java.util.Map;
 
-import jcifs2.smb.SmbFile;
 
 public class SmbProxy extends Proxy{
     private StreamOverHttp mStream;
@@ -38,14 +38,21 @@ public class SmbProxy extends Proxy{
     protected Uri start() {
         stop();
         String mimeType = MimeUtils.guessMimeTypeFromExtension(mUri.getLastPathSegment());
-        SmbFile file;
+        MetaFile2 file = null;
         try {
-            file = new SmbFile(SambaConfiguration.getCredentials(mUri.toString()));
-            mStream = new StreamOverHttp(mUri, mimeType);
+            try {
+                file = MetaFile2Factory.getMetaFileForUrl(mUri);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if(file != null)
+                mStream = new StreamOverHttp(file, mimeType);
+            else
+                mStream = new StreamOverHttp(mUri, mimeType);
         } catch (IOException e) {
             return null;
         }
-        return mStream.getUri(file.getName());
+        return mStream.getUri(file != null ? file.getName():mUri.getLastPathSegment());
     }
     
     public void stop() {
