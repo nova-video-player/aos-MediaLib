@@ -144,7 +144,7 @@ public abstract class BaseTags implements Parcelable {
                 sb.append(actor);
                 if (role != null && !role.isEmpty()) {
                     sb.append(" (");
-                    sb.append(role);
+                    sb.append(role.replace("|", " | "));
                     sb.append(')');
                 }
             }
