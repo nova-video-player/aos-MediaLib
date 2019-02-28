@@ -17,12 +17,16 @@ package com.archos.mediascraper;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
 
 import com.archos.filecorelibrary.MetaFile;
 import com.archos.filecorelibrary.MetaFile2;
@@ -63,6 +67,7 @@ public abstract class BaseTags implements Parcelable {
     protected String mPlot;
     protected final Map<String, String> mActors;
     protected String mActorsFormatted;
+    protected SpannableString mSpannableActorsFormatted;
     protected final List<String> mDirectors;
     protected String mDirectorsFormatted;
     protected Uri mFile;
@@ -144,11 +149,50 @@ public abstract class BaseTags implements Parcelable {
                 sb.append(actor);
                 if (role != null && !role.isEmpty()) {
                     sb.append(" (");
-                    sb.append(role.replace("|", " | "));
+                    sb.append(role);
                     sb.append(')');
                 }
             }
             mActorsFormatted = sb.toString();
+        }
+    }
+    
+    public SpannableString getSpannableActorsFormatted() {
+        ensureSpannableFormattedActors();
+        return mSpannableActorsFormatted;
+    }
+
+    private void ensureSpannableFormattedActors() {
+        if (mSpannableActorsFormatted == null && mActors != null && !mActors.isEmpty()) {
+            SpannableStringBuilder sb = new SpannableStringBuilder();
+            boolean firstTime = true;
+            for (Entry<String, String> item : mActors.entrySet()) {
+                if (firstTime) {
+                    firstTime = false;
+                } else {
+                    sb.append(", ");
+                }
+                String actor = item.getKey();
+                String role = item.getValue();
+                sb.append(actor);
+                if (role != null && !role.isEmpty()) {
+                    role = role.replaceAll("\\s*\\(.+\\)\\s*", "");
+                    String[] roles = role.split("(?<=[^\\/\\|])\\s*(?:\\/|\\|)\\s*(?=[^\\/\\|])");
+                    int color = Color.argb(164, 255, 255, 255);
+
+                    sb.append(" (");
+
+                    for (int i = 0; i < roles.length; i++) {
+                        sb.append(roles[i], new ForegroundColorSpan(color), 0);
+
+                        if (i != roles.length - 1)
+                            sb.append(" / ");
+                    }
+
+                    sb.append(')');
+                }
+            }
+            mSpannableActorsFormatted = SpannableString.valueOf(sb);
         }
     }
 
