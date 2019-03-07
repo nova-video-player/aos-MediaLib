@@ -232,7 +232,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     if (season >= 0) {
                         if(seasonPosters.get(season) == null)
                             seasonPosters.put(season, image);
-                        else if(resultLanguage.equals(image.getLanguage())){ //reset if right language
+                        else if(resultLanguage.equals(image.getLanguage()) && !resultLanguage.equals(seasonPosters.get(season).getLanguage())){ //reset if right language
                             seasonPosters.put(season, image);
                         }
                     }
