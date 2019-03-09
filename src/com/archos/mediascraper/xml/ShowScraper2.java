@@ -111,10 +111,17 @@ public class ShowScraper2 extends BaseScraper2 {
         Bundle extra = new Bundle();
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
         extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
-        for (SearchResult searchResult : results) {
-            searchResult.setExtra(extra);
-            searchResult.setFile(searchInfo.getFile());//TODO metafilereplace
-            searchResult.setScraper(this);
+        Iterator<SearchResult> i = results.iterator();
+        while (i.hasNext()) {
+            SearchResult searchResult = i.next();
+            if (!searchResult.getTitle().equals("** 403: Series Not Permitted **")) {
+                searchResult.setExtra(extra);
+                searchResult.setFile(searchInfo.getFile());//TODO metafilereplace
+                searchResult.setScraper(this);
+            }
+            else {
+                i.remove();
+            }
         }
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
         return new ScrapeSearchResult(results, false, status, null);
