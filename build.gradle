@@ -150,7 +150,6 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
     implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.6.1'
 
-    privlibsApi files('libs/in-app-purchasing-2.0.76.jar')
     openApi 'com.github.archos-sa:AOS-FakeLibs:517a7ca02f'
     privlibsApi group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
     privlibsImplementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
