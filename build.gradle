@@ -51,25 +51,12 @@ android {
         targetSdkVersion 27
     }
 
-    flavorDimensions "version", "privDeps"
+    flavorDimensions "version"
 
     productFlavors {
-        premium {
-            dimension "version"
-        }
-        free {
-            dimension "version"
-        }
         community {
             dimension "version"
         }
-        open {
-            dimension "privDeps"
-        }
-        privlibs {
-            dimension "privDeps"
-        }
-
     }
 
     task bootstrapFFmpeg(type:Exec) {
