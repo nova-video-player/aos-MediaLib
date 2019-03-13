@@ -286,6 +286,10 @@ public class VideoStoreImportImpl {
     /** executes metadata scan of files defined by Uri */
     public void doScan(Uri what) {
         String path = what.getPath();
+
+        if (path.endsWith("/"))
+            path = path.substring(0, path.length() - 1);
+
         File f = new File(path);
         if (!f.exists()) {
             Log.d(TAG, "Not scanning " + f + ", it does not exist.");
