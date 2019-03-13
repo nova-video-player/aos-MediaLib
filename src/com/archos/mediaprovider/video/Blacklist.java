@@ -15,6 +15,7 @@
 package com.archos.mediaprovider.video;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 
@@ -24,14 +25,18 @@ import com.archos.filecorelibrary.MetaFile;
 import com.archos.environment.ArchosUtils;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.FileUtils;
+import com.archos.mediacenter.utils.BlacklistedDbAdapter;
 
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Blacklist {
     protected static final String TAG = Blacklist.class.getSimpleName();
 
-    private static final Blacklist DEFAULT_INSTANCE = new Blacklist(null);
+    private static Blacklist DEFAULT_INSTANCE;
+
+    private Context mContext;
 
     private Blacklist(Context context) {
         /*
@@ -40,9 +45,13 @@ public class Blacklist {
          * update of the database to (un-)hide or rescan files.
          * For now it's only blacklisting files ending with "sample" or "trailer"
          */
+        mContext = context;
     }
 
     public static Blacklist getInstance(Context context) {
+        if (DEFAULT_INSTANCE == null)
+            DEFAULT_INSTANCE = new Blacklist(context);
+        
         return DEFAULT_INSTANCE;
     }
 
@@ -74,6 +83,9 @@ public class Blacklist {
                 if (FileUtils.isLocal(file) && file.getPath().startsWith(extPath+blacklistedDir)) return true;
             }
         }
+        for (String blacklisted : getBlacklisteds()) {
+            if (FileUtils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
+        }
         return isFilenameBlacklisted(file.getLastPathSegment());
     }
 
@@ -84,5 +96,29 @@ public class Blacklist {
                 return true;
         }
         return false;
+    }
+
+    private ArrayList<String> getBlacklisteds() {
+        ArrayList<String> blacklisteds = new ArrayList<>();
+
+        Cursor c = BlacklistedDbAdapter.VIDEO.queryAllBlacklisteds(mContext);
+        final int pathColumn = c.getColumnIndexOrThrow(BlacklistedDbAdapter.KEY_PATH);
+
+        c.moveToFirst();
+        while (!c.isAfterLast()) {
+            String blacklistedPath = c.getString(pathColumn);
+            if (blacklistedPath!=null) {
+                blacklistedPath = Uri.parse(blacklistedPath).getPath();
+
+                if(!blacklistedPath.endsWith("/"))
+                    blacklistedPath += "/";
+
+                blacklisteds.add(blacklistedPath);
+            }
+            c.moveToNext();
+        }
+        c.close();
+
+        return blacklisteds;
     }
 }
