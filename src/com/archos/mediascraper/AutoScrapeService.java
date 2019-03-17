@@ -383,10 +383,10 @@ public class AutoScrapeService extends Service {
                             } while (cursor.moveToNext()
                                     &&isEnable(AutoScrapeService.this));
                             sIsScraping = false;
-                            if(cursor.getCount() == mNetworkErrors) { //when as many errors, we assume we don't have the internet, do not loop
+                            /*if(cursor.getCount() == mNetworkErrors) { //when as many errors, we assume we don't have the internet, do not loop
                                 restartOnNextRound = false;
                                 if(DBG) Log.d(TAG, "no internet");
-                            }
+                            }*/
                         }
                         cursor.close();
                         shouldRescrapAll = false; //to avoid rescraping on next round
