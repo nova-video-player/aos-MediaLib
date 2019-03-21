@@ -24,6 +24,9 @@
         <item name="android:windowActionBarOverlay">true</item>
         <item name="windowActionBarOverlay">true</item>
     </style>
+    <style name="ArchosThemeBlueCompatTransparent" parent="ArchosThemeBlueCompat">
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
     <style name="Theme.TransparentCompat" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
