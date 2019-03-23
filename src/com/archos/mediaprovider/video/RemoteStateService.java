@@ -44,7 +44,7 @@ import jcifs2.netbios.Lmhosts;
 /** handles visibility updates of smb://server/share type servers in the database */
 public class RemoteStateService extends IntentService implements UpnpServiceManager.Listener {
     private static final String TAG = ArchosMediaCommon.TAG_PREFIX + RemoteStateService.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private static final Uri NOTIFY_URI = VideoStore.ALL_CONTENT_URI;
     private static final Uri SERVER_URI = VideoStore.SmbServer.getContentUri();

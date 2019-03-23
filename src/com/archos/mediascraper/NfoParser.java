@@ -45,7 +45,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 public class NfoParser {
     private static final String TAG = NfoParser.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     /** filename w/o extension + this */
     public static final String CUSTOM_NFO_EXTENSION = ".archos.nfo";

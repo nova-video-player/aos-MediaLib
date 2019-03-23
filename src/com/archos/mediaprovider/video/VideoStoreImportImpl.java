@@ -56,9 +56,9 @@ import java.io.File;
  */
 public class VideoStoreImportImpl {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoStoreImportImpl";
-    private static final boolean LOCAL_DBG = true;
+    private static final boolean LOCAL_DBG = false;
     private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
-    private static final boolean DBG2 = true;
+    private static final boolean DBG2 = false;
 
     private final Context mContext;
     private final ContentResolver mCr;

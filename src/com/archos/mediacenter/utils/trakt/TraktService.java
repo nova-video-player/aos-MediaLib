@@ -70,7 +70,7 @@ import retrofit.RetrofitError;
 
 public class TraktService extends Service {
     private static final String TAG = "TraktService";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private SharedPreferences mPreferences;
     private boolean mNetworkStateReceiverRegistered = false;
