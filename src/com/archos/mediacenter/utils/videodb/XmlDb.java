@@ -61,7 +61,7 @@ public class XmlDb  implements Callback {
 
     private static XmlDb sXmlDb;
 
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private static final int MSG_PARSE_TIMEOUT = 0;
     private static final int MSG_PARSE_OK = 1;
