@@ -85,7 +85,7 @@ public class UpnpServiceManager extends BroadcastReceiver {
     }
 
     private static final String TAG = "UpnpServiceManager";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
     /**
      * NOTE: this does not work like the SMB discovery.
      * We get server updates (found, removed, renamed, etc)  1 minute
