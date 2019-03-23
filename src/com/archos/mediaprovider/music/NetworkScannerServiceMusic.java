@@ -205,7 +205,8 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
         String[] selectionArgs = { path };
         // send out a sticky broadcast telling the world that we started scanning
         Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_STARTED, data);
-        sendStickyBroadcast(scannerIntent);
+        scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+        sendBroadcast(scannerIntent);
         // also show a notification.
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         showNotification(nm, f.getDisplayPath(), R.string.network_unscan_msg);
@@ -213,8 +214,6 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
         int deleted = cr.delete(MusicStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
         Log.d(TAG, "removed: " + deleted);
 
-        // cancel the sticky broadcast
-        removeStickyBroadcast(scannerIntent);
         // send a "done" notification
         Intent intent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FINISHED, data);
         intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
@@ -237,7 +236,8 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
 
             // send out a sticky broadcast telling the world that we started scanning
             Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_STARTED, what);
-            sendStickyBroadcast(scannerIntent);
+            scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            sendBroadcast(scannerIntent);
             // also show a notification.
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             showNotification(nm, f.getDisplayPath(), R.string.network_scan_msg);
@@ -326,8 +326,6 @@ public class NetworkScannerServiceMusic extends Service implements Handler.Callb
             }
 
             Log.d(TAG, "added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount);
-            // cancel the sticky broadcast
-            removeStickyBroadcast(scannerIntent);
             // send a "done" notification
             Intent intent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FINISHED, what);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
