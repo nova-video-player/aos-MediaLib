@@ -81,4 +81,8 @@
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Artist</string>
 
+    <string name="app_name">Nova video</string>
+    <string name="trakt_sync_msg">Syncing with Trakt</string>
+
+
 </resources>

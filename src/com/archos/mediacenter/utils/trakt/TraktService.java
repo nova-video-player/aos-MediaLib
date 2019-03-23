@@ -15,6 +15,8 @@
 package com.archos.mediacenter.utils.trakt;
 
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -27,6 +29,7 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -34,6 +37,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
@@ -1293,6 +1297,29 @@ public class TraktService extends Service {
         if (action != null)
             mBackgroundHandler.sendMessage(mBackgroundHandler.obtainMessage(MSG_INTENT, intent));
 
+        // also show a notification.
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        //showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel("TraktService_id", "TraktService",
+                    nm.IMPORTANCE_LOW);
+            mNotifChannel.setDescription("TraktService");
+            if (nm != null)
+                nm.createNotificationChannel(mNotifChannel);
+        }
+        Intent notificationIntent = new Intent(this, TraktService.class);
+        //PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, "TraktService_id")
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.trakt_sync_msg))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
+
+        //.setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+        //nm.notify(1, n.build());
+        startForeground(1, n.build());
+
         return START_STICKY;
     }
 
@@ -1362,41 +1389,77 @@ public class TraktService extends Service {
         }
         public void watching(long videoID, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoID, progress, null);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void watchingStop(long videoID, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoID, progress, null);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void watching(VideoDbInfo videoInfo, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoInfo, progress, null);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void watchingStop(VideoDbInfo videoInfo, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoInfo, progress, null);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void markAs(VideoDbInfo videoInfo, String traktAction) {
             Intent intent = prepareIntent(INTENT_ACTION_MARK_AS, videoInfo, -1, traktAction);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void wipe() {
             Intent intent = prepareIntent(INTENT_ACTION_WIPE, null, -1, null);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void wipeCollection() {
             Intent intent = prepareIntent(INTENT_ACTION_WIPE_COLLECTION, null, -1, null);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void fullSync() {
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", FLAG_SYNC_FULL);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
         public void sync(int flag) {
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", flag);
-            mContext.startService(intent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(intent);
+            } else {
+                mContext.startService(intent);
+            }
         }
     }
 
