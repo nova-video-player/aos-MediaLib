@@ -224,7 +224,7 @@ public class AutoScrapeService extends Service {
 
                 public int mNetworkErrors; //when errors equals to number of files to scrap, stop looping.
                 public void run() {
-                    showNotification(getString(R.string.scraper_in_progress_msg));
+                    showNotification("");
                     boolean shouldRescrapAll = rescrapAlreadySearched;
                     if(DBG)  Log.d(TAG, "startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
                     do{
