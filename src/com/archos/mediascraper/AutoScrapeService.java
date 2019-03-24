@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -22,14 +24,17 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.trakt.TraktService;
+import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.preprocess.SearchInfo;
@@ -102,6 +107,7 @@ public class AutoScrapeService extends Service {
     public void onCreate() {
         super.onCreate();
         if(DBG) Log.d(TAG, "onCreate() "+this);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBinder = new AutoScraperBinder();
     }
 
@@ -126,6 +132,7 @@ public class AutoScrapeService extends Service {
             mExportingThread = new Thread() {
 
                 public void run() {
+                    showNotification(getString(R.string.scraper_exporting_all));
                     Cursor cursor = getFileListCursor(PARAM_SCRAPED);
                     if(DBG) Log.d(TAG, "starting thread " + cursor.getCount());
                     NfoWriter.ExportContext exportContext = new NfoWriter.ExportContext();
@@ -167,6 +174,7 @@ public class AutoScrapeService extends Service {
 
                     }
                     cursor.close();
+                    hideNotification();
 
                 }
             };
@@ -216,6 +224,7 @@ public class AutoScrapeService extends Service {
 
                 public int mNetworkErrors; //when errors equals to number of files to scrap, stop looping.
                 public void run() {
+                    showNotification(getString(R.string.scraper_in_progress_msg));
                     boolean shouldRescrapAll = rescrapAlreadySearched;
                     if(DBG)  Log.d(TAG, "startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
                     do{
@@ -389,6 +398,7 @@ public class AutoScrapeService extends Service {
                     } while(restartOnNextRound
                             &&PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this).getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP, true)); //if we had something to do, we look for new videos
                     AutoScrapeService.this.stopSelf();
+                    hideNotification();
                 }
             };
             mThread.start();
@@ -434,5 +444,38 @@ public class AutoScrapeService extends Service {
                 break;
         }
         return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS, where, selectionArgs, null);
+    }
+
+    private NotificationManager mNotificationManager;
+    private static final int NOTIFICATION_ID = 1;
+    private static final String notifChannelId = "AutoScrapeService_id";
+    private static final String notifChannelName = "AutoScrapeService";
+    private static final String notifChannelDescr = "AutoScrapeService";
+    /** shows a notification */
+    private void showNotification(String contentText){
+        NotificationCompat.Builder n = getNotification(contentText);
+        mNotificationManager.notify(NOTIFICATION_ID, n.build());
+    }
+
+    /** cancels the notification */
+    private void hideNotification() {
+        mNotificationManager.cancel(NOTIFICATION_ID);
+    }
+    private NotificationCompat.Builder getNotification(String contentText) {
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    mNotificationManager.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (mNotificationManager != null)
+                mNotificationManager.createNotificationChannel(mNotifChannel);
+        }
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.scraper_in_progress_msg))
+                .setContentText(contentText)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
+        return n;
     }
 }
