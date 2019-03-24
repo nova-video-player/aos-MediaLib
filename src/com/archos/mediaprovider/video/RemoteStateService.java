@@ -40,8 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jcifs2.netbios.Lmhosts;
-
 /** handles visibility updates of smb://server/share type servers in the database */
 public class RemoteStateService extends IntentService implements UpnpServiceManager.Listener {
     private static final String TAG = ArchosMediaCommon.TAG_PREFIX + RemoteStateService.class.getSimpleName();
@@ -102,7 +100,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
         final ContentResolver cr = context.getContentResolver();
         if (DBG) Log.d(TAG, "handleDb: hasConnection=" + hasConnection + ", hasLocalConnection=" + hasLocalConnection);
         if (hasConnection) {
-            Lmhosts.reset();
+            //Lmhosts.reset();
             final long now = System.currentTimeMillis() / 1000;
             // list all servers in the db
             Cursor c = cr.query(SERVER_URI, PROJECTION_SERVERS, SELECTION_ALL_NETWORK, null, null);
