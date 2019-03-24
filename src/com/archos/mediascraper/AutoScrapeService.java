@@ -475,7 +475,7 @@ public class AutoScrapeService extends Service {
                 .setContentTitle(getString(R.string.scraper_in_progress_msg))
                 .setContentText(contentText)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
         return n;
     }
 }
