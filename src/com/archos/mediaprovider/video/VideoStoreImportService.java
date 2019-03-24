@@ -317,7 +317,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         ImportState.VIDEO.setDirty(false);
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        showNotification("toto");
+        showNotification("");
 
         if (!sActive) {
             Log.d(TAG, "Import request ignored due to device shutdown.");

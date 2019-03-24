@@ -107,7 +107,6 @@ public class AutoScrapeService extends Service {
     public void onCreate() {
         super.onCreate();
         if(DBG) Log.d(TAG, "onCreate() "+this);
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBinder = new AutoScraperBinder();
     }
 
@@ -128,6 +127,7 @@ public class AutoScrapeService extends Service {
     protected void startExporting() {
         if (DBG)
             Log.d(TAG, "startExporting " + String.valueOf(mExportingThread == null || !mExportingThread.isAlive()));
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (mExportingThread == null || !mExportingThread.isAlive()) {
             mExportingThread = new Thread() {
 
@@ -219,6 +219,7 @@ public class AutoScrapeService extends Service {
 
     protected void startScraping(final boolean rescrapAlreadySearched, final boolean onlyNotFound) {
         if(DBG)  Log.d(TAG, "startScraping " + String.valueOf(mThread==null || !mThread.isAlive()) );
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if(mThread==null || !mThread.isAlive()) {
             mThread = new Thread() {
 

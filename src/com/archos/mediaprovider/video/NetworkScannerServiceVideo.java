@@ -353,6 +353,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
         if (f != null) {
             if (DBG) Log.d(TAG, "doScan path resolved to:" + f.getUri().toString());
+            // also show a notification.
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
             ContentResolver cr = getContentResolver();
             if(mRecordLog) {
                 try {
@@ -374,10 +377,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_STARTED, what);
             scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             sendBroadcast(scannerIntent);
-            // also show a notification.
-            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
-
 
             String path;
             String upnpUri = null;

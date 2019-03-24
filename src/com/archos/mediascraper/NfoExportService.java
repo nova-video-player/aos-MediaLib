@@ -105,7 +105,6 @@ public class NfoExportService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
     @Override
@@ -141,10 +140,11 @@ public class NfoExportService extends IntentService {
     }
 
     private void exportAll() {
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         showNotification(getString(R.string.nfo_export_exporting_all));
         handleCursor(getAllCursor());
-        hideNotification();
         removeAllTask();
+        hideNotification();
     }
 
     private void exportFile(Uri data) {
