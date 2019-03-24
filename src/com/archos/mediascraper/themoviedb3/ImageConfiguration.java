@@ -94,14 +94,16 @@ public class ImageConfiguration {
     }
 
     // pattern that accepts those imgobject urls
-    private static final Pattern URL_PATTERN = Pattern.compile("https://\\w+\\.imgobject\\.com/t/p/([^/]+)/.*");
+    // matches both http and https
+    private static final Pattern URL_PATTERN = Pattern.compile("https?://\\w+\\.imgobject\\.com/t/p/([^/]+)/.*");
     private static String rewriteUrl(String url, String replacement) {
         String result = url;
         if (url != null) {
             Matcher matcher = URL_PATTERN.matcher(url);
             if (matcher.matches()) {
-                result = url.substring(0, matcher.start(1))
-                        + replacement + url.substring(matcher.end(1));
+                result = url.substring(0, matcher.start(1)) + replacement + url.substring(matcher.end(1));
+                // force http to https rewrite since Android O does not like it anymore
+                result = result.replace("http://","https://");
             }
         }
         return result;
