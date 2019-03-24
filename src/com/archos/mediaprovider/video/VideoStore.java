@@ -30,6 +30,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.BaseColumns;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
@@ -104,10 +105,48 @@ public final class VideoStore {
                 tmp = Uri.parse(uri.toString().substring("file://".length()));
             }
             String whereR = VideoStore.MediaColumns.DATA + " = ?";
-            final ContentValues cvR = new ContentValues(1);
-            String col = VideoStore.Video.VideoColumns.ARCHOS_HIDDEN_BY_USER;
-            cvR.put(col, 0);
-            context.getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cvR, whereR, new String[]{tmp.toString()});
+            String[] whereRArgs = { tmp.toString() };
+
+            Cursor cursor = context.getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    new String[] { VideoStore.MediaColumns.DATA }, whereR, whereRArgs, null);
+            
+            if (cursor.getCount() > 0) {
+                final ContentValues cvR = new ContentValues(1);
+                String col = VideoStore.Video.VideoColumns.ARCHOS_HIDDEN_BY_USER;
+                cvR.put(col, 0);
+                context.getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cvR, whereR, whereRArgs);
+            }
+            else {
+                whereR = MediaStore.Files.FileColumns.DATA + " = ?";
+
+                cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
+                        new String[] { MediaStore.Files.FileColumns.DATA }, whereR, whereRArgs, null);
+
+                final ContentValues cvR = new ContentValues(1);
+
+                if (cursor.getCount() > 0) {
+                    long newId = 0;
+
+                    cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
+                            new String[] { "MAX(" + MediaStore.Files.FileColumns._ID + ")" }, null, null, null);
+
+                    if (cursor.getCount() > 0) {
+                        cursor.moveToFirst();
+
+                        long id = cursor.getLong(0);
+                        newId = id + 1;
+                    }
+
+                    String col = MediaStore.Files.FileColumns._ID;
+                    cvR.put(col, newId);
+                    context.getContentResolver().update(MediaStore.Files.getContentUri("external"), cvR, whereR, whereRArgs);
+                }
+                else {
+                    String col = MediaStore.Files.FileColumns.DATA;
+                    cvR.put(col, tmp.toString());
+                    context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
+                }
+            }
         }
         String action;
         if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
