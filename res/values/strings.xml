@@ -85,5 +85,6 @@
     <string name="trakt_sync_msg">Syncing with Trakt</string>
     <string name="scraper_in_progress_msg">Scraping in progress</string>
     <string name="scraper_exporting_all">Exporting scraper data</string>
+    <string name="video_store_import_msg">Importing local storage videos</string>
 
 </resources>

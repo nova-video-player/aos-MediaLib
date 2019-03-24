@@ -14,6 +14,8 @@
 
 package com.archos.mediaprovider.video;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -26,6 +28,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -33,10 +36,12 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.provider.MediaStore;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.archos.mediacenter.utils.AppState;
+import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.DbHolder;
@@ -311,6 +316,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         }
         ImportState.VIDEO.setDirty(false);
 
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        showNotification("toto");
+
         if (!sActive) {
             Log.d(TAG, "Import request ignored due to device shutdown.");
             return;
@@ -329,6 +337,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // perform no longer possible delete_file and vob_insert db callbacks after incr or full import
         // this will also flush delete_files and vob_insert buffer tables
         processDeleteFileAndVobCallback();
+
+        hideNotification();
     }
 
     private void processDeleteFileAndVobCallback() {
@@ -430,5 +440,38 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         Log.d(TAG, "initializeScraperData()");
         Scraper scraper = new Scraper(this);
         scraper.setupDefaultContent(false);
+    }
+
+    private NotificationManager mNotificationManager;
+    private static final int NOTIFICATION_ID = 1;
+    private static final String notifChannelId = "VideoStoreImportService_id";
+    private static final String notifChannelName = "VideoStoreImport";
+    private static final String notifChannelDescr = "VideoStoreImport";
+    /** shows a notification */
+    private void showNotification(String contentText){
+        NotificationCompat.Builder n = getNotification(contentText);
+        mNotificationManager.notify(NOTIFICATION_ID, n.build());
+    }
+
+    /** cancels the notification */
+    private void hideNotification() {
+        mNotificationManager.cancel(NOTIFICATION_ID);
+    }
+    private NotificationCompat.Builder getNotification(String contentText) {
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    mNotificationManager.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (mNotificationManager != null)
+                mNotificationManager.createNotificationChannel(mNotifChannel);
+        }
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.video_store_import_msg))
+                .setContentText(contentText)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
+        return n;
     }
 }
