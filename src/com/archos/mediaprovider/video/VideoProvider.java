@@ -82,7 +82,7 @@ public class VideoProvider extends ContentProvider {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoProvider";
     public static final String TAG_DOCTOR_WHO =  "DoctorWhoDebug";
 
-    private static final boolean LOCAL_DBG = true;
+    private static final boolean LOCAL_DBG = false;
     private static final boolean DBG = false;
     private static final boolean DBG_NET = false; // network state handling
 
@@ -158,8 +158,10 @@ public class VideoProvider extends ContentProvider {
                         Log.w(TAG, "Have message but no request?");
                     } else {
                         try {
-                            Uri encodedUri = FileUtils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath));
-                            FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(encodedUri, null);
+                            // In the past "uri needs to be encoded to check if file exists : fixes thumbnail creation with non ascii names".
+                            // However this breaks thumbs generation on smb:// when dealing with file names with spaces that are turned into %20 making the file not found.
+                            //FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath)), null);
+                            FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(mCurrentThumbRequest.mPath), null);
                             if(DBG)
                                 Log.d(TAG_DOCTOR_WHO,mCurrentThumbRequest.mPath+" does file exists ? "+ String.valueOf(editor.exists()));
 
