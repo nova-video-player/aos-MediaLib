@@ -23,6 +23,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.preference.PreferenceManager;
 import android.provider.BaseColumns;
@@ -32,6 +33,7 @@ import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.video.VideoStore;
+import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.MovieScraper2;
@@ -71,6 +73,7 @@ public class AutoScrapeService extends Service {
     private boolean restartOnNextRound;
     private AutoScraperBinder mBinder;
     private Thread mExportingThread;
+    private Handler mHandler;
 
     /**
      * Ugly implementation based on a static variable, guessing that there is only one instance at a time (seems to be true...)
@@ -103,6 +106,7 @@ public class AutoScrapeService extends Service {
         super.onCreate();
         if(DBG) Log.d(TAG, "onCreate() "+this);
         mBinder = new AutoScraperBinder();
+        mHandler = new Handler();
     }
 
     @Override
@@ -388,6 +392,12 @@ public class AutoScrapeService extends Service {
                         shouldRescrapAll = false; //to avoid rescraping on next round
                     } while(restartOnNextRound
                             &&PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this).getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP, true)); //if we had something to do, we look for new videos
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            WrapperChannelManager.refreshChannels(AutoScrapeService.this);
+                        }
+                    });
                     AutoScrapeService.this.stopSelf();
                 }
             };

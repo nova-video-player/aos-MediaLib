@@ -448,6 +448,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             int newSubs = handleSubtitles(cr);
             Log.d(TAG, "subtitles:" + newSubs);
             // send a "done" notification
+            WrapperChannelManager.refreshChannels(this);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             sendBroadcast(intent);
