@@ -26,7 +26,7 @@ import java.util.HashMap;
 public class BlockingDeviceRequest {
 
     private static final String TAG = "BlockingDeviceRequest";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     boolean semaphore = false;
     final int mDeviceKey;

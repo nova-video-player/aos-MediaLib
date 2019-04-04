@@ -48,7 +48,7 @@ import java.util.concurrent.ExecutionException;
 
 public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loader.OnLoadCompleteListener<Cursor> {
     private static final String TAG = "IndexHelper";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private final Context mContext;
     private final LoaderManager mLoaderManager;

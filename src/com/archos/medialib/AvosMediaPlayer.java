@@ -35,7 +35,7 @@ import java.util.Map;
 
 public class AvosMediaPlayer implements IMediaPlayer {
     private static final String TAG = "AvosMediaPlayer";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private long mMediaPlayerHandle = 0;     // Read-only, reserved for JNI
     private long mNativeWindowHandle = 0;    // Read-only, reserved for JNI

@@ -293,7 +293,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         String[] selectionArgs = { path };
         // send out a sticky broadcast telling the world that we started scanning
         Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_STARTED, data);
-        sendStickyBroadcast(scannerIntent);
+        scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+        sendBroadcast(scannerIntent);
         // also show a notification.
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         showNotification(nm, data.toString(), R.string.network_unscan_msg);
@@ -301,8 +302,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         int deleted = cr.delete(VideoStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
         Log.d(TAG, "removed: " + deleted);
 
-        // cancel the sticky broadcast
-        removeStickyBroadcast(scannerIntent);
         // send a "done" notification
         Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, data);
         intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
@@ -373,7 +372,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
             // send out a sticky broadcast telling the world that we started scanning
             Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_STARTED, what);
-            sendStickyBroadcast(scannerIntent);
+            scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+            sendBroadcast(scannerIntent);
             // also show a notification.
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
@@ -447,9 +447,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
             int newSubs = handleSubtitles(cr);
             Log.d(TAG, "subtitles:" + newSubs);
-            // cancel the sticky broadcast
-            removeStickyBroadcast(scannerIntent);
             // send a "done" notification
+            WrapperChannelManager.refreshChannels(this);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             sendBroadcast(intent);

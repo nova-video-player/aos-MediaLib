@@ -71,7 +71,7 @@ import retrofit.android.AndroidLog;
 
 public class Trakt {
     private static final String TAG = "Trakt";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
     public static final String TRAKT_ISSUE_REFRESH_TOKEN = "TRAKT_ISSUE_REFRESH_TOKEN";
@@ -218,7 +218,10 @@ public class Trakt {
     public Trakt(Context context) {
         mContext = context;
         mTraktV2 = new TraktV2();
-        mTraktV2.setIsDebug(true);
+        if (DBG)
+            mTraktV2.setIsDebug(true);
+        else
+            mTraktV2.setIsDebug(false);
         mTraktV2.setAccessToken(
                 getAccessTokenFromPreferences(
                         PreferenceManager.getDefaultSharedPreferences(context)));
@@ -227,23 +230,25 @@ public class Trakt {
         //mTraktV2.setAccessToken("911cfb2e98258328fd95a12d593f6e72e5412cff3f4ce9772e2b3a7b8af121fd");
         //setRefreshToken(PreferenceManager.getDefaultSharedPreferences(context),"");
 
-
         mTraktV2.setApiKey(API_KEY);
+
         RestAdapter restAdapter = new RestAdapter.Builder()
-        .setEndpoint(API_URL)
-        .setLog(new AndroidLog(TAG))
-        .setRequestInterceptor(new RequestInterceptor() {
-            @Override
-            public void intercept(RequestFacade request) {
-                /*  String string = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-                    request.addHeader("Accept", "application/json");
-                    request.addHeader("Authorization", string); */                
-            }
-        })
-        .setExecutors(Executors.newSingleThreadExecutor(), Executors.newSingleThreadExecutor())
-        .build();
+                .setEndpoint(API_URL)
+                .setLog(new AndroidLog(TAG))
+                .setRequestInterceptor(new RequestInterceptor() {
+                    @Override
+                    public void intercept(RequestFacade request) {
+    /*  String string = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
+        request.addHeader("Accept", "application/json");
+        request.addHeader("Authorization", string); */
+                    }
+                })
+                .setExecutors(Executors.newSingleThreadExecutor(), Executors.newSingleThreadExecutor())
+                .build();
         if (DBG)
             restAdapter.setLogLevel(RestAdapter.LogLevel.FULL);
+        else
+            restAdapter.setLogLevel(RestAdapter.LogLevel.NONE);
         restAdapter.create(TraktAPI.class);
     }
 
