@@ -13,10 +13,26 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Indexando Arquivos de Mídia</string>
+    <string name="network_unscan_msg">Removendo arquivos de mídia da biblioteca</string>
     <!-- .nfo export options -->
+    <string name="nfo_export_category">Exportar info de mídia</string>
+    <string name="nfo_export_auto_title">Auto-exportar após a pesquisa</string>
+    <string name="nfo_export_manual_title">Exportar vídeos já pesquisados</string>
+    <string name="nfo_export_auto_summary">Exportar automaticamente arquivos .nfo após uma pesquisa on-line bem sucedida</string>
+    <string name="nfo_export_manual_summary">Exportar arquivos .nfo de cada vídeo já pesquisado</string>
+    <string name="nfo_export_button">Exportar .nfo</string>
+    <string name="nfo_export_folder">Exportar tudo nesta pasta para .nfo</string>
+    <string name="nfo_export_all">Exportar toda a biblioteca para .nfo</string>
+    <string name="nfo_export_exporting">Exportando .nfo</string>
+    <string name="nfo_export_exporting_all">tudo</string>
+    <string name="rescrap_all_title">Pesquisar tudo novamente</string>
     <!-- trakt.tv -->
+    <string name="trakt_toast_syncing_error">Impossível sincronizar com o trakt</string>
     <!-- Title of screen when no sd card is present -->
+    <string name="sdcard_missing_title">Nenhum cartão SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
+    <string name="sdcard_missing_message">Seu dispositivo não tem um cartão SD inserido.</string>
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">Cartão SD indisponível</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
@@ -32,9 +48,16 @@
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">Armazenamento interno indisponível</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
+    <string name="storage_busy_message">Você não pode usar o armazenamento interno enquanto ele está conectado e montado através do USB.</string>
     <!-- Title of screen when there was an error accessing the internal storage -->
     <string name="storage_error_title">Erro de armazenamento interno</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
+    <string name="storage_error_message">Um erro foi encontrado no seu armazenamento interno.</string>
+    <string name="scraper_no_settings">Nenhuma configuração disponível para esta fonte.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Ativar Fanart</item>
+        <item>info_language:Idioma</item>
+    </string-array>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
