@@ -94,7 +94,7 @@ public class VideoProvider extends ContentProvider {
 
     private static final int IMAGE_THUMB = 2;
     // yes max retry of 5 is not enough I saw it fail and succeed at 7...
-    private static final int THUMB_TRY_MAX = 10    ;
+    private static final int THUMB_TRY_MAX = 5    ;
     private ContentResolver mCr;
 
     private static final int LIGHT_INDEX_STORAGE_MIN_ID = ArchosMediaCommon.LIGHT_INDEX_MIN_STORAGE_ID;
