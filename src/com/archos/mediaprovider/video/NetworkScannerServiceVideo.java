@@ -446,7 +446,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             Log.d(TAG, "added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount);
 
             int newSubs = handleSubtitles(cr);
-            Log.d(TAG, "subtitles:" + newSubs);
+            Log.d(TAG, "added subtitles:" + newSubs);
             // send a "done" notification
             WrapperChannelManager.refreshChannels(this);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
@@ -756,6 +756,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     // all videos and subtitles that are in a bucket that has subtitles ( type 5 )
     private static final String SEL_VIDS_N_SUBS = "bucket_id IN ( SELECT bucket_id FROM files WHERE media_type = 5 )" +
             " AND (media_type = 3 OR media_type = 5)";
+    private static final String SEL_NEW_VIDS_N_SUBS = SEL_VIDS_N_SUBS + " AND _id NOT IN (SELECT file_id FROM subtitles)";
 
     private static int handleSubtitles(ContentResolver cr) {
         Uri uri = VideoStore.Files.getContentUri("external");
@@ -767,7 +768,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         // inserts to do
         List<ContentValues> inserts = new ArrayList<ContentValues>();
 
-        Cursor c = cr.query(uri, PROJ_ID_DATA_SIZE, SEL_VIDS_N_SUBS, null, sortOrder);
+        Cursor c = cr.query(uri, PROJ_ID_DATA_SIZE, SEL_NEW_VIDS_N_SUBS, null, sortOrder);
         if (c != null) {
             String lastBucket = null;
             while (c.moveToNext()) {
