@@ -93,7 +93,7 @@ public class VideoStoreImportImpl {
         // set files not seen to hidden state. They might be deleted but we don't know for sure.
         ContentValues cv = new ContentValues();
         cv.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "local_id <= ?", selectionArgs);
+        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "local_id <= ? AND volume_hidden = 0", selectionArgs);
 
         int countEnd = getLocalCount(mCr);
         Log.d(TAG, "full import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
@@ -114,7 +114,7 @@ public class VideoStoreImportImpl {
         // 1. Hide files that are currently not visible, they might be removed at that point but we don't know for sure.
         ContentValues cv = new ContentValues();
         cv.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "_id NOT IN (" + existingFiles + ")", null);
+        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
 
         // 2. copy all remote files with higher id than our max id
         String maxLocal = getMaxId(mCr);
@@ -506,7 +506,14 @@ public class VideoStoreImportImpl {
                             cv = new ContentValues(ccount);
                             DatabaseUtils.cursorRowToContentValues(allFiles, cv);
                         }
-                        inserter.add(cv);
+                        Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, new String[] { "_id" }, "_id = ?", new String[] { cv.getAsString("_id") }, null);
+                        boolean exist = false;
+                        if (c != null) {
+                            exist = c.getCount() > 0;
+                            c.close();
+                        }
+                        if (!exist)
+                            inserter.add(cv);
                     } catch (IllegalStateException ignored) {} //we silently ignore empty lines - it means content has been deleted while scanning
                 }
                 imported = inserter.execute();
