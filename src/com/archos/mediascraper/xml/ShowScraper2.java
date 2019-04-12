@@ -51,6 +51,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -183,6 +184,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     zipFile.close();
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                 }
+                showTags.setGenres(getLocalizedGenres(showTags.getGenres()));
 
                 zipEntry = zipFile.getEntry("actors.xml");
                 inputStream = new BufferedInputStream(zipFile.getInputStream(zipEntry),
@@ -312,6 +314,103 @@ public class ShowScraper2 extends BaseScraper2 {
             }
         }
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
+    }
+
+    private List<String> getLocalizedGenres(List<String> genres) {
+        ArrayList<String> localizedGenres = new ArrayList<>();
+    
+        for (String genre : genres) {
+            switch (genre) {
+                case "Action":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_action));
+                    break;
+                case "Adventure":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_adventure));
+                    break;
+                case "Animation":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_animation));
+                    break;
+                case "Anime":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_anime));
+                    break;
+                case "Children":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_children));
+                    break;
+                case "Comedy":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_comedy));
+                    break;
+                case "Crime":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_crime));
+                    break;
+                case "Documentary":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_documentary));
+                    break;
+                case "Drama":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_drama));
+                    break;
+                case "Family":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_family));
+                    break;
+                case "Fantasy":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_fantasy));
+                    break;
+                case "Food":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_food));
+                    break;
+                case "Game Show":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_game_show));
+                    break;
+                case "Home and Garden":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_home_garden));
+                    break;
+                case "Horror":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_horror));
+                    break;
+                case "Mini-Series":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_mini_series));
+                    break;
+                case "News":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_news));
+                    break;
+                case "Reality":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_reality));
+                    break;
+                case "Romance":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_romance));
+                    break;
+                case "Science-Fiction":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_science_fiction));
+                    break;
+                case "Soap":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_soap));
+                    break;
+                case "Special Interest":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_special_interest));
+                    break;
+                case "Sport":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_sport));
+                    break;
+                case "Suspense":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_suspense));
+                    break;
+                case "Talk Show":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_talk_show));
+                    break;
+                case "Thriller":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_thriller));
+                    break;
+                case "Travel":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_travel));
+                    break;
+                case "Western":
+                    localizedGenres.add(mContext.getString(R.string.tv_show_genre_western));
+                    break;
+                default:
+                    localizedGenres.add(genre);
+            }
+        }
+    
+        return localizedGenres;
     }
 
     // in a subclass so it's lazy loaded if required
