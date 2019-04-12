@@ -254,6 +254,8 @@ public class ScraperProvider extends ContentProvider {
                 MOVIE_POSTERS);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MoviePosters.URI.BASE) + "/#",
                 MOVIE_POSTERS_ID);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MoviePosters.URI.BASE) + "/#/#",
+                MOVIE_POSTERS_ID);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MoviePosters.URI.BY_MOVIE_ID) + "/#",
                 MOVIE_POSTERS_MOVIE_ID);
 
@@ -269,6 +271,8 @@ public class ScraperProvider extends ContentProvider {
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowPosters.URI.BASE),
                 SHOW_POSTERS);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowPosters.URI.BASE) + "/#",
+                SHOW_POSTERS_ID);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowPosters.URI.BASE) + "/#/#",
                 SHOW_POSTERS_ID);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowPosters.URI.BY_SHOW_ID) + "/#",
                 SHOW_POSTERS_SHOW_ID);
