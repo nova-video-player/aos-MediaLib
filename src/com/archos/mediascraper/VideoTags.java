@@ -25,7 +25,7 @@ public abstract class VideoTags extends BaseTags {
     protected final List<String> mStudios = new ArrayList<String>();
     protected String mStudiosFormatted;
 
-    protected final List<String> mGenres = new ArrayList<String>();
+    protected List<String> mGenres = new ArrayList<String>();
     protected String mGenresFormatted;
 
     public VideoTags() {
@@ -77,6 +77,8 @@ public abstract class VideoTags extends BaseTags {
     public void addGenreIfAbsent(String genre, char... splitCharacters) {
         addIfAbsentSplitNTrim(genre, mGenres, splitCharacters);
     }
+
+    public void setGenres(List<String> genres) { mGenres = genres; }
 
     public void setGenresFormatted(String genres) { mGenresFormatted = genres; }
 
