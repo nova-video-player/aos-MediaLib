@@ -65,6 +65,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
     public static final String ACTION_CHECK_SMB = "archos.intent.action.CHECK_SMB";
     private ConcurrentHashMap<String, Pair<Long, Integer>> mUpnpId; //store name, id and active state
     private boolean mUpnpDiscoveryStarted;
+    private boolean mServerDbUpdated;
 
     public RemoteStateService() {
         super(RemoteStateService.class.getSimpleName());
@@ -102,6 +103,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
             Cursor c = cr.query(SERVER_URI, PROJECTION_SERVERS, SELECTION_ALL_NETWORK, null, null);
             if (c != null) {
                 if (DBG) Log.d(TAG, "found " + c.getCount() + " servers");
+                mServerDbUpdated = false;
                 while (c.moveToNext()) {
                     final long id = c.getLong(COLUMN_ID);
                     final String server = c.getString(COLUMN_DATA);
@@ -118,11 +120,13 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                                 if (serverFile.exists()) {
                                     if (DBG)
                                         Log.d(TAG, "server exists: " + server);
-                                    updateServerDb(id, cr, active, 1, now);
+                                     if (updateServerDb(id, cr, active, 1, now))
+                                        mServerDbUpdated = true;
                                 } else {
                                     if (DBG)
                                         Log.d(TAG, "server does not exist: " + server);
-                                    updateServerDb(id, cr, active, 0, now);
+                                    if (updateServerDb(id, cr, active, 0, now))
+                                        mServerDbUpdated = true;
                                 }
                             }
                         }.start();
@@ -130,8 +134,10 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                     else if(server.startsWith("upnp")){
                         mUpnpId.put(server,new Pair<>(id, active));
                     }
-                    else
-                        updateServerDb(id, cr, active, 1, now); //for distant folders, we don't check existence (for now)
+                    else {
+                        if (updateServerDb(id, cr, active, 1, now)) //for distant folders, we don't check existence (for now)
+                            mServerDbUpdated = true;
+                    }
                 }
                 if(mUpnpId.size()>0&&hasLocalConnection){
                     if(!mUpnpDiscoveryStarted) {
@@ -142,8 +148,10 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                     onDeviceListUpdate(new ArrayList<Device>(UpnpServiceManager.startServiceIfNeeded(context).getDevices()));
                 }
                 c.close();
-                // notify about a change in the db
-                cr.notifyChange(NOTIFY_URI, null);
+                if (mServerDbUpdated) {
+                    // notify about a change in the db
+                    cr.notifyChange(NOTIFY_URI, null);
+                }
             } else if (DBG) {
                 Log.d(TAG, "server query returned NULL");
             }
@@ -160,9 +168,9 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
         }
     }
 
-    protected final static void updateServerDb(long id, ContentResolver cr, int oldState,
+    protected final static boolean updateServerDb(long id, ContentResolver cr, int oldState,
             int newState, long time) {
-        if (oldState == newState) return;
+        if (oldState == newState) return false;
         ContentValues cv = new ContentValues();
         cv.put(VideoStore.SmbServer.SmbServerColumns.ACTIVE, String.valueOf(newState));
         if (newState != 0) {
@@ -173,7 +181,8 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
             String.valueOf(id)
         };
         if (DBG) Log.d(TAG, "DB: update server: " + id + " values:" + cv);
-        cr.update(SERVER_URI, cv, SELECTION_ID, selectionArgs);
+        int result = cr.update(SERVER_URI, cv, SELECTION_ID, selectionArgs);
+        return result > 0;
     }
 
     @Override
