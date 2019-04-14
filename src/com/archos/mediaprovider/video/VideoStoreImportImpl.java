@@ -80,20 +80,17 @@ public class VideoStoreImportImpl {
         int countStart = getLocalCount(mCr);
         ImportState.VIDEO.setState(countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT);
 
-        // save max(local_id)
-        String maxLocalId = getMaxLocalId(mCr);
-
         // replace everything with new data
         int copy = copyData(mCr, null);
 
         // delete everything that was not replaced, ! only if it is on primary local storage !
-        String[] selectionArgs = new String[] { maxLocalId };
+        String existingFiles = getRemoteIdList(mCr);
         int del = 0;
 
         // set files not seen to hidden state. They might be deleted but we don't know for sure.
         ContentValues cv = new ContentValues();
         cv.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "local_id <= ? AND volume_hidden = 0", selectionArgs);
+        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
 
         int countEnd = getLocalCount(mCr);
         Log.d(TAG, "full import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
