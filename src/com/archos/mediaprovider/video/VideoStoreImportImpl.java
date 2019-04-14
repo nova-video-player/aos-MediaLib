@@ -50,6 +50,7 @@ import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.NfoParser;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * The media db import logic
@@ -489,6 +490,13 @@ public class VideoStoreImportImpl {
             int count = allFiles.getCount();
             int ccount = allFiles.getColumnCount();
             if (count > 0) {
+                ArrayList<Long> ids = new ArrayList<>();
+                Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, new String[] { "_id" }, null, null, null);
+                if (c != null) {
+                    while (c.moveToNext())
+                        ids.add(c.getLong(0));
+                    c.close();
+                }
                 // transaction size limited, acts like buffered output stream and auto-flushes queue
                 BulkInserter inserter = new BulkInserter(VideoStoreInternal.FILES_IMPORT, cr, 2000);
                 if (DBG) Log.d(TAG, "found items to import:" + count);
@@ -503,13 +511,7 @@ public class VideoStoreImportImpl {
                             cv = new ContentValues(ccount);
                             DatabaseUtils.cursorRowToContentValues(allFiles, cv);
                         }
-                        Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, new String[] { "_id" }, "_id = ?", new String[] { cv.getAsString("_id") }, null);
-                        boolean exist = false;
-                        if (c != null) {
-                            exist = c.getCount() > 0;
-                            c.close();
-                        }
-                        if (!exist)
+                        if (!ids.contains(cv.getAsLong("_id")))
                             inserter.add(cv);
                     } catch (IllegalStateException ignored) {} //we silently ignore empty lines - it means content has been deleted while scanning
                 }
