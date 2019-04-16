@@ -37,6 +37,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -208,18 +209,24 @@ public class VideoProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projectionIn, String selection, String[] selectionArgs,
             String sort) {
+        return query(uri, projectionIn, selection, selectionArgs, sort, null);
+    }
+
+    @Override
+    public Cursor query(Uri uri, String[] projectionIn, String selection, String[] selectionArgs,
+            String sort, CancellationSignal cancellationSignal) {
         if (DBG) Log.d(TAG, "QUERY " + uri);
         int table = URI_MATCHER.match(uri);
 
         // let ScraperProvider handle that
         if (ScraperProvider.handles(table))
-            return mScraperProvider.query(uri, projectionIn, selection, selectionArgs, sort);
+            return mScraperProvider.query(uri, projectionIn, selection, selectionArgs, sort, cancellationSignal);
 
         SQLiteDatabase db = mDbHolder.get();
 
         // forward raw query requests to .rawQuery using selection as sql string
         if (table == RAWQUERY) {
-            Cursor c = db.rawQuery(selection, selectionArgs);
+            Cursor c = db.rawQuery(selection, selectionArgs, cancellationSignal);
             if (c != null) {
                 // notify for any change in the db
                 c.setNotificationUri(mCr, VideoStore.ALL_CONTENT_URI);
@@ -227,6 +234,7 @@ public class VideoProvider extends ContentProvider {
             return c;
         }
 
+        boolean distinct = uri.getQueryParameter("distinct") != null;
         String limit = uri.getQueryParameter("limit");
         String groupby = uri.getQueryParameter("group");
         String having = uri.getQueryParameter("having");
@@ -235,16 +243,13 @@ public class VideoProvider extends ContentProvider {
         // query our custom files tables directly
         if (table == RAW) {
             String tableName = uri.getLastPathSegment();
-            return db.query(tableName, projectionIn, selection, selectionArgs, groupby, having, sort, limit);
+            return db.query(distinct, tableName, projectionIn, selection, selectionArgs, groupby, having, sort, limit, cancellationSignal);
         }
 
         List<String> prependArgs = new ArrayList<String>();
 
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-        if (uri.getQueryParameter("distinct") != null) {
-            qb.setDistinct(true);
-
-        }
+        qb.setDistinct(distinct);
         boolean hasThumbnailId = false;
 
         switch (table) {
@@ -303,7 +308,7 @@ public class VideoProvider extends ContentProvider {
                 throw new IllegalStateException("Unknown Uri : " + uri);
         }
         Cursor c = qb.query(db, projectionIn, selection,
-                combine(prependArgs, selectionArgs), groupby, having, sort, limit);
+                combine(prependArgs, selectionArgs), groupby, having, sort, limit, cancellationSignal);
 
         if (c != null) {
             c.setNotificationUri(mCr, uri);
