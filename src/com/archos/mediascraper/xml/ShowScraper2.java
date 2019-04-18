@@ -115,7 +115,7 @@ public class ShowScraper2 extends BaseScraper2 {
         Iterator<SearchResult> i = results.iterator();
         while (i.hasNext()) {
             SearchResult searchResult = i.next();
-            if (!searchResult.getTitle().equals("** 403: Series Not Permitted **")) {
+            if (searchResult.getId() != 313081) { // ** 403: Series Not Permitted **
                 searchResult.setExtra(extra);
                 searchResult.setFile(searchInfo.getFile());//TODO metafilereplace
                 searchResult.setScraper(this);
