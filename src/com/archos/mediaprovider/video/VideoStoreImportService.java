@@ -33,7 +33,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.provider.MediaStore;
-import android.support.v4.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 import android.util.Log;
 
 import com.archos.mediacenter.utils.AppState;
@@ -46,9 +46,6 @@ import com.archos.mediaprovider.VolumeState;
 import com.archos.mediaprovider.ImportState.State;
 import com.archos.mediaprovider.VolumeState.Volume;
 import com.archos.mediascraper.Scraper;
-
-import java.security.Permission;
-import java.util.jar.Manifest;
 
 public class VideoStoreImportService extends Service implements Handler.Callback {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoStoreImportService";

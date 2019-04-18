@@ -16,7 +16,6 @@
 package com.archos.mediascraper;
 
 import android.app.IntentService;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ContentResolver;
@@ -26,7 +25,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.NetworkOnMainThreadException;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile2;

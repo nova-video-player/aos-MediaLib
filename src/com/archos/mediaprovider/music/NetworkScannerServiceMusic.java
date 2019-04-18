@@ -14,7 +14,6 @@
 
 package com.archos.mediaprovider.music;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -37,7 +36,7 @@ import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile;

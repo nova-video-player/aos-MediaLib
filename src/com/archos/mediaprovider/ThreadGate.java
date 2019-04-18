@@ -14,7 +14,7 @@
 
 package com.archos.mediaprovider;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;

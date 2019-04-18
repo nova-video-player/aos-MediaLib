@@ -25,7 +25,7 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.v7.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
@@ -38,7 +38,6 @@ import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.MovieScraper2;
 import com.archos.mediascraper.xml.ShowScraper2;
-import com.archos.mediascraper.xml.ShowScraper2TVDB2;
 
 import java.io.IOException;
 

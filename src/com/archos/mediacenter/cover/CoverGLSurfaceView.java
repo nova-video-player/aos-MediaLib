@@ -15,7 +15,7 @@
 package com.archos.mediacenter.cover;
 
 import android.app.Activity;
-import android.support.v4.app.LoaderManager;
+import androidx.loader.app.LoaderManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;

@@ -15,11 +15,10 @@
 package com.archos.mediaprovider.video;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.app.Service;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
@@ -38,7 +37,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import android.support.v7.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 import android.util.Pair;

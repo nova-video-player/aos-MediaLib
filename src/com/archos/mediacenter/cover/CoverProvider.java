@@ -14,7 +14,7 @@
 
 package com.archos.mediacenter.cover;
 
-import android.support.v4.app.LoaderManager;
+import androidx.loader.app.LoaderManager;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
