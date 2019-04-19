@@ -23,12 +23,12 @@
     <string name="nfo_export_manual_summary">.nfo-Dateien von jedem bereits gescraptem Video exportieren</string>
     <string name="nfo_export_button">.nfo exportieren</string>
     <string name="nfo_export_folder">Alle in diesem Verzeichnis in .nfo exportieren</string>
-    <string name="nfo_export_all">Die komplette Bibliothek als .nfo exportieren</string>
+    <string name="nfo_export_all">Die komplette Bibliothek als .nfo-Datei exportieren</string>
     <string name="nfo_export_exporting">Exportiere .nfo</string>
     <string name="nfo_export_exporting_all">alles</string>
     <string name="rescrap_all_title">Alle neu scrapen</string>
     <!-- trakt.tv -->
-    <string name="trakt_toast_syncing_error">Synchronisation mit trakt nicht möglich</string>
+    <string name="trakt_toast_syncing_error">Synchronisation mit Trakt nicht möglich</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Keine SD-Karte</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -36,7 +36,7 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">SD-Karte nicht verfügbar</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
-    <string name="sdcard_busy_message">SD-Karte wird benutzt</string>
+    <string name="sdcard_busy_message">Auf die SD-Karte wird gerade zugegriffen.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">SD-Kartenfehler</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->

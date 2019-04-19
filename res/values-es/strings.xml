@@ -16,17 +16,29 @@
     <string name="network_scan_msg">Indexando archivos multimedia</string>
     <string name="network_unscan_msg">Eliminando archivos multimedia de la biblioteca</string>
     <!-- .nfo export options -->
+    <string name="nfo_export_category">Exportar información multimedia</string>
+    <string name="nfo_export_auto_title">Exportar automáticamente después de la búsqueda</string>
+    <string name="nfo_export_manual_title">Exportar vídeos ya analizados</string>
+    <string name="nfo_export_auto_summary">Exporta automáticamente archivos .nfo después de una búsqueda online exitosa</string>
+    <string name="nfo_export_manual_summary">Exporta archivos .nfo de todos los vídeos ya analizados</string>
+    <string name="nfo_export_button">Exportar .nfo</string>
+    <string name="nfo_export_folder">Exportar todo en esta carpeta a .nfo</string>
+    <string name="nfo_export_all">Exportar toda la biblioteca a .nfo</string>
+    <string name="nfo_export_exporting">Exportando .nfo</string>
+    <string name="nfo_export_exporting_all">todo</string>
+    <string name="rescrap_all_title">Re-analizar todo</string>
     <!-- trakt.tv -->
+    <string name="trakt_toast_syncing_error">Imposible sincronizar con trakt</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Falta la tarjeta SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
-    <string name="sdcard_missing_message">Falta la tarjeta SD en el dispositivo</string>
+    <string name="sdcard_missing_message">Su dispositivo no tiene una tarjeta SD insertada.</string>
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">Tarjeta SD no disponible</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
     <string name="sdcard_busy_message">La tarjeta SD está ocupada.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
-    <string name="sdcard_error_title">Error de tarjeta SD</string>
+    <string name="sdcard_error_title">Error en tarjeta SD</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
     <string name="sdcard_error_message">Se ha producido un error al acceder a la tarjeta SD.</string>
     <!-- Title of screen when no storage is present -->
@@ -36,11 +48,11 @@
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">Espacio de almacenamiento no disponible</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
-    <string name="storage_busy_message">Dispositivo montado como almacenamiento masivo USB, no puede utilizar el espacio de almacenamiento.</string>
+    <string name="storage_busy_message">No se puede utilizar el almacenamiento interno mientras está conectado y montado a través de USB.</string>
     <!-- Title of screen when there was an error accessing the internal storage -->
     <string name="storage_error_title">Error del espacio de almacenamiento</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
-    <string name="storage_error_message">Se ha producido un error en su espacio de almacenamiento interno.</string>
+    <string name="storage_error_message">Se ha producido un error en su almacenamiento interno.</string>
     <string name="scraper_no_settings">No hay ajustes disponibles para esta fuente.</string>
     <string-array name="scraper_labels_array">
         <item>enable_fanart:Habilitar Fanart</item>
@@ -52,4 +64,5 @@
       BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
+    <string name="artist_label">Artista</string>
 </resources>
