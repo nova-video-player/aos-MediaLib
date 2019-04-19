@@ -839,8 +839,8 @@ public class TraktService extends Service {
                 errorMessage+=": "+error.getMessage();
             if(details!=null)
                 errorMessage +=" "+details;
-            showToast(errorMessage);
-
+            if (DBG) showToast(errorMessage);
+            Log.d(TAG, errorMessage);
             break;
         case SUCCESS:
             if ((flag & FLAG_SYNC_TO_TRAKT_WATCHED) != 0 || (flag & FLAG_SYNC_TO_DB_WATCHED) != 0) {
