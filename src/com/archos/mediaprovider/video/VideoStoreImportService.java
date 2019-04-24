@@ -339,13 +339,29 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         DeleteFileCallback delCb = new DeleteFileCallback();
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
+        try {
+            c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE)", null);
+        } catch (SQLException e) {
+            Log.e(TAG, "SQLException",e);
+        } finally {
+            c.moveToPosition(-1);
+            while (c.moveToNext()) {
+                long id = c.getLong(0);
+                String path = c.getString(1);
+                long count = c.getLong(2);
+                if (DBG) Log.d(TAG, "clean delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
+                // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+            }
+            c.close();
+        }
         // note: seems that the delete is performed not as a table trigger anymore but elsewhere
         try {
             c = db.rawQuery("SELECT * FROM delete_files", null);
         } catch (SQLException e) {
             Log.e(TAG, "SQLException",e);
         } finally {
-            c.moveToFirst();
+            c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
                 String path = c.getString(1);
@@ -364,7 +380,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         } catch (SQLException e) {
             Log.e(TAG, "SQLException",e);
         } finally {
-            c.moveToFirst();
+            c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
                 String path = c.getString(1);
