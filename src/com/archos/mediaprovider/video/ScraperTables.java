@@ -934,9 +934,9 @@ public final class ScraperTables {
             "    movie_id        INTEGER REFERENCES movie ( _id ) ON DELETE CASCADE\n" +
             "                                                     ON UPDATE CASCADE,\n" +
             "    m_po_thumb_url  TEXT,\n" +
-            "    m_po_thumb_file TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+            "    m_po_thumb_file TEXT,\n" +
             "    m_po_large_url  TEXT,\n" +
-            "    m_po_large_file TEXT UNIQUE ON CONFLICT IGNORE\n" +
+            "    m_po_large_file TEXT\n" +
             ")";
 
 
@@ -980,9 +980,9 @@ public final class ScraperTables {
             "    movie_id        INTEGER REFERENCES movie ( _id ) ON DELETE CASCADE\n" +
             "                                                     ON UPDATE CASCADE,\n" +
             "    m_bd_thumb_url  TEXT,\n" +
-            "    m_bd_thumb_file TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+            "    m_bd_thumb_file TEXT,\n" +
             "    m_bd_large_url  TEXT,\n" +
-            "    m_bd_large_file TEXT UNIQUE ON CONFLICT IGNORE\n" +
+            "    m_bd_large_file TEXT\n" +
             ")";
     private static final String CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER =
             "CREATE TRIGGER " + MOVIE_BACKDROPS_TABLE_NAME + "_delete\n" +
