@@ -139,8 +139,8 @@ public class MediaFactory {
         return false;
     }
 
-    public static IMediaPlayer createPlayer(Context ctx, boolean useAvosPlayer, boolean forceSoftwareDecoding) {
-        if (useAvosPlayer && preInit(ctx, true, forceSoftwareDecoding)) {
+    public static IMediaPlayer createPlayer(Context ctx, boolean forceSoftwareDecoding) {
+        if (preInit(ctx, true, forceSoftwareDecoding)) {
             Log.d(TAG, "new AvosMediaPlayer");
             return new AvosMediaPlayer();
         } else {
