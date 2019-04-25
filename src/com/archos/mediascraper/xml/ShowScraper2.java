@@ -109,48 +109,10 @@ public class ShowScraper2 extends BaseScraper2 {
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR_PARSER, e);
         }
         List<SearchResult> results = mSearchHandler.getResult();
-        ArrayList<SearchResult> newResults = new ArrayList<>();
-        for (SearchResult result : results) {
-            String imdbId = result.getImdbId();
-
-            if (imdbId == null) {
-                newResults.add(result);
-                continue;
-            }
-
-            String localizedSearchUrl = "https://www.thetvdb.com/api/GetSeriesByRemoteID.php?imdbid=" + ShowUtils.urlEncode(imdbId) + "&language=" + ShowUtils.urlEncode(language);
-
-            File localizedSearchResultFile = HttpCache.getInstance(MediaScraper.getXmlCacheDirectory(mContext),
-                    MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
-                    MediaScraper.CACHE_OVERWRITE_DIRECTORY).getFile(localizedSearchUrl, true);
-            if (localizedSearchResultFile == null) {
-                newResults.add(result);
-                continue;
-            }
-
-            mSearchHandler.setLimit(1);
-            try {
-                mParser.parse(localizedSearchResultFile, mSearchHandler);
-            } catch (SAXException e) {
-                newResults.add(result);
-                continue;
-            } catch (IOException e) {
-                newResults.add(result);
-                continue;
-            }
-            List<SearchResult> localizedResults = mSearchHandler.getResult();
-
-            if (localizedResults.isEmpty()) {
-                newResults.add(result);
-                continue;
-            }
-
-            newResults.add(localizedResults.get(0));
-        }
         Bundle extra = new Bundle();
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
         extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
-        Iterator<SearchResult> i = newResults.iterator();
+        Iterator<SearchResult> i = results.iterator();
         while (i.hasNext()) {
             SearchResult searchResult = i.next();
             if (searchResult.getId() != 313081) { // ** 403: Series Not Permitted **
@@ -162,8 +124,8 @@ public class ShowScraper2 extends BaseScraper2 {
                 i.remove();
             }
         }
-        ScrapeStatus status = newResults.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
-        return new ScrapeSearchResult(newResults, false, status, null);
+        ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
+        return new ScrapeSearchResult(results, false, status, null);
     }
 
     private static String generateSearchUrl(String showName, String language) {

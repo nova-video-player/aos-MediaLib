@@ -69,7 +69,7 @@ public class ShowSearchHandler extends BasicHandler {
     // private final static String ELEMENT_2OVERVIEW = "Overview";
     // private final static String ELEMENT_2FIRSTAIRED = "FirstAired";
 
-    private final static String ELEMENT_2IMDB_ID = "IMDB_ID";
+    // private final static String ELEMENT_2IMDB_ID = "IMDB_ID";
     // private final static String ELEMENT_2ZAP2IT_ID = "zap2it_id";
     // private final static String ELEMENT_2ID = "id";
 
@@ -108,8 +108,6 @@ public class ShowSearchHandler extends BasicHandler {
                     return true;
                 } else if (ELEMENT_2SERIESNAME.equals(localName)) {
                     return true;
-                } else if (ELEMENT_2IMDB_ID.equals(localName)) {
-                    return true;
                 }
             }
         }
@@ -138,8 +136,6 @@ public class ShowSearchHandler extends BasicHandler {
                     mCurrentData.setId(getInt(0));
                 } else if (ELEMENT_2SERIESNAME.equals(localName)) {
                     mCurrentData.setTitle(getString());
-                } else if (ELEMENT_2IMDB_ID.equals(localName)) {
-                    mCurrentData.setImdbId(getString());
                 }
             }
         }

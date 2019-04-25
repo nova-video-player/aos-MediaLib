@@ -26,7 +26,6 @@ public class SearchResult implements Parcelable {
     private int mType;
     private String mTitle;
     private int mId;
-    private String mImdbId;
     private String mLanguage;
     private BaseScraper2 mScraper;
     private Uri mFile;
@@ -49,14 +48,12 @@ public class SearchResult implements Parcelable {
     public String getTitle() { return mTitle; }
     public int getType() { return mType; }
     public int getId() { return mId; }
-    public String getImdbId() { return mImdbId; }
     public String getLanguage() { return mLanguage; }
     public BaseScraper2 getScraper() { return mScraper; }
     public Uri getFile() { return mFile; }
     public Bundle getExtra() { return mExtra; }
 
     public void setId(int id) { mId = id; }
-    public void setImdbId(String imdbId) { mImdbId = imdbId; }
     public void setLanguage(String lang) { mLanguage = lang; }
     public void setTitle(String title) { mTitle = title; }
     public void setType(int type) { mType = type; }
