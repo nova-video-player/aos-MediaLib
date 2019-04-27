@@ -65,10 +65,10 @@ public abstract class BaseTags implements Parcelable {
     protected String mTitle;
     protected float mRating;
     protected String mPlot;
-    protected final Map<String, String> mActors;
+    protected Map<String, String> mActors;
     protected String mActorsFormatted;
     protected SpannableString mSpannableActorsFormatted;
-    protected final List<String> mDirectors;
+    protected List<String> mDirectors;
     protected String mDirectorsFormatted;
     protected Uri mFile;
     protected long mVideoId;
@@ -332,6 +332,12 @@ public abstract class BaseTags implements Parcelable {
         addIfAbsentSplitNTrim(actor, mActors, splitCharacters);
     }
 
+    public void setActors(List<String> actors) {
+        mActors = new LinkedHashMap<>();
+        for(String actor : actors)
+            mActors.put(actor, "");
+    }
+
     /**
      * all strings are trimmed, does not put empty values, does not replace entries.
      * optional splitCharacters to specify how to split the string
@@ -339,6 +345,8 @@ public abstract class BaseTags implements Parcelable {
     public void addDirectorIfAbsent(String director, char... splitCharacters) {
         addIfAbsentSplitNTrim(director, mDirectors, splitCharacters);
     }
+
+    public void setDirectors(List<String> directors) { mDirectors = directors; }
 
     public abstract void setCover(File file);
 
