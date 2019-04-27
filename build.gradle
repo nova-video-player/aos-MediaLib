@@ -122,11 +122,13 @@ dependencies {
     implementation 'com.jakewharton.threetenabp:threetenabp:1.2.1'
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
-    implementation group: 'commons-codec', name: 'commons-codec', version: '1.11' 
+    emplementation group: 'commons-codec', name: 'commons-codec', version: '1.11' 
     implementation group: 'com.squareup.retrofit', name: 'retrofit', version: '1.9.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.1'
-    // thetvdb depedencies (stuck with 1.6.1) but only used in ShowScraper2TVDB2 not yet enabled
-    implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.6.1'
+    // thetvdb depedencies
+    implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:2.1.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
     // official dependencies for cling 2.1.2 is https://github.com/4thline/cling/blob/master/distribution/src/dist/README.txt
     // no host discovery if switch from 2.1.1 to 2.1.2 supposed to be fixed in 2.1.1 https://github.com/4thline/cling/issues/164
     api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
