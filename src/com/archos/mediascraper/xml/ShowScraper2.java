@@ -20,13 +20,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.LruCache;
+import android.util.Pair;
 import android.util.SparseArray;
 
-import com.archos.environment.ArchosUtils;
 import com.archos.medialib.R;
 import com.archos.mediascraper.EpisodeTags;
-import com.archos.mediascraper.HttpCache;
-import com.archos.mediascraper.MediaScraper;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.ScrapeStatus;
@@ -38,44 +36,41 @@ import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringMatcher;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
-import com.archos.mediascraper.saxhandler.ShowActorsHandler;
-import com.archos.mediascraper.saxhandler.ShowAllDetailsHandler;
-import com.archos.mediascraper.saxhandler.ShowBannersHandler;
-import com.archos.mediascraper.saxhandler.ShowSearchHandler;
 import com.archos.mediascraper.settings.ScraperSetting;
 import com.archos.mediascraper.settings.ScraperSettings;
+import com.uwetrottmann.thetvdb.TheTvdb;
+import com.uwetrottmann.thetvdb.entities.Actor;
+import com.uwetrottmann.thetvdb.entities.ActorsResponse;
+import com.uwetrottmann.thetvdb.entities.Episode;
+import com.uwetrottmann.thetvdb.entities.EpisodesResponse;
+import com.uwetrottmann.thetvdb.entities.Series;
+import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
+import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
+import com.uwetrottmann.thetvdb.entities.SeriesResponse;
+import com.uwetrottmann.thetvdb.entities.SeriesResultsResponse;
+import retrofit2.Response;
 
-import org.xml.sax.SAXException;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class ShowScraper2 extends BaseScraper2 {
 
     private final static String TAG = "ShowScraper2";
     private final static boolean DBG = false;
     private final static String PREFERENCE_NAME = "TheTVDB.com";
-    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<String, Map<String,EpisodeTags>>(5);
-    private final ShowAllDetailsHandler mDetailsHandler ;
-    private final ShowActorsHandler mActorsHandler = new ShowActorsHandler();
-    private final ShowSearchHandler mSearchHandler = new ShowSearchHandler(1);
-    private final ShowBannersHandler mBannersHandler;
+    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
 
     public ShowScraper2(Context context) {
         super(context);
-        mBannersHandler = new ShowBannersHandler(context);
-        mDetailsHandler = new ShowAllDetailsHandler(context);
     }
 
     @Override
@@ -92,53 +87,68 @@ public class ShowScraper2 extends BaseScraper2 {
                 + " s:" + searchInfo.getSeason()
                 + " e:" + searchInfo.getEpisode());
 
-        String searchUrl = generateSearchUrl(searchInfo.getShowName(), language);
-
-        File searchResultFile = HttpCache.getInstance(MediaScraper.getXmlCacheDirectory(mContext),
-                MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
-                MediaScraper.CACHE_OVERWRITE_DIRECTORY).getFile(searchUrl, true);
-        if (searchResultFile == null)
-            return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR_NETWORK, null);
-
-        mSearchHandler.setLimit(maxItems);
-        try {
-            mParser.parse(searchResultFile, mSearchHandler);
-        } catch (SAXException e) {
-            return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR_PARSER, e);
-        } catch (IOException e) {
-            return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR_PARSER, e);
-        }
-        List<SearchResult> results = mSearchHandler.getResult();
+        List<SearchResult> results = new LinkedList<>();
         Bundle extra = new Bundle();
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
         extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
-        Iterator<SearchResult> i = results.iterator();
-        while (i.hasNext()) {
-            SearchResult searchResult = i.next();
-            if (searchResult.getId() != 313081) { // ** 403: Series Not Permitted **
-                searchResult.setExtra(extra);
-                searchResult.setFile(searchInfo.getFile());//TODO metafilereplace
-                searchResult.setScraper(this);
+
+        TheTvdb theTvdb = new TheTvdb(mContext.getString(R.string.tvdb_api_2_key));
+        try {
+            final int SERIES_NOT_PERMITTED_ID = 313081;
+
+            Response<SeriesResultsResponse> response = theTvdb.search()
+                .series(searchInfo.getShowName(), null, null, null, language)
+                .execute();
+            if (response.isSuccessful() && response.body() != null) {
+                for (Series series : response.body().data) {
+                    if (series.id != SERIES_NOT_PERMITTED_ID) {
+                        SearchResult result = new SearchResult();
+                        result.setId(series.id);
+                        result.setLanguage(language);
+                        result.setTitle(series.seriesName);
+                        result.setScraper(this);
+                        result.setFile(searchInfo.getFile());
+                        result.setExtra(extra);
+                        if (maxItems < 0 || results.size() < maxItems)
+                            results.add(result);
+                    }
+                }
             }
-            else {
-                i.remove();
+            else if (response.code() != 404) {
+                return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
+            }
+
+            if (results.isEmpty() && !language.equals("en")) {
+                Response<SeriesResultsResponse> globalResponse = theTvdb.search()
+                    .series(searchInfo.getShowName(), null, null, null, "en")
+                    .execute();
+                if (globalResponse.isSuccessful() && globalResponse.body() != null) {
+                    for (Series series : globalResponse.body().data) {
+                        if (series.id != SERIES_NOT_PERMITTED_ID) {
+                            SearchResult result = new SearchResult();
+                            result.setId(series.id);
+                            result.setLanguage("en");
+                            result.setTitle(series.seriesName);
+                            result.setScraper(this);
+                            result.setFile(searchInfo.getFile());
+                            result.setExtra(extra);
+                            if (maxItems < 0 || results.size() < maxItems)
+                                results.add(result);
+                        }
+                    }
+                }
+                else if (globalResponse.code() != 404) {
+                    return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
+                }
             }
         }
+        catch (Exception e) {
+            Log.e(TAG, "getMatches2", e);
+            return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
+        }
+
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
         return new ScrapeSearchResult(results, false, status, null);
-    }
-
-    private static String generateSearchUrl(String showName, String language) {
-        String encode = ShowUtils.urlEncode(showName);
-        String langencode = ShowUtils.urlEncode(language);
-        String url = "https://www.thetvdb.com/api/GetSeries.php?seriesname=" + encode
-                + "&language=" + langencode;
-        return url;
-    }
-
-    private static String generateDetailsUrl(int showId, String language) {
-        return "https://www.thetvdb.com/api/"+ ArchosUtils.getGlobalContext().getString(R.string.tvdb_api_key)+"/series/" + showId + "/all/"
-                + language + ".zip";
     }
 
     private static ScraperSettings sSettings;
@@ -147,94 +157,228 @@ public class ShowScraper2 extends BaseScraper2 {
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
         String resultLanguage = result.getLanguage();
         if (TextUtils.isEmpty(resultLanguage))
-            resultLanguage = ShowAllDetailsHandler.DEFAULT_LANGUAGE;
+            resultLanguage = "en";
         int showId = result.getId();
-        String detailsUrl = generateDetailsUrl(showId, resultLanguage);
+        String showKey = showId + "|" + resultLanguage;
 
         Map<String, EpisodeTags> allEpisodes = null;
         ShowTags showTags = null;
-        allEpisodes = sEpisodeCache.get(detailsUrl);
+        allEpisodes = sEpisodeCache.get(showKey);
         if (allEpisodes == null) {
             // need to parse that show
-            String searchUrl = generateDetailsUrl(showId, resultLanguage);
-            File searchResultFile = HttpCache.getInstance(MediaScraper.getXmlCacheDirectory(mContext),
-                    MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
-                    MediaScraper.CACHE_OVERWRITE_DIRECTORY).getFile(searchUrl, true);
-            if (searchResultFile == null) {
-                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_NETWORK, null);
-            }
-            Map<String, String> actors = null;
-            ShowBannersHandler.CoverResult banners = null;
+            Map<String, String> actors = new LinkedHashMap<>();
+            List<ScraperImage> backdrops = new LinkedList<>();
+            List<ScraperImage> posters = new ArrayList<>();
+            allEpisodes = new HashMap<>();
 
-            ZipFile zipFile = null;
+            TheTvdb theTvdb = new TheTvdb(mContext.getString(R.string.tvdb_api_2_key));
             try {
-                zipFile = new ZipFile(searchResultFile);
-                ZipEntry zipEntry = zipFile.getEntry(resultLanguage + ".xml");
-                InputStream inputStream = new BufferedInputStream(zipFile.getInputStream(zipEntry),
-                        8 * 1024);
-                try {
-                    mParser.parse(inputStream, mDetailsHandler);
-                } catch (SAXException e) {
-                    zipFile.close();
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
+                // series
+                Response<SeriesResponse> seriesResponse = theTvdb.series()
+                    .series(showId, resultLanguage)
+                    .execute();
+                if (seriesResponse.isSuccessful() && seriesResponse.body() != null) {
+                    Series series = seriesResponse.body().data;
+                    showTags = new ShowTags();
+                    showTags.setPlot(series.overview);
+                    showTags.setRating(series.siteRating.floatValue());
+                    showTags.setTitle(series.seriesName);
+                    showTags.setContentRating(series.rating);
+                    showTags.setImdbId(series.imdbId);
+                    showTags.setOnlineId(series.id);
+                    showTags.setGenres(getLocalizedGenres(series.genre));
+                    showTags.addStudioIfAbsent(series.network, '|', ',');
+                    showTags.setPremiered(series.firstAired);
                 }
-                showTags = mDetailsHandler.getShowTags();
-                // if there is no info about the show there is nothing we can do
-                if (showTags == null) {
-                    zipFile.close();
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                else {
+                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
-                showTags.setGenres(getLocalizedGenres(showTags.getGenres()));
 
-                zipEntry = zipFile.getEntry("actors.xml");
-                inputStream = new BufferedInputStream(zipFile.getInputStream(zipEntry),
-                        8 * 1024);
-                try {
-                    mParser.parse(inputStream, mActorsHandler);
-                } catch (SAXException e) {
-                    zipFile.close();
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
+                // actors
+                List<Actor> tempActors = new ArrayList<>();
+                Response<ActorsResponse> actorsResponse = theTvdb.series()
+                    .actors(showId)
+                    .execute();
+                if (actorsResponse.isSuccessful() && actorsResponse.body() != null) {
+                    for(Actor actor : actorsResponse.body().data) {
+                        tempActors.add(actor);
+                    }
                 }
-                actors = mActorsHandler.getResult();
+                else {
+                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                }
+                Collections.sort(tempActors, new Comparator<Actor>() {
+                    @Override
+                    public int compare(Actor a1, Actor a2) {
+                        return Integer.compare(a1.sortOrder, a2.sortOrder);
+                    }
+                });
+                for(Actor actor : tempActors) {
+                    actors.put(actor.name, actor.role);
+                }
 
-                zipEntry = zipFile.getEntry("banners.xml");
-                inputStream = new BufferedInputStream(zipFile.getInputStream(zipEntry),
-                        8 * 1024);
-                mBannersHandler.setNameSeed(showTags.getTitle());
-                try {
-                    mParser.parse(inputStream, mBannersHandler);
-                } catch (SAXException e) {
-                    zipFile.close();
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
+                final String BANNERS_URL = "https://www.thetvdb.com/banners/";
+
+                // backdrops
+                List<Pair<SeriesImageQueryResult, String>> tempBackdrops = new ArrayList<>();
+                Response<SeriesImageQueryResultResponse> fanartsResponse = theTvdb.series()
+                    .imagesQuery(showId, "fanart", null, null, resultLanguage)
+                    .execute();
+                if (fanartsResponse.isSuccessful() && fanartsResponse.body() != null) {
+                    for(SeriesImageQueryResult fanart : fanartsResponse.body().data) {
+                        tempBackdrops.add(Pair.create(fanart, resultLanguage));
+                    }
                 }
-                banners = mBannersHandler.getResult();
-                zipFile.close();
-            } catch (IOException e) {
-                if (zipFile != null)
-                    try {
-                        zipFile.close();
-                    } catch (IOException ignored) {}
-                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
+                else if (fanartsResponse.code() != 404) {
+                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                }
+                if (!resultLanguage.equals("en")) {
+                    Response<SeriesImageQueryResultResponse> globalFanartsResponse = theTvdb.series()
+                        .imagesQuery(showId, "fanart", null, null, "en")
+                        .execute();
+                    if (globalFanartsResponse.isSuccessful() && globalFanartsResponse.body() != null) {
+                        for(SeriesImageQueryResult fanart : globalFanartsResponse.body().data) {
+                            tempBackdrops.add(Pair.create(fanart, "en"));
+                        }
+                    }
+                    else if (globalFanartsResponse.code() != 404) {
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                    }
+                }
+                Collections.sort(tempBackdrops, new Comparator<Pair<SeriesImageQueryResult, String>>() {
+                    @Override
+                    public int compare(Pair<SeriesImageQueryResult, String> b1, Pair<SeriesImageQueryResult, String> b2) {
+                        return - Double.compare(b1.first.ratingsInfo.average, b2.first.ratingsInfo.average);
+                    }
+                });
+                for(Pair<SeriesImageQueryResult, String> backdrop : tempBackdrops) {
+                    ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTags.getTitle());
+                    image.setLanguage(backdrop.second);
+                    image.setThumbUrl(BANNERS_URL + backdrop.first.thumbnail);
+                    image.setLargeUrl(BANNERS_URL + backdrop.first.fileName);
+                    image.generateFileNames(mContext);
+                    backdrops.add(image);
+                }
+
+                // posters
+                List<Pair<SeriesImageQueryResult, String>> tempPosters = new ArrayList<>();
+                Response<SeriesImageQueryResultResponse> postersResponse = theTvdb.series()
+                    .imagesQuery(showId, "poster", null, null, resultLanguage)
+                    .execute();
+                if (postersResponse.isSuccessful() && postersResponse.body() != null) {
+                    for(SeriesImageQueryResult poster : postersResponse.body().data) {
+                        tempPosters.add(Pair.create(poster, resultLanguage));
+                    }
+                }
+                else if (postersResponse.code() != 404) {
+                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                }
+                if (!resultLanguage.equals("en")) {
+                    Response<SeriesImageQueryResultResponse> globalPostersResponse = theTvdb.series()
+                        .imagesQuery(showId, "poster", null, null, "en")
+                        .execute();
+                    if (globalPostersResponse.isSuccessful() && globalPostersResponse.body() != null) {
+                        for(SeriesImageQueryResult poster : globalPostersResponse.body().data) {
+                            tempPosters.add(Pair.create(poster, "en"));
+                        }
+                    }
+                    else if (globalPostersResponse.code() != 404) {
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                    }
+                }
+                Response<SeriesImageQueryResultResponse> seasonsResponse = theTvdb.series()
+                    .imagesQuery(showId, "season", null, null, resultLanguage)
+                    .execute();
+                if (seasonsResponse.isSuccessful() && seasonsResponse.body() != null) {
+                    for(SeriesImageQueryResult season : seasonsResponse.body().data) {
+                        tempPosters.add(Pair.create(season, resultLanguage));
+                    }
+                }
+                else if (seasonsResponse.code() != 404) {
+                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                }
+                if (!resultLanguage.equals("en")) {
+                    Response<SeriesImageQueryResultResponse> globalSeasonsResponse = theTvdb.series()
+                        .imagesQuery(showId, "season", null, null, "en")
+                        .execute();
+                    if (globalSeasonsResponse.isSuccessful() && globalSeasonsResponse.body() != null) {
+                        for(SeriesImageQueryResult season : globalSeasonsResponse.body().data) {
+                            tempPosters.add(Pair.create(season, "en"));
+                        }
+                    }
+                    else if (globalSeasonsResponse.code() != 404) {
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                    }
+                }
+                Collections.sort(tempPosters, new Comparator<Pair<SeriesImageQueryResult, String>>() {
+                    @Override
+                    public int compare(Pair<SeriesImageQueryResult, String> p1, Pair<SeriesImageQueryResult, String> p2) {
+                        return - Double.compare(p1.first.keyType.equals("season") ? p1.first.ratingsInfo.average - 11 : p1.first.ratingsInfo.average, p2.first.keyType.equals("season") ? p2.first.ratingsInfo.average - 11 : p2.first.ratingsInfo.average);
+                    }
+                });
+                for(Pair<SeriesImageQueryResult, String> poster : tempPosters) {
+                    ScraperImage image = new ScraperImage(poster.first.keyType.equals("season") ? ScraperImage.Type.EPISODE_POSTER : ScraperImage.Type.SHOW_POSTER, showTags.getTitle());
+                    image.setLanguage(poster.second);
+                    image.setThumbUrl(BANNERS_URL + poster.first.thumbnail);
+                    image.setLargeUrl(BANNERS_URL + poster.first.fileName);
+                    image.generateFileNames(mContext);
+                    image.setSeason(poster.first.keyType.equals("season") ? Integer.parseInt(poster.first.subKey) : -1);
+                    posters.add(image);
+                }
+
+                // episodes
+                Integer page = 1;
+                while (page != null) {
+                    Response<EpisodesResponse> episodesResponse = theTvdb.series()
+                        .episodes(showId, page, resultLanguage)
+                        .execute();
+                    if (episodesResponse.isSuccessful() && episodesResponse.body() != null) {
+                        for(Episode episode : episodesResponse.body().data) {
+                            EpisodeTags episodeTags = new EpisodeTags();
+                            episodeTags.setActors(episode.guestStars);
+                            episodeTags.setDirectors(episode.directors);
+                            episodeTags.setPlot(episode.overview);
+                            episodeTags.setRating(episode.siteRating.floatValue());
+                            episodeTags.setTitle(episode.episodeName);
+                            episodeTags.setImdbId(episode.imdbId);
+                            episodeTags.setOnlineId(episode.id);
+                            episodeTags.setAired(episode.firstAired);
+                            episodeTags.setEpisode(episode.airedEpisodeNumber);
+                            episodeTags.setSeason(episode.airedSeason);
+                            episodeTags.setShowTags(showTags);
+                            episodeTags.setEpisodePicture(episode.filename, mContext);
+                            allEpisodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
+                        }
+                        page = episodesResponse.body().links.next;
+                    }
+                    else {
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                    }
+                }
             }
-            allEpisodes = mDetailsHandler.getResult();
+            catch (Exception e) {
+                Log.e(TAG, "getDetailsInternal", e);
+                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+            }
+
             if (allEpisodes != null) {
                 // put that result in cache.
-                sEpisodeCache.put(detailsUrl, allEpisodes);
+                sEpisodeCache.put(showKey, allEpisodes);
             }
 
             // add backdrops & posters to show
-            if (!banners.backdrops.isEmpty())
-                showTags.setBackdrops(banners.backdrops);
-            if (!banners.posters.isEmpty()) {
-                showTags.setPosters(banners.posters);
+            if (!backdrops.isEmpty())
+                showTags.setBackdrops(backdrops);
+            if (!posters.isEmpty()) {
+                showTags.setPosters(posters);
             }
             // if we have episodes and posters map them to each other
             if (allEpisodes != null && !allEpisodes.isEmpty() &&
-                    !banners.posters.isEmpty()) {
+                    !posters.isEmpty()) {
 
                 // array to map season -> image
                 SparseArray<ScraperImage> seasonPosters = new SparseArray<ScraperImage>();
-                for (ScraperImage image : banners.posters) {
+                for (ScraperImage image : posters) {
                     int season = image.getSeason();
 
                     // season -1 is invalid, set the first only
@@ -281,7 +425,7 @@ public class ShowScraper2 extends BaseScraper2 {
         int epnum = Integer.parseInt(extra.getString(ShowUtils.EPNUM, "0"));
         int season = Integer.parseInt(extra.getString(ShowUtils.SEASON, "0"));
         if (allEpisodes != null) {
-            String key = ShowAllDetailsHandler.getKey(season, epnum);
+            String key = season + "|" + epnum;
             returnValue = allEpisodes.get(key);
         }
         if (returnValue == null) {
