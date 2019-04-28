@@ -109,9 +109,9 @@ public class AutoScrapeService extends Service {
     }
 
     @Override
-    public void onStart(Intent intent, int startId) {
-        super.onStart(intent, startId);
-        if(DBG) Log.d(TAG, "onStart() " + this);
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        if(DBG) Log.d(TAG, "onStartCommand() " + this);
         if(intent!=null){
             if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING))
                 startExporting();
@@ -120,6 +120,7 @@ public class AutoScrapeService extends Service {
         }
         else
             startScraping(false,false);
+        return START_STICKY;
     }
 
     protected void startExporting() {
