@@ -14,6 +14,9 @@
 
 package com.archos.mediascraper;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -22,16 +25,21 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+
+import androidx.core.app.NotificationCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.trakt.TraktService;
+import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
+import com.archos.mediaprovider.video.NetworkScannerServiceVideo;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
@@ -54,6 +62,8 @@ public class AutoScrapeService extends Service {
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static String TAG = "AutoScrapeService";
     private static boolean DBG = false;
+
+    private NotificationManager nm;
 
     static boolean sIsScraping = false;
     static int sNumberOfFilesRemainingToProcess = 0;
@@ -100,6 +110,37 @@ public class AutoScrapeService extends Service {
         if(DBG) Log.d(TAG, "AutoScrapeService() "+this);
     }
 
+
+    private static final int NOTIFICATION_ID = 4;
+    private static final String notifChannelId = "AutoScrapeService_id";
+    private static final String notifChannelName = "AutoScrapeService";
+    private static final String notifChannelDescr = "AutoScrapeService";
+    /** shows a notification */
+    private void showNotification(NotificationManager nm, String notifMsg, int titleId){
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(mNotifChannel);
+        }
+        Intent notificationIntent = new Intent(this, NetworkScannerServiceVideo.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        String notifyPath = notifMsg;
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(titleId))
+                .setContentText(notifyPath)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+        nm.notify(NOTIFICATION_ID, n.build());
+    }
+    /** cancels the notification */
+    private static void hideNotification(NotificationManager nm) {
+        nm.cancel(NOTIFICATION_ID);
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -112,11 +153,11 @@ public class AutoScrapeService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         if(DBG) Log.d(TAG, "onStartCommand() " + this);
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if(intent!=null){
             if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING))
                 startExporting();
             else startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false),intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
-
         }
         else
             startScraping(false,false);
@@ -124,8 +165,7 @@ public class AutoScrapeService extends Service {
     }
 
     protected void startExporting() {
-        if (DBG)
-            Log.d(TAG, "startExporting " + String.valueOf(mExportingThread == null || !mExportingThread.isAlive()));
+        if (DBG) Log.d(TAG, "startExporting " + String.valueOf(mExportingThread == null || !mExportingThread.isAlive()));
         if (mExportingThread == null || !mExportingThread.isAlive()) {
             mExportingThread = new Thread() {
 
@@ -137,13 +177,13 @@ public class AutoScrapeService extends Service {
                     if (cursor.getCount() > 0) {
                         cursor.moveToFirst();
                         do {
-                            Log.d(TAG, "cursor.getCount() "+cursor.getCount());
+                            if (DBG) Log.d(TAG, "cursor.getCount() "+cursor.getCount());
                             Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                             long movieID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID));
                             long episodeID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID));
                             final int scraperType = cursor.getInt(cursor.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
                             BaseTags baseTags=null;
-                            Log.d(TAG, movieID+ " fileUri "+fileUri);
+                            if (DBG) Log.d(TAG, movieID+ " fileUri "+fileUri);
                             if (scraperType == BaseTags.TV_SHOW) {
                                 baseTags= TagsFactory.buildEpisodeTags(AutoScrapeService.this, episodeID);
 
@@ -153,7 +193,7 @@ public class AutoScrapeService extends Service {
                             }
                             if(baseTags==null)
                                 continue;
-                            Log.d(TAG, "Base tag created, exporting"+fileUri);
+                            if (DBG) Log.d(TAG, "Base tag created, exporting"+fileUri);
 
                             if (exportContext != null) {
                                 if (fileUri != null) {
@@ -179,6 +219,7 @@ public class AutoScrapeService extends Service {
     }
     @Override
     public void onDestroy() {
+        hideNotification(nm);
         super.onDestroy();
         if(DBG) Log.d(TAG, "onDestroy() " + this);
     }
@@ -220,8 +261,10 @@ public class AutoScrapeService extends Service {
 
                 public int mNetworkErrors; //when errors equals to number of files to scrap, stop looping.
                 public void run() {
+
                     boolean shouldRescrapAll = rescrapAlreadySearched;
                     if(DBG)  Log.d(TAG, "startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
+
                     do{
 
                         mNetworkErrors = 0;
@@ -252,6 +295,7 @@ public class AutoScrapeService extends Service {
                                 long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                                 boolean notScrapedAndNoError = true;
                                 if(DBG) Log.d(TAG, "fileUri "+fileUri);
+                                showNotification(nm,  getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess, R.string.scraping_in_progress);
                                 if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
 
                                     if(DBG) Log.d(TAG, "NFO enabled");
@@ -283,17 +327,15 @@ public class AutoScrapeService extends Service {
                                         }
                                         notScrapedAndNoError = false;
                                         if (tags.getPosters() != null&&DBG) {
-                                            Log.d(TAG, "posters : " + tags.getPosters().size());
+                                            if (DBG) Log.d(TAG, "posters : " + tags.getPosters().size());
                                         }
                                         else if(tags.getPosters() == null&&tags.getDefaultPoster()==null&&
                                                 (!(tags instanceof EpisodeTags)||((EpisodeTags)tags).getShowTags().getPosters()==null)){//special case for episodes : check show
                                             if (tags.getTitle() != null && !tags.getTitle().isEmpty()) { //if a title is specified in nfo, use it to scrap file
                                                 scrapUri = Uri.parse("/" + tags.getTitle() + ".mp4");
-                                                if(DBG)
-                                                Log.d(TAG, "no posters using title " + tags.getTitle());
+                                                if(DBG) Log.d(TAG, "no posters using title " + tags.getTitle());
                                             }
-                                            if(DBG)
-                                                Log.d(TAG, "no posters ");
+                                            if(DBG) Log.d(TAG, "no posters ");
                                             notScrapedAndNoError = true;
                                         }
                                     }
@@ -302,19 +344,19 @@ public class AutoScrapeService extends Service {
                                     ScrapeDetailResult result = null;
                                     boolean searchOnline = !shouldRescrapAll;
                                     if(shouldRescrapAll){
-                                        Log.d(TAG,"rescraping");
+                                        if (DBG) Log.d(TAG,"rescraping");
                                         long videoID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID));
                                         final int scraperType = cursor.getInt(cursor.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
 
                                         if (scraperType == BaseTags.TV_SHOW) {
-                                            Log.d(TAG,"rescraping episode "+videoID);
+                                            if (DBG) Log.d(TAG,"rescraping episode "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new ShowScraper2(AutoScrapeService.this));
                                             result = ShowScraper2.getDetails(new SearchResult(0,title, (int) videoID), null);
 
                                         } else if (scraperType==BaseTags.MOVIE) {
-                                            Log.d(TAG,"rescraping movie "+videoID);
+                                            if (DBG) Log.d(TAG,"rescraping movie "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new MovieScraper2(AutoScrapeService.this));
@@ -324,7 +366,7 @@ public class AutoScrapeService extends Service {
 
                                     }
                                     if(searchOnline) {
-                                        Log.d(TAG,"searching online "+title);
+                                        if (DBG) Log.d(TAG,"searching online "+title);
                                         SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri,scrapUri);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         result = scraper.getAutoDetails(searchInfo);
@@ -349,7 +391,7 @@ public class AutoScrapeService extends Service {
                                         DeleteFileCallback.DO_NOT_DELETE.clear();
                                         notScrapedAndNoError = false;
                                         if (result.tag.getTitle() != null)
-                                            Log.d(TAG, "info " + result.tag.getTitle());
+                                            if (DBG) Log.d(TAG, "info " + result.tag.getTitle());
 
                                         TraktService.onNewVideo(AutoScrapeService.this);
                                         if (exportContext != null) {
@@ -357,7 +399,7 @@ public class AutoScrapeService extends Service {
 
                                             if (fileUri != null) {
                                                 try {
-                                                    Log.d(TAG, "exporting NFO");
+                                                    if (DBG) Log.d(TAG, "exporting NFO");
                                                     NfoWriter.export(fileUri, result.tag, exportContext);
                                                 } catch (IOException e) {
                                                     Log.w(TAG, e);
@@ -398,6 +440,7 @@ public class AutoScrapeService extends Service {
                             WrapperChannelManager.refreshChannels(AutoScrapeService.this);
                         }
                     });
+                    hideNotification(nm);
                     AutoScrapeService.this.stopSelf();
                 }
             };
