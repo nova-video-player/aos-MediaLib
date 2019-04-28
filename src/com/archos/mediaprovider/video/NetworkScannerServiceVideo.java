@@ -296,7 +296,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         sendBroadcast(scannerIntent);
         // also show a notification.
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        showNotification(nm, data.toString(), R.string.network_unscan_msg);
+        showNotification(nm, path, R.string.network_unscan_msg);
 
         int deleted = cr.delete(VideoStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
         Log.d(TAG, "removed: " + deleted);
@@ -376,7 +376,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             // also show a notification.
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
-
 
             String path;
             String upnpUri = null;
