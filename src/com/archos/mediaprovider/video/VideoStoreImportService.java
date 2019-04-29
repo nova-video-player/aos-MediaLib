@@ -227,6 +227,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents are delivered here.
         if (DBG) Log.d(TAG, "onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
