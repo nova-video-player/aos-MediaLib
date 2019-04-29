@@ -224,7 +224,7 @@ public class NfoExportService extends IntentService {
         return cr.query(URI, PROJECTION, SELECTION_FOLDER, selectionArgs, ORDER);
     }
 
-    private static final int NOTIFICATION_ID = 1;
+    private static final int NOTIFICATION_ID = 8;
     private static final String notifChannelId = "NfoExportService_id";
     private static final String notifChannelName = "NfoExportService";
     private static final String notifChannelDescr = "NfoExportService";
@@ -252,7 +252,7 @@ public class NfoExportService extends IntentService {
                 .setContentTitle(getString(R.string.nfo_export_exporting))
                 .setContentText(contentText)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
         return n;
     }
 

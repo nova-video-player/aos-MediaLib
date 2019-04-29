@@ -110,6 +110,7 @@
     <string name="artist_label">Artist</string>
 
     <string name="scraping_in_progress">Scraping in progress</string>
-    <string name="remaining_videos_to_process">Remaining videos to be processed:</string>
+    <string name="remaining_videos_to_process">Remaining mediafiles to be processed:</string>
+    <string name="video_store_import">Importing local mediafiles</string>
 
 </resources>
