@@ -63,8 +63,6 @@ public class AutoScrapeService extends Service {
     private static String TAG = "AutoScrapeService";
     private static boolean DBG = false;
 
-    private NotificationManager nm;
-
     static boolean sIsScraping = false;
     static int sNumberOfFilesRemainingToProcess = 0;
     public static String KEY_ENABLE_AUTO_SCRAP ="enable_auto_scrap_key";
@@ -110,8 +108,8 @@ public class AutoScrapeService extends Service {
         if(DBG) Log.d(TAG, "AutoScrapeService() "+this);
     }
 
-
     private static final int NOTIFICATION_ID = 4;
+    private NotificationManager nm;
     private static final String notifChannelId = "AutoScrapeService_id";
     private static final String notifChannelName = "AutoScrapeService";
     private static final String notifChannelDescr = "AutoScrapeService";
@@ -133,7 +131,7 @@ public class AutoScrapeService extends Service {
                 .setContentTitle(getString(titleId))
                 .setContentText(notifyPath)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
         nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */

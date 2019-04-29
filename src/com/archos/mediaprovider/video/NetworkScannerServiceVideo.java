@@ -295,11 +295,11 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
         sendBroadcast(scannerIntent);
         // also show a notification.
-        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         showNotification(nm, path, R.string.network_unscan_msg);
 
         int deleted = cr.delete(VideoStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
-        Log.d(TAG, "removed: " + deleted);
+        if (DBG) Log.d(TAG, "removed: " + deleted);
 
         // send a "done" notification
         Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, data);
@@ -374,7 +374,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             sendBroadcast(scannerIntent);
             // also show a notification.
-            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
 
             String path;
@@ -441,10 +441,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             int insertCount = bulkHandler.getInsertHandled();
             int updateCount = bulkHandler.getUpdatesHandled();
             int deleteCount = bulkHandler.getDeletesHandled();
-            Log.d(TAG, "added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount);
+            if (DBG) Log.d(TAG, "added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount);
 
             int newSubs = handleSubtitles(cr);
-            Log.d(TAG, "added subtitles:" + newSubs);
+            if (DBG) Log.d(TAG, "added subtitles:" + newSubs);
             // send a "done" notification
             WrapperChannelManager.refreshChannels(this);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
@@ -524,7 +524,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         public boolean onDirectory(MetaFile2 directory) {
             // hidden directories are not scanned
             if (ArchosMediaFile.isHiddenFile(directory)) {
-                Log.d(TAG, "skipping " + directory + ", .hidden!");
+                if (DBG) Log.d(TAG, "skipping " + directory + ", .hidden!");
                 return false;
             }
 
@@ -546,7 +546,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             String uniqueId = "";
             //special case for upnp : use unique id
             if(file instanceof UpnpFile2){
-                Log.d(TAG, "File is upnp " + ((UpnpFile2)file).getUniqueHash());
+                if (DBG) Log.d(TAG, "File is upnp " + ((UpnpFile2)file).getUniqueHash());
                 uniqueId = ((UpnpFile2)file).getUniqueHash();
                 existingItem = mPrescanItemsMap.get(((UpnpFile2)file).getUniqueHash());
             }
@@ -831,6 +831,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     // -- Utility logic                                                    -- //
     // ---------------------------------------------------------------------- //
     private static final int NOTIFICATION_ID = 1;
+    private NotificationManager nm;
     private static final String notifChannelId = "NetworkScannerServiceVideo_id";
     private static final String notifChannelName = "NetworkScannerServiceVideo";
     private static final String notifChannelDescr = "NetworkScannerServiceVideo";
@@ -852,7 +853,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 .setContentTitle(getString(titleId))
                 .setContentText(notifyPath)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setAutoCancel(true).setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
         nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */

@@ -14,6 +14,9 @@
 
 package com.archos.mediaprovider.video;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -26,6 +29,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -33,10 +37,13 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.provider.MediaStore;
+
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import android.util.Log;
 
 import com.archos.mediacenter.utils.AppState;
+import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.DbHolder;
@@ -85,6 +92,38 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (DBG) Log.d(TAG, "VideoStoreImportService DTOR");
         super.finalize();
     }
+
+    private static final int NOTIFICATION_ID = 6;
+    private NotificationManager nm;
+    private static final String notifChannelId = "VideoStoreImportService_id";
+    private static final String notifChannelName = "VideoStoreImportService";
+    private static final String notifChannelDescr = "VideoStoreImportService";
+    /** shows a notification */
+    private void showNotification(NotificationManager nm, String notifMsg, int titleId){
+        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            mNotifChannel.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(mNotifChannel);
+        }
+        Intent notificationIntent = new Intent(this, VideoStoreImportService.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        String notifyPath = notifMsg;
+        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(titleId))
+                .setContentText(notifyPath)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+        nm.notify(NOTIFICATION_ID, n.build());
+    }
+    /** cancels the notification */
+    private static void hideNotification(NotificationManager nm) {
+        nm.cancel(NOTIFICATION_ID);
+    }
+
 
     @Override
     public void onCreate() {
@@ -166,6 +205,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     @Override
     public void onDestroy() {
         if (DBG) Log.d(TAG, "onDestroy");
+        hideNotification(nm);
         AppState.removeOnForeGroundListener(mForeGroundListener);
         mForeGroundListener = null;
         // stop handler thread
@@ -302,14 +342,17 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     /** starts import, fullMode decides which import implementation is used */
     private void doImport(boolean fullMode) {
         // TODO determine when / if we need both import implementations
+        showNotification(nm,  "", R.string.video_store_import);
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED ) {
             Log.d(TAG, "no read permission : stop import");
+            hideNotification(nm);
             return;
         }
         ImportState.VIDEO.setDirty(false);
 
         if (!sActive) {
             Log.d(TAG, "Import request ignored due to device shutdown.");
+            hideNotification(nm);
             return;
         }
 
@@ -326,6 +369,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // perform no longer possible delete_file and vob_insert db callbacks after incr or full import
         // this will also flush delete_files and vob_insert buffer tables
         processDeleteFileAndVobCallback();
+        hideNotification(nm);
     }
 
     private void processDeleteFileAndVobCallback() {
@@ -440,7 +484,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     /** calls {@link IScraperService#setupDefaultContent(boolean) }*/
     private void initializeScraperData() {
-        Log.d(TAG, "initializeScraperData()");
+        if (DBG) Log.d(TAG, "initializeScraperData()");
         Scraper scraper = new Scraper(this);
         scraper.setupDefaultContent(false);
     }
