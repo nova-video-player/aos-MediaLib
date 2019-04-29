@@ -853,7 +853,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 .setContentTitle(getString(titleId))
                 .setContentText(notifyPath)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true).setAutoCancel(true);;
         nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */

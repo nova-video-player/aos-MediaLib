@@ -116,7 +116,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 .setContentTitle(getString(titleId))
                 .setContentText(notifyPath)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true).setAutoCancel(true);;
         nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */
@@ -241,11 +241,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             mHandler.sendMessageDelayed(m, 1000);
             mNeedToInitScraper = true;
             ImportState.VIDEO.setAndroidScanning(false);
-            Log.d(TAG, "SCAN FINISHED " + intent.getData());
+            if (DBG) Log.d(TAG, "SCAN FINISHED " + intent.getData());
         } else if (Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)) {
             removeAllMessages(mHandler);
             ImportState.VIDEO.setAndroidScanning(true);
-            Log.d(TAG, "SCAN STARTED " + intent.getData());
+            if (DBG) Log.d(TAG, "SCAN STARTED " + intent.getData());
         } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)) {
             // requests to update metadata are processed directly and don't impact importing
             Message m = mHandler.obtainMessage(MESSAGE_UPDATE_METADATA, startId, flags, intent.getData());
@@ -255,7 +255,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             Message m = mHandler.obtainMessage(MESSAGE_REMOVE_FILE, startId, flags, intent.getData());
             m.sendToTarget();
         } else if (Intent.ACTION_SHUTDOWN.equals(action)) {
-            Log.d(TAG, "Import disabled due to shutdown");
+            if (DBG) Log.d(TAG, "Import disabled due to shutdown");
             sActive = false;
         }
         return Service.START_NOT_STICKY;
@@ -345,14 +345,14 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // TODO determine when / if we need both import implementations
         showNotification(nm,  "", R.string.video_store_import);
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED ) {
-            Log.d(TAG, "no read permission : stop import");
+            if (DBG) Log.d(TAG, "no read permission : stop import");
             hideNotification(nm);
             return;
         }
         ImportState.VIDEO.setDirty(false);
 
         if (!sActive) {
-            Log.d(TAG, "Import request ignored due to device shutdown.");
+            if (DBG) Log.d(TAG, "Import request ignored due to device shutdown.");
             hideNotification(nm);
             return;
         }

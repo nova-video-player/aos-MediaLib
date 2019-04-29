@@ -253,7 +253,7 @@ public class NfoExportService extends IntentService {
                 .setContentTitle(getString(R.string.nfo_export_exporting))
                 .setContentText(contentText)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true);
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);;
         return n;
     }
 

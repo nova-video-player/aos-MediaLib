@@ -95,7 +95,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
             mUpnpId =new ConcurrentHashMap<>();
         mUpnpId.clear();
         final ContentResolver cr = context.getContentResolver();
-        Log.d(TAG, "hasConnection "+String.valueOf(hasConnection));
+        if (DBG) Log.d(TAG, "hasConnection "+String.valueOf(hasConnection));
         if (hasConnection) {
             Lmhosts.reset();
             final long now = System.currentTimeMillis() / 1000;
