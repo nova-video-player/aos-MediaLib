@@ -42,6 +42,7 @@ import com.uwetrottmann.thetvdb.TheTvdb;
 import com.uwetrottmann.thetvdb.entities.Actor;
 import com.uwetrottmann.thetvdb.entities.ActorsResponse;
 import com.uwetrottmann.thetvdb.entities.Episode;
+import com.uwetrottmann.thetvdb.entities.EpisodeResponse;
 import com.uwetrottmann.thetvdb.entities.EpisodesResponse;
 import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
@@ -189,6 +190,21 @@ public class ShowScraper2 extends BaseScraper2 {
                     showTags.setGenres(getLocalizedGenres(series.genre));
                     showTags.addStudioIfAbsent(series.network, '|', ',');
                     showTags.setPremiered(series.firstAired);
+                    if ((series.overview == null || series.seriesName == null) && !resultLanguage.equals("en")) {
+                        Response<SeriesResponse> globalSeriesResponse = theTvdb.series()
+                            .series(showId, "en")
+                            .execute();
+                        if (globalSeriesResponse.isSuccessful() && globalSeriesResponse.body() != null) {
+                            Series globalSeries = globalSeriesResponse.body().data;
+                            if (series.overview == null)
+                                showTags.setPlot(globalSeries.overview);
+                            if (series.seriesName == null)
+                                showTags.setTitle(globalSeries.seriesName);
+                        }
+                        else {
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        }
+                    }
                 }
                 else {
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
@@ -347,6 +363,21 @@ public class ShowScraper2 extends BaseScraper2 {
                             episodeTags.setSeason(episode.airedSeason);
                             episodeTags.setShowTags(showTags);
                             episodeTags.setEpisodePicture(episode.filename, mContext);
+                            if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
+                                Response<EpisodeResponse> globalEpisodeResponse = theTvdb.episodes()
+                                    .get(episode.id, "en")
+                                    .execute();
+                                if (globalEpisodeResponse.isSuccessful() && globalEpisodeResponse.body() != null) {
+                                    Episode globalEpisode = globalEpisodeResponse.body().data;
+                                    if (episode.overview == null)
+                                        episodeTags.setPlot(globalEpisode.overview);
+                                    if (episode.episodeName == null)
+                                        episodeTags.setTitle(globalEpisode.episodeName);
+                                }
+                                else {
+                                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                                }
+                            }
                             allEpisodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
                         }
                         page = episodesResponse.body().links.next;
