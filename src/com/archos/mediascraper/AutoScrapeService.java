@@ -36,6 +36,7 @@ import android.provider.BaseColumns;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
+import com.archos.mediacenter.utils.AppState;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
@@ -231,7 +232,7 @@ public class AutoScrapeService extends Service {
         appContext.getContentResolver().registerContentObserver(VideoStore.ALL_CONTENT_URI, true, new ContentObserver(null) {
             @Override
             public void onChange(boolean selfChange) {
-                if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true)) {
+                if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true) && AppState.isForeGround()) {
                     AutoScrapeService.startService(appContext);
                 }
             }

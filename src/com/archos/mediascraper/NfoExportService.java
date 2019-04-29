@@ -30,6 +30,7 @@ import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.MetaFile2Factory;
+import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
@@ -87,12 +88,12 @@ public class NfoExportService extends IntentService {
         Intent serviceIntent = new Intent(context, NfoExportService.class);
         serviceIntent.setAction(INTENT_EXPORT_FILE);
         serviceIntent.setData(directory);
-        context.startService(serviceIntent);
+        if (AppState.isForeGround()) context.startService(serviceIntent);
     }
     public static void exportAll(Context context) {
         Intent serviceIntent = new Intent(context, NfoExportService.class);
         serviceIntent.setAction(INTENT_EXPORT_ALL);
-        context.startService(serviceIntent);
+        if (AppState.isForeGround()) context.startService(serviceIntent);
     }
 
     public NfoExportService() {
