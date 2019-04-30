@@ -110,18 +110,20 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         }
         Intent notificationIntent = new Intent(this, VideoStoreImportService.class);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        String notifyPath = notifMsg;
         NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle(getString(titleId))
-                .setContentText(notifyPath)
+                .setContentText(notifMsg)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true).setAutoCancel(true);;
+                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true).setAutoCancel(true);
+        if (notifMsg != "")
+            n.setContentText(notifMsg);
         nm.notify(NOTIFICATION_ID, n.build());
     }
     /** cancels the notification */
     private static void hideNotification(NotificationManager nm) {
-        nm.cancel(NOTIFICATION_ID);
+        if (nm != null)
+            nm.cancel(NOTIFICATION_ID);
     }
 
 
