@@ -78,6 +78,7 @@ public class ShowScraper2 extends BaseScraper2 {
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
             Log.e(TAG, "bad search info: " + info == null ? "null" : "movie in show scraper");
+            if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR");
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
         TvShowSearchInfo searchInfo = (TvShowSearchInfo) info;
@@ -115,6 +116,7 @@ public class ShowScraper2 extends BaseScraper2 {
                 }
             }
             else if (response.code() != 404) {
+                if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
                 return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
             }
 
@@ -148,6 +150,11 @@ public class ShowScraper2 extends BaseScraper2 {
         }
 
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
+        if (DBG)
+            if (results.isEmpty())
+                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.NOT_FOUND");
+            else
+                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.OKAY found " + results);
         return new ScrapeSearchResult(results, false, status, null);
     }
 
@@ -191,6 +198,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     showTags.setPremiered(series.firstAired);
                 }
                 else {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR");
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
 
@@ -205,6 +213,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
                 else {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR");
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
                 Collections.sort(tempActors, new Comparator<Actor>() {
@@ -230,6 +239,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
                 else if (fanartsResponse.code() != 404) {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult fanart ScrapeStatus.ERROR");
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
                 if (!resultLanguage.equals("en")) {
@@ -242,6 +252,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (globalFanartsResponse.code() != 404) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult fanart en ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
                 }
@@ -271,6 +282,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
                 else if (postersResponse.code() != 404) {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult poster ScrapeStatus.ERROR");
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
                 if (!resultLanguage.equals("en")) {
@@ -283,6 +295,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (globalPostersResponse.code() != 404) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult poster en ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
                 }
@@ -295,6 +308,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
                 else if (seasonsResponse.code() != 404) {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult season ScrapeStatus.ERROR");
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
                 if (!resultLanguage.equals("en")) {
@@ -307,6 +321,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (globalSeasonsResponse.code() != 404) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult season en ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
                 }
@@ -352,12 +367,14 @@ public class ShowScraper2 extends BaseScraper2 {
                         page = episodesResponse.body().links.next;
                     }
                     else {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult episode ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
                 }
             }
             catch (Exception e) {
                 Log.e(TAG, "getDetailsInternal", e);
+                if (DBG) Log.d(TAG,"ScrapeDetailResult exception ScrapeStatus.ERROR");
                 return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
             }
 
@@ -415,8 +432,10 @@ public class ShowScraper2 extends BaseScraper2 {
         }
 
         // if there is no info about the show there is nothing we can do
-        if (showTags == null)
+        if (showTags == null) {
+            if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+        }
 
         showTags.downloadPoster(mContext);
 
@@ -457,6 +476,7 @@ public class ShowScraper2 extends BaseScraper2 {
                 extraOut.putParcelable(item.getKey(), item.getValue());
             }
         }
+        if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 
