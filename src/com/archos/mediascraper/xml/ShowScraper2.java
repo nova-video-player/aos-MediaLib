@@ -79,6 +79,7 @@ public class ShowScraper2 extends BaseScraper2 {
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
             Log.e(TAG, "bad search info: " + info == null ? "null" : "movie in show scraper");
+            if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR");
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
         TvShowSearchInfo searchInfo = (TvShowSearchInfo) info;
@@ -116,6 +117,7 @@ public class ShowScraper2 extends BaseScraper2 {
                 }
             }
             else if (response.code() != 404) {
+                if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
                 return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
             }
 
@@ -149,6 +151,11 @@ public class ShowScraper2 extends BaseScraper2 {
         }
 
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
+        if (DBG)
+            if (results.isEmpty())
+                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.NOT_FOUND");
+            else
+                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.OKAY found " + results);
         return new ScrapeSearchResult(results, false, status, null);
     }
 
@@ -156,6 +163,8 @@ public class ShowScraper2 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
+        boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
+        boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
         String resultLanguage = result.getLanguage();
         if (TextUtils.isEmpty(resultLanguage))
             resultLanguage = "en";
@@ -190,7 +199,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     showTags.setGenres(getLocalizedGenres(series.genre));
                     showTags.addStudioIfAbsent(series.network, '|', ',');
                     showTags.setPremiered(series.firstAired);
-                    if ((series.overview == null || series.seriesName == null) && !resultLanguage.equals("en")) {
+                    if (!basicShow && !basicEpisode && (series.overview == null || series.seriesName == null) && !resultLanguage.equals("en")) {
                         Response<SeriesResponse> globalSeriesResponse = theTvdb.series()
                             .series(showId, "en")
                             .execute();
@@ -202,128 +211,145 @@ public class ShowScraper2 extends BaseScraper2 {
                                 showTags.setTitle(globalSeries.seriesName);
                         }
                         else {
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR");
                             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                         }
                     }
                 }
                 else {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR");
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                 }
 
                 // actors
-                List<Actor> tempActors = new ArrayList<>();
-                Response<ActorsResponse> actorsResponse = theTvdb.series()
-                    .actors(showId)
-                    .execute();
-                if (actorsResponse.isSuccessful() && actorsResponse.body() != null) {
-                    for(Actor actor : actorsResponse.body().data) {
-                        tempActors.add(actor);
+                if (!basicShow && !basicEpisode) {
+                    List<Actor> tempActors = new ArrayList<>();
+                    Response<ActorsResponse> actorsResponse = theTvdb.series()
+                        .actors(showId)
+                        .execute();
+                    if (actorsResponse.isSuccessful() && actorsResponse.body() != null) {
+                        for(Actor actor : actorsResponse.body().data) {
+                            tempActors.add(actor);
+                        }
                     }
-                }
-                else {
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
-                }
-                Collections.sort(tempActors, new Comparator<Actor>() {
-                    @Override
-                    public int compare(Actor a1, Actor a2) {
-                        return Integer.compare(a1.sortOrder, a2.sortOrder);
+                    else {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR");
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
-                });
-                for(Actor actor : tempActors) {
-                    actors.put(actor.name, actor.role);
+                    Collections.sort(tempActors, new Comparator<Actor>() {
+                        @Override
+                        public int compare(Actor a1, Actor a2) {
+                            return Integer.compare(a1.sortOrder, a2.sortOrder);
+                        }
+                    });
+                    for(Actor actor : tempActors) {
+                        actors.put(actor.name, actor.role);
+                    }
                 }
 
                 final String BANNERS_URL = "https://www.thetvdb.com/banners/";
 
                 // backdrops
-                List<Pair<SeriesImageQueryResult, String>> tempBackdrops = new ArrayList<>();
-                Response<SeriesImageQueryResultResponse> fanartsResponse = theTvdb.series()
-                    .imagesQuery(showId, "fanart", null, null, resultLanguage)
-                    .execute();
-                if (fanartsResponse.isSuccessful() && fanartsResponse.body() != null) {
-                    for(SeriesImageQueryResult fanart : fanartsResponse.body().data) {
-                        tempBackdrops.add(Pair.create(fanart, resultLanguage));
-                    }
-                }
-                else if (fanartsResponse.code() != 404) {
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
-                }
-                if (!resultLanguage.equals("en")) {
-                    Response<SeriesImageQueryResultResponse> globalFanartsResponse = theTvdb.series()
-                        .imagesQuery(showId, "fanart", null, null, "en")
+                if (!basicShow && !basicEpisode) {
+                    List<Pair<SeriesImageQueryResult, String>> tempBackdrops = new ArrayList<>();
+                    Response<SeriesImageQueryResultResponse> fanartsResponse = theTvdb.series()
+                        .imagesQuery(showId, "fanart", null, null, resultLanguage)
                         .execute();
-                    if (globalFanartsResponse.isSuccessful() && globalFanartsResponse.body() != null) {
-                        for(SeriesImageQueryResult fanart : globalFanartsResponse.body().data) {
-                            tempBackdrops.add(Pair.create(fanart, "en"));
+                    if (fanartsResponse.isSuccessful() && fanartsResponse.body() != null) {
+                        for(SeriesImageQueryResult fanart : fanartsResponse.body().data) {
+                            tempBackdrops.add(Pair.create(fanart, resultLanguage));
                         }
                     }
-                    else if (globalFanartsResponse.code() != 404) {
+                    else if (fanartsResponse.code() != 404) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult fanart ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
-                }
-                Collections.sort(tempBackdrops, new Comparator<Pair<SeriesImageQueryResult, String>>() {
-                    @Override
-                    public int compare(Pair<SeriesImageQueryResult, String> b1, Pair<SeriesImageQueryResult, String> b2) {
-                        return - Double.compare(b1.first.ratingsInfo.average, b2.first.ratingsInfo.average);
+                    if (!resultLanguage.equals("en")) {
+                        Response<SeriesImageQueryResultResponse> globalFanartsResponse = theTvdb.series()
+                            .imagesQuery(showId, "fanart", null, null, "en")
+                            .execute();
+                        if (globalFanartsResponse.isSuccessful() && globalFanartsResponse.body() != null) {
+                            for(SeriesImageQueryResult fanart : globalFanartsResponse.body().data) {
+                                tempBackdrops.add(Pair.create(fanart, "en"));
+                            }
+                        }
+                        else if (globalFanartsResponse.code() != 404) {
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult fanart en ScrapeStatus.ERROR");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        }
                     }
-                });
-                for(Pair<SeriesImageQueryResult, String> backdrop : tempBackdrops) {
-                    ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTags.getTitle());
-                    image.setLanguage(backdrop.second);
-                    image.setThumbUrl(BANNERS_URL + backdrop.first.thumbnail);
-                    image.setLargeUrl(BANNERS_URL + backdrop.first.fileName);
-                    image.generateFileNames(mContext);
-                    backdrops.add(image);
+                    Collections.sort(tempBackdrops, new Comparator<Pair<SeriesImageQueryResult, String>>() {
+                        @Override
+                        public int compare(Pair<SeriesImageQueryResult, String> b1, Pair<SeriesImageQueryResult, String> b2) {
+                            return - Double.compare(b1.first.ratingsInfo.average, b2.first.ratingsInfo.average);
+                        }
+                    });
+                    for(Pair<SeriesImageQueryResult, String> backdrop : tempBackdrops) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTags.getTitle());
+                        image.setLanguage(backdrop.second);
+                        image.setThumbUrl(BANNERS_URL + backdrop.first.thumbnail);
+                        image.setLargeUrl(BANNERS_URL + backdrop.first.fileName);
+                        image.generateFileNames(mContext);
+                        backdrops.add(image);
+                    }
                 }
 
                 // posters
                 List<Pair<SeriesImageQueryResult, String>> tempPosters = new ArrayList<>();
-                Response<SeriesImageQueryResultResponse> postersResponse = theTvdb.series()
-                    .imagesQuery(showId, "poster", null, null, resultLanguage)
-                    .execute();
-                if (postersResponse.isSuccessful() && postersResponse.body() != null) {
-                    for(SeriesImageQueryResult poster : postersResponse.body().data) {
-                        tempPosters.add(Pair.create(poster, resultLanguage));
-                    }
-                }
-                else if (postersResponse.code() != 404) {
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
-                }
-                if (!resultLanguage.equals("en")) {
-                    Response<SeriesImageQueryResultResponse> globalPostersResponse = theTvdb.series()
-                        .imagesQuery(showId, "poster", null, null, "en")
+                if (!basicEpisode) {
+                    Response<SeriesImageQueryResultResponse> postersResponse = theTvdb.series()
+                        .imagesQuery(showId, "poster", null, null, resultLanguage)
                         .execute();
-                    if (globalPostersResponse.isSuccessful() && globalPostersResponse.body() != null) {
-                        for(SeriesImageQueryResult poster : globalPostersResponse.body().data) {
-                            tempPosters.add(Pair.create(poster, "en"));
+                    if (postersResponse.isSuccessful() && postersResponse.body() != null) {
+                        for(SeriesImageQueryResult poster : postersResponse.body().data) {
+                            tempPosters.add(Pair.create(poster, resultLanguage));
                         }
                     }
-                    else if (globalPostersResponse.code() != 404) {
+                    else if (postersResponse.code() != 404) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult poster ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                     }
-                }
-                Response<SeriesImageQueryResultResponse> seasonsResponse = theTvdb.series()
-                    .imagesQuery(showId, "season", null, null, resultLanguage)
-                    .execute();
-                if (seasonsResponse.isSuccessful() && seasonsResponse.body() != null) {
-                    for(SeriesImageQueryResult season : seasonsResponse.body().data) {
-                        tempPosters.add(Pair.create(season, resultLanguage));
-                    }
-                }
-                else if (seasonsResponse.code() != 404) {
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
-                }
-                if (!resultLanguage.equals("en")) {
-                    Response<SeriesImageQueryResultResponse> globalSeasonsResponse = theTvdb.series()
-                        .imagesQuery(showId, "season", null, null, "en")
-                        .execute();
-                    if (globalSeasonsResponse.isSuccessful() && globalSeasonsResponse.body() != null) {
-                        for(SeriesImageQueryResult season : globalSeasonsResponse.body().data) {
-                            tempPosters.add(Pair.create(season, "en"));
+                    if (!resultLanguage.equals("en")) {
+                        Response<SeriesImageQueryResultResponse> globalPostersResponse = theTvdb.series()
+                            .imagesQuery(showId, "poster", null, null, "en")
+                            .execute();
+                        if (globalPostersResponse.isSuccessful() && globalPostersResponse.body() != null) {
+                            for(SeriesImageQueryResult poster : globalPostersResponse.body().data) {
+                                tempPosters.add(Pair.create(poster, "en"));
+                            }
+                        }
+                        else if (globalPostersResponse.code() != 404) {
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult poster en ScrapeStatus.ERROR");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
                         }
                     }
-                    else if (globalSeasonsResponse.code() != 404) {
+                }
+                if (!basicShow) {
+                    Response<SeriesImageQueryResultResponse> seasonsResponse = theTvdb.series()
+                        .imagesQuery(showId, "season", null, null, resultLanguage)
+                        .execute();
+                    if (seasonsResponse.isSuccessful() && seasonsResponse.body() != null) {
+                        for(SeriesImageQueryResult season : seasonsResponse.body().data) {
+                            tempPosters.add(Pair.create(season, resultLanguage));
+                        }
+                    }
+                    else if (seasonsResponse.code() != 404) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult season ScrapeStatus.ERROR");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                    }
+                    if (!resultLanguage.equals("en")) {
+                        Response<SeriesImageQueryResultResponse> globalSeasonsResponse = theTvdb.series()
+                            .imagesQuery(showId, "season", null, null, "en")
+                            .execute();
+                        if (globalSeasonsResponse.isSuccessful() && globalSeasonsResponse.body() != null) {
+                            for(SeriesImageQueryResult season : globalSeasonsResponse.body().data) {
+                                tempPosters.add(Pair.create(season, "en"));
+                            }
+                        }
+                        else if (globalSeasonsResponse.code() != 404) {
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult season en ScrapeStatus.ERROR");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        }
                     }
                 }
                 Collections.sort(tempPosters, new Comparator<Pair<SeriesImageQueryResult, String>>() {
@@ -343,56 +369,61 @@ public class ShowScraper2 extends BaseScraper2 {
                 }
 
                 // episodes
-                Integer page = 1;
-                while (page != null) {
-                    Response<EpisodesResponse> episodesResponse = theTvdb.series()
-                        .episodes(showId, page, resultLanguage)
-                        .execute();
-                    if (episodesResponse.isSuccessful() && episodesResponse.body() != null) {
-                        for(Episode episode : episodesResponse.body().data) {
-                            EpisodeTags episodeTags = new EpisodeTags();
-                            episodeTags.setActors(episode.guestStars);
-                            episodeTags.setDirectors(episode.directors);
-                            episodeTags.setPlot(episode.overview);
-                            episodeTags.setRating(episode.siteRating.floatValue());
-                            episodeTags.setTitle(episode.episodeName);
-                            episodeTags.setImdbId(episode.imdbId);
-                            episodeTags.setOnlineId(episode.id);
-                            episodeTags.setAired(episode.firstAired);
-                            episodeTags.setEpisode(episode.airedEpisodeNumber);
-                            episodeTags.setSeason(episode.airedSeason);
-                            episodeTags.setShowTags(showTags);
-                            episodeTags.setEpisodePicture(episode.filename, mContext);
-                            if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
-                                Response<EpisodeResponse> globalEpisodeResponse = theTvdb.episodes()
-                                    .get(episode.id, "en")
-                                    .execute();
-                                if (globalEpisodeResponse.isSuccessful() && globalEpisodeResponse.body() != null) {
-                                    Episode globalEpisode = globalEpisodeResponse.body().data;
-                                    if (episode.overview == null)
-                                        episodeTags.setPlot(globalEpisode.overview);
-                                    if (episode.episodeName == null)
-                                        episodeTags.setTitle(globalEpisode.episodeName);
+                if (!basicShow && !basicEpisode) {
+                    Integer page = 1;
+                    while (page != null) {
+                        Response<EpisodesResponse> episodesResponse = theTvdb.series()
+                            .episodes(showId, page, resultLanguage)
+                            .execute();
+                        if (episodesResponse.isSuccessful() && episodesResponse.body() != null) {
+                            for(Episode episode : episodesResponse.body().data) {
+                                EpisodeTags episodeTags = new EpisodeTags();
+                                episodeTags.setActors(episode.guestStars);
+                                episodeTags.setDirectors(episode.directors);
+                                episodeTags.setPlot(episode.overview);
+                                episodeTags.setRating(episode.siteRating.floatValue());
+                                episodeTags.setTitle(episode.episodeName);
+                                episodeTags.setImdbId(episode.imdbId);
+                                episodeTags.setOnlineId(episode.id);
+                                episodeTags.setAired(episode.firstAired);
+                                episodeTags.setEpisode(episode.airedEpisodeNumber);
+                                episodeTags.setSeason(episode.airedSeason);
+                                episodeTags.setShowTags(showTags);
+                                episodeTags.setEpisodePicture(episode.filename, mContext);
+                                if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
+                                    Response<EpisodeResponse> globalEpisodeResponse = theTvdb.episodes()
+                                        .get(episode.id, "en")
+                                        .execute();
+                                    if (globalEpisodeResponse.isSuccessful() && globalEpisodeResponse.body() != null) {
+                                        Episode globalEpisode = globalEpisodeResponse.body().data;
+                                        if (episode.overview == null)
+                                            episodeTags.setPlot(globalEpisode.overview);
+                                        if (episode.episodeName == null)
+                                            episodeTags.setTitle(globalEpisode.episodeName);
+                                    }
+                                    else {
+                                        if (DBG) Log.d(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR");
+                                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                                    }
                                 }
-                                else {
-                                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
-                                }
+                                allEpisodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
                             }
-                            allEpisodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
+                            page = episodesResponse.body().links.next;
                         }
-                        page = episodesResponse.body().links.next;
-                    }
-                    else {
-                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        else {
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult episode ScrapeStatus.ERROR");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        }
                     }
                 }
             }
             catch (Exception e) {
                 Log.e(TAG, "getDetailsInternal", e);
+                if (DBG) Log.d(TAG,"ScrapeDetailResult exception ScrapeStatus.ERROR");
                 return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
             }
 
-            if (allEpisodes != null) {
+            if (!allEpisodes.isEmpty()) {
                 // put that result in cache.
                 sEpisodeCache.put(showKey, allEpisodes);
             }
@@ -404,8 +435,7 @@ public class ShowScraper2 extends BaseScraper2 {
                 showTags.setPosters(posters);
             }
             // if we have episodes and posters map them to each other
-            if (allEpisodes != null && !allEpisodes.isEmpty() &&
-                    !posters.isEmpty()) {
+            if (!allEpisodes.isEmpty() && !posters.isEmpty()) {
 
                 // array to map season -> image
                 SparseArray<ScraperImage> seasonPosters = new SparseArray<ScraperImage>();
@@ -434,7 +464,8 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
             }
-            showTags.addActorIfAbsent(actors);
+            if (!actors.isEmpty())
+                showTags.addActorIfAbsent(actors);
         } else {
             if (DBG) Log.d(TAG, "using cached Episode List");
             // no need to parse, we have a cached result
@@ -446,8 +477,10 @@ public class ShowScraper2 extends BaseScraper2 {
         }
 
         // if there is no info about the show there is nothing we can do
-        if (showTags == null)
+        if (showTags == null) {
+            if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+        }
 
         showTags.downloadPoster(mContext);
 
@@ -455,7 +488,7 @@ public class ShowScraper2 extends BaseScraper2 {
         Bundle extra = result.getExtra();
         int epnum = Integer.parseInt(extra.getString(ShowUtils.EPNUM, "0"));
         int season = Integer.parseInt(extra.getString(ShowUtils.SEASON, "0"));
-        if (allEpisodes != null) {
+        if (!allEpisodes.isEmpty()) {
             String key = season + "|" + epnum;
             returnValue = allEpisodes.get(key);
         }
@@ -481,13 +514,13 @@ public class ShowScraper2 extends BaseScraper2 {
             returnValue.downloadPoster(mContext);
         }
         Bundle extraOut = null;
-        if (options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES)
-                && allEpisodes != null && !allEpisodes.isEmpty()) {
+        if (options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES) && !allEpisodes.isEmpty()) {
             extraOut = new Bundle();
             for (Entry<String, EpisodeTags> item : allEpisodes.entrySet()) {
                 extraOut.putParcelable(item.getKey(), item.getValue());
             }
         }
+        if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 
