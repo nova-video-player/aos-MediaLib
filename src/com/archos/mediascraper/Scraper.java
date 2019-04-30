@@ -45,6 +45,9 @@ public class Scraper {
     public static final String ITEM_REQUEST_ALL_EPISODES = "WantAllEps";
     public static final String ITEM_RESULT_ALL_EPISODES = "allEpisodes";
 
+    public static final String ITEM_REQUEST_BASIC_SHOW = "basicShow";
+    public static final String ITEM_REQUEST_BASIC_VIDEO = "basicVideo";
+
     private final Context mContext;
     public Scraper(Context context) {
         if (DBG) Log.d(TAG, "CTOR");
