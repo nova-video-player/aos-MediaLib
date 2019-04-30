@@ -214,13 +214,13 @@ public class AutoScrapeService extends Service {
         if(mThread==null || !mThread.isAlive()) {
             mThread = new Thread() {
 
-                public int mNetworkErrors; //when errors equals to number of files to scrap, stop looping.
+                public int mNetworkOrScrapErrors; //when errors equals to number of files to scrap, stop looping.
                 public void run() {
                     boolean shouldRescrapAll = rescrapAlreadySearched;
                     if(DBG)  Log.d(TAG, "startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
                     do{
 
-                        mNetworkErrors = 0;
+                        mNetworkOrScrapErrors = 0;
                         restartOnNextRound = false;
 
                         Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED);
@@ -343,7 +343,8 @@ public class AutoScrapeService extends Service {
                                         }
                                         result.tag.save(AutoScrapeService.this, ID);
                                         DeleteFileCallback.DO_NOT_DELETE.clear();
-                                        notScrapedAndNoError = false;
+                                        //a result exists
+                                        notScrapedAndNoError = true;
                                         if (result.tag.getTitle() != null)
                                             Log.d(TAG, "info " + result.tag.getTitle());
 
@@ -373,15 +374,16 @@ public class AutoScrapeService extends Service {
                                     cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE, String.valueOf(-1));
                                     getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cv, BaseColumns._ID + "=?", new String[]{Long.toString(ID)});
                                 }
-                                else if(!notScrapedAndNoError) mNetworkErrors++;
+                                else if(!notScrapedAndNoError) mNetworkOrScrapErrors++;
                                 sNumberOfFilesRemainingToProcess--;
+                                if (DBG) Log.d(TAG,"remaining=" + sNumberOfFilesRemainingToProcess + ", mNetworkOrScrapErrors=" + mNetworkOrScrapErrors);
 
                             } while (cursor.moveToNext()
                                     &&isEnable(AutoScrapeService.this));
                             sIsScraping = false;
-                            if(cursor.getCount() == mNetworkErrors) { //when as many errors, we assume we don't have the internet, do not loop
+                            if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
-                                if(DBG) Log.d(TAG, "no internet");
+                                if(DBG) Log.d(TAG, "no internet or scraper errors, stop iterating");
                             }
                         }
                         cursor.close();
