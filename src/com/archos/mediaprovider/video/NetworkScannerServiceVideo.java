@@ -858,7 +858,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     }
     /** cancels the notification */
     private static void hideNotification(NotificationManager nm) {
-        nm.cancel(NOTIFICATION_ID);
+        if (nm != null)
+            nm.cancel(NOTIFICATION_ID);
     }
 
     /**

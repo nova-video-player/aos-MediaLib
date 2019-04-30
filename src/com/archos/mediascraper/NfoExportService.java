@@ -237,7 +237,8 @@ public class NfoExportService extends IntentService {
 
     /** cancels the notification */
     private void hideNotification() {
-        mNotificationManager.cancel(NOTIFICATION_ID);
+        if (mNotificationManager != null)
+            mNotificationManager.cancel(NOTIFICATION_ID);
     }
     private NotificationCompat.Builder getNotification(String contentText) {
         // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
