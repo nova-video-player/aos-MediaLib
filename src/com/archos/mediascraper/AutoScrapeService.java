@@ -137,7 +137,8 @@ public class AutoScrapeService extends Service {
     }
     /** cancels the notification */
     private static void hideNotification(NotificationManager nm) {
-        nm.cancel(NOTIFICATION_ID);
+        if (nm != null)
+            nm.cancel(NOTIFICATION_ID);
     }
 
     @Override
