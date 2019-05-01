@@ -14,9 +14,7 @@
 
 package com.archos.mediascraper;
 
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -25,22 +23,20 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 
-import androidx.core.app.NotificationCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
-import com.archos.mediaprovider.video.NetworkScannerServiceVideo;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
@@ -82,6 +78,13 @@ public class AutoScrapeService extends Service {
     private AutoScraperBinder mBinder;
     private Thread mExportingThread;
     private Handler mHandler;
+    private static Context mContext;
+
+    private static final int NOTIFICATION_ID = 4;
+    private NotificationManager nm;
+    private static final String notifChannelId = "AutoScrapeService_id";
+    private static final String notifChannelName = "AutoScrapeService";
+    private static final String notifChannelDescr = "AutoScrapeService";
 
     /**
      * Ugly implementation based on a static variable, guessing that there is only one instance at a time (seems to be true...)
@@ -101,44 +104,13 @@ public class AutoScrapeService extends Service {
     }
 
     public static void startService(Context context) {
+        mContext = context;
         context.startService(new Intent(context, AutoScrapeService.class));
     }
 
     // Used by system. Don't call
     public AutoScrapeService() {
         if(DBG) Log.d(TAG, "AutoScrapeService() "+this);
-    }
-
-    private static final int NOTIFICATION_ID = 4;
-    private NotificationManager nm;
-    private static final String notifChannelId = "AutoScrapeService_id";
-    private static final String notifChannelName = "AutoScrapeService";
-    private static final String notifChannelDescr = "AutoScrapeService";
-    /** shows a notification */
-    private void showNotification(NotificationManager nm, String notifMsg, int titleId){
-        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
-                    nm.IMPORTANCE_LOW);
-            mNotifChannel.setDescription(notifChannelDescr);
-            if (nm != null)
-                nm.createNotificationChannel(mNotifChannel);
-        }
-        Intent notificationIntent = new Intent(this, NetworkScannerServiceVideo.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        String notifyPath = notifMsg;
-        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
-                .setSmallIcon(android.R.drawable.stat_notify_sync)
-                .setContentTitle(getString(titleId))
-                .setContentText(notifyPath)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true).setAutoCancel(true);;
-        nm.notify(NOTIFICATION_ID, n.build());
-    }
-    /** cancels the notification */
-    private static void hideNotification(NotificationManager nm) {
-        if (nm != null)
-            nm.cancel(NOTIFICATION_ID);
     }
 
     @Override
@@ -219,7 +191,7 @@ public class AutoScrapeService extends Service {
     }
     @Override
     public void onDestroy() {
-        hideNotification(nm);
+        FileUtils.hideNotification(nm, NOTIFICATION_ID);
         super.onDestroy();
         if(DBG) Log.d(TAG, "onDestroy() " + this);
     }
@@ -295,8 +267,11 @@ public class AutoScrapeService extends Service {
                                 long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                                 boolean notScrapedAndNoError = true;
                                 if(DBG) Log.d(TAG, "fileUri "+fileUri);
-                                showNotification(nm,  getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess, R.string.scraping_in_progress);
-                                if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
+                                FileUtils.showNotification(mContext, AutoScrapeService.class, nm, NOTIFICATION_ID,
+                                        getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess,
+                                        R.string.scraping_in_progress, notifChannelId, notifChannelName,  notifChannelDescr);
+
+                                    if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
 
                                     if(DBG) Log.d(TAG, "NFO enabled");
 
@@ -442,7 +417,7 @@ public class AutoScrapeService extends Service {
                             WrapperChannelManager.refreshChannels(AutoScrapeService.this);
                         }
                     });
-                    hideNotification(nm);
+                    FileUtils.hideNotification(nm, NOTIFICATION_ID);
                     AutoScrapeService.this.stopSelf();
                 }
             };

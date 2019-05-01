@@ -15,10 +15,7 @@
 package com.archos.mediaprovider.video;
 
 import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import androidx.core.app.NotificationCompat;
 import android.app.Service;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderOperation.Builder;
@@ -30,7 +27,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
-import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -107,6 +103,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private boolean mRecordLog;
     private String mRecordOnFailPreference;
     private String mRecordEndOfScanPreference;
+
+    private static final int NOTIFICATION_ID = 1;
+    private NotificationManager nm;
+    private static final String notifChannelId = "NetworkScannerServiceVideo_id";
+    private static final String notifChannelName = "NetworkScannerServiceVideo";
+    private static final String notifChannelDescr = "NetworkScannerServiceVideo";
 
     public static boolean startIfHandles(Context context, Intent broadcast) {
         String action = broadcast.getAction();
@@ -296,7 +298,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         sendBroadcast(scannerIntent);
         // also show a notification.
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        showNotification(nm, path, R.string.network_unscan_msg);
+        FileUtils.showNotification(this, NetworkScannerServiceVideo.class, nm, NOTIFICATION_ID,
+                path, R.string.network_unscan_msg, notifChannelId, notifChannelName,  notifChannelDescr);
 
         int deleted = cr.delete(VideoStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
         if (DBG) Log.d(TAG, "removed: " + deleted);
@@ -306,7 +309,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
         sendBroadcast(intent);
         // and cancel the Notification
-        hideNotification(nm);
+        FileUtils.hideNotification(nm, NOTIFICATION_ID);
     }
 
     /** Utility class to build a comma separated string of ids */
@@ -375,7 +378,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             sendBroadcast(scannerIntent);
             // also show a notification.
             nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            showNotification(nm, f.getUri().toString(), R.string.network_scan_msg);
+            FileUtils.showNotification(this, NetworkScannerServiceVideo.class, nm, NOTIFICATION_ID,
+                    f.getUri().toString(), R.string.network_scan_msg, notifChannelId, notifChannelName,  notifChannelDescr);
 
             String path;
             String upnpUri = null;
@@ -451,7 +455,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             sendBroadcast(intent);
             // and cancel the Notification
-            hideNotification(nm);
+            FileUtils.hideNotification(nm, NOTIFICATION_ID);
             if(mRecordLog) {
                 try {
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
@@ -830,37 +834,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     // ---------------------------------------------------------------------- //
     // -- Utility logic                                                    -- //
     // ---------------------------------------------------------------------- //
-    private static final int NOTIFICATION_ID = 1;
-    private NotificationManager nm;
-    private static final String notifChannelId = "NetworkScannerServiceVideo_id";
-    private static final String notifChannelName = "NetworkScannerServiceVideo";
-    private static final String notifChannelDescr = "NetworkScannerServiceVideo";
-    /** shows a notification */
-    private void showNotification(NotificationManager nm, String path, int titleId){
-        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
-                    nm.IMPORTANCE_LOW);
-            mNotifChannel.setDescription(notifChannelDescr);
-            if (nm != null)
-                nm.createNotificationChannel(mNotifChannel);
-        }
-        Intent notificationIntent = new Intent(this, NetworkScannerServiceVideo.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        String notifyPath = path;
-        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
-                .setSmallIcon(android.R.drawable.stat_notify_sync)
-                .setContentTitle(getString(titleId))
-                .setContentText(notifyPath)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setContentIntent(contentIntent).setOngoing(true).setAutoCancel(true);;
-        nm.notify(NOTIFICATION_ID, n.build());
-    }
-    /** cancels the notification */
-    private static void hideNotification(NotificationManager nm) {
-        if (nm != null)
-            nm.cancel(NOTIFICATION_ID);
-    }
 
     /**
      * transforms '/mnt/network/smb/GROUP/SERVER/..' into 'GROUP/SERVER'
