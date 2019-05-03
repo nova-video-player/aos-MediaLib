@@ -52,9 +52,9 @@ public class AutoScrapeService extends Service {
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static String TAG = "AutoScrapeService";
-    private static boolean DBG = false;
+    private static boolean DBG = true;
 
-    static boolean sIsScraping = false;
+    static boolean sIsScraping = true;
     static int sNumberOfFilesRemainingToProcess = 0;
     public static String KEY_ENABLE_AUTO_SCRAP ="enable_auto_scrap_key";
     private final static String[] SCRAPER_ACTIVITY_COLS = {
@@ -246,22 +246,22 @@ public class AutoScrapeService extends Service {
                                 Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                                 Uri scrapUri = title != null && !title.isEmpty() ? Uri.parse("/" + title + ".mp4") : fileUri;
                                 long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-                                boolean notScrapedAndNoError = true;
+                                // for now there is no error and file is not scraped
+                                boolean notScraped = true;
+                                boolean noScrapeError = true;
                                 if(DBG) Log.d(TAG, "fileUri "+fileUri);
                                 if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
 
                                     if(DBG) Log.d(TAG, "NFO enabled");
 
                                     BaseTags tags = NfoParser.getTagForFile(fileUri, AutoScrapeService.this);
-                                        if (tags != null) {
-                                            if(DBG) Log.d(TAG, "found NFO");
-                        /*
-                        if poster url are in nfo or in folder, download is automatic
-                        if no poster available, try to scrap with good title,
-                         */
-
+                                    if (tags != null) {
+                                        if(DBG) Log.d(TAG, "found NFO");
+                                        /*
+                                        if poster url are in nfo or in folder, download is automatic
+                                        if no poster available, try to scrap with good title,
+                                        */
                                         if (ID != -1) {
-
                                             //ugly but necessary to avoid poster delete when replacing tag
                                             if(tags.getDefaultPoster()!=null){
                                                 DeleteFileCallback.DO_NOT_DELETE.add(tags.getDefaultPoster().getLargeFile()); }
@@ -277,7 +277,9 @@ public class AutoScrapeService extends Service {
                                             DeleteFileCallback.DO_NOT_DELETE.clear();
                                             TraktService.onNewVideo(AutoScrapeService.this);
                                         }
-                                        notScrapedAndNoError = false;
+                                        //found NFO thus still no error but scraped
+                                        notScraped = false;
+                                        noScrapeError = true;
                                         if (tags.getPosters() != null&&DBG) {
                                             Log.d(TAG, "posters : " + tags.getPosters().size());
                                         }
@@ -288,13 +290,14 @@ public class AutoScrapeService extends Service {
                                                 if(DBG)
                                                 Log.d(TAG, "no posters using title " + tags.getTitle());
                                             }
-                                            if(DBG)
-                                                Log.d(TAG, "no posters ");
-                                            notScrapedAndNoError = true;
+                                            if(DBG) Log.d(TAG, "no posters ");
+                                            //poster not found thus not scraped and no error
+                                            notScraped = true;
+                                            noScrapeError = true;
                                         }
                                     }
                                 }
-                                if (notScrapedAndNoError) { //look for online details
+                                if (notScraped&&noScrapeError) { //look for online details
                                     ScrapeDetailResult result = null;
                                     boolean searchOnline = !shouldRescrapAll;
                                     if(shouldRescrapAll){
@@ -343,8 +346,9 @@ public class AutoScrapeService extends Service {
                                         }
                                         result.tag.save(AutoScrapeService.this, ID);
                                         DeleteFileCallback.DO_NOT_DELETE.clear();
-                                        //a result exists
-                                        notScrapedAndNoError = true;
+                                        // result exists thus scraped and no error for now
+                                        notScraped = false;
+                                        noScrapeError = true;
                                         if (result.tag.getTitle() != null)
                                             Log.d(TAG, "info " + result.tag.getTitle());
 
@@ -361,20 +365,26 @@ public class AutoScrapeService extends Service {
                                                 }
                                             }
                                         }
-                                    } else if (result!=null){ //not scraped, check for errors
-                                        notScrapedAndNoError = result.status != ScrapeStatus.ERROR && result.status != ScrapeStatus.ERROR_NETWORK && result.status != ScrapeStatus.ERROR_NO_NETWORK;
+                                    } else if (result!=null){
+                                        //not scraped, check for errors
+                                        notScraped = true;
+                                        noScrapeError = result.status != ScrapeStatus.ERROR && result.status != ScrapeStatus.ERROR_NETWORK && result.status != ScrapeStatus.ERROR_NO_NETWORK;
                                     }
                                 }
 
-                                if (notScrapedAndNoError&&!shouldRescrapAll) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
+                                if (notScraped&&noScrapeError&&!shouldRescrapAll) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
                                     // Failed => set the scraper fields to -1 so that we will be able
                                     // to skip this file when launching the automated process again
+                                    if (DBG) Log.d(TAG,"file " + fileUri + " not scraped without error -> mark it as not to be scraped again");
                                     ContentValues cv = new ContentValues(2);
                                     cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID, String.valueOf(-1));
                                     cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE, String.valueOf(-1));
                                     getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cv, BaseColumns._ID + "=?", new String[]{Long.toString(ID)});
                                 }
-                                else if(!notScrapedAndNoError) mNetworkOrScrapErrors++;
+                                else if(!noScrapeError) { // condition is scrapedOrError
+                                    if (DBG) Log.d(TAG,"file " + fileUri + " scraped but with error -> increase mNetworkOrScrapErrors");
+                                    mNetworkOrScrapErrors++;
+                                }
                                 sNumberOfFilesRemainingToProcess--;
                                 if (DBG) Log.d(TAG,"remaining=" + sNumberOfFilesRemainingToProcess + ", mNetworkOrScrapErrors=" + mNetworkOrScrapErrors);
 
@@ -395,8 +405,6 @@ public class AutoScrapeService extends Service {
             };
             mThread.start();
         }
-
-
     }
     private static final String WHERE_BASE =
                     VideoStore.Video.VideoColumns.ARCHOS_HIDE_FILE + "=0 AND " +
