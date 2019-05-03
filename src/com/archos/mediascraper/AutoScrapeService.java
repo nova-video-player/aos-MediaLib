@@ -383,6 +383,8 @@ public class AutoScrapeService extends Service {
                                             }
                                         }
                                     } else if (result!=null){ //not scraped, check for errors
+                                        // for tvshow if search returns ScrapeStatus.OKAY but in details it returns ScrapeStaus.ERROR_PARSER it is not counted as a scraping error
+                                        // this allows the video to be marked as not to be rescraped
                                         notScrapedAndNoError = result.status != ScrapeStatus.ERROR && result.status != ScrapeStatus.ERROR_NETWORK && result.status != ScrapeStatus.ERROR_NO_NETWORK;
                                     }
                                 }
