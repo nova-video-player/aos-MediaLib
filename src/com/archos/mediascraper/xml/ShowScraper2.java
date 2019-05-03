@@ -181,45 +181,47 @@ public class ShowScraper2 extends BaseScraper2 {
             List<ScraperImage> backdrops = new LinkedList<>();
             List<ScraperImage> posters = new ArrayList<>();
             allEpisodes = new HashMap<>();
+            showTags = new ShowTags();
 
             TheTvdb theTvdb = new TheTvdb(mContext.getString(R.string.tvdb_api_2_key));
             try {
                 // series
-                Response<SeriesResponse> seriesResponse = theTvdb.series()
-                    .series(showId, resultLanguage)
-                    .execute();
-                if (seriesResponse.isSuccessful() && seriesResponse.body() != null) {
-                    Series series = seriesResponse.body().data;
-                    showTags = new ShowTags();
-                    showTags.setPlot(series.overview);
-                    showTags.setRating(series.siteRating.floatValue());
-                    showTags.setTitle(series.seriesName);
-                    showTags.setContentRating(series.rating);
-                    showTags.setImdbId(series.imdbId);
-                    showTags.setOnlineId(series.id);
-                    showTags.setGenres(getLocalizedGenres(series.genre));
-                    showTags.addStudioIfAbsent(series.network, '|', ',');
-                    showTags.setPremiered(series.firstAired);
-                    if (!basicShow && !basicEpisode && (series.overview == null || series.seriesName == null) && !resultLanguage.equals("en")) {
-                        Response<SeriesResponse> globalSeriesResponse = theTvdb.series()
-                            .series(showId, "en")
-                            .execute();
-                        if (globalSeriesResponse.isSuccessful() && globalSeriesResponse.body() != null) {
-                            Series globalSeries = globalSeriesResponse.body().data;
-                            if (series.overview == null)
-                                showTags.setPlot(globalSeries.overview);
-                            if (series.seriesName == null)
-                                showTags.setTitle(globalSeries.seriesName);
-                        }
-                        else {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER");
-                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                if (!basicShow && !basicEpisode) {
+                    Response<SeriesResponse> seriesResponse = theTvdb.series()
+                        .series(showId, resultLanguage)
+                        .execute();
+                    if (seriesResponse.isSuccessful() && seriesResponse.body() != null) {
+                        Series series = seriesResponse.body().data;
+                        showTags.setPlot(series.overview);
+                        showTags.setRating(series.siteRating.floatValue());
+                        showTags.setTitle(series.seriesName);
+                        showTags.setContentRating(series.rating);
+                        showTags.setImdbId(series.imdbId);
+                        showTags.setOnlineId(series.id);
+                        showTags.setGenres(getLocalizedGenres(series.genre));
+                        showTags.addStudioIfAbsent(series.network, '|', ',');
+                        showTags.setPremiered(series.firstAired);
+                        if (!basicShow && !basicEpisode && (series.overview == null || series.seriesName == null) && !resultLanguage.equals("en")) {
+                            Response<SeriesResponse> globalSeriesResponse = theTvdb.series()
+                                .series(showId, "en")
+                                .execute();
+                            if (globalSeriesResponse.isSuccessful() && globalSeriesResponse.body() != null) {
+                                Series globalSeries = globalSeriesResponse.body().data;
+                                if (series.overview == null)
+                                    showTags.setPlot(globalSeries.overview);
+                                if (series.seriesName == null)
+                                    showTags.setTitle(globalSeries.seriesName);
+                            }
+                            else {
+                                if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER");
+                                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                            }
                         }
                     }
-                }
-                else {
-                    if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER");
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                    else {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER");
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                    }
                 }
 
                 // actors
@@ -371,6 +373,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
                 // episodes
                 if (!basicShow && !basicEpisode) {
+                    SparseArray<Episode> globalEpisodes = null;
                     Integer page = 1;
                     while (page != null) {
                         Response<EpisodesResponse> episodesResponse = theTvdb.series()
@@ -392,19 +395,31 @@ public class ShowScraper2 extends BaseScraper2 {
                                 episodeTags.setShowTags(showTags);
                                 episodeTags.setEpisodePicture(episode.filename, mContext);
                                 if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
-                                    Response<EpisodeResponse> globalEpisodeResponse = theTvdb.episodes()
-                                        .get(episode.id, "en")
-                                        .execute();
-                                    if (globalEpisodeResponse.isSuccessful() && globalEpisodeResponse.body() != null) {
-                                        Episode globalEpisode = globalEpisodeResponse.body().data;
+                                    if (globalEpisodes == null) {
+                                        globalEpisodes = new SparseArray<>();
+                                        Integer globalPage = 1;
+                                        while (globalPage != null) {
+                                            Response<EpisodesResponse> globalEpisodesResponse = theTvdb.series()
+                                                .episodes(showId, globalPage, "en")
+                                                .execute();
+                                            if (globalEpisodesResponse.isSuccessful() && globalEpisodesResponse.body() != null) {
+                                                for(Episode globalEpisode : globalEpisodesResponse.body().data) {
+                                                    globalEpisodes.put(globalEpisode.id, globalEpisode);
+                                                }
+                                                globalPage = globalEpisodesResponse.body().links.next;
+                                            }
+                                            else {
+                                                if (DBG) Log.d(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR_PARSER");
+                                                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                                            }
+                                        }
+                                    }
+                                    Episode globalEpisode = globalEpisodes.get(episode.id);
+                                    if (globalEpisode != null) {
                                         if (episode.overview == null)
                                             episodeTags.setPlot(globalEpisode.overview);
                                         if (episode.episodeName == null)
                                             episodeTags.setTitle(globalEpisode.episodeName);
-                                    }
-                                    else {
-                                        if (DBG) Log.d(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR_PARSER");
-                                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                                     }
                                 }
                                 allEpisodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
