@@ -141,6 +141,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
                 else if (globalResponse.code() != 404) {
+                    if (DBG) Log.d(TAG, "ScrapeSearchResult en ScrapeStatus.ERROR response not successful or body empty");
                     return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
                 }
             }
@@ -211,14 +212,14 @@ public class ShowScraper2 extends BaseScraper2 {
                                 showTags.setTitle(globalSeries.seriesName);
                         }
                         else {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR");
-                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
                 }
                 else {
-                    if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR");
-                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER");
+                    return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                 }
 
                 // actors
@@ -233,8 +234,8 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR");
-                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR_PARSER");
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     Collections.sort(tempActors, new Comparator<Actor>() {
                         @Override
@@ -261,8 +262,8 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (fanartsResponse.code() != 404) {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult fanart ScrapeStatus.ERROR");
-                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult fanart ScrapeStatus.ERROR_PARSER");
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (!resultLanguage.equals("en")) {
                         Response<SeriesImageQueryResultResponse> globalFanartsResponse = theTvdb.series()
@@ -274,8 +275,8 @@ public class ShowScraper2 extends BaseScraper2 {
                             }
                         }
                         else if (globalFanartsResponse.code() != 404) {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult fanart en ScrapeStatus.ERROR");
-                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult fanart en ScrapeStatus.ERROR_PARSER");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
                     Collections.sort(tempBackdrops, new Comparator<Pair<SeriesImageQueryResult, String>>() {
@@ -306,8 +307,8 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (postersResponse.code() != 404) {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult poster ScrapeStatus.ERROR");
-                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult poster ScrapeStatus.ERROR_PARSER");
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (!resultLanguage.equals("en")) {
                         Response<SeriesImageQueryResultResponse> globalPostersResponse = theTvdb.series()
@@ -319,8 +320,8 @@ public class ShowScraper2 extends BaseScraper2 {
                             }
                         }
                         else if (globalPostersResponse.code() != 404) {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult poster en ScrapeStatus.ERROR");
-                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult poster en ScrapeStatus.ERROR_PARSER");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
                 }
@@ -334,8 +335,8 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (seasonsResponse.code() != 404) {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult season ScrapeStatus.ERROR");
-                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult season ScrapeStatus.ERROR_PARSER");
+                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (!resultLanguage.equals("en")) {
                         Response<SeriesImageQueryResultResponse> globalSeasonsResponse = theTvdb.series()
@@ -347,8 +348,8 @@ public class ShowScraper2 extends BaseScraper2 {
                             }
                         }
                         else if (globalSeasonsResponse.code() != 404) {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult season en ScrapeStatus.ERROR");
-                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult season en ScrapeStatus.ERROR_PARSER");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
                 }
@@ -402,8 +403,8 @@ public class ShowScraper2 extends BaseScraper2 {
                                             episodeTags.setTitle(globalEpisode.episodeName);
                                     }
                                     else {
-                                        if (DBG) Log.d(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR");
-                                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                                        if (DBG) Log.d(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR_PARSER");
+                                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                                     }
                                 }
                                 allEpisodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
@@ -411,16 +412,16 @@ public class ShowScraper2 extends BaseScraper2 {
                             page = episodesResponse.body().links.next;
                         }
                         else {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult episode ScrapeStatus.ERROR");
-                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                            if (DBG) Log.d(TAG,"ScrapeDetailResult episode ScrapeStatus.ERROR_PARSER");
+                            return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
                 }
             }
             catch (Exception e) {
                 Log.e(TAG, "getDetailsInternal", e);
-                if (DBG) Log.d(TAG,"ScrapeDetailResult exception ScrapeStatus.ERROR");
-                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR, null);
+                if (DBG) Log.d(TAG,"ScrapeDetailResult exception ScrapeStatus.ERROR_PARSER");
+                return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
             }
 
             if (!allEpisodes.isEmpty()) {
