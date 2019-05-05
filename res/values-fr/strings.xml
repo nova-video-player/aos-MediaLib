@@ -13,7 +13,7 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
-    <string name="network_scan_msg">Indexation des fichiers Média</string>
+    <string name="network_scan_msg">Indexation des fichiers multimédia</string>
     <string name="network_unscan_msg">Suppression du contenu de la bibliothèque</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Export des informations multimédia</string>
@@ -58,6 +58,34 @@
         <item>enable_fanart:Activer Fanart</item>
         <item>info_language:Langue</item>
     </string-array>
+    <string name="tv_show_genre_action">Action</string>
+    <string name="tv_show_genre_adventure">Aventure</string>
+    <string name="tv_show_genre_animation">Dessin animé</string>
+    <string name="tv_show_genre_anime">Animé</string>
+    <string name="tv_show_genre_children">Enfants</string>
+    <string name="tv_show_genre_comedy">Comédie</string>
+    <string name="tv_show_genre_crime">Crime</string>
+    <string name="tv_show_genre_documentary">Documentaire</string>
+    <string name="tv_show_genre_drama">Drame</string>
+    <string name="tv_show_genre_family">Familial</string>
+    <string name="tv_show_genre_fantasy">Fantastique</string>
+    <string name="tv_show_genre_food">Culinaire</string>
+    <string name="tv_show_genre_game_show">Jeu télévisé</string>
+    <string name="tv_show_genre_home_garden">Maison et jardin</string>
+    <string name="tv_show_genre_horror">Horreur</string>
+    <string name="tv_show_genre_mini_series">Mini-série</string>
+    <string name="tv_show_genre_news">Actualité</string>
+    <string name="tv_show_genre_reality">Télé réalité</string>
+    <string name="tv_show_genre_romance">Romance</string>
+    <string name="tv_show_genre_science_fiction">Science-fiction</string>
+    <string name="tv_show_genre_soap">Téléfilm</string>
+    <string name="tv_show_genre_special_interest">Intérêt particulier</string>
+    <string name="tv_show_genre_sport">Sport</string>
+    <string name="tv_show_genre_suspense">Suspense</string>
+    <string name="tv_show_genre_talk_show">Débat</string>
+    <string name="tv_show_genre_thriller">Thriller</string>
+    <string name="tv_show_genre_travel">Voyage</string>
+    <string name="tv_show_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
@@ -65,4 +93,7 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Artiste</string>
+    <string name="scraping_in_progress">Recherche des descriptions en cours</string>
+    <string name="remaining_videos_to_process">Fichiers multimédia restants à traiter:</string>
+    <string name="video_store_import">Importation des fichiers multimédia locaux</string>
 </resources>

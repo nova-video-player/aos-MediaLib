@@ -36,7 +36,7 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">Tarjeta SD no disponible</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
-    <string name="sdcard_busy_message">La tarjeta SD está ocupada.</string>
+    <string name="sdcard_busy_message">Lo sentimos, tu tarjeta SD está ocupada.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">Error en tarjeta SD</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
