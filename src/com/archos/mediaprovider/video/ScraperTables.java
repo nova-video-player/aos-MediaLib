@@ -1539,5 +1539,9 @@ public final class ScraperTables {
             db.execSQL(SHOW_DELETE_TRIGGER_DROP);
             db.execSQL(SHOW_DELETE_TRIGGER_CREATE);
         }
+        if (toVersion == 37) {
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
+        }
     }
 }
