@@ -1535,6 +1535,12 @@ public final class VideoStore {
              * <P> Type: INTEGER</P>
              */
             public static final String AUTOSCRAPER_STATUS = "autoscrape_status";
+
+            /**
+             * Private nova flag to store if video is pinned.
+             * <P>TYPE: INTEGER<P>
+             */
+            public static final String NOVA_PINNED = "Nova_pinned";
         }
 
         public static final class Media implements VideoColumns {
