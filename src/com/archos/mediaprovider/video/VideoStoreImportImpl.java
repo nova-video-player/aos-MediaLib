@@ -567,18 +567,23 @@ public class VideoStoreImportImpl {
     }
 
     private final static String[] REMOTE_LIST_PROJECTION = new String[] {
-        "group_concat(" + BaseColumns._ID + ")"
+        BaseColumns._ID
     };
     /** helper to get a comma separated list of all ids */
     private static String getRemoteIdList (ContentResolver cr) {
         Cursor c = cr.query(MediaStore.Files.getContentUri("external"), REMOTE_LIST_PROJECTION, null, null, null);
-        String result = null;
+        StringBuilder sb = new StringBuilder();
+        String prefix = "";
         if (c != null) {
-            if (c.moveToFirst()) {
-                result = c.getString(0);
+            c.moveToFirst();
+            while (!c.isAfterLast()) {
+                sb.append(prefix).append(c.getString(0));
+                prefix = ",";
+                c.moveToNext();
             }
             c.close();
         }
+        String result = sb.toString();
         return TextUtils.isEmpty(result) ? "" : result;
     }
 
