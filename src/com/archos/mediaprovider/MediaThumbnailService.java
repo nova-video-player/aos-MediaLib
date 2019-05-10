@@ -32,6 +32,8 @@ import com.archos.medialib.MediaFactory;
 public class MediaThumbnailService extends Service {
 
     private static boolean sFirst = true;
+    private static boolean DBG = false;
+
 
     static class ServiceStub extends IMediaThumbnailService.Stub {
         MediaThumbnailService mService;
@@ -67,12 +69,12 @@ public class MediaThumbnailService extends Service {
 
     static private ServiceConnection mServiceConnection = new ServiceConnection() {
         public void onServiceDisconnected(ComponentName name) {
-            Log.d(TAG, "onServiceDisconnected");
+            if (DBG) Log.d(TAG, "onServiceDisconnected");
             sMediaThumbnailService = null;
         }
         
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "onServiceConnected: " + name);
+            if (DBG) Log.d(TAG, "onServiceConnected: " + name);
             synchronized (sLock) {
                 sMediaThumbnailService = IMediaThumbnailService.Stub.asInterface(service);
                 sLock.notifyAll();
