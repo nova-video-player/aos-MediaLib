@@ -166,7 +166,7 @@ public class VideoProvider extends ContentProvider {
                                 Log.d(TAG_DOCTOR_WHO,mCurrentThumbRequest.mPath+" does file exists ? "+ String.valueOf(editor.exists()));
 
                             if (editor.exists()) {
-                                Log.d(TAG,"mCurrentThumbRequest");
+                                if (DBG) Log.d(TAG,"mCurrentThumbRequest");
                                 mCurrentThumbRequest.execute();
                             } else {
                                 // original file hasn't been stored yet
@@ -876,7 +876,7 @@ public class VideoProvider extends ContentProvider {
      * @return
      */
     private boolean waitForThumbnailReady(Uri origUri) {
-        Log.d(TAG,"waitForThumbnailReady");
+        if (DBG) Log.d(TAG,"waitForThumbnailReady");
 
         String origId = origUri.getLastPathSegment();
         String[] whereArgs = new String[] { origId };
