@@ -2860,6 +2860,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
             db.update(FILES_TABLE_NAME, cvExtra, SELECTION_ID, new String[] { String.valueOf(id) });
         }
+
+        if (c != null) {
+            c.close();
+        }
     }
 
     /**
