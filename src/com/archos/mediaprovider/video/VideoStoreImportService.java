@@ -412,6 +412,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             }
             c.close();
         }
+        db.close();
     }
 
     /** removes all messages from handler */
