@@ -147,6 +147,8 @@ public final class VideoStore {
                     context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
                 }
             }
+            if (cursor != null)
+                cursor.close();
         }
         String action;
         if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
