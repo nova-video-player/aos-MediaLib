@@ -20,6 +20,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.database.sqlite.SQLiteBlobTooBigException;
 import android.net.Uri;
 import android.os.Build;
 import android.os.RemoteException;
@@ -30,6 +31,7 @@ import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.MediaColumns;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
@@ -151,76 +153,85 @@ public class VideoStoreImportImpl {
 
 
         NfoParser.ImportContext importContext = new NfoParser.ImportContext();
-        while (c.moveToNext()) {
-            ImportState.VIDEO.setRemainingCount(remaining--);
-            String id;
-            String path;
-            int scraperID;
-            try {
-                id = c.getString(0);
-                path = c.getString(1);
-                if (path.startsWith("/"))
-                    path = "file://" + path;
-                scraperID = c.getInt(2);
-            } catch (IllegalStateException ignored) {
-                 //we silently ignore empty lines - it means content has been deleted while scanning
-                continue;
-            }
-            Job job = new Job(path, id, blacklist);
-            if (DBG2) Log.d(TAG, "Scanning: " + job.mPath);
-            // update property with current file
-            ContentValues cv = null;
-            try {
-                cv = fromRetrieverService(job, timeString);
-            } catch (InterruptedException e) {
-                // won't happen but stopping as soon as we can would be desired
-                break;
-            } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
-                // something is fishy with our service, abort and try again later.
-                break;
-            }
 
-            // using ContentProviderOperation so updates are done as single transaction
-            operations.add(
-                ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                        .withSelection(UPDATE_WHERE, new String[] { job.mId })
-                        .withValues(cv)
-                        .build()
-                    );
-            scanned++;
+        try {
+            while (c.moveToNext()) {
+                ImportState.VIDEO.setRemainingCount(remaining--);
+                String id;
+                String path;
+                int scraperID;
+                try {
+                    id = c.getString(0);
+                    path = c.getString(1);
+                    if (path.startsWith("/"))
+                        path = "file://" + path;
+                    scraperID = c.getInt(2);
+                } catch (IllegalStateException ignored) {
+                    //we silently ignore empty lines - it means content has been deleted while scanning
+                    continue;
+                }
+                Job job = new Job(path, id, blacklist);
+                if (DBG2) Log.d(TAG, "Scanning: " + job.mPath);
+                // update property with current file
+                ContentValues cv = null;
+                try {
+                    cv = fromRetrieverService(job, timeString);
+                } catch (InterruptedException e) {
+                    // won't happen but stopping as soon as we can would be desired
+                    break;
+                } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
+                    // something is fishy with our service, abort and try again later.
+                    break;
+                }
 
-            // .nfo auto-parsing
-            if (job.mRetrieve && scraperID <= 0) {
-                Uri videoFile = job.mPath;
-                if (videoFile != null) {
-                    if (DBG) Log.d(TAG, "searching .nfo for " + videoFile);
-                    NfoParser.NfoFile nfo = NfoParser.determineNfoFile(videoFile);
-                    if (nfo != null && nfo.hasNfo()) {
-                        if (DBG) Log.d(TAG, ".nfo found for " + videoFile + " : " + nfo.videoNfo);
-                        BaseTags tagForFile = NfoParser.getTagForFile(nfo, context, importContext);
-                        if (tagForFile != null) {
-                            if (DBG) Log.d(TAG, ".nfo contains valid BaseTags for " + videoFile);
-                            long videoId = parseLong(job.mId, -1);
-                            if (videoId > 0) {
-                                tagForFile.save(context, videoId);
-                                if (DBG) Log.d(TAG, "BaseTags saved for " + videoFile);
-                                scraped++;
+                // using ContentProviderOperation so updates are done as single transaction
+                operations.add(
+                        ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                                .withSelection(UPDATE_WHERE, new String[]{job.mId})
+                                .withValues(cv)
+                                .build()
+                );
+                scanned++;
+
+                // .nfo auto-parsing
+                if (job.mRetrieve && scraperID <= 0) {
+                    Uri videoFile = job.mPath;
+                    if (videoFile != null) {
+                        if (DBG) Log.d(TAG, "searching .nfo for " + videoFile);
+                        NfoParser.NfoFile nfo = NfoParser.determineNfoFile(videoFile);
+                        if (nfo != null && nfo.hasNfo()) {
+                            if (DBG)
+                                Log.d(TAG, ".nfo found for " + videoFile + " : " + nfo.videoNfo);
+                            BaseTags tagForFile = NfoParser.getTagForFile(nfo, context, importContext);
+                            if (tagForFile != null) {
+                                if (DBG)
+                                    Log.d(TAG, ".nfo contains valid BaseTags for " + videoFile);
+                                long videoId = parseLong(job.mId, -1);
+                                if (videoId > 0) {
+                                    tagForFile.save(context, videoId);
+                                    if (DBG) Log.d(TAG, "BaseTags saved for " + videoFile);
+                                    scraped++;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            if (job.mMediaType == FileColumns.MEDIA_TYPE_VIDEO) {
-                /* Process the FileName for more information */
-                ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
-                operations.add(
-                        ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                                .withSelection(UPDATE_WHERE, new String[] { job.mId })
-                                .withValues(cvExtra)
-                                .build()
-                            );
+                if (job.mMediaType == FileColumns.MEDIA_TYPE_VIDEO) {
+                    /* Process the FileName for more information */
+                    ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
+                    operations.add(
+                            ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                                    .withSelection(UPDATE_WHERE, new String[]{job.mId})
+                                    .withValues(cvExtra)
+                                    .build()
+                    );
+                }
             }
+        } catch(SQLiteBlobTooBigException e) {
+            Log.w(TAG, "handleScanCursor caught SQLiteBlobTooBigException in c.moveToNext() " + "media scanned:" + scanned + " nfo-scraped:" + scraped + " remaining:" + remaining);
+            Toast.makeText(context, "SQLiteBlobTooBigException VideoStoreImportImpl, " +
+                    "scanned:" + scanned + "  scraped:" + scraped + " remaining:" + remaining, Toast.LENGTH_LONG).show();
         }
 
         c.close();
@@ -570,10 +581,14 @@ public class VideoStoreImportImpl {
         String prefix = "";
         if (c != null) {
             c.moveToFirst();
-            while (!c.isAfterLast()) {
-                sb.append(prefix).append(c.getString(0));
-                prefix = ",";
-                c.moveToNext();
+            try {
+                while (!c.isAfterLast()) {
+                    sb.append(prefix).append(c.getString(0));
+                    prefix = ",";
+                    c.moveToNext();
+                }
+            } catch(SQLiteBlobTooBigException e) {
+                Log.w(TAG, "getRemoteIdList caught SQLiteBlobTooBigException in c.moveToNext()");
             }
             c.close();
         }
