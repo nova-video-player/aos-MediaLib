@@ -184,7 +184,8 @@ public class LibAvos {
             }
         } catch (Exception ule) {};
 
-        installExtLibs(ctx, armHasNeon);
+        //We do not need to use any external codec packs
+        //installExtLibs(ctx, armHasNeon);
 
         loadLibrary(ctx, "dav1d", armHasNeon, false);
         loadLibrary(ctx, "avutil", armHasNeon, false);
@@ -192,23 +193,14 @@ public class LibAvos {
         loadLibrary(ctx, "avcodec", armHasNeon, true);
         loadLibrary(ctx, "avformat", armHasNeon, false);
 
-	    loadLibrary(ctx, "cryptocompat", true, false);
-	    loadLibrary(ctx, "sslcompat", true, false);
-        loadLibrary(ctx, "curl", armHasNeon, false);
+        // not used anymore
+	    //loadLibrary(ctx, "cryptocompat", true, false);
+	    //loadLibrary(ctx, "sslcompat", true, false);
+        //loadLibrary(ctx, "curl", armHasNeon, false);
         loadLibrary(ctx, "deinterlace", armHasNeon, false);
         loadLibrary(ctx, "audiocompress", armHasNeon, false);
 
-        String api;
-        if (Build.VERSION.SDK_INT <= 15)
-            api = "14";
-        else if (Build.VERSION.SDK_INT == 16 || Build.VERSION.SDK_INT == 17)
-            api = "16";
-        else if (Build.VERSION.SDK_INT == 18)
-            api = "18";
-        else if (Build.VERSION.SDK_INT == 19)
-            api = "19";
-        else
-            api = "21";
+        String api = "21";
 
         loadLibrary(ctx, "sfdec", armHasNeon, false);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || (Build.VERSION.SDK_INT == Build.VERSION_CODES.M && Build.VERSION.PREVIEW_SDK_INT == 0))  {
@@ -224,12 +216,7 @@ public class LibAvos {
         loadLibrary(ctx, "avos", armHasNeon, false);
         if (loadLibrary(ctx, "avosjni", armHasNeon, false)) {
             nativeInit(ctx.getPackageName(), sIsPluginAvailable);
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                loadLibrary(ctx, "iomx." + api, armHasNeon, false);
-                loadLibrary(ctx, "sfdec.core." + api, armHasNeon, false);
-            }
-            else
-                nativeLoadLibraryRTLDGlobal("libsfdec.core.21.so");
+            nativeLoadLibraryRTLDGlobal("libsfdec.core.21.so");
             sIsAvailable = true;
         } else {
             sIsAvailable = false;
