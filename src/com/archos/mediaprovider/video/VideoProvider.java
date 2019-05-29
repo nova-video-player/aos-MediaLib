@@ -161,8 +161,12 @@ public class VideoProvider extends ContentProvider {
                         try {
                             // In the past "uri needs to be encoded to check if file exists : fixes thumbnail creation with non ascii names".
                             // However this breaks thumbs generation on smb:// when dealing with file names with spaces that are turned into %20 making the file not found.
-                            //FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath)), null);
-                            FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(mCurrentThumbRequest.mPath), null);
+                            // Limit uri encoding to upnp.
+                            FileEditor editor;
+                            if (mCurrentThumbRequest.mPath.startsWith("upnp"))
+                                editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath)), null);
+                            else
+                                editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(mCurrentThumbRequest.mPath), null);
                             if(DBG)
                                 Log.d(TAG_DOCTOR_WHO,mCurrentThumbRequest.mPath+" does file exists ? "+ String.valueOf(editor.exists()));
 
