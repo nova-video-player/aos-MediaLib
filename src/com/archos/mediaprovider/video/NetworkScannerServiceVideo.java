@@ -622,7 +622,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 // 0: EXTERNAL_SMB_PATH, 1: EXTERNAL_UPNP_PATH -> "smb://" = 2
                 return getStorageId(2 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
 
-            Log.w(TAG, "path has no valid storage id:" + path);
+            Log.w(TAG, "path has no valid storage id: " + path);
             return 0;
         }
 
