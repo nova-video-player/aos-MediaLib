@@ -192,6 +192,7 @@ public class LibAvos {
         loadLibrary(ctx, "swresample", armHasNeon, false);
         loadLibrary(ctx, "avcodec", armHasNeon, true);
         loadLibrary(ctx, "avformat", armHasNeon, false);
+        loadLibrary(ctx, "avfilter", armHasNeon, false);
 
         // not used anymore
 	    //loadLibrary(ctx, "cryptocompat", true, false);
