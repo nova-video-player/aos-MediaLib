@@ -343,11 +343,14 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
         // note: seems that the delete is performed not as a table trigger anymore but elsewhere
+        db.beginTransactionNonExclusive();
         try {
             c = db.rawQuery("SELECT * FROM delete_files", null);
+            db.setTransactionSuccessful();
         } catch (SQLException e) {
             Log.e(TAG, "SQLException",e);
         } finally {
+            db.endTransaction();
             c.moveToFirst();
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -357,16 +360,26 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 // delete callback
                 DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
                 delCb.callback(DeleteFileCallbackArgs);
-                // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                db.beginTransactionNonExclusive();
+                try {
+                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                    db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                } catch (SQLException sqlE) {
+                    Log.e(TAG, "SQLException", sqlE);
+                } finally {
+                    db.endTransaction();
+                }
             }
             c.close();
         }
+        db.beginTransactionNonExclusive();
         try {
             c = db.rawQuery("SELECT * FROM vob_insert", null);
+            db.setTransactionSuccessful();
         } catch (SQLException e) {
             Log.e(TAG, "SQLException",e);
         } finally {
+            db.endTransaction();
             c.moveToFirst();
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -375,8 +388,15 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 // delete callback
                 VobUpdateCallbackArgs = new String[] {path};
                 vobCb.callback(VobUpdateCallbackArgs);
-                // purge the db: delete row
-                db.execSQL("DELETE FROM vob_insert WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                db.beginTransactionNonExclusive();
+                try {
+                    // purge the db: delete row
+                    db.execSQL("DELETE FROM vob_insert WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                } catch (SQLException sqlE) {
+                    Log.e(TAG, "SQLException", sqlE);
+                } finally {
+                    db.endTransaction();
+                }
             }
             c.close();
         }
