@@ -364,6 +364,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 try {
                     // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
                     db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                    db.setTransactionSuccessful();
                 } catch (SQLException sqlE) {
                     Log.e(TAG, "SQLException", sqlE);
                 } finally {
