@@ -362,10 +362,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             db.beginTransactionNonExclusive();
             c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE)", null);
             db.setTransactionSuccessful();
-        } catch (SQLException e) {
-            Log.e(TAG, "SQLException",e);
-        } finally {
-            db.endTransaction();
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -383,17 +379,18 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     db.endTransaction();
                 }
             }
-            c.close();
+        } catch (SQLException e) {
+            Log.e(TAG, "SQLException",e);
+        } finally {
+            db.endTransaction();
+            if (c != null)
+                c.close();
         }
         // note: seems that the delete is performed not as a table trigger anymore but elsewhere
         db.beginTransactionNonExclusive();
         try {
             c = db.rawQuery("SELECT * FROM delete_files", null);
             db.setTransactionSuccessful();
-        } catch (SQLException e) {
-            Log.e(TAG, "SQLException",e);
-        } finally {
-            db.endTransaction();
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -414,16 +411,17 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     db.endTransaction();
                 }
             }
-            c.close();
+        } catch (SQLException e) {
+            Log.e(TAG, "SQLException",e);
+        } finally {
+            db.endTransaction();
+            if (c != null)
+                c.close();
         }
         db.beginTransactionNonExclusive();
         try {
             c = db.rawQuery("SELECT * FROM vob_insert", null);
             db.setTransactionSuccessful();
-        } catch (SQLException e) {
-            Log.e(TAG, "SQLException",e);
-        } finally {
-            db.endTransaction();
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -443,7 +441,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     db.endTransaction();
                 }
             }
-            c.close();
+        } catch (SQLException e) {
+            Log.e(TAG, "SQLException",e);
+        } finally {
+            db.endTransaction();
+            if (c != null)
+                c.close();
         }
         db.close();
     }
