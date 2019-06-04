@@ -379,8 +379,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     db.endTransaction();
                 }
             }
-        } catch (SQLException e) {
-            Log.e(TAG, "SQLException",e);
+        } catch (SQLException | IllegalStateException e) {
+            Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
             db.endTransaction();
             if (c != null)
@@ -411,8 +411,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     db.endTransaction();
                 }
             }
-        } catch (SQLException e) {
-            Log.e(TAG, "SQLException",e);
+        } catch (SQLException | IllegalStateException e) {
+            Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
             db.endTransaction();
             if (c != null)
@@ -441,8 +441,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     db.endTransaction();
                 }
             }
-        } catch (SQLException e) {
-            Log.e(TAG, "SQLException",e);
+        } catch (SQLException | IllegalStateException e) {
+            Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
             db.endTransaction();
             if (c != null)
