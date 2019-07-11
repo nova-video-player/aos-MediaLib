@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
-    <string name="tvdb_api_key"></string>
-    <string name="tmdb_api_key"></string>
-    <string name="trakt_api_key"></string>
-    <string name="trakt_api_secret"></string>
+    <string name="tvdb_api_key">3BC8BCFB013A3FE1</string>
+    <string name="tmdb_api_key">051012651ba326cf5b1e2f482342eaa2</string>
+    <string name="trakt_api_key">e89dd8c16f44807d0854ebe9c7f6d947d0c72c914a5aff343ccb03b4eed56816</string>
+    <string name="trakt_api_secret">31c85d91f8e3bb14d6c0fe327f0fa4b28ee3a62fbb771d71b3aab773774d26c1</string>
 </resources>

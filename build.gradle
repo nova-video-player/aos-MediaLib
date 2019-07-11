@@ -57,14 +57,6 @@ android {
         targetSdkVersion 28
     }
 
-    flavorDimensions "version"
-
-    productFlavors {
-        community {
-            dimension "version"
-        }
-    }
-
     task ndkBuild(type:Exec) {
         workingDir = "../"
         List<String> myCmd = new ArrayList<String>()
