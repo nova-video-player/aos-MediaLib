@@ -2597,10 +2597,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             "END";
 
     private static final String CREATE_FILES_DELETE_TABLE =
-            "CREATE TABLE delete_files (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE ON CONFLICT REPLACE, use_count INTEGER);";
+            "CREATE TABLE IF NOT EXISTS delete_files (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE ON CONFLICT REPLACE, use_count INTEGER);";
 
     private static final String CREATE_VOB_INSERT_TABLE =
-            "CREATE TABLE vob_insert (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE ON CONFLICT REPLACE);";
+            "CREATE TABLE IF NOT EXISTS vob_insert (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE ON CONFLICT REPLACE);";
 
     /* ---------------------------------------------------------------------- */
     /* --                    STUFF TO DROP - AUDIO REMOVED                    */
@@ -2678,6 +2678,11 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         db.execSQL(CREATE_FILES_SCANNED_TRIGGER_DELETE);
         // create table that holds scanned/imported + added information about imported & scanned files
         db.execSQL(CREATE_FILES_TABLE);
+
+        // these are new tables starting v35 and are required for the CREATE_FILES_TRIGGER_VOB_*
+        db.execSQL(CREATE_FILES_DELETE_TABLE);
+        db.execSQL(CREATE_VOB_INSERT_TABLE);
+
         db.execSQL(CREATE_FILES_TRIGGER_VOB_INSERT);
         db.execSQL(CREATE_FILES_TRIGGER_VOB_DELETE);
         db.execSQL(CREATE_FILES_TRIGGER_VOB_UPDATE);
@@ -2716,6 +2721,8 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // create db sets initial version to 10
+        // TODO: nova first release is has db version 34, reimport upgrade into create, do not forget mirror action on ScraperTables
         Log.d(TAG, "Upgrading Database from " + oldVersion + " to " + newVersion);
         if (oldVersion < DATABASE_CREATE_VERSION) {
             Log.d(TAG, "Upgrade not supported for version " + oldVersion + ", recreating the database.");
@@ -2927,13 +2934,15 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             db.execSQL("UPDATE " + FILES_SCANNED_TABLE_NAME + " SET storage_id = storage_id + 16961 WHERE " + FileColumns._ID + " > " + SCANNED_ID_OFFSET);
             db.execSQL(DROP_TRIGGER_STORAGE_ID);
         }
-        if(oldVersion<35){
+        if(oldVersion<35) {
             ListTables.upgradeTo(db, 34);
         }
         if(oldVersion<36) {
-            // delete files table
+            // drop and recreate triggers
+            // the two next tables are created only if it does not exist and are introduced in db v36 (onCreate create these)
             db.execSQL(CREATE_FILES_DELETE_TABLE);
             db.execSQL(CREATE_VOB_INSERT_TABLE);
+
             db.execSQL(DROP_FILES_TRIGGER_VOB_INSERT);
             db.execSQL(CREATE_FILES_TRIGGER_VOB_INSERT);
             db.execSQL(DROP_FILES_TRIGGER_VOB_UPDATE);
