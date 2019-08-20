@@ -113,7 +113,17 @@ public final class ScraperTables {
         ScraperStore.Movie.COVER + " TEXT," +
         "overview_movie TEXT," +
         ScraperStore.Movie.BACKDROP_URL + " TEXT," +
-        ScraperStore.Movie.BACKDROP + " TEXT)";
+        ScraperStore.Movie.BACKDROP + " TEXT," +
+        "m_backdrop_id INTEGER,"  + // movie has backdrop + poster
+        "m_poster_id INTEGER," +
+        "m_online_id INTEGER," + // also the id in the online db "1858" - http://www.themoviedb.org/movie/1858
+        "m_imdb_id TEXT," + // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
+        "m_content_rating TEXT," + // also content rating e.g. "PG-13"
+        ScraperStore.Movie.ACTORS_FORMATTED + " TEXT," +
+        ScraperStore.Movie.DIRECTORS_FORMATTED + " TEXT," +
+        ScraperStore.Movie.GERNES_FORMATTED + " TEXT," +
+        ScraperStore.Movie.STUDIOS_FORMATTED + " TEXT" +
+        ")";
 
     private static final String SHOW_TABLE_CREATE =
         "CREATE TABLE " + SHOW_TABLE_NAME + " (" +
@@ -124,7 +134,17 @@ public final class ScraperTables {
         ScraperStore.Show.RATING + " FLOAT," +
         ScraperStore.Show.PLOT + " TEXT," +
         ScraperStore.Show.BACKDROP_URL + " TEXT," +
-        ScraperStore.Show.BACKDROP + " TEXT)";
+        ScraperStore.Show.BACKDROP + " TEXT," +
+        "s_backdrop_id INTEGER," + // show has backdrop + poster
+        "s_poster_id INTEGER," +
+        "s_online_id INTEGER," + // also the id in the online db "73255" - http://thetvdb.com/?tab=series&id=73255
+        "s_imdb_id TEXT," + // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
+        "s_content_rating TEXT," + // also content rating e.g. "TV-14"
+        ScraperStore.Show.ACTORS_FORMATTED + " TEXT," +
+        ScraperStore.Show.DIRECTORS_FORMATTED + " TEXT," +
+        ScraperStore.Show.GERNES_FORMATTED + " TEXT," +
+        ScraperStore.Show.STUDIOS_FORMATTED + " TEXT" +
+        ")";
 
     private static final String EPISODE_TABLE_CREATE =
         "CREATE TABLE " + EPISODE_TABLE_NAME + " (" +
@@ -139,7 +159,14 @@ public final class ScraperTables {
         ScraperStore.Episode.PLOT + " TEXT," +
         ScraperStore.Episode.NUMBER + " INTEGER," +
         ScraperStore.Episode.SEASON + " INTEGER," +
-        ScraperStore.Episode.COVER + ")";
+        ScraperStore.Episode.COVER + " TEXT," +
+        "e_poster_id INTEGER," + // episode has a poster too
+        "e_online_id INTEGER," + // also the id in the online db "306192" - http://thetvdb.com/?tab=episode&seriesid=73255&id=306192
+        "e_imdb_id TEXT," + // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
+        ScraperStore.Episode.ACTORS_FORMATTED + " TEXT," +
+        ScraperStore.Episode.DIRECTORS_FORMATTED + " TEXT," +
+        ScraperStore.Episode.PICTURE + " TEXT" +
+        ")";
 
     private static final String ACTORS_TABLE_CREATE =
         "CREATE TABLE " + ACTORS_TABLE_NAME + " (" +
@@ -939,7 +966,6 @@ public final class ScraperTables {
             "    m_po_large_file TEXT\n" +
             ")";
 
-
     public static final String MOVIE_TRAILERS_TABLE_NAME = "movie_trailers";
     private static final String CREATE_MOVIE_TRAILERS_TABLE =
             "CREATE TABLE " + MOVIE_TRAILERS_TABLE_NAME + " ( \n" +
@@ -963,16 +989,7 @@ public final class ScraperTables {
     private static final String DROP_MOVIE_POSTERS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + MOVIE_POSTERS_TABLE_NAME + "_delete";
 
-
-
-
     public static final String MOVIE_BACKDROPS_TABLE_NAME = "movie_backdrops";
-
-
-
-
-
-
 
     private static final String CREATE_MOVIE_BACKDROPS_TABLE =
             "CREATE TABLE " + MOVIE_BACKDROPS_TABLE_NAME + " ( \n" +
@@ -1034,264 +1051,7 @@ public final class ScraperTables {
             "END";
     private static final String DROP_SHOW_BACKDROPS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_BACKDROPS_TABLE_NAME + "_delete";
-    private static final String CREATE_VIEW_MOVIE_ALL_V11 =
-            "CREATE VIEW " + VIEW_MOVIE_ALL + " AS\n" +
-            "SELECT movie.*,\n" +
-            "       a.actors,\n" +
-            "       d.directors,\n" +
-            "       g.genres,\n" +
-            "       s.studios,\n" +
-            "       p.m_po_thumb_url,\n" +
-            "       p.m_po_thumb_file,\n" +
-            "       p.m_po_large_url,\n" +
-            "       p.m_po_large_file,\n" +
-            "       b.m_bd_thumb_url,\n" +
-            "       b.m_bd_thumb_file,\n" +
-            "       b.m_bd_large_url,\n" +
-            "       b.m_bd_large_file\n" +
-            "  FROM movie\n" +
-            "       NATURAL LEFT JOIN v_movie_actors AS a\n" +
-            "       NATURAL LEFT JOIN v_movie_directors AS d\n" +
-            "       NATURAL LEFT JOIN v_movie_genres AS g\n" +
-            "       NATURAL LEFT JOIN v_movie_studios AS s\n" +
-            "       LEFT JOIN movie_posters AS p\n" +
-            "              ON ( movie.m_poster_id = p._id ) \n" +
-            "       LEFT JOIN movie_backdrops AS b\n" +
-            "              ON ( movie.m_backdrop_id = b._id )";
-    private static final String CREATE_VIEW_SHOW_ALL_V11 =
-            "CREATE VIEW " + VIEW_SHOW_ALL + " AS\n" +
-            "SELECT show.*,\n" +
-            "       a.actors,\n" +
-            "       d.directors,\n" +
-            "       g.genres,\n" +
-            "       s.studios,\n" +
-            "       p.s_po_thumb_url,\n" +
-            "       p.s_po_thumb_file,\n" +
-            "       p.s_po_large_url,\n" +
-            "       p.s_po_large_file,\n" +
-            "       b.s_bd_thumb_url,\n" +
-            "       b.s_bd_thumb_file,\n" +
-            "       b.s_bd_large_url,\n" +
-            "       b.s_bd_large_file\n" +
-            "  FROM show\n" +
-            "       NATURAL LEFT JOIN v_show_actors AS a\n" +
-            "       NATURAL LEFT JOIN v_show_directors AS d\n" +
-            "       NATURAL LEFT JOIN v_show_genres AS g\n" +
-            "       NATURAL LEFT JOIN v_show_studios AS s\n" +
-            "       LEFT JOIN show_posters AS p\n" +
-            "              ON ( show.s_poster_id = p._id ) \n" +
-            "       LEFT JOIN show_backdrops AS b\n" +
-            "              ON ( show.s_backdrop_id = b._id )";
-    private static final String CREATE_VIEW_EPISODE_ALL_V11 =
-            "CREATE VIEW " + VIEW_EPISODE_ALL + " AS\n" +
-            "SELECT episode.*,\n" +
-            "       a.guests,\n" +
-            "       d.directors,\n" +
-            "       p.s_po_thumb_url AS e_po_thumb_url,\n" +
-            "       p.s_po_thumb_file AS e_po_thumb_file,\n" +
-            "       p.s_po_large_url AS e_po_large_url,\n" +
-            "       p.s_po_large_file AS e_po_large_file,\n" +
-            "       p.s_po_season AS e_po_season\n" +
-            "  FROM episode\n" +
-            "       NATURAL LEFT JOIN v_episode_actors AS a\n" +
-            "       NATURAL LEFT JOIN v_episode_directors AS d\n" +
-            "       LEFT JOIN show_posters AS p\n" +
-            "              ON ( episode.e_poster_id = p._id )";
-    private static final String CREATE_VIEW_VIDEO_ALL_V11 =
-            "CREATE VIEW " + VIEW_VIDEO_ALL + " AS\n" +
-            "SELECT e.video_id AS _id,\n" +
-            "       NULL AS m_id,\n" +
-            "       e.show_episode AS s_id,\n" +
-            "       e._id AS e_id,\n" +
-            "       s.name_show AS scraper_name,\n" +
-            "       NULL AS m_name,\n" +
-            "       s.name_show AS s_name,\n" +
-            "       e.name_episode AS e_name,\n" +
-            "       e.season_episode AS e_season,\n" +
-            "       e.number_episode AS e_episode,\n" +
-            "       e.aired_episode AS e_aired,\n" +
-            "       s.premiered_show AS s_premiered,\n" +
-            "       NULL AS m_year,\n" +
-            "       e.rating_episode AS rating,\n" +
-            "       NULL AS m_rating,\n" +
-            "       e.rating_episode AS e_rating,\n" +
-            "       s.rating_show AS s_rating,\n" +
 
-            "       s_online_id AS online_id,\n" +
-            "       s_imdb_id AS imdb_id,\n" +
-            "       s_content_rating AS content_rating,\n" +
-            "       NULL AS m_online_id,\n" +
-            "       NULL AS m_imdb_id,\n" +
-            "       NULL AS m_content_rating,\n" +
-            "       s_online_id,\n" +
-            "       s_imdb_id,\n" +
-            "       s_content_rating,\n" +
-            "       e_online_id,\n" +
-            "       e_imdb_id,\n" +
-
-            "       e.plot_episode AS plot,\n" +
-            "       NULL AS m_plot,\n" +
-            "       e.plot_episode AS e_plot,\n" +
-            "       s.plot_show AS s_plot,\n" +
-            "       s.actors AS actors,\n" +
-            "       NULL AS m_actors,\n" +
-            "       s.actors AS s_actors,\n" +
-            "       e.guests AS e_actors,\n" +
-            "       e.directors AS directors,\n" +
-            "       NULL AS m_directors,\n" +
-            "       e.directors AS e_directors,\n" +
-            "       s.directors AS s_directors,\n" +
-            "       s.genres AS genres,\n" +
-            "       NULL AS m_genres,\n" +
-            "       s.genres AS s_genres,\n" +
-            "       s.studios AS studios,\n" +
-            "       NULL AS m_studios,\n" +
-            "       s.studios AS s_studios,\n" +
-            "       coalesce( e_po_large_file, s_po_large_file, e.cover_episode, s.cover_show ) AS cover,\n" +
-            "       NULL AS m_cover,\n" +
-            "       coalesce(e_po_large_file, e.cover_episode) AS e_cover,\n" +
-            "       coalesce(s_po_large_file, s.cover_show) AS s_cover,\n" +
-            "       coalesce(s_bd_large_url, s.backdrop_url_show) AS bd_url,\n" +
-            "       NULL AS m_bd_url,\n" +
-            "       coalesce(s_bd_large_url, s.backdrop_url_show) AS s_bd_url,\n" +
-            "       coalesce(s_bd_large_file, s.backdrop_show) AS bd_file,\n" +
-            "       NULL AS m_bd_file,\n" +
-            "       coalesce(s_bd_large_file, s.backdrop_show) AS s_bd_file,\n" +
-            "       coalesce(e_poster_id, s_poster_id) AS poster_id,\n" +
-            "       coalesce(e_po_thumb_url,  s_po_thumb_url)  AS po_thumb_url,\n" +
-            "       coalesce(e_po_thumb_file, s_po_thumb_file) AS po_thumb_file,\n" +
-            "       coalesce(e_po_large_url,  s_po_large_url)  AS po_large_url,\n" +
-            "       coalesce(e_po_large_file, s_po_large_file)  AS po_large_file,\n" +
-            "       s_backdrop_id AS backdrop_id,\n" +
-            "       s_bd_thumb_url AS bd_thumb_url,\n" +
-            "       s_bd_thumb_file AS bd_thumb_file,\n" +
-            "       s_bd_large_url AS bd_large_url,\n" +
-            "       s_bd_large_file AS bd_large_file,\n" +
-            "       e_poster_id,\n" +
-            "       e_po_thumb_url,\n" +
-            "       e_po_thumb_file,\n" +
-            "       e_po_large_url,\n" +
-            "       e_po_large_file,\n" +
-            "       e_po_season,\n" +
-            "       s_poster_id,\n" +
-            "       s_po_thumb_url,\n" +
-            "       s_po_thumb_file,\n" +
-            "       s_po_large_url,\n" +
-            "       s_po_large_file,\n" +
-            "       s_backdrop_id,\n" +
-            "       s_bd_thumb_url,\n" +
-            "       s_bd_thumb_file,\n" +
-            "       s_bd_large_url,\n" +
-            "       s_bd_large_file,\n" +
-            "       NULL AS m_poster_id,\n" +
-            "       NULL AS m_po_thumb_url,\n" +
-            "       NULL AS m_po_thumb_file,\n" +
-            "       NULL AS m_po_large_url,\n" +
-            "       NULL AS m_po_large_file,\n" +
-            "       NULL AS m_backdrop_id,\n" +
-            "       NULL AS m_bd_thumb_url,\n" +
-            "       NULL AS m_bd_thumb_file,\n" +
-            "       NULL AS m_bd_large_url,\n" +
-            "       NULL AS m_bd_large_file\n" +
-            "  FROM v_episode_all AS e\n" +
-            "       LEFT JOIN v_show_all AS s\n" +
-            "              ON ( s_id = s._id ) \n" +
-            "UNION\n" +
-            "SELECT m.video_id AS _id,\n" +
-            "       m._id AS m_id,\n" +
-            "       NULL AS s_id,\n" +
-            "       NULL AS e_id,\n" +
-            "       m.name_movie AS scraper_name,\n" +
-            "       m.name_movie AS m_name,\n" +
-            "       NULL AS s_name,\n" +
-            "       NULL AS e_name,\n" +
-            "       NULL AS e_season,\n" +
-            "       NULL AS e_episode,\n" +
-            "       NULL AS e_aired,\n" +
-            "       NULL AS s_premiered,\n" +
-            "       m.year_movie AS m_year,\n" +
-            "       m.rating_movie AS rating,\n" +
-            "       m.rating_movie AS m_rating,\n" +
-            "       NULL AS e_rating,\n" +
-            "       NULL AS s_rating,\n" +
-
-            "       m_online_id AS online_id,\n" +
-            "       m_imdb_id AS imdb_id,\n" +
-            "       m_content_rating AS content_rating,\n" +
-            "       m_online_id,\n" +
-            "       m_imdb_id,\n" +
-            "       m_content_rating,\n" +
-            "       NULL AS s_online_id,\n" +
-            "       NULL AS s_imdb_id,\n" +
-            "       NULL AS s_content_rating,\n" +
-            "       NULL AS e_online_id,\n" +
-            "       NULL AS e_imdb_id,\n" +
-
-            "       m.plot_movie AS plot,\n" +
-            "       m.plot_movie AS m_plot,\n" +
-            "       NULL AS e_plot,\n" +
-            "       NULL AS s_plot,\n" +
-            "       m.actors AS actors,\n" +
-            "       m.actors AS m_actors,\n" +
-            "       NULL AS s_actors,\n" +
-            "       NULL AS e_actors,\n" +
-            "       m.directors AS directors,\n" +
-            "       m.directors AS m_directors,\n" +
-            "       NULL AS e_directors,\n" +
-            "       NULL AS s_directors,\n" +
-            "       m.genres AS genres,\n" +
-            "       m.genres AS m_genres,\n" +
-            "       NULL AS s_genres,\n" +
-            "       m.studios AS studios,\n" +
-            "       m.studios AS m_studios,\n" +
-            "       NULL AS s_studios,\n" +
-            "       coalesce(m_po_large_file, m.cover_movie) AS cover,\n" +
-            "       coalesce(m_po_large_file, m.cover_movie) AS m_cover,\n" +
-            "       NULL AS e_cover,\n" +
-            "       NULL AS s_cover,\n" +
-            "       coalesce(m_bd_large_url, m.backdrop_url_movie) AS bd_url,\n" +
-            "       coalesce(m_bd_large_url, m.backdrop_url_movie) AS m_bd_url,\n" +
-            "       NULL AS s_bd_url,\n" +
-            "       coalesce(m_bd_large_file, m.backdrop_movie) AS bd_file,\n" +
-            "       coalesce(m_bd_large_file, m.backdrop_movie) AS m_bd_file,\n" +
-            "       NULL AS s_bd_file,\n" +
-            "       m_poster_id AS poster_id,\n" +
-            "       m_po_thumb_url AS po_thumb_url,\n" +
-            "       m_po_thumb_file AS po_thumb_file,\n" +
-            "       m_po_large_url AS po_large_url,\n" +
-            "       m_po_large_file AS po_large_file,\n" +
-            "       m_backdrop_id AS backdrop_id,\n" +
-            "       m_bd_thumb_url AS bd_thumb_url,\n" +
-            "       m_bd_thumb_file AS bd_thumb_file,\n" +
-            "       m_bd_large_url AS bd_large_url,\n" +
-            "       m_bd_large_file AS bd_large_file,\n" +
-            "       NULL AS e_poster_id,\n" +
-            "       NULL AS e_po_thumb_url,\n" +
-            "       NULL AS e_po_thumb_file,\n" +
-            "       NULL AS e_po_large_url,\n" +
-            "       NULL AS e_po_large_file,\n" +
-            "       NULL AS e_po_season,\n" +
-            "       NULL AS s_poster_id,\n" +
-            "       NULL AS s_po_thumb_url,\n" +
-            "       NULL AS s_po_thumb_file,\n" +
-            "       NULL AS s_po_large_url,\n" +
-            "       NULL AS s_po_large_file,\n" +
-            "       NULL AS s_backdrop_id,\n" +
-            "       NULL AS s_bd_thumb_url,\n" +
-            "       NULL AS s_bd_thumb_file,\n" +
-            "       NULL AS s_bd_large_url,\n" +
-            "       NULL AS s_bd_large_file,\n" +
-            "       m_poster_id,\n" +
-            "       m_po_thumb_url,\n" +
-            "       m_po_thumb_file,\n" +
-            "       m_po_large_url,\n" +
-            "       m_po_large_file,\n" +
-            "       m_backdrop_id,\n" +
-            "       m_bd_thumb_url,\n" +
-            "       m_bd_thumb_file,\n" +
-            "       m_bd_large_url,\n" +
-            "       m_bd_large_file\n" +
-            "  FROM v_movie_all AS m";
     public static void create(SQLiteDatabase db) {
         db.execSQL(MOVIE_TABLE_CREATE);
         db.execSQL(ACTORS_TABLE_CREATE);
@@ -1362,183 +1122,21 @@ public final class ScraperTables {
         db.execSQL(CREATE_VIEW_SHOW_STUDIOS);
         db.execSQL(CREATE_VIEW_MOVIE_STUDIOS);
 
-        // create views that combine formatted with base info
-        db.execSQL(CREATE_VIEW_SHOW_ALL_V0);
-        db.execSQL(CREATE_VIEW_EPISODE_ALL_V0);
-        db.execSQL(CREATE_VIEW_MOVIE_ALL_V0);
+        // V11
+        db.execSQL(CREATE_MOVIE_POSTERS_TABLE);
+        db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
+        db.execSQL(CREATE_MOVIE_BACKDROPS_TABLE);
+        db.execSQL(CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER);
+        db.execSQL(CREATE_SHOW_POSTERS_TABLE);
+        db.execSQL(CREATE_SHOW_POSTERS_DELETE_TRIGGER);
+        db.execSQL(CREATE_SHOW_BACKDROPS_TABLE);
+        db.execSQL(CREATE_SHOW_BACKDROPS_DELETE_TRIGGER);
 
-        // and combine all that into another view
-        db.execSQL(CREATE_VIEW_VIDEO_ALL_V0);
-
+        // V28
+        db.execSQL(CREATE_MOVIE_TRAILERS_TABLE);
     }
 
     public static void upgradeTo (SQLiteDatabase db, int toVersion) {
-        if (toVersion == 11) {
-            // drop those triggers
-            db.execSQL(EPISODE_INSERT_TRIGGER_DROP);
-            db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
-            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_INSERT_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-
-            // movie has backdrop + poster
-            db.execSQL("ALTER TABLE movie ADD COLUMN m_backdrop_id INTEGER");
-            db.execSQL("ALTER TABLE movie ADD COLUMN m_poster_id INTEGER");
-
-            // also the id in the online db "1858" - http://www.themoviedb.org/movie/1858
-            db.execSQL("ALTER TABLE movie ADD COLUMN m_online_id INTEGER");
-            // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
-            db.execSQL("ALTER TABLE movie ADD COLUMN m_imdb_id TEXT");
-            // also content rating e.g. "PG-13"
-            db.execSQL("ALTER TABLE movie ADD COLUMN m_content_rating TEXT");
-
-            // show has backdrop + poster
-            db.execSQL("ALTER TABLE show ADD COLUMN s_backdrop_id INTEGER");
-            db.execSQL("ALTER TABLE show ADD COLUMN s_poster_id INTEGER");
-
-            // also the id in the online db "73255" - http://thetvdb.com/?tab=series&id=73255
-            db.execSQL("ALTER TABLE show ADD COLUMN s_online_id INTEGER");
-            // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
-            db.execSQL("ALTER TABLE show ADD COLUMN s_imdb_id TEXT");
-            // also content rating e.g. "TV-14"
-            db.execSQL("ALTER TABLE show ADD COLUMN s_content_rating TEXT");
-
-            // episode has a poster too
-            db.execSQL("ALTER TABLE episode ADD COLUMN e_poster_id INTEGER");
-            // also the id in the online db "306192" - http://thetvdb.com/?tab=episode&seriesid=73255&id=306192
-            db.execSQL("ALTER TABLE episode ADD COLUMN e_online_id INTEGER");
-            // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
-            db.execSQL("ALTER TABLE episode ADD COLUMN e_imdb_id TEXT");
-
-            db.execSQL(CREATE_MOVIE_POSTERS_TABLE);
-            db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_MOVIE_BACKDROPS_TABLE);
-            db.execSQL(CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(CREATE_SHOW_POSTERS_TABLE);
-            db.execSQL(CREATE_SHOW_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_SHOW_BACKDROPS_TABLE);
-            db.execSQL(CREATE_SHOW_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_SHOW_ALL);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_EPISODE_ALL);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_MOVIE_ALL);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_VIDEO_ALL);
-            db.execSQL(CREATE_VIEW_SHOW_ALL_V11);
-            db.execSQL(CREATE_VIEW_EPISODE_ALL_V11);
-            db.execSQL(CREATE_VIEW_MOVIE_ALL_V11);
-            db.execSQL(CREATE_VIEW_VIDEO_ALL_V11);
-
-            // recreate the triggers
-            db.execSQL(EPISODE_INSERT_TRIGGER_CREATE);
-            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE);
-            db.execSQL(MOVIE_INSERT_TRIGGER_CREATE);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE);
-        }
-        // recreate those _DELETE_FILE triggers with _DELETE_FILE_J
-        if (toVersion == 12) {
-            // movie / show backdrops + posters
-            db.execSQL(DROP_MOVIE_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
-
-            db.execSQL(DROP_MOVIE_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER);
-
-            db.execSQL(DROP_SHOW_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_SHOW_POSTERS_DELETE_TRIGGER);
-
-            db.execSQL(DROP_SHOW_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(CREATE_SHOW_BACKDROPS_DELETE_TRIGGER);
-
-            // "cover" on movie / show
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
-
-            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE);
-        }
-        // use hard data for formatted actors etc
-        if (toVersion == 13) {
-            // drop those triggers, sqlite breaks when those are not recreated
-            db.execSQL(EPISODE_INSERT_TRIGGER_DROP);
-            db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
-            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_INSERT_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-
-            // those views are no longer required, drop them
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_MOVIE_ALL);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_SHOW_ALL);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_EPISODE_ALL);
-            db.execSQL("DROP VIEW IF EXISTS " + VIEW_VIDEO_ALL);
-
-            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.ACTORS_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.DIRECTORS_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.GERNES_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.STUDIOS_FORMATTED + " TEXT");
-            // insert existing data into those columns
-            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.ACTORS_FORMATTED + " = (SELECT " +
-                    "actors FROM " + VIEW_MOVIE_ACTORS + " AS t WHERE t._id = " + MOVIE_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.DIRECTORS_FORMATTED + " = (SELECT " +
-                    "directors FROM " + VIEW_MOVIE_DIRECTORS + " AS t WHERE t._id = " + MOVIE_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.GERNES_FORMATTED + " = (SELECT " +
-                    "genres FROM " + VIEW_MOVIE_GENRES + " AS t WHERE t._id = " + MOVIE_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.STUDIOS_FORMATTED + " = (SELECT " +
-                    "studios FROM " + VIEW_MOVIE_STUDIOS + " AS t WHERE t._id = " + MOVIE_TABLE_NAME + "._id)");
-
-            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.ACTORS_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.DIRECTORS_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.GERNES_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.STUDIOS_FORMATTED + " TEXT");
-            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.ACTORS_FORMATTED + " = (SELECT " +
-                    "actors FROM " + VIEW_SHOW_ACTORS + " AS t WHERE t._id = " + SHOW_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.DIRECTORS_FORMATTED + " = (SELECT " +
-                    "directors FROM " + VIEW_SHOW_DIRECTORS + " AS t WHERE t._id = " + SHOW_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.GERNES_FORMATTED + " = (SELECT " +
-                    "genres FROM " + VIEW_SHOW_GENRES + " AS t WHERE t._id = " + SHOW_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.STUDIOS_FORMATTED + " = (SELECT " +
-                    "studios FROM " + VIEW_SHOW_STUDIOS + " AS t WHERE t._id = " + SHOW_TABLE_NAME + "._id)");
-
-            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.ACTORS_FORMATTED + " TEXT");
-            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.DIRECTORS_FORMATTED + " TEXT");
-            db.execSQL("UPDATE " + EPISODE_TABLE_NAME + " SET " + ScraperStore.Episode.ACTORS_FORMATTED + " = (SELECT " +
-                    "guests FROM " + VIEW_EPISODE_ACTORS + " AS t WHERE t._id = " + EPISODE_TABLE_NAME + "._id)");
-            db.execSQL("UPDATE " + EPISODE_TABLE_NAME + " SET " + ScraperStore.Episode.DIRECTORS_FORMATTED + " = (SELECT " +
-                    "directors FROM " + VIEW_EPISODE_DIRECTORS + " AS t WHERE t._id = " + EPISODE_TABLE_NAME + "._id)");
-
-            // recreate the triggers
-            db.execSQL(EPISODE_INSERT_TRIGGER_CREATE);
-            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE);
-            db.execSQL(MOVIE_INSERT_TRIGGER_CREATE);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE);
-        }
-        if(toVersion == 28){
-
-            db.execSQL(CREATE_MOVIE_TRAILERS_TABLE);
-        }
-        if(toVersion==29)
-            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.PICTURE + " TEXT");
-        if(toVersion==33) {
-            db.execSQL(DROP_MOVIE_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
-        }
-        if (toVersion == 36) {
-            // tables touched MOVIE_DELETE_TRIGGER_CREATE HOW_DELETE_TRIGGER_CREATE CREATE_MOVIE_POSTERS_DELETE_TRIGGER CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER CREATE_SHOW_POSTERS_DELETE_TRIGGER CREATE_SHOW_BACKDROPS_DELETE_TRIGGER
-            db.execSQL(DROP_MOVIE_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
-            db.execSQL(DROP_MOVIE_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(DROP_SHOW_POSTERS_DELETE_TRIGGER);
-            db.execSQL(CREATE_SHOW_POSTERS_DELETE_TRIGGER);
-            db.execSQL(DROP_SHOW_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(CREATE_SHOW_BACKDROPS_DELETE_TRIGGER);
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE);
-            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE);
-        }
         if (toVersion == 37) {
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
