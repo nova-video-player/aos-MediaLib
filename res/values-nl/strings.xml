@@ -58,6 +58,34 @@
         <item>enable_fanart: Fanart inschakelen</item>
         <item>info_language:Taal</item>
     </string-array>
+    <string name="tv_show_genre_action">Actie</string>
+    <string name="tv_show_genre_adventure">Avontuur</string>
+    <string name="tv_show_genre_animation">Animatie</string>
+    <string name="tv_show_genre_anime">Animatie</string>
+    <string name="tv_show_genre_children">Kinderen</string>
+    <string name="tv_show_genre_comedy">Komedie</string>
+    <string name="tv_show_genre_crime">Misdaad</string>
+    <string name="tv_show_genre_documentary">Documentaire</string>
+    <string name="tv_show_genre_drama">Drama</string>
+    <string name="tv_show_genre_family">Familie</string>
+    <string name="tv_show_genre_fantasy">Fantasie</string>
+    <string name="tv_show_genre_food">Voeding</string>
+    <string name="tv_show_genre_game_show">Spel-Serie</string>
+    <string name="tv_show_genre_home_garden">Huis en Tuin</string>
+    <string name="tv_show_genre_horror">Horror</string>
+    <string name="tv_show_genre_mini_series">Mini-Series</string>
+    <string name="tv_show_genre_news">Nieuws</string>
+    <string name="tv_show_genre_reality">Reality</string>
+    <string name="tv_show_genre_romance">Romantiek</string>
+    <string name="tv_show_genre_science_fiction">Sciencefiction</string>
+    <string name="tv_show_genre_soap">Soap</string>
+    <string name="tv_show_genre_special_interest">Speciale interesse</string>
+    <string name="tv_show_genre_sport">Sport</string>
+    <string name="tv_show_genre_suspense">Spanning</string>
+    <string name="tv_show_genre_talk_show">Talkshow</string>
+    <string name="tv_show_genre_thriller">Thriller</string>
+    <string name="tv_show_genre_travel">Reizen</string>
+    <string name="tv_show_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
@@ -65,4 +93,7 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Artiest</string>
+    <string name="scraping_in_progress">Bezig met Scraping</string>
+    <string name="remaining_videos_to_process">Resterende mediabestanden om te worden verwerkt:</string>
+    <string name="video_store_import">Lokale mediabestanden importeren</string>
 </resources>
