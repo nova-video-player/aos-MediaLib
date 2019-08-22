@@ -18,6 +18,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.util.Log;
 
 import com.archos.filecorelibrary.ExtStorageManager;
 import com.archos.filecorelibrary.MetaFile;
@@ -28,11 +29,13 @@ import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.utils.BlacklistedDbAdapter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Blacklist {
     protected static final String TAG = Blacklist.class.getSimpleName();
+    private static final boolean DBG = false;
 
     private static Blacklist DEFAULT_INSTANCE;
 
@@ -74,16 +77,24 @@ public class Blacklist {
     };
 
     public boolean isBlacklisted(Uri file) {
+        if (DBG) Log.d(TAG,"isBlacklisted: ExternalStorageDirectory=" + Environment.getExternalStorageDirectory().getPath() + ", ExtSdcards=" + ExtStorageManager.getExtStorageManager().getExtSdcards());
         if (file == null) return true;
+        if (DBG) Log.d(TAG,"isBlacklisted: checking now on default camera dir " + BLACKLISTED_CAMERA);
         for (String blacklisted : BLACKLISTED_CAMERA) {
+            if (DBG) Log.d(TAG,"isBlacklisted: " + file.getPath() + " starts with " + blacklisted);
             if (FileUtils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
         }
-        for (String extPath: ExtStorageManager.getExtStorageManager().getExtSdcards()) {
+        List<String> extPathList = ExtStorageManager.getExtStorageManager().getExtSdcards();
+        extPathList.add(Environment.getExternalStorageDirectory().getPath());
+        if (DBG) Log.d(TAG,"isBlacklisted: checking now on app blacklisted" + extPathList);
+        for (String extPath: extPathList) {
             for (String blacklistedDir : BLACKLISTED_CAM_DIRS)  {
+                if (DBG) Log.d(TAG,"isBlacklisted: " + file.getPath() + " starts with " + extPath+blacklistedDir);
                 if (FileUtils.isLocal(file) && file.getPath().startsWith(extPath+blacklistedDir)) return true;
             }
         }
         for (String blacklisted : getBlacklisteds()) {
+            if (DBG) Log.d(TAG,"isBlacklisted: " + file.getPath() + " starts with " + blacklisted);
             if (FileUtils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
         }
         return isFilenameBlacklisted(file.getLastPathSegment());
@@ -91,6 +102,7 @@ public class Blacklist {
 
     private boolean isFilenameBlacklisted(String fileName) {
         if (fileName != null) {
+            if (DBG) Log.d(TAG,"isFilenameBlacklisted: " + fileName + " contains sample|trailer");
             Matcher matcher = BLACKLISTED.matcher(fileName);
             if (matcher.matches())
                 return true;
