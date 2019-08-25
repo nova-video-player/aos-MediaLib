@@ -190,7 +190,7 @@ public class LibAvos {
         loadLibrary(ctx, "dav1d", armHasNeon, false);
         loadLibrary(ctx, "avutil", armHasNeon, false);
         loadLibrary(ctx, "swresample", armHasNeon, false);
-        loadLibrary(ctx, "avcodec", armHasNeon, true);
+        loadLibrary(ctx, "avcodec", armHasNeon, false);
         loadLibrary(ctx, "avformat", armHasNeon, false);
         loadLibrary(ctx, "avfilter", armHasNeon, false);
 
