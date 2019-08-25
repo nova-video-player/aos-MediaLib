@@ -14,14 +14,6 @@
 
 package com.archos.mediacenter.utils.trakt;
 
-import retrofit.Callback;
-import retrofit.http.Body;
-import retrofit.http.Header;
-import retrofit.http.Headers;
-import retrofit.http.POST;
-import retrofit.http.Path;
-
-
 public interface TraktAPI {
 
     /*
@@ -97,29 +89,4 @@ public interface TraktAPI {
         String year;
     }
 
-    public static class ShowPerSeason {
-        String title;
-        String year;
-        String imdb_id; // optional
-        String tvdb_id;
-        Season seasons[];
-    }
-
-    public static class Season {
-        int season;
-        int episodes[];
-    }
-
-    public static class LastActivityElm {
-        long watched;
-        long collection;
-    }
-
-    public static class LastActivity {
-        long all;
-        LastActivityElm movie;
-        LastActivityElm episode;
-    }
-
-   
 }
