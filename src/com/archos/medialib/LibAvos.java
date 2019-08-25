@@ -179,7 +179,7 @@ public class LibAvos {
 
         try {
             if (CpuTest.isArm() && !CpuTest.hasNeon()) {
-                Log.d(TAG, "That shit does not have neon!!!");
+                Log.d(TAG, "That poor cpu does not even have neon!!!");
                 armHasNeon = false;
             }
         } catch (Exception ule) {};
