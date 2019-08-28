@@ -54,17 +54,8 @@ public final class ArchosMediaCommon {
     public static final long SCANNED_ID_OFFSET = 1000000000;
 
     static {
-        if (BuildConfig.FLAVOR.contains("free")) {
-            AUTHORITY_VIDEO = "com.archos.media.videofree";
-            AUTHORITY_SCRAPER = "com.archos.media.scraperfree";
-        } else if (BuildConfig.FLAVOR.contains("community")) {
-            AUTHORITY_VIDEO = "com.archos.media.videocommunity";
-            AUTHORITY_SCRAPER = "com.archos.media.scrapercommunity";
-        }
-         else {
-            AUTHORITY_VIDEO = "com.archos.media.video";
-            AUTHORITY_SCRAPER = "com.archos.media.scraper";
-        }
+        AUTHORITY_VIDEO = "com.archos.media.videocommunity";
+        AUTHORITY_SCRAPER = "com.archos.media.scrapercommunity";
         CONTENT_AUTHORITY_SLASH_VIDEO = CONTENT + AUTHORITY_VIDEO + SLASH;
         CONTENT_AUTHORITY_SLASH_SCRAPER = CONTENT + AUTHORITY_SCRAPER + SLASH;
     }
