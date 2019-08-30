@@ -359,9 +359,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
         try {
-            db.beginTransactionNonExclusive();
             c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE)", null);
-            db.setTransactionSuccessful();
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -369,28 +367,22 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 long count = c.getLong(2);
                 if (DBG) Log.d(TAG, "clean delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
                 // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                db.beginTransactionNonExclusive();
                 try {
                     db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    db.setTransactionSuccessful();
                 } catch (SQLException sqlE) {
                     Log.e(TAG, "SQLException", sqlE);
                 } finally {
-                    db.endTransaction();
                 }
             }
         } catch (SQLException | IllegalStateException e) {
             Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
-            db.endTransaction();
             if (c != null)
                 c.close();
         }
         // note: seems that the delete is performed not as a table trigger anymore but elsewhere
-        db.beginTransactionNonExclusive();
         try {
             c = db.rawQuery("SELECT * FROM delete_files", null);
-            db.setTransactionSuccessful();
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -401,27 +393,21 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
                 delCb.callback(DeleteFileCallbackArgs);
                 // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                db.beginTransactionNonExclusive();
                 try {
                     db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    db.setTransactionSuccessful();
                 } catch (SQLException sqlE) {
                     Log.e(TAG, "SQLException", sqlE);
                 } finally {
-                    db.endTransaction();
                 }
             }
         } catch (SQLException | IllegalStateException e) {
             Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
-            db.endTransaction();
             if (c != null)
                 c.close();
         }
-        db.beginTransactionNonExclusive();
         try {
             c = db.rawQuery("SELECT * FROM vob_insert", null);
-            db.setTransactionSuccessful();
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 long id = c.getLong(0);
@@ -431,20 +417,16 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 VobUpdateCallbackArgs = new String[] {path};
                 vobCb.callback(VobUpdateCallbackArgs);
                 // purge the db: delete row
-                db.beginTransactionNonExclusive();
                 try {
                     db.execSQL("DELETE FROM vob_insert WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    db.setTransactionSuccessful();
                 } catch (SQLException sqlE) {
                     Log.e(TAG, "SQLException", sqlE);
                 } finally {
-                    db.endTransaction();
                 }
             }
         } catch (SQLException | IllegalStateException e) {
             Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
-            db.endTransaction();
             if (c != null)
                 c.close();
         }
