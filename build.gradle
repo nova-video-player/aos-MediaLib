@@ -118,8 +118,6 @@ dependencies {
     //    exclude group: 'org.threeten', module: 'threetenbp'
     //}
     implementation 'com.jakewharton.threetenabp:threetenabp:1.2.1'
-    implementation 'joda-time:joda-time:2.10'
-    implementation group: 'org.joda', name: 'joda-convert', version: '1.9.2' 
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.11' 
@@ -135,5 +133,4 @@ dependencies {
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.2.0.v20160908'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.2.0.v20160908'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.2.0.v20160908'
-    implementation group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.25'
 }

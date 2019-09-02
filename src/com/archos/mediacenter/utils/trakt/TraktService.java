@@ -61,8 +61,6 @@ import com.uwetrottmann.trakt5.entities.SyncItems;
 import com.uwetrottmann.trakt5.entities.SyncMovie;
 import com.uwetrottmann.trakt5.entities.TraktList;
 
-import org.joda.time.DateTime;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
