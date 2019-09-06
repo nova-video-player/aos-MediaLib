@@ -26,52 +26,50 @@ import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.trakt.Trakt.Result.ObjectType;
 import com.archos.mediacenter.utils.trakt.TraktAPI.AuthParam;
 import com.archos.mediacenter.utils.trakt.TraktAPI.MovieWatchingParam;
-import com.archos.mediacenter.utils.trakt.TraktAPI.Response;
 import com.archos.mediacenter.utils.trakt.TraktAPI.ShowWatchingParam;
 import com.archos.mediacenter.utils.videodb.VideoDbInfo;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.video.VideoStore;
-import com.uwetrottmann.trakt.v2.TraktHttpClient;
-import com.uwetrottmann.trakt.v2.TraktV2;
-import com.uwetrottmann.trakt.v2.entities.BaseMovie;
-import com.uwetrottmann.trakt.v2.entities.BaseShow;
-import com.uwetrottmann.trakt.v2.entities.EpisodeIds;
-import com.uwetrottmann.trakt.v2.entities.EpisodeProgress;
-import com.uwetrottmann.trakt.v2.entities.GenericProgress;
-import com.uwetrottmann.trakt.v2.entities.LastActivities;
-import com.uwetrottmann.trakt.v2.entities.ListEntry;
-import com.uwetrottmann.trakt.v2.entities.MovieIds;
-import com.uwetrottmann.trakt.v2.entities.MovieProgress;
-import com.uwetrottmann.trakt.v2.entities.SyncEpisode;
-import com.uwetrottmann.trakt.v2.entities.SyncItems;
-import com.uwetrottmann.trakt.v2.entities.SyncMovie;
-import com.uwetrottmann.trakt.v2.entities.SyncResponse;
-import com.uwetrottmann.trakt.v2.enums.Extended;
-import com.uwetrottmann.trakt.v2.enums.ListPrivacy;
-import com.uwetrottmann.trakt.v2.exceptions.OAuthUnauthorizedException;
+import com.uwetrottmann.trakt5.TraktV2;
+import com.uwetrottmann.trakt5.entities.AccessToken;
+import com.uwetrottmann.trakt5.entities.BaseMovie;
+import com.uwetrottmann.trakt5.entities.BaseShow;
+import com.uwetrottmann.trakt5.entities.EpisodeIds;
+import com.uwetrottmann.trakt5.entities.EpisodeProgress;
+import com.uwetrottmann.trakt5.entities.GenericProgress;
+import com.uwetrottmann.trakt5.entities.LastActivities;
+import com.uwetrottmann.trakt5.entities.ListEntry;
+import com.uwetrottmann.trakt5.entities.MovieIds;
+import com.uwetrottmann.trakt5.entities.MovieProgress;
+import com.uwetrottmann.trakt5.entities.SyncEpisode;
+import com.uwetrottmann.trakt5.entities.SyncItems;
+import com.uwetrottmann.trakt5.entities.SyncMovie;
+import com.uwetrottmann.trakt5.entities.SyncResponse;
+import com.uwetrottmann.trakt5.entities.TraktList;
+import com.uwetrottmann.trakt5.entities.UserSlug;
+import com.uwetrottmann.trakt5.enums.Extended;
+import com.uwetrottmann.trakt5.enums.ListPrivacy;
 
-import org.apache.oltu.oauth2.client.OAuthClient;
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
-import org.apache.oltu.oauth2.client.response.OAuthAccessTokenResponse;
-import org.apache.oltu.oauth2.client.response.OAuthJSONAccessTokenResponse;
-import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
-import org.joda.time.DateTime;
+import org.threeten.bp.OffsetDateTime;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executors;
 
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.RetrofitError;
-import retrofit.android.AndroidLog;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class Trakt {
     private static final String TAG = "Trakt";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
     public static final String TRAKT_ISSUE_REFRESH_TOKEN = "TRAKT_ISSUE_REFRESH_TOKEN";
@@ -110,13 +108,36 @@ public class Trakt {
     public static final int WATCHING_DELAY_MS = 600000; // 10 min
     private static final long WAIT_BEFORE_NEXT_TRIAL = 2000;
 
+    private static final String REDIRECT_URI = "http://localhost";
+
     private final Context mContext;
 
     private Listener mListener;
 
-    private boolean mRequestPending;
     private boolean mWatchingSuccess = false;
-    private TraktV2 mTraktV2;
+
+    static class MyTraktV2 extends TraktV2 {
+
+        public MyTraktV2(String apiKey) {
+            super(apiKey);
+        }
+
+        public MyTraktV2(String apiKey, String clientSecret, String redirectUri) {
+            super(apiKey, clientSecret, redirectUri);
+        }
+
+        @Override
+        protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
+            super.setOkHttpClientDefaults(builder);
+            if (DBG) {
+                HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+                logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+                builder.addNetworkInterceptor(logging).addInterceptor(logging);
+            }
+        }
+    }
+
+    private static MyTraktV2 mTraktV2;
 
     public static void initApiKeys(Context context){
         API_KEY = context.getString(R.string.trakt_api_key);
@@ -139,8 +160,6 @@ public class Trakt {
         else
             return null;
     }
-
-
 
     static private final class CallbackLock {
         boolean ready = false;
@@ -215,71 +234,59 @@ public class Trakt {
         public void onResult(Result result);
     }
 
+    private static MyTraktV2 getTraktV2() {
+        if(mTraktV2 == null)
+            mTraktV2 = new MyTraktV2(API_KEY, API_SECRET, REDIRECT_URI);
+        return  mTraktV2;
+    }
+
     public Trakt(Context context) {
         mContext = context;
-        mTraktV2 = new TraktV2();
-        if (DBG)
-            mTraktV2.setIsDebug(true);
-        else
-            mTraktV2.setIsDebug(false);
-        mTraktV2.setAccessToken(
+        mTraktV2 = getTraktV2();
+        mTraktV2.accessToken(
                 getAccessTokenFromPreferences(
                         PreferenceManager.getDefaultSharedPreferences(context)));
 
         //test
         //mTraktV2.setAccessToken("911cfb2e98258328fd95a12d593f6e72e5412cff3f4ce9772e2b3a7b8af121fd");
         //setRefreshToken(PreferenceManager.getDefaultSharedPreferences(context),"");
-
-        mTraktV2.setApiKey(API_KEY);
-
-        RestAdapter restAdapter = new RestAdapter.Builder()
-                .setEndpoint(API_URL)
-                .setLog(new AndroidLog(TAG))
-                .setRequestInterceptor(new RequestInterceptor() {
-                    @Override
-                    public void intercept(RequestFacade request) {
-    /*  String string = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-        request.addHeader("Accept", "application/json");
-        request.addHeader("Authorization", string); */
-                    }
-                })
-                .setExecutors(Executors.newSingleThreadExecutor(), Executors.newSingleThreadExecutor())
-                .build();
-        if (DBG)
-            restAdapter.setLogLevel(RestAdapter.LogLevel.FULL);
-        else
-            restAdapter.setLogLevel(RestAdapter.LogLevel.NONE);
-        restAdapter.create(TraktAPI.class);
     }
 
     public void setListener(Listener listener) {
         mListener = listener;
     }
     public static OAuthClientRequest getAuthorizationRequest(SharedPreferences pref) throws OAuthSystemException{
-    	return TraktV2.getAuthorizationRequest(API_KEY,"http://localhost","test",getUserFromPreferences(pref)!=null?getUserFromPreferences(pref):"");
-    }
-    public static OAuthAccessTokenResponse getAccessToken(String code){
-    	OAuthAccessTokenResponse res=null;
-    	try {
-    		res = TraktV2.getAccessToken(Trakt.API_KEY, API_SECRET, "http://localhost", code);
-    	} catch (OAuthSystemException e) {
-    		// TODO Auto-generated catch block
-    		e.printStackTrace();
-    	} catch (OAuthProblemException e) {
-    		// TODO Auto-generated catch block
-    		e.printStackTrace();
-    	}
-
-    	return res;
+        String sampleState = new BigInteger(130, new SecureRandom()).toString(32);
+        String url = getTraktV2().buildAuthorizationUrl(sampleState);
+        return OAuthClientRequest
+                .authorizationLocation(url)
+                .buildQueryMessage();
     }
 
+    // redefine minimal class not to export the whole trakt5 to Video with AccessToken
+    public static class accessToken {
+        public String access_token;
+        public String refresh_token;
+    }
 
+    public static accessToken getAccessToken(String code){
+        try {
+            final retrofit2.Response<AccessToken> response = getTraktV2().exchangeCodeForAccessToken(code);
+            final accessToken mAccessToken = new accessToken();
+            mAccessToken.access_token = response.body().access_token;
+            mAccessToken.refresh_token = response.body().refresh_token;
+            return mAccessToken;
+        } catch (IOException e) {
+            Log.e(TAG, "getAccessToken: caught IoException ", e);
+        }
+        return null;
+    }
 
-
-    private Result handleRet(CallbackLock lock, RetrofitError error, Object object, Result.ObjectType objectType) {
+    private Result handleRet(CallbackLock lock, Exception error, Object object, Result.ObjectType objectType) {
         Result result = null;
         if (error != null || object == null || objectType == ObjectType.NULL) {
             Status status;
+            /*
             if (error!=null&&error.isNetworkError()) {
                 status = Status.ERROR_NETWORK;
             } else if (error!=null&&error.getResponse() != null) {
@@ -292,17 +299,29 @@ public class Trakt {
                     status = Status.ERROR;
             } else {
                 status = Status.ERROR;
+            }*/
+            status = Status.ERROR;
+            if(error instanceof AuthentificationError) {
+                status = Status.ERROR_AUTH;
+            }
+            //TODO: network error (on 503 & retrofit.isNetworkError & IOException)
+            if(error instanceof IOException) {
+                status = Status.ERROR_NETWORK;
             }
 
             result = new Result(status, error, objectType);
         } else {
             if (objectType == ObjectType.RESPONSE) {
-                Response response = (Response) object;
+                SyncResponse response = (SyncResponse) object;
                 Status status;
+                // TODO: test check if mark as seen already marked as seen generates an error
+                /*
                 if (response.error != null)
                     status = response.error.endsWith("already") ? Status.SUCCESS_ALREADY : Status.ERROR;
                 else
                     status = Status.SUCCESS;
+                 */
+                status = Status.SUCCESS;
                 result = new Result(status, response, objectType);
             } else {
                 result = new Result(Status.SUCCESS, object, objectType);
@@ -316,81 +335,33 @@ public class Trakt {
         return result;
     }
 
-    
-
     public static String getDateFormat(long currentTimeSecond) {
         return currentTimeSecond > 0 ? DATE_FORMAT.format(new Date(currentTimeSecond * 1000L)) : null;
     }
-
    
     public Result markAs(final String action, final SyncItems param, final boolean isShow, final int trial){
-        Log.d(TAG, "markAs "+action+" "+trial);
-
-        TraktAPI.Response response = null;
-        try {
-            if (action.equals(Trakt.ACTION_SEEN))
-                try {
-                    response = mTraktV2.sync().addItemsToWatchedHistory(param);
-                    return  handleRet(null, null, response, ObjectType.RESPONSE);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken()){
-
-                        markAs(action, param, isShow, trial + 1);
-                    }
-                    e.printStackTrace();
-                }
-            if (action.equals(Trakt.ACTION_UNSEEN)) {
-                try {
-                    response = mTraktV2.sync().deleteItemsFromWatchedHistory(param);
-                    return handleRet(null, null, response, ObjectType.RESPONSE);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken()){
-                        markAs(action, param,isShow,  trial+1);
-                    }
-                }
-            } else if (action.equals(Trakt.ACTION_LIBRARY)) {
-                try {
-                    response = mTraktV2.sync().addItemsToCollection(param);
-                    return handleRet(null, null, response, ObjectType.RESPONSE);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken()){
-                        markAs(action, param,isShow,  trial+1);
-                    }
-                }
-            } else if (action.equals(Trakt.ACTION_UNLIBRARY)) {
-                try {
-                    response = mTraktV2.sync().deleteItemsFromCollection(param);
-                    return handleRet(null, null, response, ObjectType.RESPONSE);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken()){
-                        markAs(action, param,isShow,  trial+1);
-                    }
-                }
-            }
+        if (DBG) Log.d(TAG, "markAs "+action+" "+trial);
+        //TraktAPI.Response response = null;
+        SyncResponse response = null;
+        if (action.equals(Trakt.ACTION_SEEN)) {
+            response = exec(mTraktV2.sync().addItemsToWatchedHistory(param));
+        } else if (action.equals(Trakt.ACTION_UNSEEN)) {
+            response = exec(mTraktV2.sync().deleteItemsFromWatchedHistory(param));
+        } else if (action.equals(Trakt.ACTION_LIBRARY)) {
+            response = exec(mTraktV2.sync().addItemsToCollection(param));
+        } else if (action.equals(Trakt.ACTION_UNLIBRARY)) {
+            response = exec(mTraktV2.sync().deleteItemsFromCollection(param));
         }
-        catch(RetrofitError error){
-            mRequestPending = false;
-
-            if(trial<MAX_TRIAL&&!error.isNetworkError()){
-
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                return markAs(action, param, isShow, trial + 1);
-            }
-            else{
-
-                return handleRet(null, error, null, ObjectType.NULL);
-            }
-        }
-          return Result.getAsync();
+        if (response == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, response, ObjectType.RESPONSE);
+        // TODO: return Result.getAsync();
     }
+
     public Result markAs(final String action, SyncItems param, boolean isShow) {
-      
         return markAs(action, param, isShow, 0);
     }
+
     public Result markAs(final String action, VideoDbInfo videoInfo) {
         if (videoInfo.isScraped) {
             if (videoInfo.isShow) {
@@ -399,7 +370,7 @@ public class Trakt {
                 ei.tvdb = Integer.valueOf(videoInfo.scraperEpisodeId);             
                 se.id(ei);
                 if(videoInfo.lastTimePlayed>0)
-                	se.watchedAt(DateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
+                	se.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 SyncItems sitems = new SyncItems();
                 sitems.episodes(se);
 
@@ -409,7 +380,7 @@ public class Trakt {
                 MovieIds mi = new MovieIds();
                 mi.tmdb = Integer.valueOf(videoInfo.scraperMovieId);
                 if(videoInfo.lastTimePlayed>0)
-                	sm.watchedAt(DateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
+                	sm.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 sm.id(mi);
                 SyncItems sitems = new SyncItems();
                 sitems.movies(sm);
@@ -419,7 +390,6 @@ public class Trakt {
             return Result.getError();
         }
     }
-
 
     public Result removeFromLibrary(VideoDbInfo videoInfo) {
         return markAs(ACTION_UNLIBRARY, videoInfo);
@@ -451,86 +421,64 @@ public class Trakt {
             return param;
         }
     }
+
+    public Result postWatchingStop(final VideoDbInfo videoInfo, float progress) {
+        return postWatching("stop", videoInfo, progress, 0);
+    }
+
     public Result postWatching(VideoDbInfo videoInfo, float progress){
     	return  postWatching("start", videoInfo, progress, 0);
     }
-    public Result postWatching(final String action,final VideoDbInfo videoInfo, final float progress, final int trial) {
-        Log.d(TAG, "postWatching "+trial);
-        try {
-            TraktAPI.Response arg0=null;
-            AuthParam param = fillParam(videoInfo);
-            if (videoInfo.isShow) {
-                ShowWatchingParam showParam = (ShowWatchingParam )param;
-                showParam.progress = (int) progress;
-                SyncEpisode e = new SyncEpisode();
-                EpisodeIds ids = new EpisodeIds();
-                if(showParam.episode_tvdb_id!=null)
-                    ids.tvdb = Integer.valueOf(showParam.episode_tvdb_id);
-                e.id(ids);
-                EpisodeProgress ep = new EpisodeProgress();
-                ep.progress = progress;
-                ep.episode=e;
-                try{
-                    if(action.equals("start"))
-                        arg0 = mTraktV2.scrobble().startWatching(ep);
-                    else
-                        arg0 = mTraktV2.scrobble().stopWatching(ep);
-                } catch (OAuthUnauthorizedException e1){
-                    if(trial<1&&refreshAccessToken()){
-                        postWatching(action, videoInfo,progress,  trial+1);
-                    }
-                }
-            } else {
-                MovieWatchingParam movieParam = (MovieWatchingParam) param;
-                movieParam.progress = (int) progress;
-                MovieProgress mp = new MovieProgress();
-                mp.progress=progress;
-                MovieIds mi = new MovieIds();
-                if(movieParam.tmdb_id!=null)
-                    mi.tmdb=Integer.valueOf(movieParam.tmdb_id);
-                SyncMovie sm= new SyncMovie();
-                sm.id(mi);
-                mp.movie=sm;
-                try {
-                    if(action.equals("start"))
-                        arg0 = mTraktV2.scrobble().startWatching(mp);
-                    else
-                        arg0 = mTraktV2.scrobble().stopWatching(mp);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken()){
-                        postWatching(action, videoInfo,progress,  trial+1);
-                    }
-                }
-            }
-            mWatchingSuccess = true;
-            return handleRet(null, null, arg0, ObjectType.RESPONSE);
-        }
-        catch (RetrofitError arg0) {
-            Log.d(TAG, "failure: isNetworkError: " + arg0.isNetworkError());
-            if (!arg0.isNetworkError()&& trial>=MAX_TRIAL){
-                cleanWatching();
-                return handleRet(null, arg0, null, ObjectType.NULL);
-            }
-            else if(!arg0.isNetworkError()&&  trial <MAX_TRIAL){
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                    return postWatching(action, videoInfo, progress, trial + 1);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-            }
-            else if(isAuthError(arg0)&&trial <1){
-                Log.d(TAG, "postWatching bis");
-                if(refreshAccessToken())
-                    return postWatching(action, videoInfo, progress, trial + 1);
-                else
-                    return  handleRet(null, arg0, null, ObjectType.NULL);
-            }
-            else return  handleRet(null, arg0, null, ObjectType.NULL);
-        }
-        return Result.getAsync();
-    }
 
+    public Result postWatching(final String action,final VideoDbInfo videoInfo, final float progress, final int trial) {
+        if (DBG) Log.d(TAG, "postWatching progress=" + progress + ", trial=" + trial);
+        Void arg0 = null;
+        AuthParam param = fillParam(videoInfo);
+        if (videoInfo.isShow) {
+            ShowWatchingParam showParam = (ShowWatchingParam )param;
+            showParam.progress = (int) progress;
+            SyncEpisode e = new SyncEpisode();
+            EpisodeIds ids = new EpisodeIds();
+            if(showParam.episode_tvdb_id!=null) {
+                if (DBG) Log.d(TAG, "this is a show with id " + showParam.episode_tvdb_id);
+                ids.tvdb = Integer.valueOf(showParam.episode_tvdb_id);
+                e.season(videoInfo.scraperSeasonNr);
+                e.number(videoInfo.scraperEpisodeNr);
+            }
+            e.id(ids);
+            EpisodeProgress ep = new EpisodeProgress();
+            ep.progress = progress;
+            ep.episode=e;
+            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + e.ids + " season " + e.season + " number " + e.number);
+            if(action.equals("start"))
+                arg0 = exec(mTraktV2.scrobble().startWatching(ep));
+            else
+                arg0 = exec(mTraktV2.scrobble().stopWatching(ep));
+        } else {
+            MovieWatchingParam movieParam = (MovieWatchingParam) param;
+            movieParam.progress = (int) progress;
+            MovieProgress mp = new MovieProgress();
+            mp.progress=progress;
+            MovieIds mi = new MovieIds();
+            if(movieParam.tmdb_id!=null)
+                mi.tmdb=Integer.valueOf(movieParam.tmdb_id);
+            SyncMovie sm= new SyncMovie();
+            sm.id(mi);
+            mp.movie=sm;
+            if (DBG) Log.d(TAG, "postWatching: MovieProgress=" + mp);
+            if(action.equals("start"))
+                arg0 = exec(mTraktV2.scrobble().startWatching(mp));
+            else
+                arg0 = exec(mTraktV2.scrobble().stopWatching(mp));
+        }
+        mWatchingSuccess = true;
+        if (arg0 == null) {
+            cleanWatching();
+            return handleRet(null, null, arg0, ObjectType.NULL);
+        }
+        return handleRet(null, null, arg0, ObjectType.RESPONSE);
+        // TODO: return Result.getAsync();
+    }
 
     public static void setRefreshToken(SharedPreferences sharedPreferences, String refreshToken) {
         Editor editor = sharedPreferences.edit();
@@ -546,50 +494,34 @@ public class Trakt {
         return defaultSharedPreferences.getString(KEY_TRAKT_REFRESH_TOKEN,"");
     }
 
-    private boolean isAuthError(RetrofitError arg0) {
-
-        return false;
-    }
-
     private boolean refreshAccessToken() {
         Log.d(TAG, "refreshAccessToken()");
-        try {
-            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
-            String refreshToken = getRefreshTokenFromPreferences(pref);
-            if(refreshToken==null|| refreshToken.isEmpty()){
-                Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
-                intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-                mContext.sendBroadcast(intent);
-            }
-            else {
-                OAuthClientRequest request = TraktV2.getAccessTokenRefreshRequest(API_KEY, API_SECRET, "http://localhost", refreshToken);
-
-                OAuthClient client = new OAuthClient(new TraktHttpClient());
-                OAuthJSONAccessTokenResponse res = client.accessToken(request);
-                if (res != null && res.getAccessToken() != null && !res.getAccessToken().isEmpty()) {
-                    setAccessToken(pref, res.getAccessToken());
-                    mTraktV2.setAccessToken(res.getAccessToken());
-                    setRefreshToken(pref, res.getRefreshToken());
-                    return true;
-                }
-            }
-
-        } catch (OAuthSystemException e) {
-            Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
-            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-            mContext.sendBroadcast(intent);
-        } catch (OAuthProblemException e) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
+        String refreshToken = getRefreshTokenFromPreferences(pref);
+        if(refreshToken==null|| refreshToken.isEmpty()){
             Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             mContext.sendBroadcast(intent);
         }
+        else {
+            try {
+                retrofit2.Response<AccessToken> token = mTraktV2.refreshAccessToken(refreshToken);
+                if (!token.isSuccessful()) {
+                    Log.d(TAG, "Failed refreshing token " + token.toString());
+                    Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
+                    intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                    mContext.sendBroadcast(intent);
+                }
+                mTraktV2.accessToken(token.body().access_token);
+                setAccessToken(pref, token.body().access_token);
+                setRefreshToken(pref, token.body().refresh_token);
+                return true;
+            } catch (IOException ioe) {
+                Log.e(TAG, "getAccessToken: caught IOException " + ioe);
+                return false;
+            }
+        }
         return false;
-    }
-
-
-
-    public Result postWatchingStop(final VideoDbInfo videoInfo, float progress) {
-        return postWatching("stop", videoInfo, progress, 0);
     }
 
     public Result getAllShows(String library) {
@@ -599,292 +531,179 @@ public class Trakt {
     private Result getAllShows(String library, int trial){
         Log.d(TAG, "getAllShows");
         List<BaseShow> ret = null;
-        try {
-            if (library.equals(Trakt.LIBRARY_WATCHED))
-                try {
-                    ret = mTraktV2.sync().watchedShows(Extended.DEFAULT_MIN);
-
-                    return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken())
-                        return  getAllShows( library, trial + 1);
-                }
-            else
-                try {
-                    ret = mTraktV2.sync().collectionShows(Extended.DEFAULT_MIN);
-                    return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
-                } catch (OAuthUnauthorizedException e) {
-                    if(trial<1&&refreshAccessToken())
-                        return  getAllShows( library, trial + 1);
-                }
+        if (library.equals(Trakt.LIBRARY_WATCHED)) {
+            ret = exec(mTraktV2.sync().watchedShows(Extended.FULL));
+            if (ret == null)
+                return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
+        } else {
+            ret = exec(mTraktV2.sync().collectionShows(Extended.FULL));
+            if (ret == null)
+                return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
         }
-        catch(RetrofitError error){
-            return handleRet(null, error, null, ObjectType.NULL);
-        }
-
-        return Result.getAsync();
+        // TODO: what about return Result.getAsync();
     }
+
     public Result getPlaybackStatus(int trial){
-        Log.d(TAG, "getPlaybackStatus "+trial);
-        try {
-            List<GenericProgress> list = mTraktV2.sync().getPlayback();
-            return handleRet(null, null, list, ObjectType.MOVIES);
-
-        } catch (OAuthUnauthorizedException e) {
-            if(trial<1&&refreshAccessToken()){
-                getPlaybackStatus(trial+1);
-            }
-            e.printStackTrace();
-        } catch(retrofit.RetrofitError error){
-            try {if(!error.isNetworkError()&&trial<MAX_TRIAL&&error.getResponse()!=null&&error.getResponse().getStatus()!=403) {
-                Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                return getPlaybackStatus(trial+1);
-            }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-        }
-        return Result.getAsync();
+        List<GenericProgress> list = exec(mTraktV2.sync().getPlayback());
+        if(list == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, list, ObjectType.MOVIES);
+        // TODO return Result.getAsync();
     }
     public Result getPlaybackStatus() {
         return getPlaybackStatus(0);
 	}
-    public Result getAllMovies(String library, boolean sync) {
 
+    public Result getAllMovies(String library, boolean sync) {
         return getAllMovies(library, 0);
     }
-    public Result getAllMovies(final String library, int trial) {
-        Log.d(TAG, "getAllMovies");
-        List<BaseMovie> arg0 = null;
+
+    public static class AuthentificationError extends Exception{};
+
+    public <T> T exec(retrofit2.Call<T> call) {
+        return exec(call, MAX_TRIAL);
+    }
+    public <T> T exec(retrofit2.Call<T> call, int remaining) {
         try {
-            if (library.equals(Trakt.LIBRARY_WATCHED))
-                try {
-                    arg0 = mTraktV2.sync().watchedMovies(Extended.DEFAULT_MIN);
-                } catch (OAuthUnauthorizedException e) {
-                    if (trial < 1 && refreshAccessToken()) {
-                        return getAllMovies(library, trial + 1);
+            retrofit2.Response<T> res = call.execute();
+            //TODO: logs
+            //call.request().body().writeTo();
+            if (res.errorBody() != null) {
+                Log.e(TAG, "exec request " + res.errorBody().string(), new Throwable());
+                if (res.code() == 401) {
+                    if (remaining > 0) {
+                        refreshAccessToken();
+                        return exec(call, 0);
+                    } else {
+                        throw new AuthentificationError();
                     }
+                } else {
+                    throw new Exception(res.errorBody().toString());
                 }
-            else
-                try {
-                    arg0 = mTraktV2.sync().collectionMovies(Extended.DEFAULT_MIN);
-                } catch (OAuthUnauthorizedException e) {
-                    if (trial < 1 && refreshAccessToken()) {
-                        return getAllMovies(library, trial + 1);
-                    }
-                }
-            return handleRet(null, null, arg0, ObjectType.MOVIES);
-        } catch (RetrofitError error) {
-            if (!error.isNetworkError() && trial < MAX_TRIAL && error.getResponse() != null && error.getResponse().getStatus() != 403) {
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                    return getAllMovies(library, trial + 1);
-                } catch (InterruptedException e) {
-                    return handleRet(null, error, null, ObjectType.NULL);
-                }
-            } else {
-                return handleRet(null, error, null, ObjectType.NULL);
             }
+            return res.body();
+        } catch(Exception e) {
+            try { Thread.sleep(WAIT_BEFORE_NEXT_TRIAL); } catch (Exception a) {}
+            if(remaining == 0) {
+                return null;
+            }
+            return exec(call, remaining-1);
         }
+    }
+
+    public Result getAllMovies(final String library, int trial) {
+        if (DBG) Log.d(TAG, "getAllMovies");
+        List<BaseMovie> arg0 = null;
+        if (library.equals(Trakt.LIBRARY_WATCHED))
+            // TODO: was Extended.DEFAULT_MIN before but does not exist anymore
+            arg0 = exec(mTraktV2.sync().watchedMovies(Extended.FULL));
+        else
+            arg0 = exec(mTraktV2.sync().collectionMovies(Extended.FULL));
+        if(arg0 == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, arg0, ObjectType.MOVIES);
     }
 
     public Result getLastActivity(int trial) {
-        Log.d(TAG, "getLastActivity");
-        try {
-            LastActivities ret = mTraktV2.sync().lastActivities();
-            return handleRet(null, null, ret, ObjectType.LAST_ACTIVITY);
-        } catch (OAuthUnauthorizedException e) {
-            if (trial < 1 && refreshAccessToken()) {
-                return getLastActivity(trial + 1);
-            }
-        } catch (RetrofitError error) {
-            if (!error.isNetworkError() && trial < MAX_TRIAL) {
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                    return getLastActivity(trial + 1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else
-                return handleRet(null, error, null, ObjectType.NULL);
-        }
-        return Result.getAsync();
+        if (DBG) Log.d(TAG, "getLastActivity");
+        LastActivities ret = exec(mTraktV2.sync().lastActivities());
+        if(ret == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, ret, ObjectType.LAST_ACTIVITY);
     }
 
     /* add new list to trakt profile */
     public Result addList(int trial, String title) {
-        com.uwetrottmann.trakt.v2.entities.List list = new com.uwetrottmann.trakt.v2.entities.List();
+        if (DBG) Log.d(TAG, "addList");
+        TraktList list = new TraktList();
         list.name = title;
         list.privacy = ListPrivacy.fromValue("private");
-        try {
-            com.uwetrottmann.trakt.v2.entities.List result = mTraktV2.users().createList(mTraktV2.users().settings().user.username, list);
 
-            return handleRet(null, null, result, ObjectType.LIST);
-        } catch (OAuthUnauthorizedException e) {
-            if (trial < 1 && refreshAccessToken()) {
-                return addList(trial + 1, title);
-            } else
-                return Result.getError();
-        }
-        catch (RetrofitError error) {
-            if (!error.isNetworkError() && trial < MAX_TRIAL) {
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                    return addList(trial+1,title);
-                } catch (InterruptedException e) {
-                    return Result.getError();
-                }
-            } else
-                return Result.getError();
-        }
+        TraktList result = exec(mTraktV2.users().createList(UserSlug.ME, list));
+        if (result == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, result, ObjectType.LIST);
     }
 
     public Result deleteList(int trial, String id) {
-        try {
-            retrofit.client.Response response = mTraktV2.users().deleteList(mTraktV2.users().settings().user.username, id);
-            if (response.getStatus() == 200)
-                return handleRet(null, null, response, ObjectType.RETOFIT_RESPONSE);
-            else
-                return Result.getError();
-        } catch (OAuthUnauthorizedException e) {
-            if (trial < 1 && refreshAccessToken()) {
-                return deleteList(trial + 1, id);
-            } else
-                return Result.getError();
-        }
-        catch (RetrofitError error) {
-            if (!error.isNetworkError() && trial < MAX_TRIAL) {
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                    return deleteList(trial + 1,id);
-                } catch (InterruptedException e) {
-                    return Result.getError();
-                }
-            } else
-                return Result.getError();
-        }
+        if (DBG) Log.d(TAG, "deleteList");
+        Void response = exec(mTraktV2.users().deleteList(UserSlug.ME, id));
+        if (response == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, response, ObjectType.NULL);
+        /*
+        if (response.getStatus() == 200)
+            return handleRet(null, null, response, ObjectType.RETOFIT_RESPONSE);
+        else
+            return Result.getError();
+         */
     }
 
     public Result getLists(int trial) {
-        try {
-            List<com.uwetrottmann.trakt.v2.entities.List> lists = mTraktV2.users().lists(mTraktV2.users().settings().user.username);
-            return handleRet(null, null, lists, ObjectType.LIST);
-        } catch (OAuthUnauthorizedException e) {
-            if (trial < 1 && refreshAccessToken()) {
-                return getLists(trial + 1);
-            } else
-                return Result.getError();
-        }
-        catch (RetrofitError error) {
-            if (!error.isNetworkError() && trial < MAX_TRIAL) {
-                try {
-                    Thread.sleep(WAIT_BEFORE_NEXT_TRIAL);
-                    return getLists(trial + 1);
-                } catch (InterruptedException e) {
-                    return Result.getError();
-                }
-            } else
-                return Result.getError();
-        }
+        if (DBG) Log.d(TAG, "getLists");
+        List<TraktList> lists = exec(mTraktV2.users().lists(UserSlug.ME));
+        if (lists == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, lists, ObjectType.LIST);
     }
 
     public Result getListContent(int trial, int listId) {
-        try {
-            List<ListEntry> items = mTraktV2.users().listItems(mTraktV2.users().settings().user.username, String.valueOf(listId), null);
-            return handleRet(null, null, items, ObjectType.LIST);
-
-        } catch (OAuthUnauthorizedException e) {
-            e.printStackTrace();
-            if (trial < 1 && refreshAccessToken()) {
-                return getListContent(trial + 1, listId);
-            } else
-                return Result.getError();
-        }
-        catch (retrofit.RetrofitError e) {
-            e.printStackTrace();
-            if (!e.isNetworkError() && trial < MAX_TRIAL) {
-                return getListContent(trial + 1, listId);
-            } else
-                return Result.getError();
-        }
+        if (DBG) Log.d(TAG, "getListContent");
+        List<ListEntry> items = exec(mTraktV2.users().listItems(UserSlug.ME, String.valueOf(listId), null));
+        if (items == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        return handleRet(null, null, items, ObjectType.LIST);
     }
 
     public Result removeVideoFromList(int trial, int listId, ListEntry onlineItem) {
-        try {
-            SyncItems syncItems = new SyncItems();
-            if(onlineItem.episode!=null) {
-                SyncEpisode syncEpisode = new SyncEpisode();
-                syncEpisode.id(onlineItem.episode.ids);
-                syncItems.episodes(syncEpisode);
-            }else{
-                SyncMovie syncMovie = new SyncMovie ();
-                syncMovie .id(onlineItem.movie.ids);
-                syncItems.movies(syncMovie);
-            }
-
-            SyncResponse ret = mTraktV2.users().deleteListItems(mTraktV2.users().settings().user.username, String.valueOf(listId), syncItems);
-            if(ret.deleted.episodes+ret.deleted.movies>0)
-                return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
-            else
-                return Result.getError();
-        }catch (OAuthUnauthorizedException e) {
-            e.printStackTrace();
-            if (trial < 1 && refreshAccessToken()) {
-                return removeVideoFromList(trial + 1, listId, onlineItem);
-            } else
-                return Result.getError();
+        if (DBG) Log.d(TAG, "removeVideoFromLit");
+        SyncItems syncItems = new SyncItems();
+        if(onlineItem.episode!=null) {
+            SyncEpisode syncEpisode = new SyncEpisode();
+            syncEpisode.id(onlineItem.episode.ids);
+            syncItems.episodes(syncEpisode);
+        } else {
+            SyncMovie syncMovie = new SyncMovie ();
+            syncMovie .id(onlineItem.movie.ids);
+            syncItems.movies(syncMovie);
         }
-        catch (retrofit.RetrofitError e) {
-            e.printStackTrace();
-            if (!e.isNetworkError() && trial < MAX_TRIAL) {
-                return removeVideoFromList(trial + 1, listId, onlineItem);
-            } else
-                return Result.getError();
-        }
+        SyncResponse ret = exec(mTraktV2.users().deleteListItems(UserSlug.ME, String.valueOf(listId), syncItems));
+        if (ret == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        if(ret.deleted.episodes+ret.deleted.movies>0)
+            return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
+        else
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
     }
 
     public Result addVideoToList(int trial, int listId, VideoStore.VideoList.VideoItem videoItem) {
-        try {
-            if (videoItem.episodeId > 0) {
-                SyncEpisode se = new SyncEpisode();
-                EpisodeIds ei = new EpisodeIds();
-                ei.tvdb = Integer.valueOf(videoItem.episodeId);
-                se.id(ei);
-                SyncItems sitems = new SyncItems();
-                sitems.episodes(se);
-                SyncResponse ret = mTraktV2.users().addListItems(mTraktV2.users().settings().user.username, String.valueOf(listId), sitems);
-                if(ret.added.episodes+ret.added.movies>0)
-                    return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
-                else
-                    return Result.getError();
-            } else {
-                SyncMovie sm = new SyncMovie();
-                MovieIds mi = new MovieIds();
-                mi.tmdb = Integer.valueOf(videoItem.movieId);
-                sm.id(mi);
-                SyncItems sitems = new SyncItems();
-                sitems.movies(sm);
-                SyncResponse ret = mTraktV2.users().addListItems(mTraktV2.users().settings().user.username, String.valueOf(listId), sitems);
-                if(ret.added.episodes+ret.added.movies>0)
-                    return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
-                else
-                    return Result.getError();            }
-        } catch (OAuthUnauthorizedException e) {
-            e.printStackTrace();
-            if(trial<1&&refreshAccessToken()){
-                return addVideoToList(trial+1, listId, videoItem);
-            }
-            else
-                return Result.getError();
+        if (DBG) Log.d(TAG, "addVideoToList");
+        SyncResponse ret = null;
+        if (videoItem.episodeId > 0) {
+            SyncEpisode se = new SyncEpisode();
+            EpisodeIds ei = new EpisodeIds();
+            ei.tvdb = Integer.valueOf(videoItem.episodeId);
+            se.id(ei);
+            SyncItems sitems = new SyncItems();
+            sitems.episodes(se);
+            ret = exec(mTraktV2.users().addListItems(UserSlug.ME, String.valueOf(listId), sitems));
+        } else {
+            SyncMovie sm = new SyncMovie();
+            MovieIds mi = new MovieIds();
+            mi.tmdb = Integer.valueOf(videoItem.movieId);
+            sm.id(mi);
+            SyncItems sitems = new SyncItems();
+            sitems.movies(sm);
+            ret = exec(mTraktV2.users().addListItems(UserSlug.ME, String.valueOf(listId), sitems));
         }
-        catch (retrofit.RetrofitError e) {
-            e.printStackTrace();
-            if (!e.isNetworkError() &&  trial < MAX_TRIAL) {
-                return addVideoToList(trial + 1, listId, videoItem);
-            } else
-                return Result.getError();
-        }
+        if (ret == null)
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
+        if(ret.added.episodes+ret.added.movies>0)
+            return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
+        else
+            return handleRet(null, new Exception(), null, ObjectType.NULL);
     }
 
     public Result getLastActivity() {
@@ -914,6 +733,7 @@ public class Trakt {
         }
         editor.commit();
     }
+    
     public static void setAccessToken(SharedPreferences pref, String accessToken) {
         Editor editor = pref.edit();
         if (accessToken != null) {
@@ -923,6 +743,7 @@ public class Trakt {
         }
         editor.commit();
     }
+
     public static String getAccessTokenFromPreferences(SharedPreferences pref) {
         return pref.getString(KEY_TRAKT_ACCESS_TOKEN, null);
     }
@@ -930,9 +751,11 @@ public class Trakt {
     public static boolean isTraktV1Enabled(Context context, SharedPreferences pref) {
         return getUserFromPreferences(pref)!=null;
     }
+
     public static boolean isTraktV2Enabled(Context context, SharedPreferences pref) {
         return getAccessTokenFromPreferences(pref)!=null;
     }
+
     public static boolean isLiveScrobblingEnabled(SharedPreferences pref) {
         return pref.getBoolean(KEY_TRAKT_LIVE_SCROBBLING, true);
     }
@@ -940,9 +763,11 @@ public class Trakt {
     public static int getFlagSyncPreference(SharedPreferences preferences) {
         return preferences.getInt(KEY_TRAKT_SYNC_FLAG, 0);
     }
+
     public static boolean getSyncPlaybackPreference(SharedPreferences preferences) {
         return preferences.getBoolean(KEY_TRAKT_SYNC_RESUME, false);
     }
+
     public static void setFlagSyncPreference(SharedPreferences preferences, int flag) {
         int oldFlag = preferences.getInt(KEY_TRAKT_SYNC_FLAG, 0);
         if (flag != 0)
@@ -971,6 +796,7 @@ public class Trakt {
         editor.putLong(KEY_TRAKT_LAST_TIME_MOVIE_WATCHED, time);
         editor.commit();
     }
+
     public static boolean getSyncCollection(SharedPreferences preferences) {
         return preferences.getBoolean(KEY_TRAKT_SYNC_COLLECTION, false);
     }
@@ -986,7 +812,6 @@ public class Trakt {
         editor.remove(Trakt.KEY_TRAKT_SYNC_FLAG);
         editor.remove(Trakt.KEY_TRAKT_LAST_TIME_MOVIE_WATCHED);
         editor.remove(Trakt.KEY_TRAKT_LAST_TIME_SHOW_WATCHED);
-
         editor.commit();
     }
 

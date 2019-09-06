@@ -47,20 +47,19 @@ import com.archos.medialib.R;
 import com.archos.mediaprovider.NetworkState;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.ScrapeStatus;
-import com.uwetrottmann.trakt.v2.entities.BaseEpisode;
-import com.uwetrottmann.trakt.v2.entities.BaseMovie;
-import com.uwetrottmann.trakt.v2.entities.BaseSeason;
-import com.uwetrottmann.trakt.v2.entities.BaseShow;
-import com.uwetrottmann.trakt.v2.entities.EpisodeIds;
-import com.uwetrottmann.trakt.v2.entities.GenericProgress;
-import com.uwetrottmann.trakt.v2.entities.LastActivities;
-import com.uwetrottmann.trakt.v2.entities.ListEntry;
-import com.uwetrottmann.trakt.v2.entities.MovieIds;
-import com.uwetrottmann.trakt.v2.entities.SyncEpisode;
-import com.uwetrottmann.trakt.v2.entities.SyncItems;
-import com.uwetrottmann.trakt.v2.entities.SyncMovie;
-
-import org.joda.time.DateTime;
+import com.uwetrottmann.trakt5.entities.BaseEpisode;
+import com.uwetrottmann.trakt5.entities.BaseMovie;
+import com.uwetrottmann.trakt5.entities.BaseSeason;
+import com.uwetrottmann.trakt5.entities.BaseShow;
+import com.uwetrottmann.trakt5.entities.EpisodeIds;
+import com.uwetrottmann.trakt5.entities.GenericProgress;
+import com.uwetrottmann.trakt5.entities.LastActivities;
+import com.uwetrottmann.trakt5.entities.ListEntry;
+import com.uwetrottmann.trakt5.entities.MovieIds;
+import com.uwetrottmann.trakt5.entities.SyncEpisode;
+import com.uwetrottmann.trakt5.entities.SyncItems;
+import com.uwetrottmann.trakt5.entities.SyncMovie;
+import com.uwetrottmann.trakt5.entities.TraktList;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -70,7 +69,7 @@ import retrofit.RetrofitError;
 
 public class TraktService extends Service {
     private static final String TAG = "TraktService";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
 
     private SharedPreferences mPreferences;
     private boolean mNetworkStateReceiverRegistered = false;
@@ -163,8 +162,8 @@ public class TraktService extends Service {
 
                 if (mTrakt != null) {
                     if (action.equals(INTENT_ACTION_WATCHING)) {
-                        if (DBG) Log.d(TAG, "postWatching");
                         final float progress = intent.getFloatExtra("progress", -1);
+                        if (DBG) Log.d(TAG, "postWatching progress=" + progress);
                         if(videoInfo == null&&videoID>=0)
                         	videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
@@ -185,9 +184,8 @@ public class TraktService extends Service {
                             }
                         }
                     } else if (action.equals(INTENT_ACTION_WATCHING_STOP)) {
-                        if (DBG) Log.d(TAG, "postWatchingStop");
-                        
                         final float progress = intent.getFloatExtra("progress", -1);
+                        if (DBG) Log.d(TAG, "postWatchingStop progress=" + progress);
                         if(videoInfo == null&&videoID>=0)
                         	videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
@@ -479,6 +477,7 @@ public class TraktService extends Service {
         return Trakt.Status.SUCCESS;
 
     }
+
     private Trakt.Status syncPlaybackStatus(){
         if (DBG) Log.d(TAG, "syncPlaybackStatus");
 
@@ -507,7 +506,8 @@ public class TraktService extends Service {
 	            				// this value hasn't been sync yet
 	                			// we should check if videoInfo.watched_at more recent
 
-	        					DateTime lastPaused =null;
+                                //TODO: seems not used
+                                // DateTime lastPaused =null;
 	                        	if(movie.type.equals("movie")
 	                        			&&movie.movie!=null && movie.movie.ids!=null
 	                        			&& movie.movie.ids.tmdb==Integer.valueOf(videoInfo.scraperMovieId)
@@ -550,7 +550,6 @@ public class TraktService extends Service {
             }
             c1.close();
         }
-
 
 
     	
@@ -612,6 +611,7 @@ public class TraktService extends Service {
         return Trakt.Status.SUCCESS;
     	
     }
+
     private Trakt.Status syncMoviesToDb(String library) {
         final ContentResolver cr = getContentResolver();
 
@@ -809,15 +809,13 @@ public class TraktService extends Service {
         if (result != null && result.status == Trakt.Status.SUCCESS &&
                 result.objType == Trakt.Result.ObjectType.LAST_ACTIVITY) {
             LastActivities lastActivity = (LastActivities) result.obj;
-            
-            
-            
-            if (lastActivity.movies.watched_at.getMillis()> movieTime*1000)
+            // TODO: now watched_at are in seconds check comparison everywhere! --> especially for scrobble
+            if (lastActivity.movies.watched_at.toEpochSecond()> movieTime)
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_MOVIES;
-            if (DBG) Log.d(TAG, "lastActivity: show: " + lastActivity.episodes.watched_at + " vs " + showTime);
-            if (lastActivity.episodes.watched_at.getMillis()>showTime*1000)
+            if (DBG) Log.d(TAG, "lastActivity: show: " + lastActivity.episodes.watched_at.toEpochSecond() + " vs " + showTime);
+            if (lastActivity.episodes.watched_at.toEpochSecond()>showTime)
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_SHOWS;
-            if (lastActivity.movies.paused_at.getMillis()>movieTime*1000||lastActivity.episodes.paused_at.getMillis()>showTime*1000)
+            if (lastActivity.movies.paused_at.toEpochSecond()>movieTime||lastActivity.episodes.paused_at.toEpochSecond()>showTime)
                 flag |= FLAG_SYNC_PROGRESS;
         }
         return flag;
@@ -936,7 +934,7 @@ public class TraktService extends Service {
         final boolean syncShowsFromTrakt = (flag & FLAG_SYNC_SHOWS) != 0;
         final boolean syncMoviesFromTrakt = (flag & FLAG_SYNC_MOVIES) != 0;
         if(Trakt.getSyncPlaybackPreference(mPreferences)){
-        	syncPlaybackStatus();
+            syncPlaybackStatus();
         }
         syncLists();
         
@@ -1001,13 +999,13 @@ public class TraktService extends Service {
 
 
         Trakt.Result result = mTrakt.getLists(0);
-        List<com.uwetrottmann.trakt.v2.entities.List> listLists;
+        List<TraktList> listLists;
         if(result.status == Status.SUCCESS){
-            listLists= (List<com.uwetrottmann.trakt.v2.entities.List>) result.obj;
+            listLists= (List<TraktList>) result.obj;
         }else return;
 
         //trakt to DB
-        for(com.uwetrottmann.trakt.v2.entities.List list : listLists) {
+        for(TraktList list : listLists) {
             boolean isIn = false;
             boolean needsRenaming = false;
             boolean wasLocallyDeleted = false;
@@ -1048,7 +1046,7 @@ public class TraktService extends Service {
         //DB to trakt
         for (VideoStore.List.ListObj localList : originalLocalLists) {
             boolean isIn = false;
-            for(com.uwetrottmann.trakt.v2.entities.List list : listLists) {
+            for(TraktList list : listLists) {
                 if (localList.traktId == list.ids.trakt) {
                     isIn = true;
                     break;
@@ -1063,7 +1061,7 @@ public class TraktService extends Service {
                     if(result1.status==Status.SUCCESS){
                         Log.d(TAG," add List To Trakt Status.SUCCESS");
 
-                        com.uwetrottmann.trakt.v2.entities.List list = (com.uwetrottmann.trakt.v2.entities.List) result1.obj;
+                        TraktList list = (TraktList) result1.obj;
                         localList.syncStatus = VideoStore.List.SyncStatus.STATUS_OK;
                         localList.traktId = list.ids.trakt;
                         getContentResolver().update(VideoStore.List.LIST_CONTENT_URI, localList.toContentValues(), VideoStore.List.Columns.ID +"= ?", new String[]{String.valueOf(localList.id)});
