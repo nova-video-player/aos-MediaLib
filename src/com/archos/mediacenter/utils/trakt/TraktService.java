@@ -506,8 +506,6 @@ public class TraktService extends Service {
 	            				// this value hasn't been sync yet
 	                			// we should check if videoInfo.watched_at more recent
 
-                                //TODO: seems not used
-                                // DateTime lastPaused =null;
 	                        	if(movie.type.equals("movie")
 	                        			&&movie.movie!=null && movie.movie.ids!=null
 	                        			&& movie.movie.ids.tmdb==Integer.valueOf(videoInfo.scraperMovieId)
@@ -809,7 +807,6 @@ public class TraktService extends Service {
         if (result != null && result.status == Trakt.Status.SUCCESS &&
                 result.objType == Trakt.Result.ObjectType.LAST_ACTIVITY) {
             LastActivities lastActivity = (LastActivities) result.obj;
-            // TODO: now watched_at are in seconds check comparison everywhere! --> especially for scrobble
             if (lastActivity.movies.watched_at.toEpochSecond()> movieTime)
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_MOVIES;
             if (DBG) Log.d(TAG, "lastActivity: show: " + lastActivity.episodes.watched_at.toEpochSecond() + " vs " + showTime);

@@ -286,25 +286,10 @@ public class Trakt {
         Result result = null;
         if (error != null || object == null || objectType == ObjectType.NULL) {
             Status status;
-            /*
-            if (error!=null&&error.isNetworkError()) {
-                status = Status.ERROR_NETWORK;
-            } else if (error!=null&&error.getResponse() != null) {
-                final int httpStatus = error.getResponse().getStatus();
-                if (httpStatus == 401)
-                    status = Status.ERROR_AUTH;
-                else if (httpStatus == 503)
-                    status = Status.ERROR_NETWORK;
-                else
-                    status = Status.ERROR;
-            } else {
-                status = Status.ERROR;
-            }*/
             status = Status.ERROR;
             if(error instanceof AuthentificationError) {
                 status = Status.ERROR_AUTH;
             }
-            //TODO: network error (on 503 & retrofit.isNetworkError & IOException)
             if(error instanceof IOException) {
                 status = Status.ERROR_NETWORK;
             }
@@ -315,6 +300,7 @@ public class Trakt {
                 SyncResponse response = (SyncResponse) object;
                 Status status;
                 // TODO: test check if mark as seen already marked as seen generates an error
+                // test avp clear seen, launch video avp, mark on trakt web seen, end video what happens?
                 /*
                 if (response.error != null)
                     status = response.error.endsWith("already") ? Status.SUCCESS_ALREADY : Status.ERROR;
@@ -355,7 +341,6 @@ public class Trakt {
         if (response == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, response, ObjectType.RESPONSE);
-        // TODO: return Result.getAsync();
     }
 
     public Result markAs(final String action, SyncItems param, boolean isShow) {
@@ -477,7 +462,6 @@ public class Trakt {
             return handleRet(null, null, arg0, ObjectType.NULL);
         }
         return handleRet(null, null, arg0, ObjectType.RESPONSE);
-        // TODO: return Result.getAsync();
     }
 
     public static void setRefreshToken(SharedPreferences sharedPreferences, String refreshToken) {
@@ -542,7 +526,6 @@ public class Trakt {
                 return handleRet(null, new Exception(), null, ObjectType.NULL);
             return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
         }
-        // TODO: what about return Result.getAsync();
     }
 
     public Result getPlaybackStatus(int trial){
@@ -550,7 +533,6 @@ public class Trakt {
         if(list == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, list, ObjectType.MOVIES);
-        // TODO return Result.getAsync();
     }
     public Result getPlaybackStatus() {
         return getPlaybackStatus(0);
@@ -568,8 +550,6 @@ public class Trakt {
     public <T> T exec(retrofit2.Call<T> call, int remaining) {
         try {
             retrofit2.Response<T> res = call.execute();
-            //TODO: logs
-            //call.request().body().writeTo();
             if (res.errorBody() != null) {
                 Log.e(TAG, "exec request " + res.errorBody().string(), new Throwable());
                 if (res.code() == 401) {
@@ -597,7 +577,6 @@ public class Trakt {
         if (DBG) Log.d(TAG, "getAllMovies");
         List<BaseMovie> arg0 = null;
         if (library.equals(Trakt.LIBRARY_WATCHED))
-            // TODO: was Extended.DEFAULT_MIN before but does not exist anymore
             arg0 = exec(mTraktV2.sync().watchedMovies(Extended.FULL));
         else
             arg0 = exec(mTraktV2.sync().collectionMovies(Extended.FULL));
