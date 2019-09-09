@@ -35,12 +35,10 @@ import com.uwetrottmann.trakt5.entities.AccessToken;
 import com.uwetrottmann.trakt5.entities.BaseMovie;
 import com.uwetrottmann.trakt5.entities.BaseShow;
 import com.uwetrottmann.trakt5.entities.EpisodeIds;
-import com.uwetrottmann.trakt5.entities.EpisodeProgress;
 import com.uwetrottmann.trakt5.entities.GenericProgress;
 import com.uwetrottmann.trakt5.entities.LastActivities;
 import com.uwetrottmann.trakt5.entities.ListEntry;
 import com.uwetrottmann.trakt5.entities.MovieIds;
-import com.uwetrottmann.trakt5.entities.MovieProgress;
 import com.uwetrottmann.trakt5.entities.SyncEpisode;
 import com.uwetrottmann.trakt5.entities.SyncItems;
 import com.uwetrottmann.trakt5.entities.SyncMovie;
@@ -69,7 +67,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class Trakt {
     private static final String TAG = "Trakt";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
     public static final String TRAKT_ISSUE_REFRESH_TOKEN = "TRAKT_ISSUE_REFRESH_TOKEN";
@@ -431,7 +429,7 @@ public class Trakt {
                 e.number(videoInfo.scraperEpisodeNr);
             }
             e.id(ids);
-            EpisodeProgress ep = new EpisodeProgress();
+            GenericProgress ep = new GenericProgress();
             ep.progress = progress;
             ep.episode=e;
             if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + e.ids + " season " + e.season + " number " + e.number);
@@ -442,7 +440,7 @@ public class Trakt {
         } else {
             MovieWatchingParam movieParam = (MovieWatchingParam) param;
             movieParam.progress = (int) progress;
-            MovieProgress mp = new MovieProgress();
+            GenericProgress mp = new GenericProgress();
             mp.progress=progress;
             MovieIds mi = new MovieIds();
             if(movieParam.tmdb_id!=null)
