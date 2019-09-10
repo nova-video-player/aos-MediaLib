@@ -65,6 +65,7 @@ android {
         myCmd.add("native_libnativehelper")
         myCmd.add("native_avos_full")
         myCmd.add("native_torrentd")
+        myCmd.add("trakt-java")
         commandLine myCmd
     }
 
@@ -73,6 +74,7 @@ android {
         List<String> myCmd = new ArrayList<String>()
         myCmd.add("make")
         myCmd.add("native_clean")
+        myCmd.add("external_clean_trakt-java")
         commandLine myCmd
     }
 
@@ -113,7 +115,7 @@ dependencies {
     implementation group: 'org.json', name: 'json', version: '20180813'
     // trakt depedencies: we imported the source code
     //api 'com.uwetrottmann.trakt5:trakt-java:6.1.0'
-    api files('libs/trakt-java-6.3.1-SNAPSHOT.jar')
+    api files('libs/trakt-java.jar')
     //implementation ('com.uwetrottmann.trakt5:trakt-java:6.2.0') {
     //    exclude group: 'org.threeten', module: 'threetenbp'
     //}
