@@ -425,8 +425,6 @@ public class Trakt {
             if(showParam.episode_tvdb_id!=null) {
                 if (DBG) Log.d(TAG, "this is a show with id " + showParam.episode_tvdb_id);
                 ids.tvdb = Integer.valueOf(showParam.episode_tvdb_id);
-                e.season(videoInfo.scraperSeasonNr);
-                e.number(videoInfo.scraperEpisodeNr);
             }
             e.id(ids);
             GenericProgress ep = new GenericProgress();
