@@ -18,8 +18,6 @@ package com.archos.mediascraper.saxhandler;
 import android.content.Context;
 import android.net.Uri;
 
-import com.archos.filecorelibrary.MetaFile;
-import com.archos.filecorelibrary.MetaFile2;
 import com.archos.mediascraper.BaseTags;
 
 import org.xml.sax.Attributes;

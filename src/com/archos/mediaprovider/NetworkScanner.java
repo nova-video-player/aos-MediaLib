@@ -17,10 +17,8 @@ package com.archos.mediaprovider;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
-import com.archos.filecorelibrary.MetaFile;
 
 public class NetworkScanner {
 
@@ -28,12 +26,6 @@ public class NetworkScanner {
     public static void scanVideos(Context context, String location) {
         if (location != null)
             scanVideos(context, Uri.parse(location));
-    }
-
-    /** sends broadcast that triggers mediacenter-video network scanning */
-    public static void scanVideos(Context context, MetaFile location) {
-        if (location != null)
-            scanVideos(context, location.getUri());
     }
 
     /** sends broadcast that triggers mediacenter-video network scanning */
@@ -52,12 +44,6 @@ public class NetworkScanner {
     }
 
     /** sends broadcast that triggers mediacenter-video removal of files */
-    public static void removeVideos(Context context, MetaFile location) {
-        if (location != null)
-            removeVideos(context, location.getUri());
-    }
-
-    /** sends broadcast that triggers mediacenter-video removal of files */
     public static void removeVideos(Context context, Uri uri) {
         if (context != null && uri != null) {
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_REMOVE_FILE, uri);
@@ -65,47 +51,4 @@ public class NetworkScanner {
             context.sendBroadcast(intent);
         }
     }
-
-    //------------------------------MUSIC-------------------------------------//
-
-    /** sends broadcast that triggers mediacenter-music network scanning */
-    public static void scanMusic(Context context, String location) {
-        if (location != null)
-            scanMusic(context, MetaFile.from(location));
-    }
-
-    /** sends broadcast that triggers mediacenter-music network scanning */
-    public static void scanMusic(Context context, MetaFile location) {
-        if (location != null)
-            scanMusic(context, location.getUri());
-    }
-
-    /** sends broadcast that triggers mediacenter-music network scanning */
-    public static void scanMusic(Context context, Uri uri) {
-        if (context != null && uri != null) {
-            Intent intent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_SCAN_FILE, uri);
-            context.sendBroadcast(intent);
-        }
-    }
-
-    /** sends broadcast that triggers mediacenter-music network scanning */
-    public static void removeMusic(Context context, String location) {
-        if (location != null)
-            removeMusic(context, MetaFile.from(location));
-    }
-
-    /** sends broadcast that triggers mediacenter-music network scanning */
-    public static void removeMusic(Context context, MetaFile location) {
-        if (location != null)
-            removeMusic(context, location.getUri());
-    }
-
-    /** sends broadcast that triggers mediacenter-music network scanning */
-    public static void removeMusic(Context context, Uri uri) {
-        if (context != null && uri != null) {
-            Intent intent = new Intent(ArchosMediaIntent.ACTION_MUSIC_SCANNER_REMOVE_FILE, uri);
-            context.sendBroadcast(intent);
-        }
-    }
-
 }

@@ -14,7 +14,6 @@
 
 package com.archos.mediacenter.cover;
 
-import com.archos.mediaprovider.music.MusicStore;
 import com.archos.mediaprovider.video.VideoStore;
 
 import android.content.AsyncQueryHandler;
@@ -37,8 +36,6 @@ public class LibraryUtils {
 	private final static String DESC = " DESC";
 	private final static String LIMIT = " LIMIT ";
 
-	private static final Uri ALBUM_ARTWORK_URI = MusicStore.Audio.Albums.ALBUM_ART_URI;
-
 	public final static String[] VIDEO_COLS = {
 		VideoStore.Video.VideoColumns._ID,
 		VideoStore.Video.VideoColumns.DATA,
@@ -50,43 +47,7 @@ public class LibraryUtils {
 		VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,
 		VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID
 	};
-	private final static String[] TITLE_COLS = new String[] {
-	    MusicStore.Audio.Media._ID,
-	    MusicStore.Audio.Media.ALBUM_ID,
-	    MusicStore.Audio.Media.ARTIST,
-	    MusicStore.Audio.Media.ALBUM,
-	    MusicStore.Audio.Media.TITLE,
-	    MusicStore.Audio.Media.TRACK,
-	    MusicStore.Audio.Media.DURATION,
-	    MusicStore.Audio.Media.YEAR,
-	    MusicStore.Audio.Media.DATA,
-	    MusicStore.Audio.Media.IS_ARCHOS_FAVORITE
-	};
-	private final static String[] ALBUM_COLS = new String[] {
-	    MusicStore.Audio.Albums._ID,
-	    MusicStore.Audio.Albums.ARTIST,
-	    MusicStore.Audio.Albums.ALBUM,
-	    MusicStore.Audio.Albums.ALBUM_ART,
-	    MusicStore.Audio.Albums.NUMBER_OF_SONGS,
-	    MusicStore.Audio.Albums.FIRST_YEAR,
-	    MusicStore.Audio.Albums.IS_ARCHOS_FAVORITE
-	};
-    private final static String[] ALBUM_COLS2 = new String[] {
-        MusicStore.Audio.Albums._ID,
-        "(case when (_id in (select album_id from files WHERE media_type=2 AND storage_id < 2162689)) then artist else '' end) as artist",
-        MusicStore.Audio.Albums.ALBUM,
-        MusicStore.Audio.Albums.ALBUM_ART,
-        MusicStore.Audio.Albums.NUMBER_OF_SONGS,
-        MusicStore.Audio.Albums.FIRST_YEAR,
-        MusicStore.Audio.Albums.IS_ARCHOS_FAVORITE
-    };
-	private final static String[] ARTIST_COLS = new String[] {
-	    MusicStore.Audio.Artists._ID,
-	    MusicStore.Audio.Artists.ARTIST,
-	    MusicStore.Audio.Artists.NUMBER_OF_ALBUMS,
-	    MusicStore.Audio.Artists.NUMBER_OF_TRACKS,
-	    MusicStore.Audio.Artists.IS_ARCHOS_FAVORITE
-	};
+
     public static final String TVSHOW_EPISODE_COUNT_COLUMN = "episode_count";
     public static final String TVSHOW_SEASON_COUNT_COLUMN = "season_count";
     private static final String[] TVSHOW_COLS = {
@@ -132,105 +93,6 @@ public class LibraryUtils {
         return new CursorLoader(context, uri, TVSHOW_COLS, TVSHOW_SELECT, null, sortOrder);
     }
 
-    public static void queryAllArtists(AsyncQueryHandler queryHandler, int max) {
-        String sortOrder = MusicStore.Audio.Artists.DEFAULT_SORT_ORDER + LIMIT + max;
-        StringBuilder where = new StringBuilder();
-        where.append(MusicStore.Audio.Artists.ARTIST).append(" != ''");
-        queryHandler.startQuery( 0, null, MusicStore.Audio.Artists.EXTERNAL_RW_CONTENT_URI,
-                    ARTIST_COLS, where.toString(), null, sortOrder);
-    }
-
-    public static CursorLoader getAllAlbumsCursorLoader(Context context, int max) {
-        String sortOrder = getAlbumsSortOrder(context) + LIMIT + max;
-        StringBuilder where = new StringBuilder();
-        where.append(MusicStore.Audio.Albums.ALBUM).append(" != ''");
-        return new CursorLoader(context, MusicStore.Audio.Albums.EXTERNAL_RW_CONTENT_URI,
-                ALBUM_COLS2, where.toString(), null, sortOrder);
-    }
-
-	public static CursorLoader getRecentlyAddedTitlesCursorLoader(Context context, int max) {
-	    String sortOrder = MusicStore.MediaColumns.DATE_ADDED + DESC + LIMIT + max;
-        StringBuilder where = new StringBuilder();
-        where.append(MusicStore.Audio.Media.IS_MUSIC).append("=1" );
-        where.append(AND).append(MusicStore.Audio.Media.IS_RINGTONE).append("=0" );
-
-        return new CursorLoader(context, MusicStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                TITLE_COLS, where.toString() , null, sortOrder);
-	}
-
-    public static CursorLoader getRecentlyPlayedTitlesCursorLoader(Context context, int max) {
-        String sortOrder = MusicStore.Audio.AudioColumns.ARCHOS_LAST_TIME_PLAYED + DESC + LIMIT + max;
-        StringBuilder where = new StringBuilder();
-        where.append(MusicStore.Audio.Media.IS_MUSIC).append("=1" );
-        where.append(AND).append(MusicStore.Audio.Media.IS_RINGTONE).append("=0" );
-        where.append(AND).append(MusicStore.Audio.AudioColumns.ARCHOS_LAST_TIME_PLAYED).append("!=0" );
-
-        return new CursorLoader(context, MusicStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                TITLE_COLS, where.toString() , null, sortOrder);
-    }
-
-	public static CursorLoader getFavoriteTitlesCursorLoader(Context context) {
-	    String sortOrder = MusicStore.Audio.Media.IS_ARCHOS_FAVORITE + DESC;
-	    StringBuilder where = new StringBuilder();
-	    where.append(MusicStore.Audio.Media.IS_ARCHOS_FAVORITE).append(">0");
-	    where.append(AND).append(MusicStore.Audio.Media.IS_MUSIC).append("=1");
-	    where.append(AND).append(MusicStore.Audio.Media.IS_RINGTONE).append("=0");
-
-	    return new CursorLoader(context, MusicStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                TITLE_COLS, where.toString() , null, sortOrder);
-	}
-
-    public static CursorLoader getFavoriteArtistsCursorLoader(Context context) {
-        String sortOrder = MusicStore.Audio.Artists.IS_ARCHOS_FAVORITE + DESC;
-        StringBuilder where = new StringBuilder();
-        where.append(MusicStore.Audio.Artists.IS_ARCHOS_FAVORITE).append(">0");
-        where.append(AND).append(MusicStore.Audio.Artists.ARTIST).append(" != ''");
-
-        return new CursorLoader(context, MusicStore.Audio.Artists.EXTERNAL_RW_CONTENT_URI,
-                ARTIST_COLS, where.toString() , null, sortOrder);
-    }
-
-    public static CursorLoader getFavoriteAlbumsCursorLoader(Context context) {
-        String sortOrder = MusicStore.Audio.Albums.IS_ARCHOS_FAVORITE + DESC;
-        StringBuilder where = new StringBuilder();
-        where.append(MusicStore.Audio.Albums.IS_ARCHOS_FAVORITE).append(">0");
-        where.append(AND).append(MusicStore.Audio.Albums.ALBUM).append(" != ''");
-
-        return new CursorLoader(context, MusicStore.Audio.Albums.EXTERNAL_RW_CONTENT_URI,
-                ALBUM_COLS2, where.toString() , null, sortOrder);
-    }
-
-	public static Uri[] getAlbumArtsFromArtist(Context context, long artistId) {
-
-		final Uri uri = MusicStore.Audio.Artists.Albums.getContentUri("external", artistId);
-		final String sortOrder = MusicStore.Audio.Media.YEAR + DESC;
-		StringBuilder where = new StringBuilder();
-		where.append(MusicStore.Audio.Artists.Albums.ALBUM_ART).append(" != ''");
-
-		Cursor c = query(context,uri, ALBUM_COLS, where.toString(), null, sortOrder);
-		if (c==null) return null;
-
-		Uri result[] = new Uri[c.getCount()];
-
-		final int albumIdIdx = c.getColumnIndexOrThrow(MusicStore.Audio.Albums._ID);
-
-		c.moveToFirst();
-		int n=0;
-		while (!c.isAfterLast() && (n<result.length)) { // better safe than sorry
-			result[n++] = ContentUris.withAppendedId(ALBUM_ARTWORK_URI, c.getLong(albumIdIdx));
-			c.moveToNext();
-		}
-
-		return result;
-	}
-
-	public static Cursor getTrackCursorFromId(Context context, long trackId) {
-		StringBuilder where = new StringBuilder();
-		where.append(BaseColumns._ID).append(" = '").append(trackId).append("'");
-		return query(context, MusicStore.Audio.Media.EXTERNAL_CONTENT_URI,
-				TITLE_COLS, where.toString(), null, MusicStore.Audio.Media.DEFAULT_SORT_ORDER);
-	}
-
 	private static Cursor query(Context context, Uri uri, String[] projection,
 			String selection, String[] selectionArgs, String sortOrder) {
 		try {
@@ -242,25 +104,6 @@ public class LibraryUtils {
 		} catch (UnsupportedOperationException ex) {
 			return null;
 		}
-	}
-
-    public static Cursor getArtistCursor(Context context, long id) {
-    	return query(context, MusicStore.Audio.Artists.EXTERNAL_RW_CONTENT_URI,
-    			ARTIST_COLS,
-    			MusicStore.Audio.Artists._ID + " = '" + id + "'",
-    			null, null);
-	}
-    public static Cursor getAlbumCursor(Context context, long id) {
-    	return query(context, MusicStore.Audio.Albums.EXTERNAL_RW_CONTENT_URI,
-    			ALBUM_COLS,
-    			MusicStore.Audio.Albums._ID + " = '" + id + "'",
-    			null, null);
-	}
-    public static Cursor getTitleCursor(Context context, long id) {
-    	return query(context, MusicStore.Audio.Media.EXTERNAL_CONTENT_URI,
-    			TITLE_COLS,
-    			MusicStore.Audio.Media._ID + " = '" + id + "'",
-    			null, null);
 	}
 
     public static Cursor getScraperCursorFromPath(ContentResolver resolver, String filePath) {
@@ -307,33 +150,7 @@ public class LibraryUtils {
         ed.commit();
     }
 
-    /**
-     * Sorted by Artists > Album Name > DEFAULT_SORT_ORDER
-     */
-    public static final String ALBUMS_SORT_ORDER_DEFAULT = MusicStore.Audio.Albums.ARTIST + ", "
-            + MusicStore.Audio.Albums.ALBUM + ", " + MusicStore.Audio.Albums.DEFAULT_SORT_ORDER;
-
-    public static final String ALBUMS_SORT_ORDER_DATE = MusicStore.Audio.Albums.ARTIST + ", "
-            + MusicStore.Audio.Albums.FIRST_YEAR + " ASC";
-
-    public static String getAlbumsSortOrder(Context context) {
-        return getStringPref(context, "albumsSortOrder", ALBUMS_SORT_ORDER_DEFAULT);
-    }
-
-    public static String changeAlbumSortOrder(Context context) {
-        String sort = getStringPref(context, "albumsSortOrder", ALBUMS_SORT_ORDER_DEFAULT);
-        if (ALBUMS_SORT_ORDER_DEFAULT.equals(sort)) {
-            sort = ALBUMS_SORT_ORDER_DATE;
-        } else {
-            sort = ALBUMS_SORT_ORDER_DEFAULT;
-        }
-
-        setStringPref(context, "albumsSortOrder", sort);
-
-        return sort;
-    }
-
-    public static boolean hasStorage() {
+	public static boolean hasStorage() {
         String storageState = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(storageState)) {
             return true;

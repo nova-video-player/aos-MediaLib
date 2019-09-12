@@ -26,11 +26,9 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
-import android.provider.BaseColumns;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.archos.filecorelibrary.MetaFile;
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediascraper.ScraperImage.Type;
 
@@ -40,7 +38,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public class ShowTags extends VideoTags {
     private static final String TAG = "ShowTags";
