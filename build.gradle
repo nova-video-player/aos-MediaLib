@@ -74,7 +74,7 @@ android {
         List<String> myCmd = new ArrayList<String>()
         myCmd.add("make")
         myCmd.add("native_clean")
-        myCmd.add("external_clean_trakt-java")
+        //myCmd.add("external_clean_trakt-java")
         commandLine myCmd
     }
 
