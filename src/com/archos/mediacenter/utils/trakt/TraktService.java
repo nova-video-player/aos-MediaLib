@@ -501,20 +501,19 @@ public class TraktService extends Service {
             			boolean send = true;
             			GenericProgress gprog = null;
             			if(movies != null)
-            				
-            				for (GenericProgress movie : movies){
-	            				// this value hasn't been sync yet
-	                			// we should check if videoInfo.watched_at more recent
 
-	                        	if(movie.type.equals("movie")
-	                        			&&movie.movie!=null && movie.movie.ids!=null
-	                        			&& movie.movie.ids.tmdb==Integer.valueOf(videoInfo.scraperMovieId)
-	                        			&& movie.progress>-videoInfo.traktResume){
-	                        		//trakt mark is more advanced, we don't send anything
-	                        		send=false;
+                            for (GenericProgress movie : movies) {
+                                // this value hasn't been sync yet
+                                // we should check if videoInfo.watched_at more recent
+                                if (movie.movie != null
+                                        && movie.movie.ids != null
+                                        && movie.movie.ids.tmdb == Integer.valueOf(videoInfo.scraperMovieId)
+                                        && movie.progress > -videoInfo.traktResume) {
+                                    //trakt mark is more advanced, we don't send anything
+                                    send = false;
 
-	                        		gprog = movie;
-	                        		break;
+                                    gprog = movie;
+                                    break;
 	                        	}
 	                        	
             				}
@@ -533,7 +532,7 @@ public class TraktService extends Service {
                             }
                             if (result.status == Trakt.Status.SUCCESS || result.status == Trakt.Status.SUCCESS_ALREADY) {
                                 if (gprog != null)
-                                    gprog.progress = Math.abs(videoInfo.traktResume);
+                                    gprog.progress = Double.valueOf(Math.abs(videoInfo.traktResume));
                                 videoInfo.traktResume = Math.abs(videoInfo.traktResume);
                                 values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, videoInfo.traktResume);
                                 values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_SEEN, videoInfo.traktSeen);
@@ -560,7 +559,7 @@ public class TraktService extends Service {
             if (movies!=null&&movies.size() > 0) {
                 String whereR;
 				for (GenericProgress movie : movies){
-                	if(movie.type.equals("movie")){
+                    if (movie.movie != null) {
                 		whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
                                 "SELECT video_id FROM movie where " + VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID +"= "+movie.movie.ids.tmdb+")";
                 	}
@@ -580,9 +579,9 @@ public class TraktService extends Service {
                             while (c.moveToNext()) {
                             	int id = c.getInt(idIdx);
                             	VideoDbInfo i = VideoDbInfo.fromId(cr, id);
-                            	if(i!=null){     
-                            		
-                            		int newResumePercent = (int) movie.progress;
+                                if (i != null) {
+
+                                    int newResumePercent = (int) Math.round(movie.progress);
                             		int newResume = (int) ((float)newResumePercent/100.0*i.duration);
                             		if(Math.abs(i.traktResume)!=newResumePercent&&i.traktSeen!=1&&newResume>i.resume&&i.resume!=-2){//i.resume = -2 is file end
 

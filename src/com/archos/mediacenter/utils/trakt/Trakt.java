@@ -35,10 +35,11 @@ import com.uwetrottmann.trakt5.entities.AccessToken;
 import com.uwetrottmann.trakt5.entities.BaseMovie;
 import com.uwetrottmann.trakt5.entities.BaseShow;
 import com.uwetrottmann.trakt5.entities.EpisodeIds;
-import com.uwetrottmann.trakt5.entities.GenericProgress;
 import com.uwetrottmann.trakt5.entities.LastActivities;
 import com.uwetrottmann.trakt5.entities.ListEntry;
 import com.uwetrottmann.trakt5.entities.MovieIds;
+import com.uwetrottmann.trakt5.entities.PlaybackResponse;
+import com.uwetrottmann.trakt5.entities.ScrobbleProgress;
 import com.uwetrottmann.trakt5.entities.SyncEpisode;
 import com.uwetrottmann.trakt5.entities.SyncItems;
 import com.uwetrottmann.trakt5.entities.SyncMovie;
@@ -62,8 +63,7 @@ import java.util.Locale;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+
 
 public class Trakt {
     private static final String TAG = "Trakt";
@@ -76,6 +76,8 @@ public class Trakt {
     private static String API_SECRET;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
     public static final int SCROBBLE_THRESHOLD = 85;
+    // TODO: question do we want more?
+    public static final int LIMIT_RESPONSES = 10000;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";
@@ -196,7 +198,8 @@ public class Trakt {
             LAST_ACTIVITY,
             LIST,
             SYNC_RESPONSE,
-            RETOFIT_RESPONSE
+            RETOFIT_RESPONSE,
+            PLAYBACK_RESPONSE
         }
         public Result(Status status, Object obj, ObjectType objType) {
             this.status = status;
@@ -285,20 +288,17 @@ public class Trakt {
         if (error != null || object == null || objectType == ObjectType.NULL) {
             Status status;
             status = Status.ERROR;
-            if(error instanceof AuthentificationError) {
+            if (error instanceof AuthentificationError)
                 status = Status.ERROR_AUTH;
-            }
-            if(error instanceof IOException) {
+            if (error instanceof IOException)
                 status = Status.ERROR_NETWORK;
-            }
-
             result = new Result(status, error, objectType);
         } else {
             if (objectType == ObjectType.RESPONSE) {
                 SyncResponse response = (SyncResponse) object;
                 Status status;
                 // TODO: test check if mark as seen already marked as seen generates an error
-                // test avp clear seen, launch video avp, mark on trakt web seen, end video what happens?
+                // test nvp clear seen, launch video nvp, mark on trakt web seen, end video what happens?
                 /*
                 if (response.error != null)
                     status = response.error.endsWith("already") ? Status.SUCCESS_ALREADY : Status.ERROR;
@@ -307,9 +307,11 @@ public class Trakt {
                  */
                 status = Status.SUCCESS;
                 result = new Result(status, response, objectType);
-            } else {
+            } else if (objectType == ObjectType.PLAYBACK_RESPONSE) {
+                PlaybackResponse response = (PlaybackResponse) object;
+                result = new Result(Status.SUCCESS, response, objectType);
+            } else
                 result = new Result(Status.SUCCESS, object, objectType);
-            }
         }
         if (lock != null){
         	lock.notify(result);
@@ -415,49 +417,46 @@ public class Trakt {
 
     public Result postWatching(final String action,final VideoDbInfo videoInfo, final float progress, final int trial) {
         if (DBG) Log.d(TAG, "postWatching progress=" + progress + ", trial=" + trial);
-        Void arg0 = null;
+        PlaybackResponse playbackResponse = null;
         AuthParam param = fillParam(videoInfo);
         if (videoInfo.isShow) {
-            ShowWatchingParam showParam = (ShowWatchingParam )param;
+            ShowWatchingParam showParam = (ShowWatchingParam) param;
             showParam.progress = (int) progress;
-            SyncEpisode e = new SyncEpisode();
+            SyncEpisode se = new SyncEpisode();
             EpisodeIds ids = new EpisodeIds();
             if(showParam.episode_tvdb_id!=null) {
                 if (DBG) Log.d(TAG, "this is a show with id " + showParam.episode_tvdb_id);
                 ids.tvdb = Integer.valueOf(showParam.episode_tvdb_id);
             }
-            e.id(ids);
-            GenericProgress ep = new GenericProgress();
-            ep.progress = progress;
-            ep.episode=e;
-            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + e.ids + " season " + e.season + " number " + e.number);
+            se.id(ids);
+            ScrobbleProgress ep = new ScrobbleProgress(se, progress, "", "");
+            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids + " season " + se.season + " number " + se.number);
             if(action.equals("start"))
-                arg0 = exec(mTraktV2.scrobble().startWatching(ep));
+                playbackResponse = exec(mTraktV2.scrobble().startWatching(ep));
             else
-                arg0 = exec(mTraktV2.scrobble().stopWatching(ep));
+                playbackResponse = exec(mTraktV2.scrobble().stopWatching(ep));
         } else {
             MovieWatchingParam movieParam = (MovieWatchingParam) param;
             movieParam.progress = (int) progress;
-            GenericProgress mp = new GenericProgress();
-            mp.progress=progress;
+
             MovieIds mi = new MovieIds();
             if(movieParam.tmdb_id!=null)
                 mi.tmdb=Integer.valueOf(movieParam.tmdb_id);
             SyncMovie sm= new SyncMovie();
             sm.id(mi);
-            mp.movie=sm;
+            ScrobbleProgress mp = new ScrobbleProgress(sm, progress, "", "");
             if (DBG) Log.d(TAG, "postWatching: MovieProgress=" + mp);
             if(action.equals("start"))
-                arg0 = exec(mTraktV2.scrobble().startWatching(mp));
+                playbackResponse = exec(mTraktV2.scrobble().startWatching(mp));
             else
-                arg0 = exec(mTraktV2.scrobble().stopWatching(mp));
+                playbackResponse = exec(mTraktV2.scrobble().stopWatching(mp));
         }
         mWatchingSuccess = true;
-        if (arg0 == null) {
+        if (playbackResponse == null) {
             cleanWatching();
-            return handleRet(null, null, arg0, ObjectType.NULL);
+            return handleRet(null, null, playbackResponse, ObjectType.NULL);
         }
-        return handleRet(null, null, arg0, ObjectType.RESPONSE);
+        return handleRet(null, null, playbackResponse, ObjectType.PLAYBACK_RESPONSE);
     }
 
     public static void setRefreshToken(SharedPreferences sharedPreferences, String refreshToken) {
@@ -525,7 +524,7 @@ public class Trakt {
     }
 
     public Result getPlaybackStatus(int trial){
-        List<GenericProgress> list = exec(mTraktV2.sync().getPlayback());
+        List<PlaybackResponse> list = exec(mTraktV2.sync().getPlayback(LIMIT_RESPONSES));
         if(list == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, list, ObjectType.MOVIES);
