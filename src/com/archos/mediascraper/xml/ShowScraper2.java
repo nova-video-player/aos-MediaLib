@@ -42,15 +42,21 @@ import com.uwetrottmann.thetvdb.TheTvdb;
 import com.uwetrottmann.thetvdb.entities.Actor;
 import com.uwetrottmann.thetvdb.entities.ActorsResponse;
 import com.uwetrottmann.thetvdb.entities.Episode;
-import com.uwetrottmann.thetvdb.entities.EpisodeResponse;
 import com.uwetrottmann.thetvdb.entities.EpisodesResponse;
 import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
 import com.uwetrottmann.thetvdb.entities.SeriesResultsResponse;
+
+import okhttp3.Cache;
+import okhttp3.CacheControl;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Response;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,16 +68,55 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 public class ShowScraper2 extends BaseScraper2 {
 
     private final static String TAG = "ShowScraper2";
     private final static boolean DBG = false;
+    private final static boolean CACHE = true;
     private final static String PREFERENCE_NAME = "TheTVDB.com";
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
 
+    // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
+    protected final int cacheSize = 1 * 1024 * 1024; // 1 MB
+    static Cache cache;
+
     public ShowScraper2(Context context) {
         super(context);
+        cache = new Cache(context.getCacheDir(), cacheSize);
+    }
+
+    static class MyTheTVdb extends TheTvdb {
+        public MyTheTVdb(String apiKey) {
+            super(apiKey);
+        }
+        public class CacheInterceptor implements Interceptor {
+            @Override
+            public okhttp3.Response intercept(Chain chain) throws IOException {
+                okhttp3.Response response = chain.proceed(chain.request());
+                CacheControl cacheControl = new CacheControl.Builder()
+                        .maxAge(2, TimeUnit.HOURS) // 2 hours cache
+                        .build();
+                return response.newBuilder()
+                        .removeHeader("Pragma")
+                        .removeHeader("Cache-Control")
+                        .header("Cache-Control", cacheControl.toString())
+                        .build();
+            }
+        }
+        @Override
+        protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
+            super.setOkHttpClientDefaults(builder);
+            if (DBG) {
+                HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+                logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+                builder.addNetworkInterceptor(logging).addInterceptor(logging);
+            }
+            if (CACHE) {
+                builder.cache(cache).addNetworkInterceptor(new CacheInterceptor());
+            }
+        }
     }
 
     @Override
@@ -94,7 +139,7 @@ public class ShowScraper2 extends BaseScraper2 {
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
         extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
 
-        TheTvdb theTvdb = new TheTvdb(mContext.getString(R.string.tvdb_api_2_key));
+        MyTheTVdb theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
         try {
             final int SERIES_NOT_PERMITTED_ID = 313081;
 
