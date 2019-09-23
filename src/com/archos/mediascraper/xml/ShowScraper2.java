@@ -74,6 +74,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
     private final static String TAG = "ShowScraper2";
     private final static boolean DBG = false;
+    private final static boolean DBG_RETROFIT = false;
     private final static boolean CACHE = true;
     private final static String PREFERENCE_NAME = "TheTVDB.com";
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
@@ -108,7 +109,7 @@ public class ShowScraper2 extends BaseScraper2 {
         @Override
         protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
             super.setOkHttpClientDefaults(builder);
-            if (DBG) {
+            if (DBG_RETROFIT) {
                 HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                 logging.setLevel(HttpLoggingInterceptor.Level.BODY);
                 builder.addNetworkInterceptor(logging).addInterceptor(logging);
