@@ -123,7 +123,6 @@ dependencies {
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.11' 
-    implementation group: 'com.squareup.retrofit', name: 'retrofit', version: '1.9.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.1'
     // thetvdb depedencies (stuck with 1.6.1) but only used in ShowScraper2TVDB2 not yet enabled
     implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:1.6.1'
