@@ -65,8 +65,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit.RetrofitError;
-
 public class TraktService extends Service {
     private static final String TAG = "TraktService";
     private static final boolean DBG = false;
@@ -823,14 +821,12 @@ public class TraktService extends Service {
                 Trakt.getLastTimeShowWatched(mPreferences));
     }
 
-    private Trakt.Result handleSyncStatus(Status status, RetrofitError error, int flag, String details) {
+    private Trakt.Result handleSyncStatus(Status status, int flag, String details) {
         switch (status) {
         case ERROR_NETWORK:
             Trakt.setFlagSyncPreference(mPreferences, flag);
             String errorMessage = getString(R.string.trakt_toast_syncing_error);
             //try to be more precise
-            if(error!=null && error.getMessage()!=null)
-                errorMessage+=": "+error.getMessage();
             if(details!=null)
                 errorMessage +=" "+details;
             if (DBG) showToast(errorMessage);
@@ -861,7 +857,7 @@ public class TraktService extends Service {
         if ((flag & FLAG_SYNC_NOW) != 0)
             unregisterReceiver();
         if (mNetworkStateReceiverRegistered || mWaitNetworkStateReceiver||!mNetworkState.isConnected())
-            return handleSyncStatus(Trakt.Status.ERROR_NETWORK, null, flag, null);
+            return handleSyncStatus(Trakt.Status.ERROR_NETWORK, flag, null);
 
         if (flag == 0 || flag == FLAG_SYNC_AUTO)
             flag = Trakt.getFlagSyncPreference(mPreferences);
@@ -879,13 +875,8 @@ public class TraktService extends Service {
             if (DBG) Log.d(TAG, "get lastactivity");
 
             Trakt.Result result = mTrakt.getLastActivity();
-            if (result.status == Trakt.Status.ERROR_NETWORK) {
-                if(result.obj instanceof RetrofitError)
-                    return handleSyncStatus(Trakt.Status.ERROR_NETWORK, (RetrofitError) result.obj, flag, "lastActivities");
-                else
-                    return handleSyncStatus(Trakt.Status.ERROR_NETWORK, null, flag, "lastActivities");
-
-            }
+            if (result.status == Trakt.Status.ERROR_NETWORK)
+                return handleSyncStatus(Trakt.Status.ERROR_NETWORK, flag, "lastActivities");
             flag |= getFlagsFromTraktLastActivity(result, movieTime, showTime);
         }
         /*
@@ -914,11 +905,11 @@ public class TraktService extends Service {
                         if (DBG) Log.d(TAG, "syncing movies("+toMark+") " + library + " from DB to trakt.tv");
                         Trakt.Status status = syncMoviesToTrakt(library, toMark);
                         if (status == Trakt.Status.ERROR_NETWORK)
-                            return handleSyncStatus(status,null, flag, "syncMoviesToTrakt");
+                            return handleSyncStatus(status, flag, "syncMoviesToTrakt");
                         if (DBG) Log.d(TAG, "syncing shows("+toMark+") " + library + " from DB to trakt.tv");
                         status = syncShowsToTrakt(library, toMark);
                         if (status == Trakt.Status.ERROR_NETWORK)
-                            return handleSyncStatus(status,null, flag, "syncShowsToTrakt");
+                            return handleSyncStatus(status, flag, "syncShowsToTrakt");
 
                 }
             }
@@ -963,18 +954,18 @@ public class TraktService extends Service {
                     Trakt.Status status = syncMoviesToDb(library);
                     if (DBG) Log.d(TAG, "syncing movies " + library + " from trakt.tv to DB finished : "+status);
                     if (status == Trakt.Status.ERROR_NETWORK)
-                        return handleSyncStatus(status,null, flag, "syncMoviesToDb");
+                        return handleSyncStatus(status, flag, "syncMoviesToDb");
                 }
                 if (syncShowsFromTrakt) {
                     Trakt.Status status = syncShowsToDb(library);
                     if (status == Trakt.Status.ERROR_NETWORK)
-                        return handleSyncStatus(status,null, flag, "syncShowsToDb");
+                        return handleSyncStatus(status, flag, "syncShowsToDb");
                 }
             }
         }
 
 
-        return handleSyncStatus(Trakt.Status.SUCCESS,null, flag, null);
+        return handleSyncStatus(Trakt.Status.SUCCESS, flag, null);
     }
 
     private void syncLists() {
