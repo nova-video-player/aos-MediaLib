@@ -854,12 +854,20 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     }
 
     @Override
-    public void onOpen(SQLiteDatabase db) {
+    public void onConfigure(SQLiteDatabase db) {
+        super.onConfigure(db);
+        // this runs before onCreate/onUpgrade - must happen this early
         // Turn on WAL optimization
         // TODO: test if that is good for us or not.
         db.enableWriteAheadLogging();
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        // this runs after onCreate/onUpgrade - we don't want foreign keys enabled during that phase
         // turn on foreign key support used in scraper tables
-        db.execSQL("PRAGMA foreign_keys = ON");
+        db.setForeignKeyConstraintsEnabled(true);
     }
 
     @Override
