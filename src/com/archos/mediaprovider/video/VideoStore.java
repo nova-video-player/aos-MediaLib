@@ -101,7 +101,7 @@ public final class VideoStore {
             }
             else {
                 whereR = MediaStore.Files.FileColumns.DATA + " = ?";
-
+                cursor.close();
                 cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
                         new String[] { MediaStore.Files.FileColumns.DATA }, whereR, whereRArgs, null);
 
@@ -110,6 +110,7 @@ public final class VideoStore {
                 if (cursor.getCount() > 0) {
                     long newId = 0;
 
+                    cursor.close();
                     cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
                             new String[] { "MAX(" + MediaStore.Files.FileColumns._ID + ")" }, null, null, null);
 
@@ -130,8 +131,7 @@ public final class VideoStore {
                     context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
                 }
             }
-            if (cursor != null)
-                cursor.close();
+            cursor.close();
         }
         String action;
         if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
