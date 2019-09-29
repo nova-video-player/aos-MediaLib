@@ -43,9 +43,9 @@ import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
-import com.archos.mediaprovider.DbHolder;
 import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.ImportState;
+import com.archos.mediaprovider.VideoDb;
 import com.archos.mediaprovider.VolumeState;
 import com.archos.mediaprovider.ImportState.State;
 import com.archos.mediaprovider.VolumeState.Volume;
@@ -349,12 +349,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private void processDeleteFileAndVobCallback() {
         Cursor c = null;
-        DbHolder mDbHolder;
         VobHandler mVobHandler;
         mVobHandler = new VobHandler(this);
         VobUpdateCallback vobCb = new VobUpdateCallback(mVobHandler);
-        mDbHolder = new DbHolder(new VideoOpenHelper(this));
-        SQLiteDatabase db = mDbHolder.get();
+        SQLiteDatabase db = VideoDb.get(this);
         DeleteFileCallback delCb = new DeleteFileCallback();
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
@@ -430,7 +428,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             if (c != null)
                 c.close();
         }
-        db.close();
+        // don't db.close() - shared connection
     }
 
     /** removes all messages from handler */
