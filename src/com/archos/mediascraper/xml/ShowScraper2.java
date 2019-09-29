@@ -85,7 +85,11 @@ public class ShowScraper2 extends BaseScraper2 {
 
     public ShowScraper2(Context context) {
         super(context);
-        cache = new Cache(context.getCacheDir(), cacheSize);
+        // ensure cache is initialized
+        synchronized (ShowScraper2.class) {
+            if (cache == null)
+                cache = new Cache(context.getCacheDir(), cacheSize);
+        }
     }
 
     static class MyTheTVdb extends TheTvdb {
