@@ -315,7 +315,6 @@ public class VideoProvider extends ContentProvider {
         if (c != null) {
             c.setNotificationUri(mCr, uri);
         }
-
         return c;
     }
 
