@@ -60,6 +60,7 @@ import com.archos.mediaprovider.DbHolder;
 import com.archos.mediaprovider.IMediaThumbnailService;
 import com.archos.mediaprovider.MediaThumbnailService;
 import com.archos.mediaprovider.NetworkState;
+import com.archos.mediaprovider.VideoDb;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 import com.archos.mediaprovider.video.VideoStore.Video;
 import com.archos.mediaprovider.video.VideoStore.Files.FileColumns;
@@ -117,7 +118,7 @@ public class VideoProvider extends ContentProvider {
         mImageThumbFolder = context.getDir(IMAGE_THUMB_FOLDER_NAME, Context.MODE_PRIVATE).getPath();
 
         mVobHandler = new VobHandler(context);
-        mDbHolder = new DbHolder(new VideoOpenHelper(context));
+        mDbHolder = VideoDb.getHolder(context);
 
         mCr = context.getContentResolver();
         // implementation that handles scraper requests
