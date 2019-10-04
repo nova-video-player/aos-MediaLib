@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ContentValues;
@@ -23,16 +25,18 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
-import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.R;
@@ -82,6 +86,8 @@ public class AutoScrapeService extends Service {
 
     private static final int NOTIFICATION_ID = 4;
     private NotificationManager nm;
+    private NotificationCompat.Builder nb;
+    private Notification n;
     private static final String notifChannelId = "AutoScrapeService_id";
     private static final String notifChannelName = "AutoScrapeService";
     private static final String notifChannelDescr = "AutoScrapeService";
@@ -105,7 +111,7 @@ public class AutoScrapeService extends Service {
 
     public static void startService(Context context) {
         mContext = context;
-        context.startService(new Intent(context, AutoScrapeService.class));
+        ContextCompat.startForegroundService(context, new Intent(context, AutoScrapeService.class));
     }
 
     // Used by system. Don't call
@@ -117,6 +123,24 @@ public class AutoScrapeService extends Service {
     public void onCreate() {
         super.onCreate();
         if(DBG) Log.d(TAG, "onCreate() "+this);
+
+        // need to do that early to avoid ANR on Android 26+
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            nc.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(nc);
+        }
+        nb = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.scraping_in_progress))
+                .setContentText("")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
+        startForeground(NOTIFICATION_ID, nb.build());
+
         mBinder = new AutoScraperBinder();
         mHandler = new Handler();
     }
@@ -191,7 +215,7 @@ public class AutoScrapeService extends Service {
     }
     @Override
     public void onDestroy() {
-        FileUtils.hideNotification(nm, NOTIFICATION_ID);
+        nm.cancel(NOTIFICATION_ID);
         super.onDestroy();
         if(DBG) Log.d(TAG, "onDestroy() " + this);
     }
@@ -269,11 +293,9 @@ public class AutoScrapeService extends Service {
                                 boolean notScraped = true;
                                 boolean noScrapeError = true;
                                 if(DBG) Log.d(TAG, "fileUri "+fileUri);
-                                FileUtils.showNotification(mContext, AutoScrapeService.class, nm, NOTIFICATION_ID,
-                                        getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess,
-                                        R.string.scraping_in_progress, notifChannelId, notifChannelName,  notifChannelDescr);
+                                nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
 
-                                    if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
+                                if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
 
                                     if(DBG) Log.d(TAG, "NFO enabled");
 
@@ -430,7 +452,7 @@ public class AutoScrapeService extends Service {
                             WrapperChannelManager.refreshChannels(AutoScrapeService.this);
                         }
                     });
-                    FileUtils.hideNotification(nm, NOTIFICATION_ID);
+                    nm.cancel(NOTIFICATION_ID);
                     AutoScrapeService.this.stopSelf();
                 }
             };
