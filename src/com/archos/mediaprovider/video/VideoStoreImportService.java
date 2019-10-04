@@ -27,6 +27,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -241,7 +242,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public static void start(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
         if (AppState.isForeGround()) {
-            context.startService(intent);
+            ContextCompat.startForegroundService(context, intent);
         }
         // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }

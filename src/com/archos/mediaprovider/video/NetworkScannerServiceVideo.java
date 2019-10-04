@@ -33,6 +33,8 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
@@ -121,7 +123,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             serviceIntent.setData(data);
             if(broadcast.getExtras()!=null)
                 serviceIntent.putExtras(broadcast.getExtras()); //in case we have an extra... such as "recordLogExtra"
-            if (AppState.isForeGround()) context.startService(serviceIntent);
+            if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
             return true;
         }
         return false;

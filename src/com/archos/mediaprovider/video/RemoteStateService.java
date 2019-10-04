@@ -26,6 +26,8 @@ import android.provider.BaseColumns;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.core.content.ContextCompat;
+
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
@@ -85,7 +87,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
     public static void start(Context context) {
         Intent intent = new Intent(context, RemoteStateService.class);
         intent.setAction(ACTION_CHECK_SMB);
-        context.startService(intent);
+        ContextCompat.startForegroundService(context, intent);
     }
 
     protected void handleDb(Context context, boolean hasConnection, boolean hasLocalConnection) {
