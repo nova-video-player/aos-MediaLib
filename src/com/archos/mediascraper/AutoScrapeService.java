@@ -27,7 +27,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 
-import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
@@ -106,7 +105,7 @@ public class AutoScrapeService extends Service {
 
     public static void startService(Context context) {
         mContext = context;
-        ContextCompat.startForegroundService(context, new Intent(context, AutoScrapeService.class));
+        context.startService(new Intent(context, AutoScrapeService.class));
     }
 
     // Used by system. Don't call
