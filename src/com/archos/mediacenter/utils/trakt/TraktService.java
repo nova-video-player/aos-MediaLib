@@ -34,8 +34,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-
-import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
@@ -1349,41 +1347,41 @@ public class TraktService extends Service {
         }
         public void watching(long videoID, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoID, progress, null);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watchingStop(long videoID, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoID, progress, null);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watching(VideoDbInfo videoInfo, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoInfo, progress, null);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watchingStop(VideoDbInfo videoInfo, float progress) {
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoInfo, progress, null);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void markAs(VideoDbInfo videoInfo, String traktAction) {
             Intent intent = prepareIntent(INTENT_ACTION_MARK_AS, videoInfo, -1, traktAction);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void wipe() {
             Intent intent = prepareIntent(INTENT_ACTION_WIPE, null, -1, null);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void wipeCollection() {
             Intent intent = prepareIntent(INTENT_ACTION_WIPE_COLLECTION, null, -1, null);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void fullSync() {
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", FLAG_SYNC_FULL);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void sync(int flag) {
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", flag);
-            if (AppState.isForeGround()) ContextCompat.startForegroundService(mContext, intent);
+            if (AppState.isForeGround()) mContext.startService(intent);
         }
     }
 
