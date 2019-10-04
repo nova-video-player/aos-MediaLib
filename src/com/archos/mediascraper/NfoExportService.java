@@ -26,6 +26,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.NetworkOnMainThreadException;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile2;
@@ -88,12 +90,12 @@ public class NfoExportService extends IntentService {
         Intent serviceIntent = new Intent(context, NfoExportService.class);
         serviceIntent.setAction(INTENT_EXPORT_FILE);
         serviceIntent.setData(directory);
-        if (AppState.isForeGround()) context.startService(serviceIntent);
+        if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
     }
     public static void exportAll(Context context) {
         Intent serviceIntent = new Intent(context, NfoExportService.class);
         serviceIntent.setAction(INTENT_EXPORT_ALL);
-        if (AppState.isForeGround()) context.startService(serviceIntent);
+        if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
     }
 
     public NfoExportService() {
