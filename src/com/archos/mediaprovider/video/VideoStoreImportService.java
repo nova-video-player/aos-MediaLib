@@ -14,6 +14,8 @@
 
 package com.archos.mediaprovider.video;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ComponentName;
@@ -27,6 +29,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -35,10 +38,10 @@ import android.os.Message;
 import android.os.Process;
 import android.provider.MediaStore;
 
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import android.util.Log;
 
-import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaCommon;
@@ -84,6 +87,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private static final int NOTIFICATION_ID = 6;
     private NotificationManager nm;
+    private Notification n;
     private static final String notifChannelId = "VideoStoreImportService_id";
     private static final String notifChannelName = "VideoStoreImportService";
     private static final String notifChannelDescr = "VideoStoreImportService";
@@ -102,6 +106,25 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public void onCreate() {
 
         if (DBG) Log.d(TAG, "onCreate");
+
+        // need to do that early to avoid ANR on Android 26+
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            nc.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(nc);
+        }
+        n = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.video_store_import))
+                .setContentText("")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true)
+                .build();
+        startForeground(NOTIFICATION_ID, n);
+
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
         // setup background worker thread
@@ -178,7 +201,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     @Override
     public void onDestroy() {
         if (DBG) Log.d(TAG, "onDestroy");
-        FileUtils.hideNotification(nm, NOTIFICATION_ID);
+        // hide notification
+        nm.cancel(NOTIFICATION_ID);
         AppState.removeOnForeGroundListener(mForeGroundListener);
         mForeGroundListener = null;
         // stop handler thread
@@ -241,7 +265,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public static void start(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
         if (AppState.isForeGround()) {
-            context.startService(intent);
+            ContextCompat.startForegroundService(context, intent);
+            //context.startService(intent);
         }
         // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }
@@ -316,18 +341,19 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     /** starts import, fullMode decides which import implementation is used */
     private void doImport(boolean fullMode) {
         // TODO determine when / if we need both import implementations
-        FileUtils.showNotification(this, VideoStoreImportService.class, nm, NOTIFICATION_ID,
-                "", R.string.video_store_import, notifChannelId, notifChannelName,  notifChannelDescr);
+
+        nm.notify(NOTIFICATION_ID, n);
+
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED ) {
             if (DBG) Log.d(TAG, "no read permission : stop import");
-            FileUtils.hideNotification(nm, NOTIFICATION_ID);
+            nm.cancel(NOTIFICATION_ID);
             return;
         }
         ImportState.VIDEO.setDirty(false);
 
         if (!sActive) {
             if (DBG) Log.d(TAG, "Import request ignored due to device shutdown.");
-            FileUtils.hideNotification(nm, NOTIFICATION_ID);
+            nm.cancel(NOTIFICATION_ID);
             return;
         }
 
@@ -344,7 +370,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // perform no longer possible delete_file and vob_insert db callbacks after incr or full import
         // this will also flush delete_files and vob_insert buffer tables
         processDeleteFileAndVobCallback();
-        FileUtils.hideNotification(nm, NOTIFICATION_ID);
+        nm.cancel(NOTIFICATION_ID);
     }
 
     private void processDeleteFileAndVobCallback() {
