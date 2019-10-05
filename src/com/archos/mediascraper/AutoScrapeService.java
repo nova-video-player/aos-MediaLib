@@ -134,7 +134,7 @@ public class AutoScrapeService extends Service {
                 nm.createNotificationChannel(nc);
         }
         nb = new NotificationCompat.Builder(this, notifChannelId)
-                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setSmallIcon(R.drawable.stat_notify_scraper)
                 .setContentTitle(getString(R.string.scraping_in_progress))
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
