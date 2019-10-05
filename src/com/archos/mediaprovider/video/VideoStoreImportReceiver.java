@@ -19,6 +19,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediaprovider.ArchosMediaCommon;
 
@@ -43,7 +45,7 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
             Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
             serviceIntent.setAction(intent.getAction());
             serviceIntent.setData(intent.getData());
-            context.startService(serviceIntent);
+            ContextCompat.startForegroundService(context, serviceIntent);
         }
     }
 
