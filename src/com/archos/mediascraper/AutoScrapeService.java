@@ -433,7 +433,7 @@ public class AutoScrapeService extends Service {
                                 if (DBG) Log.d(TAG,"remaining=" + sNumberOfFilesRemainingToProcess + ", mNetworkOrScrapErrors=" + mNetworkOrScrapErrors);
 
                             } while (cursor.moveToNext()
-                                    &&isEnable(AutoScrapeService.this));
+                                    &&isEnable(AutoScrapeService.this) && (sNumberOfFilesRemainingToProcess > 0));
                             sIsScraping = false;
                             if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
