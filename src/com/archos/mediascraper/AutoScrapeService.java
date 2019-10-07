@@ -87,7 +87,6 @@ public class AutoScrapeService extends Service {
     private static final int NOTIFICATION_ID = 4;
     private NotificationManager nm;
     private NotificationCompat.Builder nb;
-    private Notification n;
     private static final String notifChannelId = "AutoScrapeService_id";
     private static final String notifChannelName = "AutoScrapeService";
     private static final String notifChannelDescr = "AutoScrapeService";
