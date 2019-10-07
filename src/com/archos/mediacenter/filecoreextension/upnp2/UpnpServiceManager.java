@@ -130,14 +130,15 @@ public class UpnpServiceManager extends BroadcastReceiver {
 
     /**
      * Singleton instance is created if needed, UPnP service is started.
-     * @param applicationContext
+     * @param context or null (which means it may return null)
      * @return the singleton
      */
-    public static synchronized UpnpServiceManager getSingleton(Context applicationContext) {
-        if (singleton==null) {
-            singleton = new UpnpServiceManager(applicationContext);
+    public static synchronized UpnpServiceManager getSingleton(Context context) {
+        if (singleton == null && context != null) {
+            singleton = new UpnpServiceManager(context.getApplicationContext());
         }
-        singleton.startUpnpServiceIfNotStartedYet();
+        if (singleton != null)
+            singleton.startUpnpServiceIfNotStartedYet();
         return singleton;
     }
 
