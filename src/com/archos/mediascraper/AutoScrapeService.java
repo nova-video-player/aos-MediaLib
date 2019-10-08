@@ -134,8 +134,6 @@ public class AutoScrapeService extends Service {
         }
         nb = new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(R.drawable.stat_notify_scraper)
-                .setContentTitle(getString(R.string.scraping_in_progress))
-                .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
         startForeground(NOTIFICATION_ID, nb.build());
@@ -152,7 +150,8 @@ public class AutoScrapeService extends Service {
         if(intent!=null){
             if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING))
                 startExporting();
-            else startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false),intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
+            else
+                startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false),intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
         }
         else
             startScraping(false,false);
@@ -161,6 +160,7 @@ public class AutoScrapeService extends Service {
 
     protected void startExporting() {
         if (DBG) Log.d(TAG, "startExporting " + String.valueOf(mExportingThread == null || !mExportingThread.isAlive()));
+        nb.setContentTitle(getString(R.string.nfo_export_in_progress));
         if (mExportingThread == null || !mExportingThread.isAlive()) {
             mExportingThread = new Thread() {
 
@@ -173,6 +173,8 @@ public class AutoScrapeService extends Service {
                         cursor.moveToFirst();
                         do {
                             if (DBG) Log.d(TAG, "cursor.getCount() "+cursor.getCount());
+                            sNumberOfFilesRemainingToProcess = cursor.getCount();
+                            nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
                             Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                             long movieID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID));
                             long episodeID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID));
@@ -251,6 +253,7 @@ public class AutoScrapeService extends Service {
 
     protected void startScraping(final boolean rescrapAlreadySearched, final boolean onlyNotFound) {
         if(DBG)  Log.d(TAG, "startScraping " + String.valueOf(mThread==null || !mThread.isAlive()) );
+        nb.setContentTitle(getString(R.string.scraping_in_progress));
         if(mThread==null || !mThread.isAlive()) {
             mThread = new Thread() {
 

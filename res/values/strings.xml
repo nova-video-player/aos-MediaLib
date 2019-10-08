@@ -34,6 +34,9 @@
     <string name="nfo_export_exporting">Exporting .nfo</string>
     <string name="nfo_export_exporting_all">everything</string>
 
+    <string name="nfo_export_in_progress">NFO export in progress</string>
+    <string name="rescrap_in_progress">Rescraping whole library</string>
+
     <string name="rescrap_all_title">Rescrap all</string>
 
     <!-- trakt.tv -->
