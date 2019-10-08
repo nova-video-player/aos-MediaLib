@@ -26,6 +26,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.NetworkOnMainThreadException;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile2;
@@ -48,6 +50,14 @@ public class NfoExportService extends IntentService {
     private static final Intent VOID_INTENT = new Intent("void");
     private static final ConcurrentHashMap<String, String> sScheduledTasks =
             new ConcurrentHashMap<String, String>();
+
+    private static final int NOTIFICATION_ID = 8;
+    private NotificationManager nm;
+    private NotificationCompat.Builder nb;
+    private static final String notifChannelId = "NfoExportService_id";
+    private static final String notifChannelName = "NfoExportService";
+    private static final String notifChannelDescr = "NfoExportService";
+
 
     /**
      * simple guard against multiple tasks of the same directory
@@ -88,12 +98,12 @@ public class NfoExportService extends IntentService {
         Intent serviceIntent = new Intent(context, NfoExportService.class);
         serviceIntent.setAction(INTENT_EXPORT_FILE);
         serviceIntent.setData(directory);
-        if (AppState.isForeGround()) context.startService(serviceIntent);
+        if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
     }
     public static void exportAll(Context context) {
         Intent serviceIntent = new Intent(context, NfoExportService.class);
         serviceIntent.setAction(INTENT_EXPORT_ALL);
-        if (AppState.isForeGround()) context.startService(serviceIntent);
+        if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
     }
 
     public NfoExportService() {
@@ -101,11 +111,26 @@ public class NfoExportService extends IntentService {
         setIntentRedelivery(true);
     }
 
-    private NotificationManager mNotificationManager;
     @Override
     public void onCreate() {
         super.onCreate();
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // need to do that early to avoid ANR on Android 26+
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName,
+                    nm.IMPORTANCE_LOW);
+            nc.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(nc);
+        }
+        nb = new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(getString(R.string.nfo_export_exporting))
+                .setContentText("")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
+        startForeground(NOTIFICATION_ID, nb.build());
     }
 
     @Override
@@ -141,10 +166,13 @@ public class NfoExportService extends IntentService {
     }
 
     private void exportAll() {
-        showNotification(getString(R.string.nfo_export_exporting_all));
+        nb.setContentText(getString(R.string.nfo_export_exporting_all));
+        nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
-        hideNotification();
+        nm.cancel(NOTIFICATION_ID);
         removeAllTask();
+        stopForeground(true);
+        stopSelf();
     }
 
     private void exportFile(Uri data) {
@@ -158,11 +186,14 @@ public class NfoExportService extends IntentService {
                 e.printStackTrace();
         }
         if (file != null && file.isDirectory()) {
-            showNotification(data.toString());
+            nb.setContentText(data.toString());
+            nm.notify(NOTIFICATION_ID, nb.build());
             handleCursor(getInDirectoryCursor(data));
-            hideNotification();
+            nm.cancel(NOTIFICATION_ID);
         }
         removeDirTask(data);
+        stopForeground(true);
+        stopSelf();
     }
 
     private void handleCursor(Cursor cursor) {
@@ -223,39 +254,6 @@ public class NfoExportService extends IntentService {
             path
         };
         return cr.query(URI, PROJECTION, SELECTION_FOLDER, selectionArgs, ORDER);
-    }
-
-    private static final int NOTIFICATION_ID = 8;
-    private static final String notifChannelId = "NfoExportService_id";
-    private static final String notifChannelName = "NfoExportService";
-    private static final String notifChannelDescr = "NfoExportService";
-    /** shows a notification */
-    private void showNotification(String contentText){
-        NotificationCompat.Builder n = getNotification(contentText);
-        mNotificationManager.notify(NOTIFICATION_ID, n.build());
-    }
-
-    /** cancels the notification */
-    private void hideNotification() {
-        if (mNotificationManager != null)
-            mNotificationManager.cancel(NOTIFICATION_ID);
-    }
-    private NotificationCompat.Builder getNotification(String contentText) {
-        // Create the NotificationChannel, but only on API 26+ because the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mNotifChannel = new NotificationChannel(notifChannelId, notifChannelName,
-                    mNotificationManager.IMPORTANCE_LOW);
-            mNotifChannel.setDescription(notifChannelDescr);
-            if (mNotificationManager != null)
-                mNotificationManager.createNotificationChannel(mNotifChannel);
-        }
-        NotificationCompat.Builder n = new NotificationCompat.Builder(this, notifChannelId)
-                .setSmallIcon(android.R.drawable.stat_notify_sync)
-                .setContentTitle(getString(R.string.nfo_export_exporting))
-                .setContentText(contentText)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);;
-        return n;
     }
 
 }
