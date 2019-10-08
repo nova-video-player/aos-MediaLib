@@ -450,6 +450,7 @@ public class AutoScrapeService extends Service {
                         }
                     });
                     nm.cancel(NOTIFICATION_ID);
+                    stopForeground(true);
                     AutoScrapeService.this.stopSelf();
                 }
             };
