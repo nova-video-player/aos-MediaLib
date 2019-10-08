@@ -370,6 +370,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // this will also flush delete_files and vob_insert buffer tables
         processDeleteFileAndVobCallback();
         nm.cancel(NOTIFICATION_ID);
+        stopForeground(true);
         VideoStoreImportService.this.stopSelf();
     }
 
