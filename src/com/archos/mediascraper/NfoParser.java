@@ -235,6 +235,7 @@ public class NfoParser {
 
     public static BaseTags getTagForFile(Uri file, Context context) {
         NfoFile nfo = determineNfoFile(file);
+        if (DBG) Log.d(TAG, "getTagForFile: found nfo file " + nfo.videoNfo + ", nfo.hasNfo()=" + nfo.hasNfo());
         if (nfo != null && nfo.hasNfo()) {
             return getTagForFile(nfo, context, null);
         }

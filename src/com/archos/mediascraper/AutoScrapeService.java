@@ -62,7 +62,7 @@ public class AutoScrapeService extends Service {
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static String TAG = "AutoScrapeService";
-    private static boolean DBG = false;
+    private static boolean DBG = true;
 
     static boolean sIsScraping = false;
     static int sNumberOfFilesRemainingToProcess = 0;
@@ -78,7 +78,7 @@ public class AutoScrapeService extends Service {
             VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID
     };
     private Thread mThread;
-    private boolean restartOnNextRound;
+    private boolean restartOnNextRound = false;
     private AutoScraperBinder mBinder;
     private Thread mExportingThread;
     private Handler mHandler;
@@ -208,7 +208,10 @@ public class AutoScrapeService extends Service {
 
                     }
                     cursor.close();
-
+                    nm.cancel(NOTIFICATION_ID);
+                    stopForeground(true);
+                    AutoScrapeService.this.stopSelf();
+                    if(DBG) Log.d(TAG, "startExporting: done and stopSelf");
                 }
             };
             mExportingThread.start();
@@ -261,15 +264,24 @@ public class AutoScrapeService extends Service {
                 public void run() {
 
                     boolean shouldRescrapAll = rescrapAlreadySearched;
-                    if(DBG)  Log.d(TAG, "startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
+                    if(DBG)  Log.d(TAG, "startScraping: startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
 
                     do{
 
                         mNetworkOrScrapErrors = 0;
                         restartOnNextRound = false;
 
+                        if (DBG) {
+                            if (shouldRescrapAll && onlyNotFound)
+                                Log.d(TAG, "startScraping: go for scraped not found");
+                            else if (shouldRescrapAll)
+                                Log.d(TAG, "startScraping: go for scrape all");
+                            else
+                                Log.d(TAG, "startScraping: go for not scraped");
+                        }
+
                         Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED);
-                        if(DBG) Log.d(TAG, "starting thread " + cursor.getCount());
+                        if(DBG) Log.d(TAG, "startScraping: starting thread " + cursor.getCount());
                         NfoWriter.ExportContext exportContext = null;
                         if (NfoWriter.isNfoAutoExportEnabled(AutoScrapeService.this))
                             exportContext = new NfoWriter.ExportContext();
@@ -288,27 +300,33 @@ public class AutoScrapeService extends Service {
                                 }
                                 String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
 
+                                int numberNotScraped = 0;
+                                int numberScrapeError = 0;
+
                                 Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                                 Uri scrapUri = title != null && !title.isEmpty() ? Uri.parse("/" + title + ".mp4") : fileUri;
                                 long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                                 // for now there is no error and file is not scraped
                                 boolean notScraped = true;
                                 boolean noScrapeError = true;
-                                if(DBG) Log.d(TAG, "fileUri "+fileUri);
+                                if(DBG) Log.d(TAG, "startScraping processing fileUri "+fileUri + ", scrapUri " + scrapUri + ", with ID " + ID + " (ID = 0 not scraped)");
+                                if(DBG) Log.d(TAG, "startScraping number of remaining files to be processed: " + sNumberOfFilesRemainingToProcess);
+
                                 nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
 
                                 if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
 
-                                    if(DBG) Log.d(TAG, "NFO enabled");
+                                    if(DBG) Log.d(TAG, "startScraping: NFO enabled");
 
                                     BaseTags tags = NfoParser.getTagForFile(fileUri, AutoScrapeService.this);
                                     if (tags != null) {
-                                        if(DBG) Log.d(TAG, "found NFO");
+                                        if(DBG) Log.d(TAG, "startScraping: found NFO");
                                         /*
                                         if poster url are in nfo or in folder, download is automatic
                                         if no poster available, try to scrap with good title,
                                         */
                                         if (ID != -1) {
+                                            if(DBG) Log.d(TAG, "startScraping: NFO ID != -1 " + ID);
                                             //ugly but necessary to avoid poster delete when replacing tag
                                             if(tags.getDefaultPoster()!=null){
                                                 DeleteFileCallback.DO_NOT_DELETE.add(tags.getDefaultPoster().getLargeFile()); }
@@ -320,6 +338,7 @@ public class AutoScrapeService extends Service {
                                                     DeleteFileCallback.DO_NOT_DELETE.add(((EpisodeTags) tags).getShowTags().getDefaultPoster().getLargeFile());
                                                 }
                                             }
+                                            if(DBG) Log.d(TAG, "startScraping: NFO tags.save ID=" + ID);
                                             tags.save(AutoScrapeService.this, ID);
                                             DeleteFileCallback.DO_NOT_DELETE.clear();
                                             TraktService.onNewVideo(AutoScrapeService.this);
@@ -328,38 +347,40 @@ public class AutoScrapeService extends Service {
                                         notScraped = false;
                                         noScrapeError = true;
                                         if (tags.getPosters() != null&&DBG) {
-                                            if (DBG) Log.d(TAG, "posters : " + tags.getPosters().size());
+                                            if (DBG) Log.d(TAG, "startScraping: posters : " + tags.getPosters().size());
                                         }
                                         else if(tags.getPosters() == null&&tags.getDefaultPoster()==null&&
                                                 (!(tags instanceof EpisodeTags)||((EpisodeTags)tags).getShowTags().getPosters()==null)){//special case for episodes : check show
                                             if (tags.getTitle() != null && !tags.getTitle().isEmpty()) { //if a title is specified in nfo, use it to scrap file
                                                 scrapUri = Uri.parse("/" + tags.getTitle() + ".mp4");
-                                                if(DBG) Log.d(TAG, "no posters using title " + tags.getTitle());
+                                                if(DBG) Log.d(TAG, "startScraping: no posters using title " + tags.getTitle());
                                             }
-                                            if(DBG) Log.d(TAG, "no posters ");
+                                            if(DBG) Log.d(TAG, "startScraping: no posters ");
                                             //poster not found thus not scraped and no error
                                             notScraped = true;
                                             noScrapeError = true;
                                         }
+                                        if(DBG) Log.d(TAG, "startScraping: NFO found, notScaped " + notScraped + ", noScrapeError " + noScrapeError + " for " + fileUri);
                                     }
                                 }
                                 if (notScraped&&noScrapeError) { //look for online details
+                                    if(DBG) Log.d(TAG, "startScraping: NFO NOT found");
                                     ScrapeDetailResult result = null;
                                     boolean searchOnline = !shouldRescrapAll;
                                     if(shouldRescrapAll){
-                                        if (DBG) Log.d(TAG,"rescraping");
+                                        if (DBG) Log.d(TAG,"startScraping: rescraping all");
                                         long videoID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID));
                                         final int scraperType = cursor.getInt(cursor.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
 
                                         if (scraperType == BaseTags.TV_SHOW) {
-                                            if (DBG) Log.d(TAG,"rescraping episode "+videoID);
+                                            if (DBG) Log.d(TAG,"startScraping: rescraping episode "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new ShowScraper2(AutoScrapeService.this));
                                             result = ShowScraper2.getDetails(new SearchResult(0,title, (int) videoID), null);
 
                                         } else if (scraperType==BaseTags.MOVIE) {
-                                            if (DBG) Log.d(TAG,"rescraping movie "+videoID);
+                                            if (DBG) Log.d(TAG,"startScraping: rescraping movie "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new MovieScraper2(AutoScrapeService.this));
@@ -369,7 +390,7 @@ public class AutoScrapeService extends Service {
 
                                     }
                                     if(searchOnline) {
-                                        if (DBG) Log.d(TAG,"searching online "+title);
+                                        if (DBG) Log.d(TAG,"startScraping: searching online "+title);
                                         SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri,scrapUri);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         result = scraper.getAutoDetails(searchInfo);
@@ -390,13 +411,15 @@ public class AutoScrapeService extends Service {
                                                 DeleteFileCallback.DO_NOT_DELETE.add(((EpisodeTags) result.tag).getShowTags().getDefaultPoster().getLargeFile());
                                             }
                                         }
+                                        if(DBG) Log.d(TAG, "startScraping: online result.tag.save ID=" + ID);
+
                                         result.tag.save(AutoScrapeService.this, ID);
                                         DeleteFileCallback.DO_NOT_DELETE.clear();
                                         // result exists thus scraped and no error for now
                                         notScraped = false;
                                         noScrapeError = true;
                                         if (result.tag.getTitle() != null)
-                                            if (DBG) Log.d(TAG, "info " + result.tag.getTitle());
+                                            if (DBG) Log.d(TAG, "startScraping: info " + result.tag.getTitle());
 
                                         TraktService.onNewVideo(AutoScrapeService.this);
                                         if (exportContext != null) {
@@ -404,47 +427,57 @@ public class AutoScrapeService extends Service {
 
                                             if (fileUri != null) {
                                                 try {
-                                                    if (DBG) Log.d(TAG, "exporting NFO");
+                                                    if (DBG) Log.d(TAG, "startScraping: exporting NFO");
                                                     NfoWriter.export(fileUri, result.tag, exportContext);
                                                 } catch (IOException e) {
                                                     Log.w(TAG, e);
                                                 }
                                             }
+                                            if(DBG) Log.d(TAG, "startScraping: online info, notScaped " + notScraped + ", noScrapeError " + noScrapeError + " for " + fileUri);
                                         }
                                     } else if (result!=null){
                                         //not scraped, check for errors
+                                        // for tvshow if search returns ScrapeStatus.OKAY but in details it returns ScrapeStaus.ERROR_PARSER it is not counted as a scraping error
+                                        // this allows the video to be marked as not to be rescraped
+                                        if (DBG) Log.d(TAG, "startScraping: file " + fileUri + " not scraped among " + numberNotScraped);
                                         notScraped = true;
+                                        numberNotScraped++;
                                         noScrapeError = result.status != ScrapeStatus.ERROR && result.status != ScrapeStatus.ERROR_NETWORK && result.status != ScrapeStatus.ERROR_NO_NETWORK;
+                                        if (! noScrapeError) {
+                                            if (DBG) Log.d(TAG, "startScraping: file " + fileUri + " scrape error " + numberNotScraped);
+                                            numberScrapeError++;
+                                        }
                                     }
                                 }
 
                                 if (notScraped&&noScrapeError&&!shouldRescrapAll) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
                                     // Failed => set the scraper fields to -1 so that we will be able
                                     // to skip this file when launching the automated process again
-                                    if (DBG) Log.d(TAG,"file " + fileUri + " not scraped without error -> mark it as not to be scraped again");
+                                    if (DBG) Log.d(TAG,"startScraping: file " + fileUri + " not scraped without error -> mark it as not to be scraped again");
                                     ContentValues cv = new ContentValues(2);
                                     cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID, String.valueOf(-1));
                                     cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE, String.valueOf(-1));
                                     getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cv, BaseColumns._ID + "=?", new String[]{Long.toString(ID)});
                                 }
                                 else if(!noScrapeError) { // condition is scrapedOrError
-                                    if (DBG) Log.d(TAG,"file " + fileUri + " scraped but with error -> increase mNetworkOrScrapErrors");
+                                    if (DBG) Log.d(TAG,"startScraping: file " + fileUri + " scraped but with error -> increase mNetworkOrScrapErrors");
                                     mNetworkOrScrapErrors++;
                                 }
                                 sNumberOfFilesRemainingToProcess--;
-                                if (DBG) Log.d(TAG,"remaining=" + sNumberOfFilesRemainingToProcess + ", mNetworkOrScrapErrors=" + mNetworkOrScrapErrors);
+                                if (DBG) Log.d(TAG,"startScraping: remaining=" + sNumberOfFilesRemainingToProcess + ", mNetworkOrScrapErrors=" + mNetworkOrScrapErrors);
 
-                            } while (cursor.moveToNext()
-                                    &&isEnable(AutoScrapeService.this) && (sNumberOfFilesRemainingToProcess > 0));
+                            } while (cursor.moveToNext() && isEnable(AutoScrapeService.this) && (sNumberOfFilesRemainingToProcess > 0));
                             sIsScraping = false;
                             if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
-                                if(DBG) Log.d(TAG, "no internet or scraper errors, stop iterating");
+                                if(DBG) Log.d(TAG, "startScraping: no internet or scraper errors, stop iterating");
+                            } else {
+                                if(DBG) Log.d(TAG, "startScraping: cursor.getCount() != mNetworkOrScrapErrors, " + cursor.getCount() + "!=" + mNetworkOrScrapErrors + ", we have restartOnNextRound = true, looping expected ");
                             }
                         }
                         cursor.close();
                         shouldRescrapAll = false; //to avoid rescraping on next round
-                    } while(restartOnNextRound
+                    } while(sNumberOfFilesRemainingToProcess>0 && restartOnNextRound
                             &&PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this).getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP, true)); //if we had something to do, we look for new videos
                     mHandler.post(new Runnable() {
                         @Override
@@ -455,11 +488,18 @@ public class AutoScrapeService extends Service {
                     nm.cancel(NOTIFICATION_ID);
                     stopForeground(true);
                     AutoScrapeService.this.stopSelf();
+                    if(DBG) Log.d(TAG, "startScraping: done and stopSelf");
                 }
             };
             mThread.start();
         }
     }
+
+    public void stopService() {
+        if (DBG) Log.d(TAG, "stopService");
+        stopForeground(true);
+    }
+
     private static final String WHERE_BASE =
                     VideoStore.Video.VideoColumns.ARCHOS_HIDE_FILE + "=0 AND " +
                     VideoStore.MediaColumns.DATA + " NOT LIKE ?";
@@ -482,15 +522,15 @@ public class AutoScrapeService extends Service {
         String where  = null;
         switch(scrapStatusParam){
             case PARAM_NOT_SCRAPED:
-                where=WHERE_NOT_SCRAPED;
+                where = WHERE_NOT_SCRAPED;
                 break;
             case PARAM_SCRAPED:
-                where=WHERE_SCRAPED;
+                where = WHERE_SCRAPED;
                 break;
-            case  PARAM_ALL:
+            case PARAM_ALL:
                 where = WHERE_SCRAPED_ALL;
                 break;
-            case  PARAM_SCRAPED_NOT_FOUND:
+            case PARAM_SCRAPED_NOT_FOUND:
                 where = WHERE_SCRAPED_NOT_FOUND;
                 break;
             default:
