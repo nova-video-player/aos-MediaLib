@@ -259,7 +259,7 @@ public class UpnpServiceManager extends BroadcastReceiver {
     final ServiceConnection mServiceConnection = new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
-            Log.d(TAG, "onServiceConnected");
+            if(DBG) Log.d(TAG, "onServiceConnected");
             mAndroidUpnpService = (AndroidUpnpService) service;
             mState = State.RUNNING;
             if(DBG) Log.d(TAG, "State RUNNING");
@@ -370,7 +370,7 @@ public class UpnpServiceManager extends BroadcastReceiver {
             Action action = service.getAction("Browse");
             if (action == null) return;
 
-            Log.d(TAG, "addDevice with hash code " + device.hashCode());
+            if(DBG) Log.d(TAG, "addDevice with hash code " + device.hashCode());
             synchronized (this) {
                 // Add to list
                 mDevices.put(Integer.valueOf(device.hashCode()), device);
