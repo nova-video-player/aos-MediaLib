@@ -62,7 +62,7 @@ public class AutoScrapeService extends Service {
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static String TAG = "AutoScrapeService";
-    private static boolean DBG = true;
+    private static boolean DBG = false;
 
     static boolean sIsScraping = false;
     static int sNumberOfFilesRemainingToProcess = 0;
