@@ -170,10 +170,10 @@ public class AutoScrapeService extends Service {
                     NfoWriter.ExportContext exportContext = new NfoWriter.ExportContext();
 
                     if (cursor.getCount() > 0) {
+                        if (DBG) Log.d(TAG, "cursor.getCount() "+cursor.getCount());
+                        sNumberOfFilesRemainingToProcess = cursor.getCount();
                         cursor.moveToFirst();
                         do {
-                            if (DBG) Log.d(TAG, "cursor.getCount() "+cursor.getCount());
-                            sNumberOfFilesRemainingToProcess = cursor.getCount();
                             nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
                             Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                             long movieID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID));
@@ -188,6 +188,7 @@ public class AutoScrapeService extends Service {
                                 baseTags= TagsFactory.buildMovieTags(AutoScrapeService.this, movieID);
 
                             }
+                            sNumberOfFilesRemainingToProcess--;
                             if(baseTags==null)
                                 continue;
                             if (DBG) Log.d(TAG, "Base tag created, exporting"+fileUri);
