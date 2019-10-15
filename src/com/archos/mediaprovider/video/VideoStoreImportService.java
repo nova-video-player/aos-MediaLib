@@ -301,6 +301,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     Log.d(TAG, "stopSelf");
                     stopSelf(msg.arg1);
                 }*/
+                stopForeground(true);
+                VideoStoreImportService.this.stopSelf();
                 break;
             case MESSAGE_IMPORT_INCR:
                 doImport(false);
@@ -370,8 +372,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // this will also flush delete_files and vob_insert buffer tables
         processDeleteFileAndVobCallback();
         nm.cancel(NOTIFICATION_ID);
-        stopForeground(true);
-        VideoStoreImportService.this.stopSelf();
     }
 
     private void processDeleteFileAndVobCallback() {
