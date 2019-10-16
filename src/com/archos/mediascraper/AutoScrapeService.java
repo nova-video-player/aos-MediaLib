@@ -17,6 +17,7 @@ package com.archos.mediascraper;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -258,6 +259,12 @@ public class AutoScrapeService extends Service {
     protected void startScraping(final boolean rescrapAlreadySearched, final boolean onlyNotFound) {
         if(DBG)  Log.d(TAG, "startScraping " + String.valueOf(mThread==null || !mThread.isAlive()) );
         nb.setContentTitle(getString(R.string.scraping_in_progress));
+        /*
+        Intent notificationIntent = new Intent(Intent.ACTION_MAIN);
+        notificationIntent.setClass(this, AutoScraperActivity.class);
+        PendingIntent contentIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, 0);
+        nb.setContentIntent(contentIntent);
+         */
         if(mThread==null || !mThread.isAlive()) {
             mThread = new Thread() {
 
