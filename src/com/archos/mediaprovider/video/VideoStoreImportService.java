@@ -224,7 +224,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents are delivered here.
         if (DBG) Log.d(TAG, "onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
-        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
@@ -301,6 +300,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     Log.d(TAG, "stopSelf");
                     stopSelf(msg.arg1);
                 }*/
+                nm.cancel(NOTIFICATION_ID);
                 stopForeground(true);
                 VideoStoreImportService.this.stopSelf();
                 break;
@@ -347,14 +347,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED ) {
             if (DBG) Log.d(TAG, "no read permission : stop import");
-            nm.cancel(NOTIFICATION_ID);
             return;
         }
         ImportState.VIDEO.setDirty(false);
 
         if (!sActive) {
             if (DBG) Log.d(TAG, "Import request ignored due to device shutdown.");
-            nm.cancel(NOTIFICATION_ID);
             return;
         }
 
@@ -371,7 +369,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // perform no longer possible delete_file and vob_insert db callbacks after incr or full import
         // this will also flush delete_files and vob_insert buffer tables
         processDeleteFileAndVobCallback();
-        nm.cancel(NOTIFICATION_ID);
     }
 
     private void processDeleteFileAndVobCallback() {
