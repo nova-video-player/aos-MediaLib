@@ -228,6 +228,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
 
+        startForeground(NOTIFICATION_ID, n);
+
         // forward startId to handler thread
         String action = intent.getAction();
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)|| ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)) {
