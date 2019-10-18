@@ -64,7 +64,7 @@ public class AutoScrapeService extends Service {
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static String TAG = "AutoScrapeService";
-    private static boolean DBG = false;
+    private static boolean DBG = true;
 
     static boolean sIsScraping = false;
     static int sNumberOfFilesRemainingToProcess = 0;
@@ -111,8 +111,14 @@ public class AutoScrapeService extends Service {
     }
 
     public static void startService(Context context) {
+        if (DBG) Log.d(TAG, "startService in foreground");
         mContext = context;
         ContextCompat.startForegroundService(context, new Intent(context, AutoScrapeService.class));
+    }
+
+    public void stopService() {
+        if (DBG) Log.d(TAG, "stopService");
+        stopForeground(true);
     }
 
     // Used by system. Don't call
@@ -147,8 +153,8 @@ public class AutoScrapeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
+        startForeground(NOTIFICATION_ID, nb.build());
         if(DBG) Log.d(TAG, "onStartCommand() " + this);
-        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if(intent!=null){
             if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING))
                 startExporting();
@@ -214,7 +220,7 @@ public class AutoScrapeService extends Service {
                     nm.cancel(NOTIFICATION_ID);
                     stopForeground(true);
                     AutoScrapeService.this.stopSelf();
-                    if(DBG) Log.d(TAG, "startExporting: done and stopSelf");
+                    if(DBG) Log.d(TAG, "startExporting: stopForeGround and stopSelf");
                 }
             };
             mExportingThread.start();
@@ -499,11 +505,6 @@ public class AutoScrapeService extends Service {
             };
             mThread.start();
         }
-    }
-
-    public void stopService() {
-        if (DBG) Log.d(TAG, "stopService");
-        stopForeground(true);
     }
 
     private static final String WHERE_BASE =
