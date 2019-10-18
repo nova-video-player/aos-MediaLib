@@ -80,7 +80,7 @@ public class ShowScraper2 extends BaseScraper2 {
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
-    protected final int cacheSize = 1 * 1024 * 1024; // 1 MB
+    protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
     static Cache cache;
 
     public ShowScraper2(Context context) {
