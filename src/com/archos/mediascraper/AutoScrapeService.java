@@ -32,6 +32,7 @@ import android.os.Handler;
 import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.TaskStackBuilder;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
@@ -259,12 +260,12 @@ public class AutoScrapeService extends Service {
     protected void startScraping(final boolean rescrapAlreadySearched, final boolean onlyNotFound) {
         if(DBG)  Log.d(TAG, "startScraping " + String.valueOf(mThread==null || !mThread.isAlive()) );
         nb.setContentTitle(getString(R.string.scraping_in_progress));
-        /*
+
         Intent notificationIntent = new Intent(Intent.ACTION_MAIN);
-        notificationIntent.setClass(this, AutoScraperActivity.class);
+        notificationIntent.setClassName(this.getPackageName(), "com.archos.mediacenter.video.autoscraper.AutoScraperActivity");
         PendingIntent contentIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, 0);
         nb.setContentIntent(contentIntent);
-         */
+
         if(mThread==null || !mThread.isAlive()) {
             mThread = new Thread() {
 
@@ -309,8 +310,6 @@ public class AutoScrapeService extends Service {
                                 String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
 
                                 int numberNotScraped = 0;
-                                int numberScrapeError = 0;
-
                                 Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                                 Uri scrapUri = title != null && !title.isEmpty() ? Uri.parse("/" + title + ".mp4") : fileUri;
                                 long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
@@ -453,7 +452,6 @@ public class AutoScrapeService extends Service {
                                         noScrapeError = result.status != ScrapeStatus.ERROR && result.status != ScrapeStatus.ERROR_NETWORK && result.status != ScrapeStatus.ERROR_NO_NETWORK;
                                         if (! noScrapeError) {
                                             if (DBG) Log.d(TAG, "startScraping: file " + fileUri + " scrape error " + numberNotScraped);
-                                            numberScrapeError++;
                                         }
                                     }
                                 }
