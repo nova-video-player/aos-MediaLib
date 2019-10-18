@@ -137,6 +137,7 @@ public class NfoExportService extends IntentService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
         Uri data = intent != null ? intent.getData() : null;
+        startForeground(NOTIFICATION_ID, nb.build());
         boolean processIntent = false;
         if (INTENT_EXPORT_FILE.equals(action)) {
             if (addDirTask(data))
