@@ -117,8 +117,10 @@ public class AutoScrapeService extends Service {
     }
 
     public void stopService() {
-        if (DBG) Log.d(TAG, "stopService");
+        if (DBG) Log.d(TAG, "stopService: stopForeground only");
+        //nm.cancel(NOTIFICATION_ID);
         stopForeground(true);
+        //AutoScrapeService.this.stopSelf();
     }
 
     // Used by system. Don't call
@@ -144,6 +146,7 @@ public class AutoScrapeService extends Service {
                 .setSmallIcon(R.drawable.stat_notify_scraper)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
+        if(DBG) Log.d(TAG, "onCreate: startForeground");
         startForeground(NOTIFICATION_ID, nb.build());
 
         mBinder = new AutoScraperBinder();
@@ -153,8 +156,9 @@ public class AutoScrapeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
-        startForeground(NOTIFICATION_ID, nb.build());
         if(DBG) Log.d(TAG, "onStartCommand() " + this);
+        if(DBG) Log.d(TAG, "onStartCommand: startForeground");
+        startForeground(NOTIFICATION_ID, nb.build());
         if(intent!=null){
             if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING))
                 startExporting();
@@ -163,7 +167,7 @@ public class AutoScrapeService extends Service {
         }
         else
             startScraping(false,false);
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     protected void startExporting() {
@@ -217,10 +221,8 @@ public class AutoScrapeService extends Service {
 
                     }
                     cursor.close();
-                    nm.cancel(NOTIFICATION_ID);
-                    stopForeground(true);
-                    AutoScrapeService.this.stopSelf();
-                    if(DBG) Log.d(TAG, "startExporting: stopForeGround and stopSelf");
+                    if(DBG) Log.d(TAG, "startExporting: call stopService");
+                    stopService();
                 }
             };
             mExportingThread.start();
@@ -228,7 +230,7 @@ public class AutoScrapeService extends Service {
     }
     @Override
     public void onDestroy() {
-        nm.cancel(NOTIFICATION_ID);
+        //nm.cancel(NOTIFICATION_ID);
         super.onDestroy();
         if(DBG) Log.d(TAG, "onDestroy() " + this);
     }
@@ -243,6 +245,7 @@ public class AutoScrapeService extends Service {
             @Override
             public void onChange(boolean selfChange) {
                 if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true) && AppState.isForeGround()) {
+                    if (DBG) Log.d(TAG, "registerObserver: onChange startService");
                     AutoScrapeService.startService(appContext);
                 }
             }
@@ -267,6 +270,7 @@ public class AutoScrapeService extends Service {
         if(DBG)  Log.d(TAG, "startScraping " + String.valueOf(mThread==null || !mThread.isAlive()) );
         nb.setContentTitle(getString(R.string.scraping_in_progress));
 
+        // TODO: seems not working
         Intent notificationIntent = new Intent(Intent.ACTION_MAIN);
         notificationIntent.setClassName(this.getPackageName(), "com.archos.mediacenter.video.autoscraper.AutoScraperActivity");
         PendingIntent contentIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, 0);
@@ -497,10 +501,8 @@ public class AutoScrapeService extends Service {
                             WrapperChannelManager.refreshChannels(AutoScrapeService.this);
                         }
                     });
-                    nm.cancel(NOTIFICATION_ID);
-                    stopForeground(true);
-                    AutoScrapeService.this.stopSelf();
-                    if(DBG) Log.d(TAG, "startScraping: done and stopSelf");
+                    if(DBG) Log.d(TAG, "startScraping: call stopService");
+                    stopService();
                 }
             };
             mThread.start();
