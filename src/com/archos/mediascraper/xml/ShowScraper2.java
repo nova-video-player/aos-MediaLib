@@ -92,6 +92,21 @@ public class ShowScraper2 extends BaseScraper2 {
         }
     }
 
+    public void dumpCacheInfo() {
+        if (cache == null) {
+            Log.d(TAG, "Cache not initialized");
+            return;
+        }
+        try {
+            double fillRatio = (cache.maxSize() / (double) cache.size());
+            double hitRatio = cache.hitCount() / (double) cache.requestCount();
+            Log.d(TAG, "Cache filled " + fillRatio + "%");
+            Log.d(TAG, "Cache hit " + hitRatio + "%");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     static class MyTheTVdb extends TheTvdb {
         public MyTheTVdb(String apiKey) {
             super(apiKey);
