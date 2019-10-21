@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
  */
 public class VobHandler implements Handler.Callback {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VobHandler";
-    private static final boolean LOCAL_DBG = true;
+    private static final boolean LOCAL_DBG = false;
     private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
 
     /** delay before processing starts */
