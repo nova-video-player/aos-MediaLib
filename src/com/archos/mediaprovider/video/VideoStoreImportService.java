@@ -304,7 +304,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }*/
                 nm.cancel(NOTIFICATION_ID);
                 stopForeground(true);
-                VideoStoreImportService.this.stopSelf();
                 break;
             case MESSAGE_IMPORT_INCR:
                 doImport(false);
