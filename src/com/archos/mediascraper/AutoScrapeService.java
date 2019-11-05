@@ -120,9 +120,7 @@ public class AutoScrapeService extends Service {
 
     public void stopService() {
         if (DBG) Log.d(TAG, "stopService: stopForeground only");
-        //nm.cancel(NOTIFICATION_ID);
         stopForeground(true);
-        //AutoScrapeService.this.stopSelf();
     }
 
     // Used by system. Don't call
