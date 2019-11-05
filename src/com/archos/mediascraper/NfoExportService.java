@@ -170,10 +170,8 @@ public class NfoExportService extends IntentService {
         nb.setContentText(getString(R.string.nfo_export_exporting_all));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
-        nm.cancel(NOTIFICATION_ID);
         removeAllTask();
         stopForeground(true);
-        stopSelf();
     }
 
     private void exportFile(Uri data) {
@@ -190,11 +188,9 @@ public class NfoExportService extends IntentService {
             nb.setContentText(data.toString());
             nm.notify(NOTIFICATION_ID, nb.build());
             handleCursor(getInDirectoryCursor(data));
-            nm.cancel(NOTIFICATION_ID);
         }
         removeDirTask(data);
         stopForeground(true);
-        stopSelf();
     }
 
     private void handleCursor(Cursor cursor) {
