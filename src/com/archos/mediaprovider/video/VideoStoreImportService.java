@@ -244,7 +244,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             removeAllMessages(mHandler);
             ImportState.VIDEO.setAndroidScanning(true);
             if (DBG) Log.d(TAG, "SCAN STARTED " + intent.getData());
-        } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)) {
+        } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action) || ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE.equals(action)) {
             // requests to update metadata are processed directly and don't impact importing
             Message m = mHandler.obtainMessage(MESSAGE_UPDATE_METADATA, startId, flags, intent.getData());
             m.sendToTarget();
@@ -255,6 +255,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         } else if (Intent.ACTION_SHUTDOWN.equals(action)) {
             if (DBG) Log.d(TAG, "Import disabled due to shutdown");
             sActive = false;
+        } else {
+            Log.w(TAG, "onStartCommand: intent not treated, notification will not get cancelled!");
         }
         return Service.START_NOT_STICKY;
     }
@@ -302,26 +304,32 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     Log.d(TAG, "stopSelf");
                     stopSelf(msg.arg1);
                 }*/
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_KILL");
                 nm.cancel(NOTIFICATION_ID);
                 stopForeground(true);
                 break;
             case MESSAGE_IMPORT_INCR:
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_IMPORT_INCR");
                 doImport(false);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_IMPORT_FULL:
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_IMPORT_FULL");
                 doImport(true);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_UPDATE_METADATA:
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_UPDATE_METADATA");
                 mImporter.doScan((Uri)msg.obj);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_REMOVE_FILE:
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_REMOVE_FILE");
                 mImporter.doRemove((Uri)msg.obj);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_HIDE_VOLUME:
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_HIDE_VOLUME");
                 // insert the storage_id that's to be hidden into the special trigger view thingy
                 ContentValues cv = new ContentValues();
                 cv.put(VideoStore.Files.FileColumns.STORAGE_ID, String.valueOf(msg.arg2));
