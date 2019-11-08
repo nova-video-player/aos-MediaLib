@@ -81,6 +81,7 @@ public final class VideoStore {
             Log.w(TAG, "requestIndexing: file or context null");
             return;
         }
+        if (DBG) Log.d(TAG, "requestIndexing: uri=" + uri + ", with reIndex=" + reIndex);
         //first check if video is hidden
         if(reIndex) {
             Uri tmp = uri;
@@ -127,7 +128,10 @@ public final class VideoStore {
                 }
                 else {
                     String col = MediaStore.Files.FileColumns.DATA;
-                    cvR.put(col, tmp.toString());
+                    // Do not try to insert in MediaStore non local files otherwise it crashes on Android>=P
+                    if ("file".equals(uri.getScheme()))
+                        cvR.put(col, tmp.toString());
+                    if (DBG) Log.d(TAG,"requestIndexing: tmp.toString()=" + tmp.toString() + ",inserting in MediaStore cvR" + cvR);
                     context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
                 }
             }
@@ -136,19 +140,23 @@ public final class VideoStore {
         String action;
         if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
             action = ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE;
+            if (DBG) Log.d(TAG, "requestIndexing: not local, content, indexable -> NVP does the scan");
         }
         else {
             action = Intent.ACTION_MEDIA_SCANNER_SCAN_FILE;
             if(uri.getScheme()==null)
                 uri = Uri.parse("file://"+uri.toString());
+            if (DBG) Log.d(TAG, "requestIndexing: file -> MediaScanner does the scan");
         }
         Intent scanIntent = new Intent(action);
         scanIntent.setData(uri);
         scanIntent.setPackage(context.getPackageName());
         if(!UriUtils.isContentUri(uri)) { // doesn't work with content
+            if (DBG) Log.d(TAG, "requestIndexing: sendBroadcast scan on uri=" + uri);
             context.sendBroadcast(scanIntent);
         }
         else {
+            if (DBG) Log.d(TAG, "requestIndexing: NetworkScanner on uri=" + uri);
             NetworkScannerServiceVideo.startIfHandles(context, scanIntent);
         }
     }
