@@ -62,6 +62,7 @@
     <string name="tv_show_genre_adventure">Dobrodružný</string>
     <string name="tv_show_genre_animation">Animovaný</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_children">Dětské</string>
     <string name="tv_show_genre_comedy">Komedie</string>
     <string name="tv_show_genre_crime">Krimi</string>
     <string name="tv_show_genre_documentary">Dokument</string>
@@ -69,10 +70,18 @@
     <string name="tv_show_genre_family">Rodinný</string>
     <string name="tv_show_genre_fantasy">Fantasy</string>
     <string name="tv_show_genre_food">Jídlo</string>
+    <string name="tv_show_genre_game_show">Herní show</string>
+    <string name="tv_show_genre_home_garden">Dům a zahrada</string>
     <string name="tv_show_genre_horror">Horor</string>
+    <string name="tv_show_genre_mini_series">Mini-série</string>
     <string name="tv_show_genre_news">Zpravodajství</string>
+    <string name="tv_show_genre_reality">Reality-TV</string>
+    <string name="tv_show_genre_romance">Romantika</string>
     <string name="tv_show_genre_science_fiction">Sci-Fi</string>
+    <string name="tv_show_genre_soap">Soap opera</string>
+    <string name="tv_show_genre_special_interest">Speciální zájmy</string>
     <string name="tv_show_genre_sport">Sport</string>
+    <string name="tv_show_genre_suspense">Napětí</string>
     <string name="tv_show_genre_talk_show">Talkshow</string>
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Cestování</string>
@@ -84,5 +93,7 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Umělec</string>
+    <string name="scraping_in_progress">Probíhá získání informací</string>
+    <string name="remaining_videos_to_process">Zbývající mediální soubory ke zpracování:</string>
     <string name="video_store_import">Importování místních mediálních souborů</string>
 </resources>
