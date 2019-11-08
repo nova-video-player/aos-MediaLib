@@ -645,8 +645,14 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (path.startsWith("smb://"))
                 // 0: EXTERNAL_SMB_PATH, 1: EXTERNAL_UPNP_PATH -> "smb://" = 2
                 return getStorageId(2 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
-
-            Log.w(TAG, "path has no valid storage id: " + path);
+            // note that below is not really needed because nobody checks this
+            else if (path.startsWith("ftp://"))
+                return getStorageId(3 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
+            else if (path.startsWith("sftp://"))
+                return getStorageId(4 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
+            else if (path.startsWith("ftps://"))
+                return getStorageId(5 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
+            else Log.w(TAG, "path has no valid storage id: " + path);
             return 0;
         }
 
