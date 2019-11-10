@@ -228,24 +228,27 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
 
+        if (DBG) Log.d(TAG, "startForeground");
         startForeground(NOTIFICATION_ID, n);
 
         // forward startId to handler thread
         String action = intent.getAction();
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)|| ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)) {
+            if (DBG) Log.d(TAG, "ACTION_MEDIA_SCANNER_FINISHED " + intent.getData());
             // happens rarely, on boot and when inserting / ejecting sd cards
             removeAllMessages(mHandler);
             Message m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, startId, flags);
             mHandler.sendMessageDelayed(m, 1000);
             mNeedToInitScraper = true;
             ImportState.VIDEO.setAndroidScanning(false);
-            if (DBG) Log.d(TAG, "SCAN FINISHED " + intent.getData());
         } else if (Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)) {
+            if (DBG) Log.d(TAG, "ACTION_MEDIA_SCANNER_STARTED " + intent.getData());
             removeAllMessages(mHandler);
             ImportState.VIDEO.setAndroidScanning(true);
-            if (DBG) Log.d(TAG, "SCAN STARTED " + intent.getData());
-        } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action) || ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE.equals(action)) {
+        } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)) {
+            if (DBG) Log.d(TAG, "ACTION_VIDEO_SCANNER_METADATA_UPDATE " + intent.getData());
             // requests to update metadata are processed directly and don't impact importing
+            if (DBG) Log.d(TAG, "SCAN STARTED " + intent.getData());
             Message m = mHandler.obtainMessage(MESSAGE_UPDATE_METADATA, startId, flags, intent.getData());
             m.sendToTarget();
         } else if (ArchosMediaIntent.isVideoRemoveIntent(action)) {
@@ -256,7 +259,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             if (DBG) Log.d(TAG, "Import disabled due to shutdown");
             sActive = false;
         } else {
-            Log.w(TAG, "onStartCommand: intent not treated, notification will not get cancelled!");
+            Log.w(TAG, "onStartCommand: intent not treated, cancelling notification and stopForeground");
+            nm.cancel(NOTIFICATION_ID);
+            stopForeground(true);
         }
         return Service.START_NOT_STICKY;
     }
@@ -336,7 +341,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 VideoStoreImportService.this.getContentResolver().insert(VideoStoreInternal.HIDE_VOLUME, cv);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
-
             default:
                 Log.w(TAG, "ImportBgHandler - unknown msg.what: " + msg.what);
                 break;
