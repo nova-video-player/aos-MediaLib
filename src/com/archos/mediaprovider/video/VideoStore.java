@@ -83,9 +83,11 @@ public final class VideoStore {
         }
         if (DBG) Log.d(TAG, "requestIndexing: uri=" + uri + ", with reIndex=" + reIndex);
         //first check if video is hidden
-        if(reIndex) {
+        if(reIndex) { // reIndex is specifically asked
+            // this part handles the insertion into the VideoStore or MediaStore if the video is not known
             Uri tmp = uri;
             if ("file".equals(tmp.getScheme())) {
+                // remove file from uri thus tmp is a path (uri still starting with file://)
                 tmp = Uri.parse(uri.toString().substring("file://".length()));
             }
             String whereR = VideoStore.MediaColumns.DATA + " = ?";
@@ -94,13 +96,13 @@ public final class VideoStore {
             Cursor cursor = context.getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
                     new String[] { VideoStore.MediaColumns.DATA }, whereR, whereRArgs, null);
             
-            if (cursor.getCount() > 0) {
+            if (cursor.getCount() > 0) { // video present in VideoStore
                 final ContentValues cvR = new ContentValues(1);
                 String col = VideoStore.Video.VideoColumns.ARCHOS_HIDDEN_BY_USER;
                 cvR.put(col, 0);
                 context.getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cvR, whereR, whereRArgs);
             }
-            else {
+            else { // video not present in VideoStore -> check if video present in Android MediaStore
                 whereR = MediaStore.Files.FileColumns.DATA + " = ?";
                 cursor.close();
                 cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
@@ -109,6 +111,7 @@ public final class VideoStore {
                 final ContentValues cvR = new ContentValues(1);
 
                 if (cursor.getCount() > 0) {
+                    // video present in MediaStore
                     long newId = 0;
 
                     cursor.close();
@@ -126,23 +129,31 @@ public final class VideoStore {
                     cvR.put(col, newId);
                     context.getContentResolver().update(MediaStore.Files.getContentUri("external"), cvR, whereR, whereRArgs);
                 }
-                else {
+                else { // video not present in MediaStore nor in VideoStore, if local file insert it in MediaStore
                     String col = MediaStore.Files.FileColumns.DATA;
                     // Do not try to insert in MediaStore non local files otherwise it crashes on Android>=P
-                    if ("file".equals(uri.getScheme()))
+                    if ("file".equals(uri.getScheme())) {
+                        if (DBG) Log.d(TAG,"requestIndexing: file is local, add it to cvR for insertion in MediaStore");
                         cvR.put(col, tmp.toString());
+                    } else {
+                        if (DBG) Log.d(TAG,"requestIndexing: file not local, do not try to add it to cvR for insertion in MediaStore");
+                    }
+                    // in any case add the file to MediaStore since not present
                     if (DBG) Log.d(TAG,"requestIndexing: tmp.toString()=" + tmp.toString() + ",inserting in MediaStore cvR" + cvR);
                     context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
                 }
             }
             cursor.close();
         }
+        // time now to index the file
         String action;
         if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
+            // send intent to NVP to request indexing
             action = ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE;
-            if (DBG) Log.d(TAG, "requestIndexing: not local, content, indexable -> NVP does the scan");
+            if (DBG) Log.d(TAG, "requestIndexing: not local, content, indexable -> NVP does the scan i.e. VideoStoreImportService");
         }
         else {
+            // send intent to Android MediaScanner to request indexing
             action = Intent.ACTION_MEDIA_SCANNER_SCAN_FILE;
             if(uri.getScheme()==null)
                 uri = Uri.parse("file://"+uri.toString());
@@ -152,11 +163,12 @@ public final class VideoStore {
         scanIntent.setData(uri);
         scanIntent.setPackage(context.getPackageName());
         if(!UriUtils.isContentUri(uri)) { // doesn't work with content
-            if (DBG) Log.d(TAG, "requestIndexing: sendBroadcast scan on uri=" + uri);
+            if (DBG) Log.d(TAG, "requestIndexing: not content:// sendBroadcast scan on uri=" + uri);
+            // if ArchosMediaIntent should be picked up by VideoStoreImportService
             context.sendBroadcast(scanIntent);
         }
-        else {
-            if (DBG) Log.d(TAG, "requestIndexing: NetworkScanner on uri=" + uri);
+        else { // if this is content:// then go with NetworkScannerServiceVideo
+            if (DBG) Log.d(TAG, "requestIndexing: content:// go with NetworkScannerServiceVideo (startIfHandles) on uri=" + uri);
             NetworkScannerServiceVideo.startIfHandles(context, scanIntent);
         }
     }
