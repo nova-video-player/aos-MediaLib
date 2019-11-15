@@ -63,7 +63,7 @@ android {
         myCmd.add("native_libnativehelper")
         myCmd.add("native_avos_full")
         myCmd.add("native_torrentd")
-        myCmd.add("trakt-java")
+        //myCmd.add("trakt-java")
         commandLine myCmd
     }
 
