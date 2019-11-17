@@ -17,10 +17,14 @@ package com.archos.mediaprovider;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
 
 public class NetworkScanner {
+
+    private static final boolean DBG = false;
+    private static final String TAG = "NetworkScanner";
 
     /** sends broadcast that triggers mediacenter-video network scanning */
     public static void scanVideos(Context context, String location) {
@@ -31,6 +35,7 @@ public class NetworkScanner {
     /** sends broadcast that triggers mediacenter-video network scanning */
     public static void scanVideos(Context context, Uri uri) {
         if (context != null && uri != null) {
+            if (DBG) Log.d(TAG, "scanVideos uri:" + uri);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE, uri);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             context.sendBroadcast(intent);
@@ -39,13 +44,16 @@ public class NetworkScanner {
 
     /** sends broadcast that triggers mediacenter-video removal of files */
     public static void removeVideos(Context context, String location) {
-        if (location != null)
+        if (location != null) {
+            if (DBG) Log.d(TAG, "scanVideos location:" + location);
             removeVideos(context, Uri.parse(location));
+        }
     }
 
     /** sends broadcast that triggers mediacenter-video removal of files */
     public static void removeVideos(Context context, Uri uri) {
         if (context != null && uri != null) {
+            if (DBG) Log.d(TAG, "removeVideos uri:" + uri);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_REMOVE_FILE, uri);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             context.sendBroadcast(intent);
