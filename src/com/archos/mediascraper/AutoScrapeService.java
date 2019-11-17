@@ -61,6 +61,8 @@ public class AutoScrapeService extends Service {
     private static boolean DBG = false;
 
     static boolean sIsScraping = false;
+    static int sNumberOfFilesScraped = 0;
+    static int sNumberOfFilesNotScraped = 0;
     static int sNumberOfFilesRemainingToProcess = 0;
     public static String KEY_ENABLE_AUTO_SCRAP ="enable_auto_scrap_key";
     private final static String[] SCRAPER_ACTIVITY_COLS = {
@@ -74,7 +76,7 @@ public class AutoScrapeService extends Service {
             VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID
     };
     private Thread mThread;
-    private boolean restartOnNextRound;
+    private boolean restartOnNextRound = false;
     private AutoScraperBinder mBinder;
     private Thread mExportingThread;
     private Handler mHandler;
@@ -240,6 +242,10 @@ public class AutoScrapeService extends Service {
                     do{
 
                         mNetworkOrScrapErrors = 0;
+                        sNumberOfFilesScraped = 0;
+                        sNumberOfFilesRemainingToProcess = 0;
+                        sNumberOfFilesNotScraped = 0;
+
                         restartOnNextRound = false;
 
                         Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED);
@@ -262,6 +268,7 @@ public class AutoScrapeService extends Service {
                                 }
                                 String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
 
+                                int numberNotScraped = 0;
                                 Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                                 Uri scrapUri = title != null && !title.isEmpty() ? Uri.parse("/" + title + ".mp4") : fileUri;
                                 long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
@@ -302,6 +309,7 @@ public class AutoScrapeService extends Service {
                                         }
                                         //found NFO thus still no error but scraped
                                         notScraped = false;
+                                        sNumberOfFilesScraped++;
                                         noScrapeError = true;
                                         if (tags.getPosters() != null&&DBG) {
                                             if (DBG) Log.d(TAG, "posters : " + tags.getPosters().size());
@@ -370,6 +378,7 @@ public class AutoScrapeService extends Service {
                                         DeleteFileCallback.DO_NOT_DELETE.clear();
                                         // result exists thus scraped and no error for now
                                         notScraped = false;
+                                        sNumberOfFilesScraped++;
                                         noScrapeError = true;
                                         if (result.tag.getTitle() != null)
                                             if (DBG) Log.d(TAG, "info " + result.tag.getTitle());
@@ -392,7 +401,9 @@ public class AutoScrapeService extends Service {
                                         // for tvshow if search returns ScrapeStatus.OKAY but in details it returns ScrapeStaus.ERROR_PARSER it is not counted as a scraping error
                                         // this allows the video to be marked as not to be rescraped
                                         notScraped = true;
+                                        numberNotScraped++;
                                         noScrapeError = result.status != ScrapeStatus.ERROR && result.status != ScrapeStatus.ERROR_NETWORK && result.status != ScrapeStatus.ERROR_NO_NETWORK;
+                                        if (noScrapeError) sNumberOfFilesNotScraped++;
                                     }
                                 }
 
@@ -413,11 +424,13 @@ public class AutoScrapeService extends Service {
                                 if (DBG) Log.d(TAG,"remaining=" + sNumberOfFilesRemainingToProcess + ", mNetworkOrScrapErrors=" + mNetworkOrScrapErrors);
 
                             } while (cursor.moveToNext()
-                                    &&isEnable(AutoScrapeService.this) && (sNumberOfFilesRemainingToProcess > 0));
+                                    &&isEnable(AutoScrapeService.this));
                             sIsScraping = false;
                             if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
                                 if(DBG) Log.d(TAG, "no internet or scraper errors, stop iterating");
+                            } else {
+                                if (sNumberOfFilesScraped + sNumberOfFilesNotScraped >= cursor.getCount()) restartOnNextRound = false;
                             }
                         }
                         cursor.close();
