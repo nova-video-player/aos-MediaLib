@@ -135,9 +135,10 @@ public class VideoProvider extends ContentProvider {
         PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(mPreferencechChangeListener);
 
         try {
+            if (DBG) Log.d(TAG, "try to VideoStoreImportService.start");
             VideoStoreImportService.start(context);
         }catch(java.lang.IllegalStateException e){
-
+            Log.w(TAG, "VideoStoreImportService.start failed!");
         }
         // handles connectivity changes
         AppState.addOnForeGroundListener(mForeGroundListener);

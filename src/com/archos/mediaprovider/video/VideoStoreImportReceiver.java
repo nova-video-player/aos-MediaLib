@@ -39,9 +39,11 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (DBG) Log.d(TAG, "onReceive:" + intent);
         if (AppState.isForeGround()) {
+            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent");
             // start network scan / removal service
             NetworkScannerServiceVideo.startIfHandles(context, intent);
             // in addition and all other cases inform import service about the event
+            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent");
             Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
             serviceIntent.setAction(intent.getAction());
             serviceIntent.setData(intent.getData());

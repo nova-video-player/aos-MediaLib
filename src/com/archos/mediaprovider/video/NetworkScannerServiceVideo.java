@@ -122,15 +122,19 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         Uri data = broadcast.getData();
         if ((ArchosMediaIntent.isVideoScanIntent(action) || ArchosMediaIntent.isVideoRemoveIntent(action))
                 && willBeScanned(data)) {
-            if (DBG) Log.d(TAG, "startIfHandles");
+            if (DBG) Log.d(TAG, "startIfHandles is true: sending intent to NetworkScannerServiceVideo");
             Intent serviceIntent = new Intent(context, NetworkScannerServiceVideo.class);
             serviceIntent.setAction(action);
             serviceIntent.setData(data);
             if(broadcast.getExtras()!=null)
                 serviceIntent.putExtras(broadcast.getExtras()); //in case we have an extra... such as "recordLogExtra"
-            if (AppState.isForeGround())  ContextCompat.startForegroundService(context, serviceIntent);
+            if (AppState.isForeGround()) {
+                if (DBG) Log.d(TAG, "startIfHandles: apps is foreground startForegroundService and pass intent to self");
+                ContextCompat.startForegroundService(context, serviceIntent);
+            }
             return true;
         }
+        if (DBG) Log.d(TAG, "startIfHandles is false: do nothing");
         return false;
     }
     public static boolean willBeScanned(Uri uri){ //returns whether or not a video will be scanned by NetworkScannerServiceVideo
@@ -282,12 +286,14 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         String key;
         switch (msg.what) {
             case MESSAGE_KILL:
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_KILL");
                 if (msg.arg1 != -1)
                     stopSelf(msg.arg1);
                 break;
             case MESSAGE_DO_SCAN:
                 uri = (Uri) msg.obj;
                 key = uri.toString();
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_DO_SCAN " + uri);
                 doScan(uri);
                 mScanRequests.remove(key);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
@@ -295,11 +301,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             case MESSAGE_DO_UNSCAN:
                 uri = (Uri) msg.obj;
                 key = uri.toString();
+                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_DO_UNSCAN " + uri);
                 doRemoveFiles(uri);
                 mUnScanRequests.remove(key);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
             default:
+                if (DBG) Log.d(TAG, "handleMessage: message not found!");
                 break;
         }
         return true;
@@ -426,6 +434,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 if (f.isDirectory()&&!path.endsWith("/"))
                     path = path + "/";
             }
+            if (DBG) Log.d(TAG, "doScan: path identified is " + path);
             // query database for all files we have already in that directory
             String[] selectionArgs = new String[] { path };
             Cursor prescan = cr.query(VideoStoreInternal.FILES_SCANNED, PrescanItem.PROJECTION, IN_FOLDER_SELECT, selectionArgs, null);
@@ -437,7 +446,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                     if(upnpUri!=null&&!item._data.startsWith(upnpUri)) { // if this isn't in folder about to be listed, we won't need to delete it
                         item.needsDelete = false;
                     }
-
+                    if (DBG) Log.d(TAG, "doScan: prescan item " + item);
                     if(item.unique_id!=null && !item.unique_id.isEmpty())
                         prescanItemsMap.put(item.unique_id, item);
                     else
@@ -565,13 +574,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (ArchosMediaFile.isHiddenFile(file)) return;
             if (mBlacklist.isBlacklisted(file.getUri())) return;
 
-            if (DBG) Log.d(TAG, "File:" + file.getUri().toString());
+            if (DBG) Log.d(TAG, "FileVisitListener.onFile: File " + file.getUri().toString());
             String p = file.getUri().toString();
             PrescanItem existingItem = null;
             String uniqueId = "";
             //special case for upnp : use unique id
             if(file instanceof UpnpFile2){
-                if (DBG) Log.d(TAG, "File is upnp " + ((UpnpFile2)file).getUniqueHash());
+                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File is upnp " + ((UpnpFile2)file).getUniqueHash());
                 uniqueId = ((UpnpFile2)file).getUniqueHash();
                 existingItem = mPrescanItemsMap.get(((UpnpFile2)file).getUniqueHash());
             }
@@ -579,28 +588,27 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 existingItem = mPrescanItemsMap.get(p);
                 uniqueId = p;
             }
-
+            if (DBG) Log.d(TAG, "FileVisitListener.onFile: existingItem " + existingItem);
             if ((existingItem) != null) {
                 // file was already scanned, it does not need to be deleted
                 existingItem.needsDelete = false;
-                if (DBG) Log.d(TAG, "File isn't new:" + file.getName());
+                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File isn't new:" + file.getName());
                 // check if it is untouched or needs an update
                 long knownDate = existingItem.date_modified;
                 long newDate = file.lastModified() / 1000;
                 if (Math.abs(knownDate - newDate) > 3 || !file.getUri().toString().equals(existingItem._data)) {
-                    if (DBG) Log.d(TAG, "Updating:" + file.getName());
+                    if (DBG) Log.d(TAG, "FileVisitListener.onFile: Updating " + file.getName());
                     // file has changed - add the update
                     mBulkHandler.addUpdate(new FileScanInfo(file, mStorageId),
                             existingItem._id);
                 }
             } else if(!mAlreadyAddedUpnpFiles.contains(uniqueId)){
                 // file is new, add as insert
-                if (DBG) Log.d(TAG, "File is new:" + file.getUri().toString());
+                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File is new " + file.getUri().toString());
                 mAlreadyAddedUpnpFiles.add(uniqueId); // needed because main difference with usual indexing : a same file can be found twice in one round
                 mBulkHandler.addInsert(new FileScanInfo(file, mStorageId), mServerId);
             }
-            else
-            if (DBG) Log.d(TAG, "Filealready scanned :" + file.getName());
+            else if (DBG) Log.d(TAG, "FileVisitListener.onFile: File already scanned " + file.getName());
             // nfo are now handled in autoscrapeservice
         }
 
@@ -704,6 +712,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
 
         public void addInsert(FileScanInfo insert, long serverId) {
+            if (DBG) Log.d(TAG, "addInsert: adding in VideoStore and calling executor "+ insert);
             ContentValues item = insert.toContentValues();
             item.put(VideoStore.Files.FileColumns.ARCHOS_SMB_SERVER, Long.valueOf(serverId));
             mInsertExecutor.add(item);

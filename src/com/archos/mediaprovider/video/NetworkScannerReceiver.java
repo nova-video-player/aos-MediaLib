@@ -54,6 +54,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
     private static synchronized void add(Uri uri) {
         if (uri == null)
             return;
+        if (DBG) Log.d(TAG, "add uri:" + uri);
         String path = uri.toString();
         sCurrentlyScanned.add(path);
     }
@@ -61,6 +62,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
     private static synchronized void remove(Uri uri) {
         if (uri == null)
             return;
+        if (DBG) Log.d(TAG, "remove uri:" + uri);
         String path = uri.toString();
         sCurrentlyScanned.remove(path);
     }
