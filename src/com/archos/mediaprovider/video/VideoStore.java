@@ -140,7 +140,11 @@ public final class VideoStore {
                     }
                     // in any case add the file to MediaStore since not present
                     if (DBG) Log.d(TAG,"requestIndexing: tmp.toString()=" + tmp.toString() + ",inserting in MediaStore cvR" + cvR);
-                    context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
+                    try {
+                        context.getContentResolver().insert(MediaStore.Files.getContentUri("external"), cvR);
+                    } catch (IllegalArgumentException e) {
+                        Log.e(TAG, "requestIndexing: caught IllegalArgumentException ", e);
+                    }
                 }
             }
             cursor.close();
