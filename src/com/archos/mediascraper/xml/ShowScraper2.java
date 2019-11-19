@@ -248,7 +248,7 @@ public class ShowScraper2 extends BaseScraper2 {
             allEpisodes = new HashMap<>();
             showTags = new ShowTags();
 
-            TheTvdb theTvdb = new TheTvdb(mContext.getString(R.string.tvdb_api_2_key));
+            MyTheTVdb theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
             try {
                 // series
                 if (!basicShow && !basicEpisode) {
