@@ -83,6 +83,8 @@ public class ShowScraper2 extends BaseScraper2 {
     protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
     static Cache cache;
 
+    static MyTheTVdb theTvdb = null;
+
     public ShowScraper2(Context context) {
         super(context);
         // ensure cache is initialized
@@ -159,7 +161,8 @@ public class ShowScraper2 extends BaseScraper2 {
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
         extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
 
-        MyTheTVdb theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
+        if (theTvdb == null)
+            theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
         try {
             final int SERIES_NOT_PERMITTED_ID = 313081;
 
@@ -248,7 +251,8 @@ public class ShowScraper2 extends BaseScraper2 {
             allEpisodes = new HashMap<>();
             showTags = new ShowTags();
 
-            MyTheTVdb theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
+            if (theTvdb == null)
+                theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
             try {
                 // series
                 if (!basicShow && !basicEpisode) {
