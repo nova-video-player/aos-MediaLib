@@ -35,7 +35,7 @@ import java.util.Locale;
 
 public class ScraperImage {
 
-        private static final String TAG = "ScraperImage";
+    private static final String TAG = "ScraperImage";
     private static final boolean DBG = false;
     private static final boolean DBG2 = false;
 
@@ -396,7 +396,13 @@ public class ScraperImage {
     private static final MultiLock<String> sLock = new MultiLock<String>();
 
     public final boolean download(Context context) {
-       return download(context, false, 0, 0, false);
+        // fallback to thumbnail if there is no full poster/backdrop e.g. when thetvdb is fubar
+       if(!download(context, false, 0, 0, false, false)) {
+           Log.w(TAG, "Failed downloading large image " + mLargeUrl + ", downloading thumb instead " + mThumbUrl);
+           Log.w(TAG, "\t" + mLargeFile + "/" + mThumbFile);
+           return download(context, true, 0, 0, false, true);
+       }
+       return true;
     }
 
     /**
@@ -404,20 +410,24 @@ public class ScraperImage {
      * Don't use in regular code.
      */
     public final void downloadFake(Context context) {
-        download(context, false, 0, 0, true);
+        download(context, false, 0, 0, true, false);
     }
 
     public final void downloadThumb(Context context, int maxWidth, int maxHeight) {
-        download(context, true /* thumb */, maxWidth, maxHeight, false /* fake */);
+        download(context, true /* thumb */, maxWidth, maxHeight, false /* fake */, false);
     }
 
-    private boolean download(Context context, boolean thumb, int maxWidth, int maxHeight, boolean fake) {
+    private boolean download(Context context, boolean thumb, int maxWidth, int maxHeight, boolean fake, boolean thumbAsMain) {
         String file = mLargeFile;
         String url = mLargeUrl;
         boolean success = false ;
         if (thumb) {
             file = mThumbFile;
             url = mThumbUrl == null ? mLargeUrl : mThumbUrl;
+        }
+        if(thumb && thumbAsMain) {
+            Log.d(TAG, "Downloading thumb as main");
+            file = mLargeFile;
         }
 
         String lockString = file == null ? "null" : file;

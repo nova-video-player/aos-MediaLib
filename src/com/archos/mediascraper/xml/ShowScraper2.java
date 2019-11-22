@@ -368,7 +368,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
                 // posters
                 List<Pair<SeriesImageQueryResult, String>> tempPosters = new ArrayList<>();
-                if (!basicEpisode) {
+                //if (!basicEpisode) {
                     Response<SeriesImageQueryResultResponse> postersResponse = theTvdb.series()
                         .imagesQuery(showId, "poster", null, null, resultLanguage)
                         .execute();
@@ -395,7 +395,7 @@ public class ShowScraper2 extends BaseScraper2 {
                             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
-                }
+                //}
                 if (!basicShow) {
                     Response<SeriesImageQueryResultResponse> seasonsResponse = theTvdb.series()
                         .imagesQuery(showId, "season", null, null, resultLanguage)
@@ -445,6 +445,9 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                     posters.add(image);
                 }
+                ScraperImage genericImage = null;
+                if(!posters.isEmpty())
+                    genericImage = posters.get(0);
 
                 // episodes
                 if (!basicShow && !basicEpisode) {
@@ -469,6 +472,8 @@ public class ShowScraper2 extends BaseScraper2 {
                                 episodeTags.setSeason(episode.airedSeason);
                                 episodeTags.setShowTags(showTags);
                                 episodeTags.setEpisodePicture(episode.filename, mContext);
+                                episodeTags.setPosters(genericImage.asList());
+
                                 if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
                                     if (globalEpisodes == null) {
                                         globalEpisodes = new SparseArray<>();
