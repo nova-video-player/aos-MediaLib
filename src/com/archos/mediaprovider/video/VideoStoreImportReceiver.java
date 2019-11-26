@@ -30,8 +30,9 @@ import com.archos.mediaprovider.ArchosMediaIntent;
  */
 public class VideoStoreImportReceiver extends BroadcastReceiver {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoStoreImportReceiver";
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean LOCAL_DBG = true;
+    //private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean DBG = true;
 
     public VideoStoreImportReceiver() {
     }
@@ -40,24 +41,12 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (DBG) Log.d(TAG, "onReceive:" + intent);
         if (AppState.isForeGround()) {
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent");
+            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent if intent supported");
             // start network scan / removal service
             NetworkScannerServiceVideo.startIfHandles(context, intent);
             // in addition and all other cases inform import service about the event but only if this is something we handle
-            String action = intent.getAction();
-            if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)
-                    || ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)
-                    || Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)
-                    || ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)
-                    || ArchosMediaIntent.isVideoRemoveIntent(action)
-                    || Intent.ACTION_SHUTDOWN.equals(action)) {
-                if (DBG)
-                    Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent");
-                Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
-                serviceIntent.setAction(intent.getAction());
-                serviceIntent.setData(intent.getData());
-                ContextCompat.startForegroundService(context, serviceIntent);
-            }
+            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent if intent supported");
+            VideoStoreImportService.startIfHandles(context, intent);
         }
     }
 
