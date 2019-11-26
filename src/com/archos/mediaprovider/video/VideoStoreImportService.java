@@ -102,6 +102,30 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         super.finalize();
     }
 
+    public static boolean startIfHandles(Context context, Intent broadcast) {
+        String action = broadcast.getAction();
+        if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)
+                || ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)
+                || Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)
+                || ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)
+                || ArchosMediaIntent.isVideoRemoveIntent(action)
+                || Intent.ACTION_SHUTDOWN.equals(action)) {
+            if (DBG) Log.d(TAG, "startIfHandles is true: sending intent to VideoStoreImportService");
+            Intent serviceIntent = new Intent(context, NetworkScannerServiceVideo.class);
+            serviceIntent.setAction(action);
+            serviceIntent.setData(broadcast.getData());
+            if(broadcast.getExtras()!=null)
+                serviceIntent.putExtras(broadcast.getExtras()); //in case we have an extra... such as "recordLogExtra"
+            if (AppState.isForeGround()) {
+                if (DBG) Log.d(TAG, "startIfHandles: apps is foreground startForegroundService and pass intent to self");
+                ContextCompat.startForegroundService(context, serviceIntent);
+            }
+            return true;
+        }
+        if (DBG) Log.d(TAG, "startIfHandles is false: do nothing");
+        return false;
+    }
+
     @Override
     public void onCreate() {
 
@@ -232,7 +256,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         startForeground(NOTIFICATION_ID, n);
 
         // forward startId to handler thread
-        // /!\ if an action is added CHECK in VideoStoreImportReceiver if action is listed /!\
+        // /!\ if an action is added CHECK in startIfHandles if action is listed /!\
         String action = intent.getAction();
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)|| ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)) {
             if (DBG) Log.d(TAG, "ACTION_MEDIA_SCANNER_FINISHED " + intent.getData());
