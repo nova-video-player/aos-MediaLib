@@ -232,6 +232,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         startForeground(NOTIFICATION_ID, n);
 
         // forward startId to handler thread
+        // /!\ if an action is added CHECK in VideoStoreImportReceiver if action is listed /!\
         String action = intent.getAction();
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)|| ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)) {
             if (DBG) Log.d(TAG, "ACTION_MEDIA_SCANNER_FINISHED " + intent.getData());
