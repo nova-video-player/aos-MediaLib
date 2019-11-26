@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat;
 
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediaprovider.ArchosMediaCommon;
+import com.archos.mediaprovider.ArchosMediaIntent;
 
 /**
  * receiver for events that trigger mediastore import
@@ -42,12 +43,21 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
             if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent");
             // start network scan / removal service
             NetworkScannerServiceVideo.startIfHandles(context, intent);
-            // in addition and all other cases inform import service about the event
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent");
-            Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
-            serviceIntent.setAction(intent.getAction());
-            serviceIntent.setData(intent.getData());
-            ContextCompat.startForegroundService(context, serviceIntent);
+            // in addition and all other cases inform import service about the event but only if this is something we handle
+            String action = intent.getAction();
+            if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)
+                    || ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)
+                    || Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)
+                    || ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)
+                    || ArchosMediaIntent.isVideoRemoveIntent(action)
+                    || Intent.ACTION_SHUTDOWN.equals(action)) {
+                if (DBG)
+                    Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent");
+                Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
+                serviceIntent.setAction(intent.getAction());
+                serviceIntent.setData(intent.getData());
+                ContextCompat.startForegroundService(context, serviceIntent);
+            }
         }
     }
 
