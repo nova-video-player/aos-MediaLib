@@ -16,13 +16,16 @@
 package com.archos.mediacenter.utils;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.WeakHashMap;
 
 /**
@@ -98,9 +101,25 @@ public class AppState {
                     }
                 }
 
+                private boolean isActuallyForeground(Context context) {
+                    ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                    List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
+                    if (runningAppProcesses != null) {
+                        int importance = runningAppProcesses.get(0).importance;
+                        // higher importance has lower number (?)
+                        return importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+                    }
+                    return false;
+                }
+
                 @Override
                 public void onActivityStarted(Activity activity) {
                     if (DBG) Log.d(TAG, "onActivityStarted:" + activity);
+
+                    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
+                        if (!isActuallyForeground(activity))
+                            return;
+                    }
 
                     int activityKey = System.identityHashCode(activity);
                     synchronized (sStartedActivities) {
