@@ -280,15 +280,20 @@ public class ShowScraper2 extends BaseScraper2 {
                                     showTags.setPlot(globalSeries.overview);
                                 if (series.seriesName == null)
                                     showTags.setTitle(globalSeries.seriesName);
+                                else {
+                                    if (DBG) Log.d(TAG,"ScrapeDetailResult globalSeries.seriesName is null for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
+                                    if (showTags.getTitle() == null) showTags.setTitle("");
+                                }
                             }
                             else {
-                                if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER");
+                                if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
+                                if (showTags.getTitle() == null) showTags.setTitle("");
                                 return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                             }
                         }
                     }
                     else {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER");
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER for showId=" + showId);
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                 }
