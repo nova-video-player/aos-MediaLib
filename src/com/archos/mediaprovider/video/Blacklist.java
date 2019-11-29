@@ -70,7 +70,7 @@ public class Blacklist {
             "/com.facebook.katana",
             "/com.facebook.orca",
             "/Movies/Instagram", "/Movies/Messenger",
-            "/Movies/Twitter",
+            "/Movies/Twitter", "/tencent"
     };
 
     public boolean isBlacklisted(Uri file) {
