@@ -143,9 +143,10 @@ public class ShowScraper2 extends BaseScraper2 {
 
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
+        if (DBG) Log.d(TAG, "getMatches2");
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
-            Log.e(TAG, "bad search info: " + info == null ? "null" : "movie in show scraper");
+            Log.e(TAG, "getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
             if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR");
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
@@ -165,7 +166,7 @@ public class ShowScraper2 extends BaseScraper2 {
             theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
         try {
             final int SERIES_NOT_PERMITTED_ID = 313081;
-
+            if (DBG) Log.d(TAG, "getMatches2: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
             Response<SeriesResultsResponse> response = theTvdb.search()
                 .series(searchInfo.getShowName(), null, null, null, language)
                 .execute();
@@ -190,6 +191,7 @@ public class ShowScraper2 extends BaseScraper2 {
             }
 
             if (results.isEmpty() && !language.equals("en")) {
+                if (DBG) Log.d(TAG, "getMatches2: result is empty for " + language + " thus quering thetvdb for " + searchInfo.getShowName() + " in en");
                 Response<SeriesResultsResponse> globalResponse = theTvdb.search()
                     .series(searchInfo.getShowName(), null, null, null, "en")
                     .execute();
@@ -218,7 +220,6 @@ public class ShowScraper2 extends BaseScraper2 {
             Log.e(TAG, "getMatches2", e);
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
-
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
         if (DBG)
             if (results.isEmpty())
@@ -232,6 +233,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
+        if (DBG) Log.d(TAG, "getDetailsInternal");
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
         String resultLanguage = result.getLanguage();
