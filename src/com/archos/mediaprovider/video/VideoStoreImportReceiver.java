@@ -30,9 +30,8 @@ import com.archos.mediaprovider.ArchosMediaIntent;
  */
 public class VideoStoreImportReceiver extends BroadcastReceiver {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoStoreImportReceiver";
-    private static final boolean LOCAL_DBG = true;
-    //private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
-    private static final boolean DBG = true;
+    private static final boolean LOCAL_DBG = false;
+    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
 
     public VideoStoreImportReceiver() {
     }
