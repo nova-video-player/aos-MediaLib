@@ -925,8 +925,14 @@ public class ScraperProvider extends ContentProvider {
 
         if(DBG) Log.d(TAG, "Query handling ended.");
         SQLiteDatabase db = mDbHolder.get();
-        c = qb.query(db, projection, selection, selectionArgs, null,
-                null, sortOrder);
+        // TODO: MARC put a try/catch but this needs fixing!
+        try {
+            c = qb.query(db, projection, selection, selectionArgs, null,
+                    null, sortOrder);
+        } catch (Throwable t) {
+            Log.e(TAG, "query: qb.query failed with projection=" + projection + ", selection=" + selection + ", selectionArgs=" + selectionArgs, t);
+            c = null;
+        }
         if (c != null) {
             // Tell the cursor what uri to watch, so it knows when its source data changes
             c.setNotificationUri(mCr, uri);
