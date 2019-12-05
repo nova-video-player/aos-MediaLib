@@ -129,8 +129,8 @@ dependencies {
     // no host discovery if switch from 2.1.1 to 2.1.2 supposed to be fixed in 2.1.1 https://github.com/4thline/cling/issues/164
     api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
     implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
-    // official version of cling jetty depedency is 8.1.22.v20160922, pushed jetty to latest 8.2.x version but it is now 9.4.x
-    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.2.0.v20160908'
-    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.2.0.v20160908'
-    implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.2.0.v20160908'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
+    implementation group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.25'
 }
