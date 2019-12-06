@@ -225,13 +225,14 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     @Override
     public void onDestroy() {
         if (DBG) Log.d(TAG, "onDestroy");
-        // hide notification
-        nm.cancel(NOTIFICATION_ID);
         AppState.removeOnForeGroundListener(mForeGroundListener);
         mForeGroundListener = null;
         // stop handler thread
         mHandlerThread.quit();
         mImporter.destroy();
+        // hide notification
+        nm.cancel(NOTIFICATION_ID);
+        stopForeground(true);
     }
 
     /** wether it's ok do do an import now, will mark db dirty if not */
