@@ -228,6 +228,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         if (DBG) Log.d(TAG, "onDestroy");
         // remove handler
         mHandlerThread.quit();
+        nm.cancel(NOTIFICATION_ID);
+        stopForeground(true);
     }
 
     @Override

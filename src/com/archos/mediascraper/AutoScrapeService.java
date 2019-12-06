@@ -230,9 +230,10 @@ public class AutoScrapeService extends Service {
     }
     @Override
     public void onDestroy() {
-        //nm.cancel(NOTIFICATION_ID);
         super.onDestroy();
         if(DBG) Log.d(TAG, "onDestroy() " + this);
+        nm.cancel(NOTIFICATION_ID);
+        stopForeground(true);
     }
 
     /**
