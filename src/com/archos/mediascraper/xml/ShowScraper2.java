@@ -174,7 +174,7 @@ public class ShowScraper2 extends BaseScraper2 {
                 for (Series series : response.body().data) {
                     if (series.id != SERIES_NOT_PERMITTED_ID) {
                         // Remove any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
-                        if (! series.banner.endsWith("missing/series.jpg")) {
+                        if (! series.banner.endsWith("missing/series.jpg") && ! series.banner.endsWith("missing/movie.jpg")) {
                             if (DBG) Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
                             SearchResult result = new SearchResult();
                             result.setId(series.id);
