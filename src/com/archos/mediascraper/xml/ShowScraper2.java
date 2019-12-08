@@ -449,7 +449,6 @@ public class ShowScraper2 extends BaseScraper2 {
                     image.setThumbUrl(BANNERS_URL + poster.first.thumbnail);
                     image.setLargeUrl(BANNERS_URL + poster.first.fileName);
                     image.generateFileNames(mContext);
-                    if (DBG) Log.d(TAG, "getDetailsInternal: poster.first.subKey " + poster.first.subKey);
                     try {
                         image.setSeason(poster.first.keyType.equals("season") ? Integer.parseInt(poster.first.subKey) : -1);
                     } catch (Throwable t) {
