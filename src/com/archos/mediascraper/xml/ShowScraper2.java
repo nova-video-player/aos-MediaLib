@@ -173,15 +173,21 @@ public class ShowScraper2 extends BaseScraper2 {
             if (response.isSuccessful() && response.body() != null) {
                 for (Series series : response.body().data) {
                     if (series.id != SERIES_NOT_PERMITTED_ID) {
-                        SearchResult result = new SearchResult();
-                        result.setId(series.id);
-                        result.setLanguage(language);
-                        result.setTitle(series.seriesName);
-                        result.setScraper(this);
-                        result.setFile(searchInfo.getFile());
-                        result.setExtra(extra);
-                        if (maxItems < 0 || results.size() < maxItems)
-                            results.add(result);
+                        // Remove any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
+                        if (! series.banner.endsWith("missing/series.jpg")) {
+                            if (DBG) Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
+                            SearchResult result = new SearchResult();
+                            result.setId(series.id);
+                            result.setLanguage(language);
+                            result.setTitle(series.seriesName);
+                            result.setScraper(this);
+                            result.setFile(searchInfo.getFile());
+                            result.setExtra(extra);
+                            if (maxItems < 0 || results.size() < maxItems)
+                                results.add(result);
+                        } else {
+                            if (DBG) Log.d(TAG, "getMatches2: discard " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                        }
                     }
                 }
             }
