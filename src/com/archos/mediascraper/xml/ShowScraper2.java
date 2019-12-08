@@ -158,6 +158,10 @@ public class ShowScraper2 extends BaseScraper2 {
                 + " e:" + searchInfo.getEpisode());
 
         List<SearchResult> results = new LinkedList<>();
+        List<SearchResult> resultsNumericSlug = new LinkedList<>();
+        List<SearchResult> resultsNoBanner = new LinkedList<>();
+        List<SearchResult> resultsProbable = new LinkedList<>();
+
         Bundle extra = new Bundle();
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
         extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
@@ -173,23 +177,38 @@ public class ShowScraper2 extends BaseScraper2 {
             if (response.isSuccessful() && response.body() != null) {
                 for (Series series : response.body().data) {
                     if (series.id != SERIES_NOT_PERMITTED_ID) {
-                        // Remove any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
-                        if (! series.banner.endsWith("missing/series.jpg") && ! series.banner.endsWith("missing/movie.jpg")) {
-                            if (DBG) Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
-                            SearchResult result = new SearchResult();
-                            result.setId(series.id);
-                            result.setLanguage(language);
-                            result.setTitle(series.seriesName);
-                            result.setScraper(this);
-                            result.setFile(searchInfo.getFile());
-                            result.setExtra(extra);
-                            if (maxItems < 0 || results.size() < maxItems)
-                                results.add(result);
-                        } else {
-                            if (DBG) Log.d(TAG, "getMatches2: discard " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                        SearchResult result = new SearchResult();
+                        result.setId(series.id);
+                        result.setLanguage(language);
+                        result.setTitle(series.seriesName);
+                        result.setScraper(this);
+                        result.setFile(searchInfo.getFile());
+                        result.setExtra(extra);
+                        if (maxItems < 0 || results.size() < maxItems) {
+                            // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
+                            if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
+                                if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                                resultsNoBanner.add(result);
+                            } else {
+                                if (DBG) Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
+                                if (series.slug.matches("^[0-9]+$")) {
+                                    // Put in lower priority any entry that has numeric slug
+                                    if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                                    resultsNumericSlug.add(result);
+                                } else {
+                                    if (DBG) Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                                    resultsProbable.add(result);
+                                }
+                            }
                         }
                     }
                 }
+                if (resultsProbable.size()>0)
+                    results.addAll(resultsProbable);
+                if (resultsNumericSlug.size()>0)
+                    results.addAll(resultsNumericSlug);
+                if (resultsNoBanner.size()>0)
+                    results.addAll(resultsNoBanner);
             }
             else if (response.code() != 404) {
                 if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
