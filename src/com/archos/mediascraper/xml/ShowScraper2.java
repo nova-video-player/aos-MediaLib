@@ -503,7 +503,8 @@ public class ShowScraper2 extends BaseScraper2 {
                                 episodeTags.setSeason(episode.airedSeason);
                                 episodeTags.setShowTags(showTags);
                                 episodeTags.setEpisodePicture(episode.filename, mContext);
-                                episodeTags.setPosters(genericImage.asList());
+                                if (genericImage != null)
+                                    episodeTags.setPosters(genericImage.asList());
 
                                 if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
                                     if (globalEpisodes == null) {
