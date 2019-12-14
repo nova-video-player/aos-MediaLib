@@ -149,6 +149,7 @@ public class ScraperImage {
         String lUrl = cur.getString(cur.getColumnIndexOrThrow(type.largeUrlColumn));
         String tFile = cur.getString(cur.getColumnIndexOrThrow(type.thumbFileColumn));
         String tUrl = cur.getString(cur.getColumnIndexOrThrow(type.thumbUrlColumn));
+        if (DBG) Log.d(TAG, "fromCursor lFile=" + lFile + ", lUrl=" + lUrl + ", tFile=" + tFile + ", tUrl=" + tUrl);
         int season = -1;
         if (type.seasonColumn != null)
             season = cur.getInt(cur.getColumnIndexOrThrow(type.seasonColumn));
@@ -313,7 +314,7 @@ public class ScraperImage {
         if (nameSeed != null) {
             seedHash = nameSeed.hashCode();
         } else {
-            Log.w(TAG, "getFileName: nameSeed is null!");
+            Log.w(TAG, "getFileName: nameSeed is null! for url " +  url);
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
 
@@ -420,6 +421,7 @@ public class ScraperImage {
     private boolean download(Context context, boolean thumb, int maxWidth, int maxHeight, boolean fake, boolean thumbAsMain) {
         String file = mLargeFile;
         String url = mLargeUrl;
+        if (DBG) Log.d(TAG, "download: file=" + file + ", url=" + url);
         boolean success = false ;
         if (thumb) {
             file = mThumbFile;
