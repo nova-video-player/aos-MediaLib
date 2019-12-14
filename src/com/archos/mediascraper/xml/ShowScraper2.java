@@ -143,17 +143,17 @@ public class ShowScraper2 extends BaseScraper2 {
 
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
-        if (DBG) Log.d(TAG, "getMatches2");
+        // getMatches2 gets all shows matching but does not record the show banner proposed
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
             Log.e(TAG, "getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
-            if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR");
+            if (DBG) Log.d(TAG, "getMatches2: ScrapeSearchResult ScrapeStatus.ERROR");
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
         TvShowSearchInfo searchInfo = (TvShowSearchInfo) info;
         String language = getLanguage(mContext);
 
-        if (DBG) Log.d(TAG, "tvshow search:" + searchInfo.getShowName()
+        if (DBG) Log.d(TAG, "getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
                 + " e:" + searchInfo.getEpisode());
 
@@ -207,14 +207,18 @@ public class ShowScraper2 extends BaseScraper2 {
                     results.addAll(resultsProbable);
                 if (resultsNumericSlug.size()>0)
                     results.addAll(resultsNumericSlug);
+                // skip shows without a banner/poster
+                /*
                 if (resultsNoBanner.size()>0)
                     results.addAll(resultsNoBanner);
+                 */
             }
             else if (response.code() != 404) {
                 if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
                 return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
             }
 
+            // fallback in english if result is empty
             if (results.isEmpty() && !language.equals("en")) {
                 if (DBG) Log.d(TAG, "getMatches2: result is empty for " + language + " thus quering thetvdb for " + searchInfo.getShowName() + " in en");
                 Response<SeriesResultsResponse> globalResponse = theTvdb.search()
@@ -230,10 +234,34 @@ public class ShowScraper2 extends BaseScraper2 {
                             result.setScraper(this);
                             result.setFile(searchInfo.getFile());
                             result.setExtra(extra);
-                            if (maxItems < 0 || results.size() < maxItems)
-                                results.add(result);
+                            if (maxItems < 0 || results.size() < maxItems) {
+                                // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
+                                if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
+                                    if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                                    resultsNoBanner.add(result);
+                                } else {
+                                    if (DBG) Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
+                                    if (series.slug.matches("^[0-9]+$")) {
+                                        // Put in lower priority any entry that has numeric slug
+                                        if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                                        resultsNumericSlug.add(result);
+                                    } else {
+                                        if (DBG) Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                                        resultsProbable.add(result);
+                                    }
+                                }
+                            }
                         }
                     }
+                    if (resultsProbable.size()>0)
+                        results.addAll(resultsProbable);
+                    if (resultsNumericSlug.size()>0)
+                        results.addAll(resultsNumericSlug);
+                    // skip shows without a banner/poster
+                    /*
+                    if (resultsNoBanner.size()>0)
+                        results.addAll(resultsNoBanner);
+                     */
                 }
                 else if (globalResponse.code() != 404) {
                     if (DBG) Log.d(TAG, "ScrapeSearchResult en ScrapeStatus.ERROR response not successful or body empty");
@@ -258,7 +286,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
-        if (DBG) Log.d(TAG, "getDetailsInternal");
+        if (DBG) Log.d(TAG, "getDetailsInternal: treating result show " + result.getTitle());
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
         String resultLanguage = result.getLanguage();
@@ -313,14 +341,14 @@ public class ShowScraper2 extends BaseScraper2 {
                                 }
                             }
                             else {
-                                if (DBG) Log.d(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
+                                if (DBG) Log.w(TAG,"ScrapeDetailResult serie en ScrapeStatus.ERROR_PARSER for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
                                 if (showTags.getTitle() == null) showTags.setTitle("");
                                 return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                             }
                         }
                     }
                     else {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER for showId=" + showId);
+                        if (DBG) Log.w(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER for showId=" + showId);
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                 }
@@ -337,8 +365,9 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR_PARSER");
-                        return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+                        if (DBG) Log.w(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR_PARSER");
+                        // missing actor is not a deal breaker, continue but mark as a problem
+                        //return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     Collections.sort(tempActors, new Comparator<Actor>() {
                         @Override
@@ -365,7 +394,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (fanartsResponse.code() != 404) {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult fanart ScrapeStatus.ERROR_PARSER");
+                        if (DBG) Log.w(TAG,"ScrapeDetailResult fanart ScrapeStatus.ERROR_PARSER");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (!resultLanguage.equals("en")) {
@@ -378,7 +407,7 @@ public class ShowScraper2 extends BaseScraper2 {
                             }
                         }
                         else if (globalFanartsResponse.code() != 404) {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult fanart en ScrapeStatus.ERROR_PARSER");
+                            if (DBG) Log.w(TAG,"ScrapeDetailResult fanart en ScrapeStatus.ERROR_PARSER");
                             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
@@ -389,6 +418,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     });
                     for(Pair<SeriesImageQueryResult, String> backdrop : tempBackdrops) {
+                        if (DBG) Log.d(TAG,"ScrapeDetailResult: generating ScraperImage for backdrop for " + showTags.getTitle() + ", large=" + BANNERS_URL + backdrop.first.fileName + ", thumb=" + BANNERS_URL + backdrop.first.fileName);
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTags.getTitle());
                         image.setLanguage(backdrop.second);
                         image.setThumbUrl(BANNERS_URL + backdrop.first.thumbnail);
@@ -400,7 +430,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
                 // posters
                 List<Pair<SeriesImageQueryResult, String>> tempPosters = new ArrayList<>();
-                //if (!basicEpisode) {
+                if (!basicEpisode) {
                     Response<SeriesImageQueryResultResponse> postersResponse = theTvdb.series()
                         .imagesQuery(showId, "poster", null, null, resultLanguage)
                         .execute();
@@ -410,7 +440,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (postersResponse.code() != 404) {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult poster ScrapeStatus.ERROR_PARSER");
+                        if (DBG) Log.w(TAG,"ScrapeDetailResult poster ScrapeStatus.ERROR_PARSER");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (!resultLanguage.equals("en")) {
@@ -423,11 +453,11 @@ public class ShowScraper2 extends BaseScraper2 {
                             }
                         }
                         else if (globalPostersResponse.code() != 404) {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult poster en ScrapeStatus.ERROR_PARSER");
+                            if (DBG) Log.w(TAG,"ScrapeDetailResult poster en ScrapeStatus.ERROR_PARSER");
                             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
-                //}
+                }
                 if (!basicShow) {
                     Response<SeriesImageQueryResultResponse> seasonsResponse = theTvdb.series()
                         .imagesQuery(showId, "season", null, null, resultLanguage)
@@ -438,7 +468,7 @@ public class ShowScraper2 extends BaseScraper2 {
                         }
                     }
                     else if (seasonsResponse.code() != 404) {
-                        if (DBG) Log.d(TAG,"ScrapeDetailResult season ScrapeStatus.ERROR_PARSER");
+                        if (DBG) Log.w(TAG,"ScrapeDetailResult season ScrapeStatus.ERROR_PARSER");
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (!resultLanguage.equals("en")) {
@@ -451,7 +481,7 @@ public class ShowScraper2 extends BaseScraper2 {
                             }
                         }
                         else if (globalSeasonsResponse.code() != 404) {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult season en ScrapeStatus.ERROR_PARSER");
+                            if (DBG) Log.w(TAG,"ScrapeDetailResult season en ScrapeStatus.ERROR_PARSER");
                             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
@@ -463,6 +493,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 });
                 for(Pair<SeriesImageQueryResult, String> poster : tempPosters) {
+                    if (DBG) Log.d(TAG,"ScrapeDetailResult: generating ScraperImage for poster for " + showTags.getTitle() + ", large=" + BANNERS_URL + poster.first.fileName + ", thumb=" + BANNERS_URL + poster.first.fileName);
                     ScraperImage image = new ScraperImage(poster.first.keyType.equals("season") ? ScraperImage.Type.EPISODE_POSTER : ScraperImage.Type.SHOW_POSTER, showTags.getTitle());
                     image.setLanguage(poster.second);
                     image.setThumbUrl(BANNERS_URL + poster.first.thumbnail);
@@ -476,9 +507,11 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                     posters.add(image);
                 }
+                /*
                 ScraperImage genericImage = null;
                 if(!posters.isEmpty())
                     genericImage = posters.get(0);
+                 */
 
                 // episodes
                 if (!basicShow && !basicEpisode) {
@@ -503,8 +536,10 @@ public class ShowScraper2 extends BaseScraper2 {
                                 episodeTags.setSeason(episode.airedSeason);
                                 episodeTags.setShowTags(showTags);
                                 episodeTags.setEpisodePicture(episode.filename, mContext);
+                                /*
                                 if (genericImage != null)
                                     episodeTags.setPosters(genericImage.asList());
+                                 */
 
                                 if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
                                     if (globalEpisodes == null) {
@@ -521,7 +556,7 @@ public class ShowScraper2 extends BaseScraper2 {
                                                 globalPage = globalEpisodesResponse.body().links.next;
                                             }
                                             else {
-                                                if (DBG) Log.d(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR_PARSER");
+                                                if (DBG) Log.w(TAG,"ScrapeDetailResult episode en ScrapeStatus.ERROR_PARSER");
                                                 return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                                             }
                                         }
@@ -539,7 +574,7 @@ public class ShowScraper2 extends BaseScraper2 {
                             page = episodesResponse.body().links.next;
                         }
                         else {
-                            if (DBG) Log.d(TAG,"ScrapeDetailResult episode ScrapeStatus.ERROR_PARSER");
+                            if (DBG) Log.w(TAG,"ScrapeDetailResult episode ScrapeStatus.ERROR_PARSER");
                             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                         }
                     }
@@ -547,7 +582,7 @@ public class ShowScraper2 extends BaseScraper2 {
             }
             catch (Exception e) {
                 Log.e(TAG, "getDetailsInternal", e);
-                if (DBG) Log.d(TAG,"ScrapeDetailResult exception ScrapeStatus.ERROR_PARSER");
+                if (DBG) Log.w(TAG,"ScrapeDetailResult exception ScrapeStatus.ERROR_PARSER");
                 return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
             }
 
@@ -557,6 +592,7 @@ public class ShowScraper2 extends BaseScraper2 {
             }
 
             // add backdrops & posters to show
+            if (DBG) Log.d(TAG,"ScrapeDetailResult setting backdrops and posters to showTags");
             if (!backdrops.isEmpty())
                 showTags.setBackdrops(backdrops);
             if (!posters.isEmpty()) {
@@ -606,7 +642,7 @@ public class ShowScraper2 extends BaseScraper2 {
 
         // if there is no info about the show there is nothing we can do
         if (showTags == null) {
-            if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
+            if (DBG) Log.w(TAG, "ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
 
