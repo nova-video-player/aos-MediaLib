@@ -27,6 +27,7 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
@@ -44,7 +45,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 public abstract class BaseTags implements Parcelable {
-    //private static final String TAG = "BaseTags";
+    private static final String TAG = "BaseTags";
+    private final static boolean DBG = false;
 
     public static final int GENERIC = 0;
 
@@ -239,12 +241,16 @@ public abstract class BaseTags implements Parcelable {
         ScraperImage image = getDefaultPoster();
         if (image != null)
             image.download(context);
+        else
+            if (DBG) Log.d(TAG, "downloadPoster: image is null for " + mTitle + ", url " + image.getLargeUrl());
     }
 
     public void downloadBackdrop(Context context) {
         ScraperImage image = getDefaultBackdrop();
         if (image != null)
             image.download(context);
+        else
+            if (DBG) Log.d(TAG, "downloadBackdrop: image is null for " + mTitle + ", url " + image.getLargeUrl());
     }
 
     public final void downloadAllImages(Context context) {
