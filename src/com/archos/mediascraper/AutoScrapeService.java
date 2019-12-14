@@ -186,7 +186,8 @@ public class AutoScrapeService extends Service {
                         sNumberOfFilesRemainingToProcess = cursor.getCount();
                         cursor.moveToFirst();
                         do {
-                            nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
+                            if (sNumberOfFilesRemainingToProcess > 0)
+                                nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
                             Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                             long movieID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID));
                             long episodeID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID));
@@ -332,7 +333,8 @@ public class AutoScrapeService extends Service {
                                 if(DBG) Log.d(TAG, "startScraping processing scrapUri " + scrapUri + ", with ID " + ID);
                                 if(DBG) Log.d(TAG, "startScraping number of remaining files to be processed: " + sNumberOfFilesRemainingToProcess);
 
-                                nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
+                                if (sNumberOfFilesRemainingToProcess > 0)
+                                    nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sNumberOfFilesRemainingToProcess).build());
 
                                 if (NfoParser.isNetworkNfoParseEnabled(AutoScrapeService.this)) {
 
@@ -492,7 +494,8 @@ public class AutoScrapeService extends Service {
                                         ", sNumberOfFilesNotScraped=" + sNumberOfFilesNotScraped);
 
                             } while (cursor.moveToNext() && isEnable(AutoScrapeService.this));
-
+                            if (sNumberOfFilesRemainingToProcess == 0)
+                                nm.cancel(NOTIFICATION_ID);
                             sIsScraping = false;
                             if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
