@@ -86,8 +86,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
      */
 
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "NetworkScannerServiceVideo";
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean LOCAL_DBG = true;
+    //private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean DBG = true;
 
     private static final boolean SCAN_MEDIA_ONLY = true;
 

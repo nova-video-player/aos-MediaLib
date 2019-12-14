@@ -56,8 +56,9 @@ import com.archos.mediascraper.Scraper;
 
 public class VideoStoreImportService extends Service implements Handler.Callback {
     private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoStoreImportService";
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean LOCAL_DBG = true;
+    //private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean DBG = true;
 
     // handler message ids
     private static final int MESSAGE_KILL = 1;
