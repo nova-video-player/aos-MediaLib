@@ -201,7 +201,13 @@ public class LibAvos {
         loadLibrary(ctx, "deinterlace", armHasNeon, false);
         loadLibrary(ctx, "audiocompress", armHasNeon, false);
 
-        String api = "21";
+        String api;
+        if (Build.VERSION.SDK_INT < 26)
+            api = "21";
+        else
+            api = "26";
+
+	if (DBG) Log.d(TAG, "Min api level for mediacodec: " + api);
 
         loadLibrary(ctx, "sfdec", armHasNeon, false);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || (Build.VERSION.SDK_INT == Build.VERSION_CODES.M && Build.VERSION.PREVIEW_SDK_INT == 0))  {
@@ -217,7 +223,7 @@ public class LibAvos {
         loadLibrary(ctx, "avos", armHasNeon, false);
         if (loadLibrary(ctx, "avosjni", armHasNeon, false)) {
             nativeInit(ctx.getPackageName(), sIsPluginAvailable);
-            nativeLoadLibraryRTLDGlobal("libsfdec.core.21.so");
+            nativeLoadLibraryRTLDGlobal("libsfdec.core." + api + ".so");
             sIsAvailable = true;
         } else {
             sIsAvailable = false;
