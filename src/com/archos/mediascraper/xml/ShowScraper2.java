@@ -80,15 +80,17 @@ public class ShowScraper2 extends BaseScraper2 {
 
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
+        // getMatches2 gets all shows matching but does not record the show banner proposed
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
-            Log.e(TAG, "bad search info: " + info == null ? "null" : "movie in show scraper");
+            Log.e(TAG, "getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
+            if (DBG) Log.d(TAG, "getMatches2: ScrapeSearchResult ScrapeStatus.ERROR");
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
         TvShowSearchInfo searchInfo = (TvShowSearchInfo) info;
         String language = getLanguage(mContext);
 
-        if (DBG) Log.d(TAG, "tvshow search:" + searchInfo.getShowName()
+        if (DBG) Log.d(TAG, "getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
                 + " e:" + searchInfo.getEpisode());
 
@@ -125,6 +127,11 @@ public class ShowScraper2 extends BaseScraper2 {
             }
         }
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
+        if (DBG)
+            if (results.isEmpty())
+                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.NOT_FOUND");
+            else
+                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.OKAY found " + results);
         return new ScrapeSearchResult(results, false, status, null);
     }
 
@@ -176,12 +183,14 @@ public class ShowScraper2 extends BaseScraper2 {
                     mParser.parse(inputStream, mDetailsHandler);
                 } catch (SAXException e) {
                     zipFile.close();
+                    if (DBG) Log.w(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER for showId=" + showId);
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
                 }
                 showTags = mDetailsHandler.getShowTags();
                 // if there is no info about the show there is nothing we can do
                 if (showTags == null) {
                     zipFile.close();
+                    if (DBG) Log.w(TAG,"ScrapeDetailResult showTags ScrapeStatus.ERROR_PARSER for showId=" + showId);
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
                 }
                 showTags.setGenres(getLocalizedGenres(showTags.getGenres()));
@@ -193,6 +202,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     mParser.parse(inputStream, mActorsHandler);
                 } catch (SAXException e) {
                     zipFile.close();
+                    if (DBG) Log.w(TAG,"ScrapeDetailResult actors ScrapeStatus.ERROR_PARSER for showId=" + showId);
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
                 }
                 actors = mActorsHandler.getResult();
@@ -205,6 +215,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     mParser.parse(inputStream, mBannersHandler);
                 } catch (SAXException e) {
                     zipFile.close();
+                    if (DBG) Log.w(TAG,"ScrapeDetailResult banners ScrapeStatus.ERROR_PARSER for showId=" + showId);
                     return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, e);
                 }
                 banners = mBannersHandler.getResult();
@@ -259,7 +270,8 @@ public class ShowScraper2 extends BaseScraper2 {
                     }
                 }
             }
-            showTags.addActorIfAbsent(actors);
+            if (!actors.isEmpty())
+                showTags.addActorIfAbsent(actors);
         } else {
             if (DBG) Log.d(TAG, "using cached Episode List");
             // no need to parse, we have a cached result
@@ -271,8 +283,10 @@ public class ShowScraper2 extends BaseScraper2 {
         }
 
         // if there is no info about the show there is nothing we can do
-        if (showTags == null)
+        if (showTags == null) {
+            if (DBG) Log.w(TAG, "ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
+        }
 
         showTags.downloadPoster(mContext);
 
@@ -280,7 +294,7 @@ public class ShowScraper2 extends BaseScraper2 {
         Bundle extra = result.getExtra();
         int epnum = Integer.parseInt(extra.getString(ShowUtils.EPNUM, "0"));
         int season = Integer.parseInt(extra.getString(ShowUtils.SEASON, "0"));
-        if (allEpisodes != null) {
+        if (!allEpisodes.isEmpty()) {
             String key = ShowAllDetailsHandler.getKey(season, epnum);
             returnValue = allEpisodes.get(key);
         }
@@ -313,6 +327,7 @@ public class ShowScraper2 extends BaseScraper2 {
                 extraOut.putParcelable(item.getKey(), item.getValue());
             }
         }
+        if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 
