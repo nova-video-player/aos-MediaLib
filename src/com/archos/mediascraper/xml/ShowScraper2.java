@@ -785,37 +785,6 @@ public class ShowScraper2 extends BaseScraper2 {
         return localizedGenres;
     }
 
-    // in a subclass so it's lazy loaded if required
-    private static class LanguageHolder {
-        static final StringMatcher LANGUAGE_IDS = new StringMatcher();
-        static {
-            LANGUAGE_IDS.addKey("en", 7);
-            LANGUAGE_IDS.addKey("sv", 8);
-            LANGUAGE_IDS.addKey("no", 9);
-            LANGUAGE_IDS.addKey("da", 10);
-            LANGUAGE_IDS.addKey("fi", 11);
-            LANGUAGE_IDS.addKey("nl", 13);
-            LANGUAGE_IDS.addKey("de", 14);
-            LANGUAGE_IDS.addKey("it", 15);
-            LANGUAGE_IDS.addKey("es", 16);
-            LANGUAGE_IDS.addKey("fr", 17);
-            LANGUAGE_IDS.addKey("pl", 18);
-            LANGUAGE_IDS.addKey("hu", 19);
-            LANGUAGE_IDS.addKey("el", 20);
-            LANGUAGE_IDS.addKey("tr", 21);
-            LANGUAGE_IDS.addKey("ru", 22);
-            LANGUAGE_IDS.addKey("he", 24);
-            LANGUAGE_IDS.addKey("ja", 25);
-            LANGUAGE_IDS.addKey("pt", 26);
-            LANGUAGE_IDS.addKey("zh", 27);
-            LANGUAGE_IDS.addKey("cs", 28);
-            LANGUAGE_IDS.addKey("sl", 30);
-            LANGUAGE_IDS.addKey("hr", 31);
-            LANGUAGE_IDS.addKey("ko", 32);
-        }
-    }
-
-
     public static String getLanguage(Context context) {
         return generatePreferences(context).getString("language");
     }
