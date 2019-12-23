@@ -41,7 +41,7 @@ import javax.xml.parsers.SAXParserFactory;
 public abstract class BaseScraper2 {
     private static final String TAG = "BaseScraper2";
 
-    protected final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|cs|sl|hr|ko|en|sv|no";
+    protected final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|cs|sl|hr|ko|en|sv|no|pb";
 
     protected final SAXParser mParser;
 
