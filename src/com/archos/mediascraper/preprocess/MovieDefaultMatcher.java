@@ -132,7 +132,7 @@ class MovieDefaultMatcher implements InputMatcher {
             " brrip ", " br rip ", " bdrip", " bd rip ", " blu ray ", " bluray ",
             " hddvd ", " hd dvd ", " hdrip ", " hd rip ", " hdlight ", " minibdrip ",
             " webrip ", " web rip ",
-            " 720p ", " 1080p ", " 1080i ", " 720 ", " 1080 ", " 480i ", " 2160p ", " 4k ", " 480p ",
+            " 720p ", " 1080p ", " 1080i ", " 720 ", " 1080 ", " 480i ", " 2160p ", " 4k ", " 480p ", " 576p ",
             " hdtv ", " sdtv ", " m hd ", " ultrahd ", " mhd ",
             " h264 ", " x264 ", " aac ", " ac3 ", " ogm ", " dts ", " hevc ", " x265 ",
             " avi ", " mkv ", " xvid ", " divx ", " wmv ", " mpg ", " mpeg ", " flv ", " f4v ",
