@@ -128,11 +128,11 @@ class MovieDefaultMatcher implements InputMatcher {
     // Common garbage in movies names to determine where the garbage starts in the name
     // tested against strings like "real movie name dvdrip 1080p power "
     private static final String[] GARBAGE_LOWERCASE = {
-            " dvdrip ", " dvd rip ", " dvdscr ", " dvd scr ",
+            " dvdrip ", " dvd rip ", "dvdscreener ", " dvdscr ", " dvd scr ",
             " brrip ", " br rip ", " bdrip", " bd rip ", " blu ray ", " bluray ",
             " hddvd ", " hd dvd ", " hdrip ", " hd rip ", " hdlight ", " minibdrip ",
             " webrip ", " web rip ",
-            " 720p ", " 1080p ", " 1080i ", " 720 ", " 1080 ", " 480i ", " 2160p ", " 4k ", " 480p ", " 576p ", " 576i ", " 260p ", " 360p ", " 4320p ", " 8k ",
+            " 720p ", " 1080p ", " 1080i ", " 720 ", " 1080 ", " 480i ", " 2160p ", " 4k ", " 480p ", " 576p ", " 576i ", " 240p ", " 360p ", " 4320p ", " 8k ",
             " hdtv ", " sdtv ", " m hd ", " ultrahd ", " mhd ",
             " h264 ", " x264 ", " aac ", " ac3 ", " ogm ", " dts ", " hevc ", " x265 ", " av1 ",
             " avi ", " mkv ", " xvid ", " divx ", " wmv ", " mpg ", " mpeg ", " flv ", " f4v ",
@@ -142,12 +142,12 @@ class MovieDefaultMatcher implements InputMatcher {
             " sbs ", " hsbs ", " side by side ", " sidebyside ", /* Side-By-Side 3d stuff */
             " 3d ", " h sbs ", " h tb " , " tb ", " htb ", " top bot ", " topbot ", " top bottom ", " topbottom ", " tab ", " htab ", /* Top-Bottom 3d stuff */
             " anaglyph ", " anaglyphe ", /* Anaglyph 3d stuff */
+            " truehd ", " atmos ", " uhd ", " hdr10+ ", " hdr10 ", " hdr ", " dolby ", " dts-x ", " dts-hd.ma ",
     };
-
     // stuff that could be present in real names is matched with tight case sensitive syntax
     // strings here will only match if separated by any of " .-_"
     private static final String[] GARBAGE_CASESENSITIVE = {
-            "FRENCH", "TRUEFRENCH", "DUAL", "MULTI", "MULTi", "SUBFORCED", "SUBFORCES", "UNRATED", "UNRATED[ ._-]DC", "EXTENDED", "IMAX",
+            "FRENCH", "TRUEFRENCH", "DUAL", "MULTISUBS", "MULTI", "MULTi", "SUBFORCED", "SUBFORCES", "UNRATED", "UNRATED[ ._-]DC", "EXTENDED", "IMAX",
             "COMPLETE", "PROPER", "iNTERNAL", "INTERNAL",
             "SUBBED", "ANiME", "LIMITED", "REMUX", "DCPRip",
             "TS", "TC", "REAL", "HD", "DDR", "WEB",
