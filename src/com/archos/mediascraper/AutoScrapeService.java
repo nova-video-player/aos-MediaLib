@@ -248,7 +248,14 @@ public class AutoScrapeService extends Service {
             public void onChange(boolean selfChange) {
                 if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true) && AppState.isForeGround()) {
                     if (DBG) Log.d(TAG, "registerObserver: onChange startService");
-                    AutoScrapeService.startService(appContext);
+                    // only launch AutoScrapeService if there is something not scraped to avoid notification popup
+                    // Look for all the videos not yet processed and not located in the Camera folder
+                    final String cameraPath =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera";
+                    String[] selectionArgs = new String[]{ cameraPath + "/%" };
+                    Cursor cursor = context.getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS, WHERE_NOT_SCRAPED, selectionArgs, null);
+                    if (cursor.getCount() > 0) {
+                        AutoScrapeService.startService(appContext);
+                    }
                 }
             }
         });
