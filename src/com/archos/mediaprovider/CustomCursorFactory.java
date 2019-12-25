@@ -112,7 +112,6 @@ public class CustomCursorFactory implements CursorFactory {
     @Override
     public Cursor newCursor(SQLiteDatabase db, SQLiteCursorDriver masterQuery,
             String editTable, SQLiteQuery query) {
-        Cursor cursor = new SQLiteCursor(masterQuery, editTable, query);
-        return new CustomCursor(cursor);
+        return new CustomCursor(new SQLiteCursor(masterQuery, editTable, query));
     }
 }
