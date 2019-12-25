@@ -108,7 +108,12 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                     final long id = c.getLong(COLUMN_ID);
                     final String server = c.getString(COLUMN_DATA);
                     final int active = c.getInt(COLUMN_ACTIVE);
-                    if(!server.startsWith("upnp")) {
+                    if(server.startsWith("sftp")||server.startsWith("ftp")) { //for distant folders, we don't check existence (for now)
+                        if (DBG)
+                            Log.d(TAG, "ftp server is assumed to exist: " + server);
+                        if (updateServerDb(id, cr, active, 1, now))
+                            mServerDbUpdated = true;
+                    } else if(!server.startsWith("upnp")) {
                         final FileEditor serverFile = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(server+"/"), null);
                         if (serverFile == null) {
                             Log.d(TAG, "bad server [" + server + "]");
@@ -120,7 +125,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                                 if (serverFile.exists()) {
                                     if (DBG)
                                         Log.d(TAG, "server exists: " + server);
-                                     if (updateServerDb(id, cr, active, 1, now))
+                                    if (updateServerDb(id, cr, active, 1, now))
                                         mServerDbUpdated = true;
                                 } else {
                                     if (DBG)
@@ -130,13 +135,8 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                                 }
                             }
                         }.start();
-                    }
-                    else if(server.startsWith("upnp")){
+                    } else if(server.startsWith("upnp")) {
                         mUpnpId.put(server,new Pair<>(id, active));
-                    }
-                    else {
-                        if (updateServerDb(id, cr, active, 1, now)) //for distant folders, we don't check existence (for now)
-                            mServerDbUpdated = true;
                     }
                 }
                 if(mUpnpId.size()>0&&hasLocalConnection){
