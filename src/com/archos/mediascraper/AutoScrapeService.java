@@ -256,6 +256,7 @@ public class AutoScrapeService extends Service {
                     if (cursor.getCount() > 0) {
                         AutoScrapeService.startService(appContext);
                     }
+                    cursor.close();
                 }
             }
         });
