@@ -464,6 +464,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             // a file needs to be deleted or not
             // ! this is the actual scanning process !
             // extract server id string / number
+            // Note that extractSmbServer is not smb specific...
             String server = extractSmbServer(f.getUri());
             long serverId = getLightIndexServerId(server);
             FileVisitListener fileVisitListener = new FileVisitListener(
@@ -529,6 +530,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         public FileVisitListener(Blacklist blacklist, HashMap<String, PrescanItem> prescanItemsMap,
                 boolean nfoScanEnabled, BulkOperationHandler bulkHandler, long serverId) {
+            if (DBG) Log.d(TAG, "FileVisitListener: serverId=" + serverId);
             mBlacklist = blacklist;
             mPrescanItemsMap = prescanItemsMap;
             mNfoScanEnabled = nfoScanEnabled;
@@ -606,7 +608,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 }
             } else if(!mAlreadyAddedUpnpFiles.contains(uniqueId)){
                 // file is new, add as insert
-                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File is new " + file.getUri().toString());
+                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File is new, serverId=" + mServerId + ", " + file.getUri().toString());
                 mAlreadyAddedUpnpFiles.add(uniqueId); // needed because main difference with usual indexing : a same file can be found twice in one round
                 mBulkHandler.addInsert(new FileScanInfo(file, mStorageId), mServerId);
             }
@@ -714,7 +716,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
 
         public void addInsert(FileScanInfo insert, long serverId) {
-            if (DBG) Log.d(TAG, "addInsert: adding in VideoStore and calling executor "+ insert);
+            if (DBG) Log.d(TAG, "addInsert: adding in VideoStore and calling executor "+ insert._data + " for serverId=" + serverId);
             ContentValues item = insert.toContentValues();
             item.put(VideoStore.Files.FileColumns.ARCHOS_SMB_SERVER, Long.valueOf(serverId));
             mInsertExecutor.add(item);
