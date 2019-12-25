@@ -120,6 +120,7 @@ public class AutoScrapeService extends Service {
 
     public void stopService() {
         if (DBG) Log.d(TAG, "stopService: stopForeground only");
+        nm.cancel(NOTIFICATION_ID);
         stopForeground(true);
     }
 
@@ -233,8 +234,7 @@ public class AutoScrapeService extends Service {
     public void onDestroy() {
         super.onDestroy();
         if(DBG) Log.d(TAG, "onDestroy() " + this);
-        nm.cancel(NOTIFICATION_ID);
-        stopForeground(true);
+        stopService();
     }
 
     /**
@@ -293,7 +293,7 @@ public class AutoScrapeService extends Service {
                 public void run() {
 
                     boolean shouldRescrapAll = rescrapAlreadySearched;
-                    if(DBG)  Log.d(TAG, "startScraping: startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
+                    if(DBG) Log.d(TAG, "startScraping: startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
 
                     do{
                         mNetworkOrScrapErrors = 0;
@@ -319,15 +319,21 @@ public class AutoScrapeService extends Service {
                             exportContext = new NfoWriter.ExportContext();
 
                         sNumberOfFilesRemainingToProcess = cursor.getCount();
+                        if (DBG) Log.d(TAG, "startScraping: number of files sNumberOfFilesRemainingToProcess=" + sNumberOfFilesRemainingToProcess);
+                        if (DBG) Log.d(TAG, "startScraping: is AutoScrapeService enabled? " + isEnable(AutoScrapeService.this));
 
                         if (cursor.getCount() > 0) {
                             restartOnNextRound = true;
                             cursor.moveToFirst();
                             sIsScraping = true;
                             do {
-                                if(!ArchosUtils.isLocalNetworkConnected(AutoScrapeService.this)&&cursor.getCount()>10||!ArchosUtils.isNetworkConnected(AutoScrapeService.this)) {//if deconnected while scraping
+                                if (DBG) Log.d(TAG, "startScraping: isLocalNetworkConnected=" + ArchosUtils.isLocalNetworkConnected(AutoScrapeService.this) +
+                                        ", isNetworkConnected=" + ArchosUtils.isNetworkConnected(AutoScrapeService.this));
+                                if(!ArchosUtils.isLocalNetworkConnected(AutoScrapeService.this)&&!ArchosUtils.isNetworkConnected(AutoScrapeService.this)) {//if deconnected while scraping
                                     cursor.close();
                                     sNumberOfFilesRemainingToProcess = 0;
+                                    if(DBG) Log.d(TAG, "startScraping disconnected from network calling stopService");
+                                    stopService();
                                     return;
                                 }
                                 String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
@@ -502,8 +508,6 @@ public class AutoScrapeService extends Service {
                                         ", sNumberOfFilesNotScraped=" + sNumberOfFilesNotScraped);
 
                             } while (cursor.moveToNext() && isEnable(AutoScrapeService.this));
-                            if (sNumberOfFilesRemainingToProcess == 0)
-                                nm.cancel(NOTIFICATION_ID);
                             sIsScraping = false;
                             if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
