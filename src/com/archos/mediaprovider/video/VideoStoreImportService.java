@@ -111,7 +111,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 || ArchosMediaIntent.isVideoRemoveIntent(action)
                 || Intent.ACTION_SHUTDOWN.equals(action)) {
             if (DBG) Log.d(TAG, "startIfHandles is true: sending intent to VideoStoreImportService");
-            Intent serviceIntent = new Intent(context, NetworkScannerServiceVideo.class);
+            Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
             serviceIntent.setAction(action);
             serviceIntent.setData(broadcast.getData());
             if(broadcast.getExtras()!=null)
