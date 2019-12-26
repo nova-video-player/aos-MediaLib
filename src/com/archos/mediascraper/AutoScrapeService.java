@@ -250,11 +250,13 @@ public class AutoScrapeService extends Service {
                     if (DBG) Log.d(TAG, "registerObserver: onChange startService");
                     // only launch AutoScrapeService if there is something not scraped to avoid notification popup
                     // Look for all the videos not yet processed and not located in the Camera folder
-                    final String cameraPath =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera";
-                    String[] selectionArgs = new String[]{ cameraPath + "/%" };
+                    String[] selectionArgs = new String[]{ Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera" + "/%" };
                     Cursor cursor = context.getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS, WHERE_NOT_SCRAPED, selectionArgs, null);
                     if (cursor.getCount() > 0) {
+                        if (DBG) Log.d(TAG, "registerObserver: onChange getting " + cursor.getCount() + " videos not yet scraped, launching service.");
                         AutoScrapeService.startService(appContext);
+                    } else {
+                        if (DBG) Log.d(TAG, "registerObserver: onChange getting " + cursor.getCount() + " videos not yet scraped -> not launching service!");
                     }
                     cursor.close();
                 }
