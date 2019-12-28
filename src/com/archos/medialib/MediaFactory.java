@@ -30,6 +30,7 @@ import android.util.Log;
 
 public class MediaFactory {
     private static final String TAG = "MediaFactory";
+    private static boolean DBG = false;
 
     private static final String KEY_FORCE_SW = "force_software_decoding";
     private static final String KEY_DEC_CHOICE = "dec_choice";
@@ -69,6 +70,7 @@ public class MediaFactory {
         LANG_CODEPAGE_MAP.put("lv_LV", 1257);   // Latvian
         LANG_CODEPAGE_MAP.put("lt_LT", 1257);   // Lithuanian
         LANG_CODEPAGE_MAP.put("vi_VN", 1258);   // Vietnamese
+        // TODO missing 28606?
 
         Method method = null;
         if (Build.VERSION.SDK_INT >= 17) {
@@ -82,6 +84,7 @@ public class MediaFactory {
 
     public static int getCodepage() {
         Integer cp = LANG_CODEPAGE_MAP.get(Locale.getDefault().getLanguage() + "_" + Locale.getDefault().getCountry());
+        if (DBG) Log.d(TAG, "getCodepage: cp=" + ( cp == null ? DEFAULT_CODEPAGE : cp.intValue()) );
         return cp == null ? DEFAULT_CODEPAGE : cp.intValue();
     }
 
