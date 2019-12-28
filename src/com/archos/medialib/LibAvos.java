@@ -120,18 +120,24 @@ public class LibAvos {
         if (!hasNeon)
             lib = lib + NO_NEON_SUFFIX;
         boolean loaded = false;
+        if (DBG) Log.d(TAG, "loadLibrary: trying to load " + lib);
         if (tryExternLib) {
             try {
                 String path = ctx.getFilesDir()+ "/plugins_11/lib" + lib + ".so";
                 File libFile = new File(path);
                 if (libFile.exists()) {
+                    if (DBG) Log.d(TAG, "loadLibrary: " + path + "exists");
                     System.load(path);
                     loaded = true;
                     sIsPluginAvailable = true;
+                } else {
+                    Log.w(TAG, "loadLibrary: " + path + "does not exist!");
                 }
             } catch (UnsatisfiedLinkError ule) {
                 sPluginUpdateNeeded = true;
+                Log.w(TAG, "loadLibrary: library load failed for " + lib + "!");
             } catch (SecurityException se) {
+                Log.w(TAG, "loadLibrary: security exception library load failed for " + lib + "!");
             }
         }
         if (!loaded) {
@@ -226,6 +232,7 @@ public class LibAvos {
             sInitState = 2;
             ctx.notifyAll();
         }
+        if (DBG) Log.d(TAG, "init: LibAvos available=" + sIsAvailable);
     }
 
     public static void initAsync(Context ctx) {
@@ -253,6 +260,7 @@ public class LibAvos {
     }
 
     public static void setCodepage(int codepage) {
+        if (DBG) Log.d(TAG, "setCodepage: " + codepage);
         nativeSetCodepage(codepage);
     }
 
