@@ -33,7 +33,6 @@ import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.ShowUtils;
-import com.archos.mediascraper.StringMatcher;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.settings.ScraperSetting;
@@ -48,7 +47,7 @@ import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
 import com.uwetrottmann.thetvdb.entities.SeriesResultsResponse;
-
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.Interceptor;
@@ -73,11 +72,12 @@ import java.util.concurrent.TimeUnit;
 public class ShowScraper2 extends BaseScraper2 {
 
     private final static String TAG = "ShowScraper2";
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
     private final static boolean DBG_RETROFIT = false;
     private final static boolean CACHE = true;
     private final static String PREFERENCE_NAME = "TheTVDB.com";
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
+    private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
@@ -160,7 +160,8 @@ public class ShowScraper2 extends BaseScraper2 {
         List<SearchResult> results = new LinkedList<>();
         List<SearchResult> resultsNumericSlug = new LinkedList<>();
         List<SearchResult> resultsNoBanner = new LinkedList<>();
-        List<SearchResult> resultsProbable = new LinkedList<>();
+        List<Pair<SearchResult,Integer>> resultsProbable = new LinkedList<>();
+        List<SearchResult> resultsProbableSorted = new LinkedList<>();
 
         Bundle extra = new Bundle();
         extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
@@ -197,14 +198,37 @@ public class ShowScraper2 extends BaseScraper2 {
                                     resultsNumericSlug.add(result);
                                 } else {
                                     if (DBG) Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
-                                    resultsProbable.add(result);
+                                    resultsProbable.add(new Pair(result,
+                                            levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                                                    result.getTitle().toLowerCase())));
                                 }
                             }
                         }
                     }
                 }
+
+                if (DBG) Log.d(TAG, "getMatches2: resultsProbable=" + resultsProbable.toString());
+
+                Collections.sort(resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
+                    @Override
+                    public int compare(final Pair<SearchResult, Integer> sr1, final Pair<SearchResult, Integer> sr2) {
+                        if (sr1.second < sr2.second) {
+                            return -1;
+                        } else if (sr1.second.equals(sr2.second)) {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    }
+                });
+
+                if (DBG) Log.d(TAG, "getMatches2: appplying Levenshtein distance resultsProbableSorted=" + resultsProbable.toString());
+
                 if (resultsProbable.size()>0)
-                    results.addAll(resultsProbable);
+                    for (Pair<SearchResult,Integer> pair : resultsProbable)
+                        resultsProbableSorted.add(pair.first);
+                if (resultsProbableSorted.size()>0)
+                    results.addAll(resultsProbableSorted);
                 if (resultsNumericSlug.size()>0)
                     results.addAll(resultsNumericSlug);
                 // skip shows without a banner/poster
@@ -247,16 +271,36 @@ public class ShowScraper2 extends BaseScraper2 {
                                         resultsNumericSlug.add(result);
                                     } else {
                                         if (DBG) Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
-                                        resultsProbable.add(result);
+                                        resultsProbable.add(new Pair(result,
+                                                levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                                                        result.getTitle().toLowerCase())));
                                     }
                                 }
                             }
                         }
                     }
+                    if (DBG) Log.d(TAG, "getMatches2: resultsProbable=" + resultsProbable.toString());
+
+                    Collections.sort(resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
+                        @Override
+                        public int compare(final Pair<SearchResult, Integer> sr1, final Pair<SearchResult, Integer> sr2) {
+                            if (sr1.second < sr2.second) {
+                                return -1;
+                            } else if (sr1.second.equals(sr2.second)) {
+                                return 0;
+                            } else {
+                                return 1;
+                            }
+                        }
+                    });
+
+                    if (DBG) Log.d(TAG, "getMatches2: appplying Levenshtein distance resultsProbableSorted=" + resultsProbable.toString());
+
                     if (resultsProbable.size()>0)
-                        results.addAll(resultsProbable);
-                    if (resultsNumericSlug.size()>0)
-                        results.addAll(resultsNumericSlug);
+                        for (Pair<SearchResult,Integer> pair : resultsProbable)
+                            resultsProbableSorted.add(pair.first);
+                    if (resultsProbableSorted.size()>0)
+                        results.addAll(resultsProbableSorted);
                     // skip shows without a banner/poster
                     /*
                     if (resultsNoBanner.size()>0)
