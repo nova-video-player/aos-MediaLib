@@ -78,7 +78,7 @@ public class ShowScraper2 extends BaseScraper2 {
     private final static String PREFERENCE_NAME = "TheTVDB.com";
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
 
-    final int SERIES_NOT_PERMITTED_ID = 313081;
+    private final int SERIES_NOT_PERMITTED_ID = 313081;
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
@@ -173,7 +173,7 @@ public class ShowScraper2 extends BaseScraper2 {
                             resultsNumericSlug.add(result);
                         } else {
                             if (DBG) Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
-                            resultsProbable.add(new Pair(result,
+                            resultsProbable.add(new Pair<>(result,
                                     levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
                                             result.getTitle().toLowerCase())));
                         }
