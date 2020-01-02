@@ -110,7 +110,10 @@ public final class VideoStore {
 
                 final ContentValues cvR = new ContentValues(1);
 
-                if (cursor.getCount() > 0) {
+                Boolean doPopulate = false;
+                if (cursor == null) { // if there is no files in MediaStore cursor can be null
+                    doPopulate = true;
+                } else if (cursor.getCount()>0) {
                     // video present in MediaStore
                     long newId = 0;
 
@@ -128,8 +131,8 @@ public final class VideoStore {
                     String col = MediaStore.Files.FileColumns._ID;
                     cvR.put(col, newId);
                     context.getContentResolver().update(MediaStore.Files.getContentUri("external"), cvR, whereR, whereRArgs);
-                }
-                else { // video not present in MediaStore nor in VideoStore, if local file insert it in MediaStore
+                } else doPopulate = true;
+                if (doPopulate) { // video not present in MediaStore nor in VideoStore, if local file insert it in MediaStore
                     String col = MediaStore.Files.FileColumns.DATA;
                     // Do not try to insert in MediaStore non local files otherwise it crashes on Android>=P
                     if ("file".equals(uri.getScheme())) {
