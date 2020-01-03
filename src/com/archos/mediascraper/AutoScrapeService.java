@@ -247,7 +247,11 @@ public class AutoScrapeService extends Service {
             @Override
             public void onChange(boolean selfChange) {
                 if (PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true) && AppState.isForeGround()) {
-                    if (DBG) Log.d(TAG, "registerObserver: onChange startService");
+                    // only look if there is something to scrape if not yet in scrape process
+                    if (isScraping()) {
+                        if (DBG) Log.d(TAG, "registerObserver: already scraping, not launching service!");
+                        return;
+                    }
                     // only launch AutoScrapeService if there is something not scraped to avoid notification popup
                     // Look for all the videos not yet processed and not located in the Camera folder
                     String[] selectionArgs = new String[]{ Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera" + "/%" };
