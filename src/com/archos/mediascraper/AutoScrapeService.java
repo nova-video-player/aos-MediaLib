@@ -179,12 +179,12 @@ public class AutoScrapeService extends Service {
 
                 public void run() {
                     Cursor cursor = getFileListCursor(PARAM_SCRAPED);
-                    if(DBG) Log.d(TAG, "starting thread " + cursor.getCount());
+                    final int cursorGetCount = cursor.getCount();
+                    if(DBG) Log.d(TAG, "starting thread " + cursorGetCount);
                     NfoWriter.ExportContext exportContext = new NfoWriter.ExportContext();
-
-                    if (cursor.getCount() > 0) {
-                        if (DBG) Log.d(TAG, "cursor.getCount() "+cursor.getCount());
-                        sNumberOfFilesRemainingToProcess = cursor.getCount();
+                    if (cursorGetCount > 0) {
+                        if (DBG) Log.d(TAG, "cursor.getCount() "+cursorGetCount);
+                        sNumberOfFilesRemainingToProcess = cursorGetCount;
                         cursor.moveToFirst();
                         do {
                             if (sNumberOfFilesRemainingToProcess > 0)
@@ -252,11 +252,12 @@ public class AutoScrapeService extends Service {
                     // Look for all the videos not yet processed and not located in the Camera folder
                     String[] selectionArgs = new String[]{ Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera" + "/%" };
                     Cursor cursor = context.getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS, WHERE_NOT_SCRAPED, selectionArgs, null);
-                    if (cursor.getCount() > 0) {
-                        if (DBG) Log.d(TAG, "registerObserver: onChange getting " + cursor.getCount() + " videos not yet scraped, launching service.");
+                    final int cursorGetCount = cursor.getCount();
+                    if (cursorGetCount > 0) {
+                        if (DBG) Log.d(TAG, "registerObserver: onChange getting " + cursorGetCount + " videos not yet scraped, launching service.");
                         AutoScrapeService.startService(appContext);
                     } else {
-                        if (DBG) Log.d(TAG, "registerObserver: onChange getting " + cursor.getCount() + " videos not yet scraped -> not launching service!");
+                        if (DBG) Log.d(TAG, "registerObserver: onChange getting " + cursorGetCount + " videos not yet scraped -> not launching service!");
                     }
                     cursor.close();
                 }
@@ -282,7 +283,6 @@ public class AutoScrapeService extends Service {
         if(DBG)  Log.d(TAG, "startScraping " + String.valueOf(mThread==null || !mThread.isAlive()) );
         nb.setContentTitle(getString(R.string.scraping_in_progress));
 
-        // TODO: seems not working
         Intent notificationIntent = new Intent(Intent.ACTION_MAIN);
         notificationIntent.setClassName(this.getPackageName(), "com.archos.mediacenter.video.autoscraper.AutoScraperActivity");
         PendingIntent contentIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, 0);
@@ -315,16 +315,17 @@ public class AutoScrapeService extends Service {
 
                         // find all videos not scraped yet looking at VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID
                         Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED);
-                        if(DBG) Log.d(TAG, "startScraping: (re)starting thread number of files identified to process " + cursor.getCount());
+                        final int cursorGetCount = cursor.getCount();
+                        if(DBG) Log.d(TAG, "startScraping: (re)starting thread number of files identified to process " + cursorGetCount);
                         NfoWriter.ExportContext exportContext = null;
                         if (NfoWriter.isNfoAutoExportEnabled(AutoScrapeService.this))
                             exportContext = new NfoWriter.ExportContext();
 
-                        sNumberOfFilesRemainingToProcess = cursor.getCount();
+                        sNumberOfFilesRemainingToProcess = cursorGetCount;
                         if (DBG) Log.d(TAG, "startScraping: number of files sNumberOfFilesRemainingToProcess=" + sNumberOfFilesRemainingToProcess);
                         if (DBG) Log.d(TAG, "startScraping: is AutoScrapeService enabled? " + isEnable(AutoScrapeService.this));
 
-                        if (cursor.getCount() > 0) {
+                        if (cursorGetCount > 0) {
                             restartOnNextRound = true;
                             cursor.moveToFirst();
                             sIsScraping = true;
@@ -511,13 +512,13 @@ public class AutoScrapeService extends Service {
 
                             } while (cursor.moveToNext() && isEnable(AutoScrapeService.this));
                             sIsScraping = false;
-                            if(cursor.getCount() == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
+                            if(cursorGetCount == mNetworkOrScrapErrors) { //when as many errors, we assume we don't have the internet or that the scraper returns an error, do not loop
                                 restartOnNextRound = false;
                                 if(DBG) Log.d(TAG, "startScraping: no internet or scraper errors, stop iterating");
                             } else {
                                 //do not restartOnNextRound if all files are processed i.e. notScraped and scraped, do it only if mNetworkOrScrapErrors
-                                if (sNumberOfFilesScraped + sNumberOfFilesNotScraped >= cursor.getCount()) restartOnNextRound = false;
-                                if(DBG) Log.d(TAG, "startScraping: cursor.getCount() != mNetworkOrScrapErrors, " + cursor.getCount() + "!=" + mNetworkOrScrapErrors +
+                                if (sNumberOfFilesScraped + sNumberOfFilesNotScraped >= cursorGetCount) restartOnNextRound = false;
+                                if(DBG) Log.d(TAG, "startScraping: cursor.getCount() != mNetworkOrScrapErrors, " + cursorGetCount + "!=" + mNetworkOrScrapErrors +
                                         ", #Scraped=" + sNumberOfFilesScraped + ", #NotScraped=" + sNumberOfFilesNotScraped + ", restartOnNextRound =" + restartOnNextRound);
                             }
                         }
