@@ -66,6 +66,8 @@ public class VideoStoreImportImpl {
     private final Blacklist mBlackList;
     private final MediaRetrieverServiceClient mMediaRetrieverServiceClient;
 
+    static final int WINDOW_SIZE = 2000;
+
     public VideoStoreImportImpl(Context context) {
         mContext = context;
         mCr = mContext.getContentResolver();
@@ -135,7 +137,7 @@ public class VideoStoreImportImpl {
     private void handleScanCursor(Cursor c, ContentResolver cr, Context context, Blacklist blacklist) {
         if (c == null || c.getCount() == 0) {
             if (c != null) c.close();
-            if (DBG) Log.d(TAG, "no media to scan");
+            if (DBG) Log.d(TAG, "handleScanCursor: no media to scan");
             return;
         }
 
@@ -146,7 +148,6 @@ public class VideoStoreImportImpl {
         CPOExecutor operations = new CPOExecutor(VideoStore.AUTHORITY, cr, 500);
         long time = System.currentTimeMillis() / 1000L;
         String timeString = String.valueOf(time);
-
 
         NfoParser.ImportContext importContext = new NfoParser.ImportContext();
         while (c.moveToNext()) {
@@ -165,7 +166,7 @@ public class VideoStoreImportImpl {
                 continue;
             }
             Job job = new Job(path, id, blacklist);
-            if (DBG2) Log.d(TAG, "Scanning: " + job.mPath);
+            if (DBG2) Log.d(TAG, "handleScanCursor: scanning " + job.mPath);
             // update property with current file
             ContentValues cv = null;
             try {
@@ -191,17 +192,17 @@ public class VideoStoreImportImpl {
             if (job.mRetrieve && scraperID <= 0) {
                 Uri videoFile = job.mPath;
                 if (videoFile != null) {
-                    if (DBG) Log.d(TAG, "searching .nfo for " + videoFile);
+                    if (DBG) Log.d(TAG, "handleScanCursor: searching .nfo for " + videoFile);
                     NfoParser.NfoFile nfo = NfoParser.determineNfoFile(videoFile);
                     if (nfo != null && nfo.hasNfo()) {
-                        if (DBG) Log.d(TAG, ".nfo found for " + videoFile + " : " + nfo.videoNfo);
+                        if (DBG) Log.d(TAG, "handleScanCursor: .nfo found for " + videoFile + " : " + nfo.videoNfo);
                         BaseTags tagForFile = NfoParser.getTagForFile(nfo, context, importContext);
                         if (tagForFile != null) {
-                            if (DBG) Log.d(TAG, ".nfo contains valid BaseTags for " + videoFile);
+                            if (DBG) Log.d(TAG, "handleScanCursor: .nfo contains valid BaseTags for " + videoFile);
                             long videoId = parseLong(job.mId, -1);
                             if (videoId > 0) {
                                 tagForFile.save(context, videoId);
-                                if (DBG) Log.d(TAG, "BaseTags saved for " + videoFile);
+                                if (DBG) Log.d(TAG, "handleScanCursor: BaseTags saved for " + videoFile);
                                 scraped++;
                             }
                         }
@@ -274,9 +275,9 @@ public class VideoStoreImportImpl {
         String where = WHERE_PATH;
         if (f.isFile())
             where = WHERE_FILE;
-        if (DBG) Log.d(TAG, "Removing file(s): " + path);
+        if (DBG) Log.d(TAG, "doRemove: Removing file(s): " + path);
         int deleted = mCr.delete(VideoStoreInternal.FILES_IMPORT, where, new String[]{path});
-        Log.d(TAG, "removed:" + deleted);
+        Log.d(TAG, "doRemove: removed:" + deleted);
     }
 
     private static String WHERE_PATH = "_data LIKE ?||'/%'";
@@ -296,7 +297,7 @@ public class VideoStoreImportImpl {
         String where = WHERE_PATH;
         if (f.isFile())
             where = WHERE_FILE;
-        if (DBG) Log.d(TAG, "Scanning Metadata: " + path);
+        if (DBG) Log.d(TAG, "doScan: Scanning Metadata: " + path);
         //initNoMedia(mCr);
         Cursor c = mCr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, where, new String[]{ path }, null);
         handleScanCursor(c, mCr, mContext, mBlackList);
@@ -312,7 +313,22 @@ public class VideoStoreImportImpl {
     /** executes metadata scan of every unscanned file */
     private void doScan(ContentResolver cr, Context context, Blacklist blacklist) {
         Cursor c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, WHERE_UNSCANNED, null, null);
-        handleScanCursor(c, cr, context, blacklist);
+        final int numberOfRows = c.getCount();
+        int numberOfRowsRemaining = numberOfRows;
+        c.close();
+        int window = WINDOW_SIZE;
+        // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+        // note that the db is being modified during import
+        do {
+            if (window > numberOfRows)
+                window = numberOfRows;
+            c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + window);
+            if (DBG) Log.d(TAG, "doScan: new batch fetching window=" + window + " entries <=" + numberOfRows);
+            if (DBG) Log.d(TAG, "doScan: new batch cursor has size " + c.getCount());
+            handleScanCursor(c, cr, context, blacklist);
+            numberOfRowsRemaining -= window;
+            c.close();
+        } while (numberOfRowsRemaining > 0);
     }
 
     /** get MediaMetadata object or null for a path */
@@ -360,7 +376,7 @@ public class VideoStoreImportImpl {
         if (!job.mRetrieve)
             return cv;
 
-        if (DBG) Log.d(TAG, "Scanning metadata of: " + path);
+        if (DBG) Log.d(TAG, "fromRetrieverService: Scanning metadata of: " + path);
         switch (job.mMediaType) {
             case FileColumns.MEDIA_TYPE_VIDEO:
                 extract(cv, metadata, VideoColumns.ARCHOS_ENCODING_PROFILE, IMediaMetadataRetriever.METADATA_KEY_ENCODING_PROFILE, "0");
@@ -463,7 +479,7 @@ public class VideoStoreImportImpl {
     };
 
     /** copies data from Android's media db to ours */
-    private static int copyData (ContentResolver cr, String minId) {
+    private static int copyData(ContentResolver cr, String minId) {
         int imported = 0;
         String where = null;
         String[] whereArgs = null;
@@ -499,7 +515,7 @@ public class VideoStoreImportImpl {
                 }
                 // transaction size limited, acts like buffered output stream and auto-flushes queue
                 BulkInserter inserter = new BulkInserter(VideoStoreInternal.FILES_IMPORT, cr, 2000);
-                if (DBG) Log.d(TAG, "found items to import:" + count);
+                if (DBG) Log.d(TAG, "copyData: found items to import:" + count);
                 while (allFiles.moveToNext()) {
                     try {
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
