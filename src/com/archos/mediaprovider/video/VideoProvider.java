@@ -135,10 +135,10 @@ public class VideoProvider extends ContentProvider {
         PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(mPreferencechChangeListener);
 
         try {
-            if (DBG) Log.d(TAG, "try to VideoStoreImportService.start");
-            VideoStoreImportService.start(context);
+            if (DBG) Log.d(TAG, "onCreate: try to VideoStoreImportService.start");
+            VideoStoreImportService.startService(context);
         }catch(java.lang.IllegalStateException e){
-            Log.w(TAG, "VideoStoreImportService.start failed!");
+            Log.w(TAG, "onCreate: VideoStoreImportService.startService failed!");
         }
         // handles connectivity changes
         AppState.addOnForeGroundListener(mForeGroundListener);
@@ -1391,10 +1391,13 @@ static class MediaThumbRequest {
 
         @Override
         public void onForeGroundState(Context applicationContext, boolean foreground) {
-            if(foreground)
-                VideoStoreImportService.start(applicationContext);
-            else
-                VideoStoreImportService.stop(applicationContext);
+            if(foreground) {
+                if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.startService");
+                VideoStoreImportService.startService(applicationContext);
+            }  else {
+                if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.stopService");
+                VideoStoreImportService.stopService(applicationContext);
+            }
             handleForeGround(foreground);
         }
     };

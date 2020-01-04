@@ -47,6 +47,8 @@ public final class ArchosMediaIntent {
     public static final String ACTION_MUSIC_SCANNER_SCAN_STARTED = "archos.media.intent.action.MUSIC_SCANNER_SCAN_STARTED";
     public static final String ACTION_MUSIC_SCANNER_SCAN_FINISHED = "archos.media.intent.action.MUSIC_SCANNER_SCAN_FINISHED";
 
+    public static final String ACTION_VIDEO_SCANNER_IMPORT_INCR = "archos.media.intent.action.VIDEO_SCANNER_IMPORT_INCR";
+
     public static boolean isVideoScanIntent(String action) {
         return ArchosIntents.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action) ||
                 ACTION_VIDEO_SCANNER_SCAN_FILE.equals(action);

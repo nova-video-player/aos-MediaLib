@@ -106,13 +106,15 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     }
 
     public static boolean startIfHandles(Context context, Intent broadcast) {
+        mContext = context;
         String action = broadcast.getAction();
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)
                 || ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)
                 || Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)
                 || ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)
                 || ArchosMediaIntent.isVideoRemoveIntent(action)
-                || Intent.ACTION_SHUTDOWN.equals(action)) {
+                || Intent.ACTION_SHUTDOWN.equals(action)
+                || ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR.equals(action)) {
             if (DBG) Log.d(TAG, "startIfHandles is true: sending intent to VideoStoreImportService");
             Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
             serviceIntent.setAction(action);
@@ -199,7 +201,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                     mVolumeState.updateState();
 
                     if (ImportState.VIDEO.isDirty()) {
-                        if (DBG) Log.d(TAG, "onForeGround && ImportState.isDirty");
+                        if (DBG) Log.d(TAG, "onCreate: onForeGround && ImportState.isDirty MESSAGE_IMPORT_FULL");
                         mHandler
                             .obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0)
                             .sendToTarget();
@@ -217,6 +219,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         getContentResolver().registerContentObserver(MediaStore.Video.Media.getContentUri("external"),
                 true, mContentObserver);
         // do a full import here to make sure that we have initial data
+        // TODO is this useful to do it at each launch --> should not?
+        if (DBG) Log.d(TAG, "onCreate: MESSAGE_IMPORT_FULL, MARC is this useful?");
         Message m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0);
         // assume this is the initial import although there could be data in the db already.
         ImportState.VIDEO.setState(State.INITIAL_IMPORT);
@@ -262,7 +266,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // forward startId to handler thread
         // /!\ if an action is added CHECK in startIfHandles if action is listed /!\
         String action = intent.getAction();
-        if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)|| ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)) {
+        if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action) || ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)) {
             if (DBG) Log.d(TAG, "ACTION_MEDIA_SCANNER_FINISHED " + intent.getData());
             // happens rarely, on boot and when inserting / ejecting sd cards
             removeAllMessages(mHandler);
@@ -287,6 +291,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         } else if (Intent.ACTION_SHUTDOWN.equals(action)) {
             if (DBG) Log.d(TAG, "Import disabled due to shutdown");
             sActive = false;
+        } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR.equals(action)) {
+            if (DBG) Log.d(TAG, "ACTION_VIDEO_SCANNER_IMPORT_INCR " + intent.getData());
+            removeAllMessages(mHandler);
+            Message m = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, startId, flags);
+            mHandler.sendMessageDelayed(m, 1000);
         } else {
             Log.w(TAG, "onStartCommand: intent not treated, cancelling notification and stopForeground");
             nm.cancel(NOTIFICATION_ID);
@@ -299,7 +308,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
      * allows to "bind" to this service, will cause the service to be listening to
      * content changed events while bound
      * */
-    public static void start(Context context) {
+    public static void startService(Context context) {
+        if (DBG) Log.d(TAG, "startService");
+        mContext = context;
         Intent intent = new Intent(context, VideoStoreImportService.class);
         if (AppState.isForeGround()) {
             ContextCompat.startForegroundService(context, intent);
@@ -307,7 +318,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }
 
-    public static void stop(Context context) {
+    // TODO MARC: problem should send kill signal intent
+    public static void stopService(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
         context.stopService(intent);
     }
@@ -428,6 +440,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE)", null);
             int numberOfRows = c.getCount();
             int numberOfRowsRemaining = numberOfRows;
+            if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files cover numberOfRows=" + numberOfRows);
             int window = WINDOW_SIZE;
             c.close();
             do {
@@ -463,6 +476,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             c = db.rawQuery("SELECT * FROM delete_files", null);
             int numberOfRows = c.getCount();
             int numberOfRowsRemaining = numberOfRows;
+            if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files numberOfRows=" + numberOfRows);
             int window = WINDOW_SIZE;
             c.close();
             do {
@@ -500,6 +514,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             c = db.rawQuery("SELECT * FROM vob_insert", null);
             int numberOfRows = c.getCount();
             int numberOfRowsRemaining = numberOfRows;
+            if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert numberOfRows=" + numberOfRows);
             int window = WINDOW_SIZE;
             c.close();
             do {
@@ -550,11 +565,23 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         @Override
         public void onChange(boolean selfChange) {
             if (DBG) Log.d(TAG, "onChange");
+            // to avoid sending message to dead thread because mHandlerThread is no more, need to relauch the service so that it is recreated in onCreate
+            /*
             // happens really often
             if (importOk()) {
                 removeAllMessages(mHandler);
                 Message msg = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, DONT_KILL_SELF, 0);
                 mHandler.sendMessageDelayed(msg, 1000);
+            }
+             */
+            // happens really often
+            if (importOk()) {
+                if (DBG) Log.d(TAG, "onChange: trigering VIDEO_SCANNER_IMPORT_INCR");
+                Intent intent = new Intent(mContext, VideoStoreImportService.class);
+                intent.setAction(ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR);
+                if (AppState.isForeGround()) {
+                    ContextCompat.startForegroundService(mContext, intent);
+                }
             }
         }
     }
