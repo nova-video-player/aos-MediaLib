@@ -66,7 +66,7 @@ public class VideoStoreImportImpl {
     private final Blacklist mBlackList;
     private final MediaRetrieverServiceClient mMediaRetrieverServiceClient;
 
-    static final int WINDOW_SIZE = 2000;
+    private static final int WINDOW_SIZE = 2000;
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;

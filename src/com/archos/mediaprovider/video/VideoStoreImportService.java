@@ -36,6 +36,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.provider.BaseColumns;
 import android.provider.MediaStore;
 
 import androidx.core.app.NotificationCompat;
@@ -91,6 +92,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     private static final String notifChannelId = "VideoStoreImportService_id";
     private static final String notifChannelName = "VideoStoreImportService";
     private static final String notifChannelDescr = "VideoStoreImportService";
+
+    private static final int WINDOW_SIZE = 2000;
 
     public VideoStoreImportService() {
         if (DBG) Log.d(TAG, "VideoStoreImportService CTOR");
@@ -253,7 +256,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
 
-        if (DBG) Log.d(TAG, "startForeground");
+        if (DBG) Log.d(TAG, "onStartCommand: startForeground");
         startForeground(NOTIFICATION_ID, n);
 
         // forward startId to handler thread
@@ -420,76 +423,112 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
         try {
+            // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+            // note that the db is being modified during import
             c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE)", null);
-            c.moveToPosition(-1);
-            while (c.moveToNext()) {
-                long id = c.getLong(0);
-                String path = c.getString(1);
-                long count = c.getLong(2);
-                if (DBG) Log.d(TAG, "clean delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
-                // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                try {
-                    db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                } catch (SQLException sqlE) {
-                    Log.e(TAG, "SQLException", sqlE);
-                } finally {
+            int numberOfRows = c.getCount();
+            int numberOfRowsRemaining = numberOfRows;
+            int window = WINDOW_SIZE;
+            c.close();
+            do {
+                if (window > numberOfRowsRemaining)
+                    window = numberOfRowsRemaining;
+                c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE) ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
+                if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files cover new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
+                if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files cover new batch cursor has size " + c.getCount());
+                while (c.moveToNext()) {
+                    long id = c.getLong(0);
+                    String path = c.getString(1);
+                    long count = c.getLong(2);
+                    if (DBG) Log.d(TAG, "clean delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
+                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                    try {
+                        db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                    } catch (SQLException sqlE) {
+                        Log.e(TAG, "SQLException", sqlE);
+                    }
                 }
-            }
+                c.close();
+                numberOfRowsRemaining -= window;
+            } while (numberOfRowsRemaining > 0);
         } catch (SQLException | IllegalStateException e) {
             Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
-            if (c != null)
-                c.close();
+            if (c != null) c.close();
         }
         // note: seems that the delete is performed not as a table trigger anymore but elsewhere
         try {
+            // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+            // note that the db is being modified during import
             c = db.rawQuery("SELECT * FROM delete_files", null);
-            c.moveToPosition(-1);
-            while (c.moveToNext()) {
-                long id = c.getLong(0);
-                String path = c.getString(1);
-                long count = c.getLong(2);
-                if (DBG) Log.d(TAG, "delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
-                // delete callback
-                DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
-                delCb.callback(DeleteFileCallbackArgs);
-                // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                try {
-                    db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                } catch (SQLException sqlE) {
-                    Log.e(TAG, "SQLException", sqlE);
-                } finally {
+            int numberOfRows = c.getCount();
+            int numberOfRowsRemaining = numberOfRows;
+            int window = WINDOW_SIZE;
+            c.close();
+            do {
+                while (c.moveToNext()) {
+                    if (window > numberOfRowsRemaining)
+                        window = numberOfRowsRemaining;
+                    c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
+                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
+                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files new batch cursor has size " + c.getCount());
+                    long id = c.getLong(0);
+                    String path = c.getString(1);
+                    long count = c.getLong(2);
+                    if (DBG) Log.d(TAG, "delete_files " + String.valueOf(id) + " path " + path + " count " + String.valueOf(count));
+                    // delete callback
+                    DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
+                    delCb.callback(DeleteFileCallbackArgs);
+                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                    try {
+                        db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                    } catch (SQLException sqlE) {
+                        Log.e(TAG, "SQLException", sqlE);
+                    }
                 }
-            }
+                c.close();
+                numberOfRowsRemaining -= window;
+            } while (numberOfRowsRemaining > 0);
         } catch (SQLException | IllegalStateException e) {
             Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
-            if (c != null)
-                c.close();
+            if (c != null) c.close();
         }
         try {
+            // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+            // note that the db is being modified during import
             c = db.rawQuery("SELECT * FROM vob_insert", null);
-            c.moveToPosition(-1);
-            while (c.moveToNext()) {
-                long id = c.getLong(0);
-                String path = c.getString(1);
-                if (DBG) Log.d(TAG, "vob_insert " + String.valueOf(id) + " path " + path);
-                // delete callback
-                VobUpdateCallbackArgs = new String[] {path};
-                vobCb.callback(VobUpdateCallbackArgs);
-                // purge the db: delete row
-                try {
-                    db.execSQL("DELETE FROM vob_insert WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                } catch (SQLException sqlE) {
-                    Log.e(TAG, "SQLException", sqlE);
-                } finally {
+            int numberOfRows = c.getCount();
+            int numberOfRowsRemaining = numberOfRows;
+            int window = WINDOW_SIZE;
+            c.close();
+            do {
+                while (c.moveToNext()) {
+                    if (window > numberOfRowsRemaining)
+                        window = numberOfRowsRemaining;
+                    c = db.rawQuery("SELECT * FROM vob_insert ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
+                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
+                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert new batch cursor has size " + c.getCount());
+                    long id = c.getLong(0);
+                    String path = c.getString(1);
+                    if (DBG) Log.d(TAG, "vob_insert " + String.valueOf(id) + " path " + path);
+                    // delete callback
+                    VobUpdateCallbackArgs = new String[] {path};
+                    vobCb.callback(VobUpdateCallbackArgs);
+                    // purge the db: delete row
+                    try {
+                        db.execSQL("DELETE FROM vob_insert WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
+                    } catch (SQLException sqlE) {
+                        Log.e(TAG, "SQLException", sqlE);
+                    }
                 }
-            }
+                c.close();
+                numberOfRowsRemaining -= window;
+            } while (numberOfRowsRemaining > 0);
         } catch (SQLException | IllegalStateException e) {
             Log.e(TAG, "SQLException or IllegalStateException",e);
         } finally {
-            if (c != null)
-                c.close();
+            if (c != null) c.close();
         }
         // don't db.close() - shared connection
     }
@@ -503,13 +542,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     /** ContentObserver that triggers import when data changed. */
     private static class ContentChangeObserver extends ContentObserver {
-
         private final Handler mHandler;
         public ContentChangeObserver(Handler handler) {
             super(handler);
             mHandler = handler;
         }
-
         @Override
         public void onChange(boolean selfChange) {
             if (DBG) Log.d(TAG, "onChange");
