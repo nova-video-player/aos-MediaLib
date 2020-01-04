@@ -268,15 +268,13 @@ public enum ShortcutDbAdapter {
         try {
 
             open(context);
-            Cursor cursor = mDb.query(mDatabaseTable,
+            return mDb.query(mDatabaseTable,
                     SHORTCUT_COLS,
                     where,
                     whereArgs,
                     null,
                     null,
                     null);
-
-            return cursor;
         }
         catch (SQLiteException e) {
             // The table corresponding to this type does not exist yet
