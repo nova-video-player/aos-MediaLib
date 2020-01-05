@@ -126,6 +126,16 @@ public enum ImportState {
         }
     }
 
+    public boolean isRegularImport() {
+        mLock.lock();
+        try {
+            if (DBG) Log.d(TAG, "isInitialImport=" + (mState == State.REGULAR_IMPORT));
+            return mState == State.REGULAR_IMPORT;
+        } finally {
+            mLock.unlock();
+        }
+    }
+
     /**
      * @return the number of files found in the Android DB that are still pending for import
      */
