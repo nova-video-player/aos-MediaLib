@@ -13,7 +13,7 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
-    <string name="network_scan_msg">Indexování mediálních souborů</string>
+    <string name="network_scan_msg">Indexovat mediální soubory</string>
     <string name="network_unscan_msg">Odstraňování mediálních souborů z knihovny</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Export informací o médiích</string>
