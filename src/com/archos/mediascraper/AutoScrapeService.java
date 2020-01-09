@@ -549,10 +549,12 @@ public class AutoScrapeService extends Service {
                         }
                         shouldRescrapAll = false; //to avoid rescraping on next round
                         // final check if while scanning there was no more files to scrape added
-                        if(getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null).getCount()>0) {
+                        cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null);
+                        if(cursor.getCount()>0) {
                             restartOnNextRound = true;
                             if (DBG) Log.d(TAG, "startScraping: new entries to scrape found most likely added during scrape process, restartOnNextRound");
                         }
+                        cursor.close();
                     } while(restartOnNextRound
                             &&PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this).getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP, true)); //if we had something to do, we look for new videos
                     sIsScraping = false;
