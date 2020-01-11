@@ -113,28 +113,33 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                             Log.d(TAG, "ftp server is assumed to exist: " + server);
                         if (updateServerDb(id, cr, active, 1, now))
                             mServerDbUpdated = true;
-                    } else if(!server.startsWith("upnp")) {
-                        final FileEditor serverFile = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(server+"/"), null);
-                        if (serverFile == null) {
-                            Log.d(TAG, "bad server [" + server + "]");
-                            continue;
-                        }
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                if (serverFile.exists()) {
-                                    if (DBG)
-                                        Log.d(TAG, "server exists: " + server);
-                                    if (updateServerDb(id, cr, active, 1, now))
-                                        mServerDbUpdated = true;
-                                } else {
-                                    if (DBG)
-                                        Log.d(TAG, "server does not exist: " + server);
-                                    if (updateServerDb(id, cr, active, 0, now))
-                                        mServerDbUpdated = true;
-                                }
+                    } else if(!server.startsWith("upnp")) { // SMB goes there even if on cellular only
+                        if (hasLocalConnection) { // perform the check of the server existing only if hasLocalConnection
+                            final FileEditor serverFile = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(server + "/"), null);
+                            if (serverFile == null) {
+                                Log.d(TAG, "bad server [" + server + "]");
+                                continue;
                             }
-                        }.start();
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    if (serverFile.exists()) {
+                                        if (DBG)
+                                            Log.d(TAG, "server exists: " + server);
+                                        if (updateServerDb(id, cr, active, 1, now))
+                                            mServerDbUpdated = true;
+                                    } else {
+                                        if (DBG)
+                                            Log.d(TAG, "server does not exist: " + server);
+                                        if (updateServerDb(id, cr, active, 0, now))
+                                            mServerDbUpdated = true;
+                                    }
+                                }
+                            }.start();
+                        } else {
+                            if (DBG) Log.d(TAG, "no local connectivity setting all smb servers inactive");
+                            setSmbServersInactive(context, cr);
+                        }
                     } else if(server.startsWith("upnp")) {
                         mUpnpId.put(server,new Pair<>(id, active));
                     }
@@ -156,16 +161,19 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                 Log.d(TAG, "server query returned NULL");
             }
         } else{
-                if (DBG) Log.d(TAG, "setting all smb servers inactive");
-                // no more smb servers.
-                ContentValues cv = new ContentValues(1);
-                cv.put(VideoStore.SmbServer.SmbServerColumns.ACTIVE, "0");
-                // update everything with inactive.
-                cr.update(SERVER_URI, cv, SELECTION_ALL_NETWORK, null);
-                // and tell the world
-
-                cr.notifyChange(NOTIFY_URI, null);
+                if (DBG) Log.d(TAG, "no connectivity setting all smb servers inactive");
+                setSmbServersInactive(context, cr);
         }
+    }
+
+    protected final static void setSmbServersInactive(Context context, ContentResolver contentResolver) {
+        // no more smb servers.
+        ContentValues cv = new ContentValues(1);
+        cv.put(VideoStore.SmbServer.SmbServerColumns.ACTIVE, "0");
+        // update everything with inactive.
+        contentResolver.update(SERVER_URI, cv, SELECTION_ALL_NETWORK, null);
+        // and tell the world
+        contentResolver.notifyChange(NOTIFY_URI, null);
     }
 
     protected final static boolean updateServerDb(long id, ContentResolver cr, int oldState,
