@@ -78,6 +78,7 @@ public class MovieScraper3 extends BaseScraper2 {
     private final static boolean CACHE = true;
 
     private static ScraperSettings sSettings;
+    private Response<MovieResultsPage> response = null;
 
     // TODO: MARC do we need cache? Can we share cache?
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
@@ -147,6 +148,28 @@ public class MovieScraper3 extends BaseScraper2 {
         return results;
     }
 
+    private Pair<List<SearchResult>, Boolean> searchMovie(MovieSearchInfo searchInfo, int maxItems, Integer year, String language) {
+        Boolean error = false;
+        List<SearchResult> results = new LinkedList<>();
+        if (DBG) Log.d(TAG, "getMatches2: no result yet, quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
+        try {
+            response = searchService.movie(searchInfo.getName(), null, language,
+                    null, true, year, null).execute();
+            if (response.isSuccessful() && response.body() != null) {
+                results = processTmDbSearch(response, searchInfo, maxItems, language);
+            } else if (response.code() != 404) { // TODO: probably treat other cases of errors
+                if (DBG)
+                    Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
+                error = true;
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "searchMovie: caught IOException");
+            error = true;
+            response = null;
+        }
+        return new Pair<>(results, error);
+    }
+
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
         // check input
@@ -155,14 +178,11 @@ public class MovieScraper3 extends BaseScraper2 {
             return new ScrapeSearchResult(null, true, ScrapeStatus.ERROR, null);
         }
         MovieSearchInfo searchInfo = (MovieSearchInfo) info;
+        Pair<List<SearchResult>, Boolean> searchResults = null;
         // get configured language
         String language = getLanguage(mContext);
-        Response<MovieResultsPage> response = null;
-
+        response = null;
         if (DBG) Log.d(TAG, "getMatches2: movie search:" + searchInfo.getName());
-
-        List<SearchResult> results = new LinkedList<>();
-
         if (tmdb == null) {
             tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
             searchService = tmdb.searchService();
@@ -173,71 +193,36 @@ public class MovieScraper3 extends BaseScraper2 {
                 year = Integer.parseInt(searchInfo.getYear());
             } catch(NumberFormatException nfe) {
                 Log.w(TAG, "getMatches2: searchInfo.getYear() is not an integer");
+                year = null;
             }
-            if (DBG) Log.d(TAG, "getMatches2: quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
-            response = searchService.movie(searchInfo.getName(), null, language,
-                    null, true, year, null).execute();
-            if (response.isSuccessful() && response.body() != null) {
-                results = processTmDbSearch(response, searchInfo, maxItems, language);
-            } else if (response.code() != 404) {
-                if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
-                return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-            }
+            searchResults = searchMovie(searchInfo, maxItems, year, language);
+            if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
             // fallback in english if result is empty
-            if (results.isEmpty() && !language.equals("en")) {
-                language = "en";
-                if (DBG) Log.d(TAG, "getMatches2: quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
-                response = searchService.movie(searchInfo.getName(), null, language,
-                        null, true, year, null).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    results = processTmDbSearch(response, searchInfo, maxItems, language);
-                }
-                else if (response.code() != 404) {
-                    if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
-                    return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-                }
+            if (searchResults.first.isEmpty() && !language.equals("en")) {
+                searchResults = searchMovie(searchInfo, maxItems, year, "en");
+                if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
             }
-            // still no result try with empty year with default language
-            if (results.isEmpty()) {
-                year = null;
-                language = getLanguage(mContext);
-                if (DBG) Log.d(TAG, "getMatches2: quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
-                response = searchService.movie(searchInfo.getName(), null, language,
-                        null, true, year, null).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    results = processTmDbSearch(response, searchInfo, maxItems, language);
+            if (year != null) { // search were made with a non null year
+                // still no result try with empty year with default language
+                if (searchResults.first.isEmpty()) {
+                    searchResults = searchMovie(searchInfo, maxItems, null, language);
+                    if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
                 }
-                else if (response.code() != 404) {
-                    if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
-                    return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-                }
-            }
-            // still no result try with empty year with english
-            if (results.isEmpty() && !language.equals("en")) {
-                year = null;
-                language = "en";
-                if (DBG) Log.d(TAG, "getMatches2: quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
-                response = searchService.movie(searchInfo.getName(), null, language,
-                        null, true, year, null).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    results = processTmDbSearch(response, searchInfo, maxItems, language);
-                }
-                else if (response.code() != 404) {
-                    if (DBG) Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
-                    return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
+                // still no result try with empty year with english
+                if (searchResults.first.isEmpty() && !language.equals("en")) {
+                    searchResults = searchMovie(searchInfo, maxItems, null, "en");
+                    if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
                 }
             }
         } catch (Exception e) {
             Log.e(TAG, "getMatches2", e);
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
-        ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
+        ScrapeStatus status = searchResults.first.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
         if (DBG)
-            if (results.isEmpty())
-                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.NOT_FOUND");
-            else
-                Log.d(TAG,"ScrapeSearchResult ScrapeStatus.OKAY found " + results);
-        return new ScrapeSearchResult(results, false, status, null);
+            if (searchResults.first.isEmpty()) Log.d(TAG,"ScrapeSearchResult ScrapeStatus.NOT_FOUND");
+            else Log.d(TAG,"ScrapeSearchResult ScrapeStatus.OKAY found " + searchResults.first);
+        return new ScrapeSearchResult(searchResults.first, false, status, null);
     }
 
     @Override
@@ -245,6 +230,8 @@ public class MovieScraper3 extends BaseScraper2 {
         generatePreferences(mContext);
 
         String language = sSettings.getString("language");
+        language = getLanguage(mContext);
+
         long movieId = result.getId();
         Uri searchFile = result.getFile();
 
@@ -278,11 +265,9 @@ public class MovieScraper3 extends BaseScraper2 {
         if (tag.getPlot() == null) {
             MovieIdDescription.addDescription(movieId, tag, jff);
         }
-
         tag.downloadPoster(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
     }
-
 
     public static String getLanguage(Context context) {
         return generatePreferences(context).getString("language");
