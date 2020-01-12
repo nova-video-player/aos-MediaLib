@@ -87,6 +87,7 @@ public class MovieScraper3 extends BaseScraper2 {
 
     static MyTmdb tmdb = null;
     static SearchService searchService = null;
+    static MoviesService moviesService = null;
 
     public MovieScraper3(Context context) {
         super(context);
@@ -148,10 +149,12 @@ public class MovieScraper3 extends BaseScraper2 {
         return results;
     }
 
+    // TODO: isolate into a separate class with throwable
     private Pair<List<SearchResult>, Boolean> searchMovie(MovieSearchInfo searchInfo, int maxItems, Integer year, String language) {
         Boolean error = false;
         List<SearchResult> results = new LinkedList<>();
-        if (DBG) Log.d(TAG, "getMatches2: no result yet, quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
+        if (searchService == null) searchService = tmdb.searchService();
+        if (DBG) Log.d(TAG, "searchMovie: quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
         try {
             response = searchService.movie(searchInfo.getName(), null, language,
                     null, true, year, null).execute();
@@ -184,10 +187,7 @@ public class MovieScraper3 extends BaseScraper2 {
         String language = getLanguage(mContext);
         response = null;
         if (DBG) Log.d(TAG, "getMatches2: movie search:" + searchInfo.getName());
-        if (tmdb == null) {
-            tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
-            searchService = tmdb.searchService();
-        }
+        if (tmdb == null) tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
         try {
             Integer year = null;
             try {
@@ -234,9 +234,24 @@ public class MovieScraper3 extends BaseScraper2 {
         long movieId = result.getId();
         Uri searchFile = result.getFile();
 
-        if (tmdb == null) {
-            tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
-            searchService = tmdb.searchService();
+        if (tmdb == null) tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
+        if (moviesService == null) moviesService = tmdb.moviesService();
+
+        Response<Movie> movieResponse = null;
+        try {
+            movieResponse = moviesService.summary((int) movieId, language).execute();
+            // fallback to english if no result
+            // TODO: check if this works as a fallback
+            if (movieResponse.body() == null && !language.equals("en")) {
+                movieResponse = moviesService.summary((int) movieId, "en").execute();
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "getDetailsInternal: caught IOException getting summary");
+        }
+        if (movieResponse.isSuccessful() && movieResponse.body() != null) {
+            if (DBG) Log.d(TAG, "found something");
+        } else if (movieResponse.code() != 404) { // TODO: probably treat other cases of errors
+            if (DBG) Log.d(TAG, "error");
         }
 
         // return ScrapeDetailResult containing baseTags for a single movieID
