@@ -80,7 +80,7 @@ public class MovieScraper3 extends BaseScraper2 {
     private static ScraperSettings sSettings;
     private Response<MovieResultsPage> response = null;
 
-    // TODO: MARC do we need cache? Can we share cache?
+    // TODO: make it a scraper cache class and link with global parameters!
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
     static Cache cache;
@@ -98,12 +98,12 @@ public class MovieScraper3 extends BaseScraper2 {
     }
 
     static class MyTmdb extends Tmdb {
-        public MyTmdb(String apiKey) {
-            super(apiKey);
-        }
+        public MyTmdb(String apiKey) { super(apiKey); }
         public class CacheInterceptor implements Interceptor {
             @Override
             public okhttp3.Response intercept(Chain chain) throws IOException {
+                // TODO: use for cache data MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
+                //  MediaScraper.CACHE_OVERWRITE_DIRECTORY)
                 okhttp3.Response response = chain.proceed(chain.request());
                 CacheControl cacheControl = new CacheControl.Builder()
                         .maxAge(2, TimeUnit.HOURS) // 2 hours cache
@@ -124,7 +124,7 @@ public class MovieScraper3 extends BaseScraper2 {
                 builder.addNetworkInterceptor(logging).addInterceptor(logging);
             }
             if (CACHE) {
-                builder.cache(cache).addNetworkInterceptor(new MovieScraper3.MyTmdb.CacheInterceptor());
+                builder.cache(cache).addNetworkInterceptor(new MyTmdb.CacheInterceptor());
             }
         }
     }
@@ -172,6 +172,7 @@ public class MovieScraper3 extends BaseScraper2 {
 
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
+        // search all movies matches based on pre-processed filename and return list of results
         // check input
         if (info == null || !(info instanceof MovieSearchInfo)) {
             Log.e(TAG, "bad search info: " + info == null ? "null" : "tvshow in movie scraper");
@@ -227,13 +228,22 @@ public class MovieScraper3 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
-        generatePreferences(mContext);
 
-        String language = sSettings.getString("language");
-        language = getLanguage(mContext);
+        String language = getLanguage(mContext);
 
         long movieId = result.getId();
         Uri searchFile = result.getFile();
+
+        if (tmdb == null) {
+            tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
+            searchService = tmdb.searchService();
+        }
+
+        // return ScrapeDetailResult containing baseTags for a single movieID
+        // get base info through movieSearch based on ID
+        // get trailers
+        // get posters and backdrops
+        // get plots
 
         HttpCache cache = HttpCache.getInstance(MediaScraper.getXmlCacheDirectory(mContext),
                 MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
