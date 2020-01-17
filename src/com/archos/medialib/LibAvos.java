@@ -259,6 +259,10 @@ public class LibAvos {
         nativeSetDecoder(decoder);
     }
 
+    public static void setAudioInterface(int audio_interface) {
+        nativeSetAudioInterface(audio_interface);
+    }
+
     public static void setCodepage(int codepage) {
         if (DBG) Log.d(TAG, "setCodepage: " + codepage);
         nativeSetCodepage(codepage);
@@ -288,6 +292,8 @@ public class LibAvos {
 
     private static native void nativeSetDecoder(int decoder);
 
+    private static native void nativeSetAudioInterface(int audio_interface);
+
     private static native void nativeSetCodepage(int codepage);
 
     private static native void nativeSetOutputSampleRate(int sampleRate);
@@ -303,5 +309,8 @@ public class LibAvos {
     public static final int MP_DECODER_HW_OMXCODEC = 3;
     public static final int MP_DECODER_HW_MEDIACODEC = 4;
     public static final int MP_DECODER_HW_OMXPLUS = 5;
-
+    // audio output
+    public static final int MP_AUDIO_INTERFACE_ANY = 0;
+    public static final int MP_AUDIO_INTERFACE_AUDIOTRACK = 1;
+    public static final int MP_AUDIO_INTERFACE_OPENSLES = 2;
 }
