@@ -17,6 +17,7 @@
     <string name="network_unscan_msg">Medya dosyalarının kütüphaneden kaldırılması</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Medya bilgisini dışa aktar</string>
+    <string name="nfo_export_auto_title">Aramadan sonra otomatik dışa aktar</string>
     <string name="nfo_export_manual_summary">Zaten kopyalanan her videonun .nfo dosyalarını dışa aktar</string>
     <!-- trakt.tv -->
     <!-- Title of screen when no sd card is present -->
