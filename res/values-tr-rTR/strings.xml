@@ -40,9 +40,11 @@
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">SD kart hatası</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
+    <string name="sdcard_error_message">SD kartınızda bir hatayla karşılaşıldı.</string>
     <!-- Title of screen when no storage is present -->
     <string name="storage_missing_title">Dahili depolama kullanılamıyor</string>
     <!-- label underneath icon used to indicate that no storage is present -->
+    <string name="storage_missing_message">Cihazınızın dahili depolama birimi kullanılamıyor.</string>
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">Dahili depolama kullanılamıyor</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
@@ -50,10 +52,48 @@
     <!-- Title of screen when there was an error accessing the internal storage -->
     <string name="storage_error_title">Dahili depolama hatası</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
+    <string name="storage_error_message">Dahili depolama biriminizde bir hatayla karşılaşıldı.</string>
+    <string name="scraper_no_settings">Bu kaynak için kullanılabilir ayar yok.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Enable Fanart</item>
+        <item>info_language:Language</item>
+    </string-array>
+    <string name="tv_show_genre_action">Aksiyon</string>
+    <string name="tv_show_genre_adventure">Macera</string>
+    <string name="tv_show_genre_animation">Animasyon</string>
+    <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_children">Çocuklar</string>
+    <string name="tv_show_genre_comedy">Komedi</string>
+    <string name="tv_show_genre_crime">Suç</string>
+    <string name="tv_show_genre_documentary">Belgesel</string>
+    <string name="tv_show_genre_drama">Dram</string>
+    <string name="tv_show_genre_family">Aile</string>
+    <string name="tv_show_genre_fantasy">Fantezi</string>
+    <string name="tv_show_genre_food">Yemek</string>
+    <string name="tv_show_genre_game_show">Oyun Şov</string>
+    <string name="tv_show_genre_home_garden">Ev ve Bahçe</string>
+    <string name="tv_show_genre_horror">Korku</string>
+    <string name="tv_show_genre_mini_series">Mini Dizi</string>
+    <string name="tv_show_genre_news">Haber</string>
+    <string name="tv_show_genre_reality">Gerçeklik Üzerine</string>
+    <string name="tv_show_genre_romance">Romantik</string>
+    <string name="tv_show_genre_science_fiction">Bilim Kurgu</string>
+    <string name="tv_show_genre_soap">Pembe Dizi</string>
+    <string name="tv_show_genre_special_interest">Özel ilgi</string>
+    <string name="tv_show_genre_sport">Spor</string>
+    <string name="tv_show_genre_suspense">Gerilim</string>
+    <string name="tv_show_genre_talk_show">Talk Show</string>
+    <string name="tv_show_genre_thriller">Gerilim</string>
+    <string name="tv_show_genre_travel">Seyahat</string>
+    <string name="tv_show_genre_western">Batı</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
       BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
+    <string name="artist_label">Sanatçı</string>
+    <string name="scraping_in_progress">Kazıma devam ediyor</string>
+    <string name="remaining_videos_to_process">İşlenecek kalan medya dosyaları:</string>
+    <string name="video_store_import">Yerel medya dosyalarını içe aktarma</string>
 </resources>
