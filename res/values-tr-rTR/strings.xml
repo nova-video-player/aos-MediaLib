@@ -18,8 +18,17 @@
     <!-- .nfo export options -->
     <string name="nfo_export_category">Medya bilgisini dışa aktar</string>
     <string name="nfo_export_auto_title">Aramadan sonra otomatik dışa aktar</string>
+    <string name="nfo_export_manual_title">Zaten kazınmış videoları dışa aktar</string>
+    <string name="nfo_export_auto_summary">Başarılı çevrimiçi aramanın ardından .nfo dosyalarını otomatik olarak dışa aktar</string>
     <string name="nfo_export_manual_summary">Zaten kopyalanan her videonun .nfo dosyalarını dışa aktar</string>
+    <string name="nfo_export_button">.Nfo dosyasını dışa aktar</string>
+    <string name="nfo_export_folder">Bu klasördeki tüm dosyaları .nfo dosyasına aktar</string>
+    <string name="nfo_export_all">Tüm kütüphaneyi .nfo dosyasına aktar</string>
+    <string name="nfo_export_exporting">.Nfo dışa aktarılıyor</string>
+    <string name="nfo_export_exporting_all">her şey</string>
+    <string name="rescrap_all_title">Tümünü iptal et</string>
     <!-- trakt.tv -->
+    <string name="trakt_toast_syncing_error">Trakt ile senkronize etmek imkansız</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">SD kartı yok</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -27,6 +36,7 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">SD kart kullanılamıyor</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
+    <string name="sdcard_busy_message">Maalesef SD kartınız meşgul.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">SD kart hatası</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->

@@ -16,13 +16,13 @@
     <string name="network_scan_msg">Indexando Arquivos de Mídia</string>
     <string name="network_unscan_msg">Removendo arquivos de mídia da biblioteca</string>
     <!-- .nfo export options -->
-    <string name="nfo_export_category">Exportar info de mídia</string>
-    <string name="nfo_export_auto_title">Auto-exportar após a pesquisa</string>
+    <string name="nfo_export_category">Exportar informações de mídia</string>
+    <string name="nfo_export_auto_title">Exportar automaticamente após pesquisa</string>
     <string name="nfo_export_manual_title">Exportar vídeos já pesquisados</string>
     <string name="nfo_export_auto_summary">Exportar automaticamente arquivos .nfo após uma pesquisa on-line bem sucedida</string>
     <string name="nfo_export_manual_summary">Exportar arquivos .nfo de cada vídeo já pesquisado</string>
     <string name="nfo_export_button">Exportar .nfo</string>
-    <string name="nfo_export_folder">Exportar tudo nesta pasta para .nfo</string>
+    <string name="nfo_export_folder">Exportar tudo desta pasta para .nfo</string>
     <string name="nfo_export_all">Exportar toda a biblioteca para .nfo</string>
     <string name="nfo_export_exporting">Exportando .nfo</string>
     <string name="nfo_export_exporting_all">tudo</string>
@@ -32,7 +32,7 @@
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Nenhum cartão SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
-    <string name="sdcard_missing_message">Seu dispositivo não tem um cartão SD inserido.</string>
+    <string name="sdcard_missing_message">Não há um cartão SD inserido no dispositivo.</string>
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">Cartão SD indisponível</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
@@ -93,7 +93,7 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Artista</string>
-    <string name="scraping_in_progress">Ordenação em andamento</string>
+    <string name="scraping_in_progress">Pesquisa em andamento</string>
     <string name="remaining_videos_to_process">Arquivos de mídia restantes a serem processados:</string>
     <string name="video_store_import">Importando arquivos de mídia locais</string>
 </resources>
