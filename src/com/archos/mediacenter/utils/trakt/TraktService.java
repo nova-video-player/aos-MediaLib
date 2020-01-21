@@ -621,6 +621,7 @@ public class TraktService extends Service {
                 InBuilder inBuilder = new InBuilder(VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID);
                 for (BaseMovie movie : movies){
                     inBuilder.addParam(movie.movie.ids.tmdb);
+                    if (DBG) Log.d(TAG, "syncMoviesToDb: marking " + movie.movie.title);
                 }
                 final String inSelection = inBuilder.get();
                 if (inSelection != null) {
@@ -647,8 +648,10 @@ public class TraktService extends Service {
                 for (BaseShow show : shows) {
                     for (BaseSeason season : show.seasons) {
                         InBuilder inBuilder = new InBuilder("number_episode");
-                        for (BaseEpisode episode : season.episodes)
+                        for (BaseEpisode episode : season.episodes) {
+                            if (DBG) Log.d(TAG, "syncShowsToDb: marking " + show.show.title + " s" + season.number + "e" + episode.number);
                             inBuilder.addParam(episode.number);
+                        }
                         final String inSelection = inBuilder.get();
                         if (inSelection != null) {
                             final String selection = "_id IN ("+
@@ -800,17 +803,25 @@ public class TraktService extends Service {
 
     private int getFlagsFromTraktLastActivity(Trakt.Result result, long movieTime, long showTime) {
         int flag = 0; 	
-        if (DBG) Log.d(TAG, "getLastActivity");
+        if (DBG) Log.d(TAG, "getFlagsFromTraktLastActivity: getLastActivity input is flag=" + flag + ", movieTime=" + movieTime + ", showTime=" + showTime);
         if (result != null && result.status == Trakt.Status.SUCCESS &&
                 result.objType == Trakt.Result.ObjectType.LAST_ACTIVITY) {
             LastActivities lastActivity = (LastActivities) result.obj;
-            if (lastActivity.movies.watched_at.toEpochSecond()> movieTime)
+            if (DBG) Log.d(TAG, "lastActivity: movie: " + lastActivity.movies.watched_at.toEpochSecond() + " vs " + movieTime);
+            if (lastActivity.movies.watched_at.toEpochSecond()> movieTime) {
+                if (DBG) Log.d(TAG, "getFlagsFromTraktLastActivity: new activity watched on movies on trakt side detected");
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_MOVIES;
+            }
             if (DBG) Log.d(TAG, "lastActivity: show: " + lastActivity.episodes.watched_at.toEpochSecond() + " vs " + showTime);
-            if (lastActivity.episodes.watched_at.toEpochSecond()>showTime)
+            if (lastActivity.episodes.watched_at.toEpochSecond()>showTime) {
+                if (DBG) Log.d(TAG, "getFlagsFromTraktLastActivity: new activity watched on shows on trakt side detected");
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_SHOWS;
-            if (lastActivity.movies.paused_at.toEpochSecond()>movieTime||lastActivity.episodes.paused_at.toEpochSecond()>showTime)
+            }
+            if (lastActivity.movies.paused_at.toEpochSecond()>movieTime||lastActivity.episodes.paused_at.toEpochSecond()>showTime) {
+                if (DBG)
+                    Log.d(TAG, "getFlagsFromTraktLastActivity: new activity on progress on trakt side detected either for movie or show");
                 flag |= FLAG_SYNC_PROGRESS;
+            }
         }
         return flag;
     }
@@ -854,6 +865,7 @@ public class TraktService extends Service {
          *  for items removed from trakt
          */
 
+        if (DBG) Log.d(TAG, "sync with flag=" + flag);
         if ((flag & FLAG_SYNC_NOW) != 0)
             unregisterReceiver();
         if (mNetworkStateReceiverRegistered || mWaitNetworkStateReceiver||!mNetworkState.isConnected())
@@ -865,8 +877,10 @@ public class TraktService extends Service {
         long movieTime = Trakt.getLastTimeMovieWatched(mPreferences);
         long showTime = Trakt.getLastTimeShowWatched(mPreferences);
 
+        if (DBG) Log.d(TAG, "sync: last sync time is movieTime=" + movieTime + ", showTime=" + showTime);
+
         if (showTime == 0 && movieTime == 0) {
-            if (DBG) Log.d(TAG, "first time syncing: full sync");
+            if (DBG) Log.d(TAG, "sync: first time syncing: full sync");
             flag |= FLAG_SYNC_FULL;
         }
 
@@ -910,12 +924,9 @@ public class TraktService extends Service {
                         status = syncShowsToTrakt(library, toMark);
                         if (status == Trakt.Status.ERROR_NETWORK)
                             return handleSyncStatus(status, flag, "syncShowsToTrakt");
-
                 }
             }
         }
-
-
 
         // if we know we have something to sync from last activity
         final boolean syncShowsFromTrakt = (flag & FLAG_SYNC_SHOWS) != 0;
@@ -929,7 +940,6 @@ public class TraktService extends Service {
             if (DBG) Log.d(TAG, "sync: no movie/show flag, abort");
             return Trakt.Result.getSuccess();
         }
-
 
         libraries = null;
 
@@ -946,9 +956,6 @@ public class TraktService extends Service {
         if (libraries != null) {
             for (String library : libraries) {
             	
-            		
-            		
-            	
                 if (syncMoviesFromTrakt) {
                     if (DBG) Log.d(TAG, "syncing movies " + library + " from trakt.tv to DB");
                     Trakt.Status status = syncMoviesToDb(library);
@@ -957,7 +964,9 @@ public class TraktService extends Service {
                         return handleSyncStatus(status, flag, "syncMoviesToDb");
                 }
                 if (syncShowsFromTrakt) {
+                    if (DBG) Log.d(TAG, "syncing shows " + library + " from trakt.tv to DB");
                     Trakt.Status status = syncShowsToDb(library);
+                    if (DBG) Log.d(TAG, "syncing shows " + library + " from trakt.tv to DB finished : "+status);
                     if (status == Trakt.Status.ERROR_NETWORK)
                         return handleSyncStatus(status, flag, "syncShowsToDb");
                 }
