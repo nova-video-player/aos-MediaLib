@@ -68,6 +68,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 public class Trakt {
     private static final String TAG = "Trakt";
     private static final boolean DBG = false;
+    private final static boolean DBG_RETROFIT = false;
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
     public static final String TRAKT_ISSUE_REFRESH_TOKEN = "TRAKT_ISSUE_REFRESH_TOKEN";
@@ -129,7 +130,7 @@ public class Trakt {
         @Override
         protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
             super.setOkHttpClientDefaults(builder);
-            if (DBG) {
+            if (DBG_RETROFIT) {
                 HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                 logging.setLevel(HttpLoggingInterceptor.Level.BODY);
                 builder.addNetworkInterceptor(logging).addInterceptor(logging);
@@ -511,12 +512,12 @@ public class Trakt {
         Log.d(TAG, "getAllShows");
         List<BaseShow> ret = null;
         if (library.equals(Trakt.LIBRARY_WATCHED)) {
-            ret = exec(mTraktV2.sync().watchedShows(Extended.FULL));
+            ret = exec(mTraktV2.sync().watchedShows(Extended.EPISODES));
             if (ret == null)
                 return handleRet(null, new Exception(), null, ObjectType.NULL);
             return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
         } else {
-            ret = exec(mTraktV2.sync().collectionShows(Extended.FULL));
+            ret = exec(mTraktV2.sync().collectionShows(Extended.EPISODES));
             if (ret == null)
                 return handleRet(null, new Exception(), null, ObjectType.NULL);
             return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
