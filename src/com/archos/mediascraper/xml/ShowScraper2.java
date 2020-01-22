@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
 public class ShowScraper2 extends BaseScraper2 {
 
     private final static String TAG = "ShowScraper2";
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
     private final static boolean DBG_RETROFIT = false;
     private final static boolean CACHE = true;
     private final static String PREFERENCE_NAME = "TheTVDB.com";
@@ -162,21 +162,29 @@ public class ShowScraper2 extends BaseScraper2 {
                 result.setExtra(extra);
                 if (maxItems < 0 || results.size() < maxItems) {
                     // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
-                    if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
-                        if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
-                        resultsNoBanner.add(result);
-                    } else {
-                        if (DBG) Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
-                        if (series.slug.matches("^[0-9]+$")) {
-                            // Put in lower priority any entry that has numeric slug
-                            if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
-                            resultsNumericSlug.add(result);
+                    if (series.banner != null) {
+                        if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
+                            if (DBG)
+                                Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                            resultsNoBanner.add(result);
                         } else {
-                            if (DBG) Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
-                            resultsProbable.add(new Pair<>(result,
-                                    levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                                            result.getTitle().toLowerCase())));
+                            if (DBG)
+                                Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
+                            if (series.slug.matches("^[0-9]+$")) {
+                                // Put in lower priority any entry that has numeric slug
+                                if (DBG)
+                                    Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                                resultsNumericSlug.add(result);
+                            } else {
+                                if (DBG)
+                                    Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                                resultsProbable.add(new Pair<>(result,
+                                        levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                                                result.getTitle().toLowerCase())));
+                            }
                         }
+                    } else {
+                        if (DBG) Log.w(TAG, "processTheTvDbSearch: ignore serie since banner is null for " + series.seriesName);
                     }
                 }
             }
