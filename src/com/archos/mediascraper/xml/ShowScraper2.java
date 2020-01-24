@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
 public class ShowScraper2 extends BaseScraper2 {
 
     private final static String TAG = "ShowScraper2";
-    private final static boolean DBG = true;
+    private final static boolean DBG = false;
     private final static boolean DBG_RETROFIT = false;
     private final static boolean CACHE = true;
     private final static String PREFERENCE_NAME = "TheTVDB.com";
