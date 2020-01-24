@@ -151,6 +151,7 @@ public class ShowScraper2 extends BaseScraper2 {
         List<SearchResult> resultsNoBanner = new LinkedList<>();
         List<Pair<SearchResult,Integer>> resultsProbable = new LinkedList<>();
         List<SearchResult> resultsProbableSorted = new LinkedList<>();
+        Boolean isDecisionTaken = false;
         for (Series series : response.body().data) {
             if (series.id != SERIES_NOT_PERMITTED_ID) {
                 SearchResult result = new SearchResult();
@@ -162,29 +163,41 @@ public class ShowScraper2 extends BaseScraper2 {
                 result.setExtra(extra);
                 if (maxItems < 0 || results.size() < maxItems) {
                     // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
+                    isDecisionTaken = false;
                     if (series.banner != null) {
                         if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
                             if (DBG)
                                 Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
                             resultsNoBanner.add(result);
+                            isDecisionTaken = true;
+                        }
+                    } else if (series.image != null) {
+                        if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg")) {
+                            if (DBG)
+                                Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
+                            resultsNoBanner.add(result);
+                            isDecisionTaken = true;
+                        }
+                    }
+                    if (! isDecisionTaken) {
+                        if (DBG)
+                            Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner/image exists");
+                        if (series.slug.matches("^[0-9]+$")) {
+                            // Put in lower priority any entry that has numeric slug
+                            if (DBG)
+                                Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                            isDecisionTaken = true;
+                            resultsNumericSlug.add(result);
                         } else {
                             if (DBG)
-                                Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner exists i.e. banner=" + series.banner);
-                            if (series.slug.matches("^[0-9]+$")) {
-                                // Put in lower priority any entry that has numeric slug
-                                if (DBG)
-                                    Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
-                                resultsNumericSlug.add(result);
-                            } else {
-                                if (DBG)
-                                    Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
-                                resultsProbable.add(new Pair<>(result,
-                                        levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                                                result.getTitle().toLowerCase())));
-                            }
+                                Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                            isDecisionTaken = true;
+                            resultsProbable.add(new Pair<>(result,
+                                    levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                                            result.getTitle().toLowerCase())));
                         }
-                    } else {
-                        if (DBG) Log.w(TAG, "processTheTvDbSearch: ignore serie since banner is null for " + series.seriesName);
+                        if (! isDecisionTaken)
+                            Log.w(TAG, "processTheTvDbSearch: ignore serie since banner/image is null for " + series.seriesName);
                     }
                 }
             }
