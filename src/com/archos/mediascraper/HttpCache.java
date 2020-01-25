@@ -136,7 +136,7 @@ public class HttpCache {
             for (File f : list) {
                 if (fileNeedsRefresh(f)) {
                     if (!f.delete()) {
-                        Log.d(TAG, "could not delete old file: " + f);
+                        if (DBG) Log.d(TAG, "could not delete old file: " + f);
                     }
                 } else if (f.isFile()) {
                     mFileMap.put(f.getName(), f);
@@ -148,7 +148,7 @@ public class HttpCache {
             if (fallbackDirectory.exists() && fallbackDirectory.isDirectory()) {
                 mFallbackDirectory = fallbackDirectory;
             } else {
-                Log.d(TAG, "FallbackDirectory must exist already");
+                if (DBG) Log.d(TAG, "FallbackDirectory must exist already");
                 mFallbackDirectory = null;
             }
         } else {
@@ -159,7 +159,7 @@ public class HttpCache {
             if (preferredDirectory.exists() && preferredDirectory.isDirectory()) {
                 mPreferredDirectory = preferredDirectory;
             } else {
-                Log.d(TAG, "PreferredDirectory must exist already");
+                if (DBG) Log.d(TAG, "PreferredDirectory must exist already");
                 mPreferredDirectory = null;
             }
         } else {
@@ -188,7 +188,7 @@ public class HttpCache {
         String timeString = String.format("%.2f s", timeSec);
         String speedString = String.format("%.2f kB/s", speedKbs);
         String sizeString = String.format("%.2f kB", sizeKb);
-        Log.d("XXSPEED", "[" + url + "] " + sizeString + " in " + timeString + " (~" + speedString + ")");
+        if (DBG) Log.d("XXSPEED", "[" + url + "] " + sizeString + " in " + timeString + " (~" + speedString + ")");
     }
 
     /**
@@ -260,12 +260,12 @@ public class HttpCache {
                         ret = generatedFile;
                         downloadSuccess = true;
                     } else {
-                        Log.d(TAG, "failed to rename " + inProgressFile + " to " +  generatedFile);
+                        Log.w(TAG, "failed to rename " + inProgressFile + " to " +  generatedFile);
                         inProgressFile.delete();
                         generatedFile.delete();
                     }
                 } catch (IOException e) {
-                    Log.d(TAG, "Exception: " + e);
+                    Log.w(TAG, "Exception: " + e);
                 } finally {
                     closeSilently(downloader);
                     // if stream are != null close them
