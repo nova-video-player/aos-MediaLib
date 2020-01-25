@@ -411,7 +411,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        Log.d(TAG, "onLoaderReset");
+        if (DBG) Log.d(TAG, "onLoaderReset");
     }
 
     @Override
@@ -420,7 +420,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
     }
 
     public void writeVideoInfo(VideoDbInfo videoInfo, boolean exportDb) {
-        Log.d(TAG, "writeVideoInfo "+exportDb);
+        if (DBG) Log.d(TAG, "writeVideoInfo "+exportDb);
         new WriteVideoInfoTask(mContext, videoInfo, exportDb).execute();
     }
 }

@@ -648,7 +648,7 @@ public class XmlDb  implements Callback {
                 @Override
                 public void onResult(VideoDbInfo result) {
                     mUiThreadHandler.removeMessages(MSG_PARSE_TIMEOUT);
-                    Log.d(TAG, "onResult ");
+                    if (DBG) Log.d(TAG, "onResult ");
 
                     notifyChanged(videoFileUri, result != null);
                 }

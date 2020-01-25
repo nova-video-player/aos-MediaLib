@@ -152,20 +152,20 @@ public class MediaFactory {
 
     public static IMediaPlayer createPlayer(Context ctx, boolean forceSoftwareDecoding) {
         if (preInit(ctx, true, forceSoftwareDecoding)) {
-            Log.d(TAG, "new AvosMediaPlayer");
+            if (DBG) Log.d(TAG, "new AvosMediaPlayer");
             return new AvosMediaPlayer();
         } else {
-            Log.d(TAG, "new AndroidMediaPlayer");
+            if (DBG) Log.d(TAG, "new AndroidMediaPlayer");
             return new AndroidMediaPlayer(ctx);
         }
     }
 
     public static IMediaMetadataRetriever createMetadataRetriever(Context ctx) {
         if (preInit(ctx, false, false)) {
-            Log.d(TAG, "new AvosMediaMetadataRetriever");
+            if (DBG) Log.d(TAG, "new AvosMediaMetadataRetriever");
             return new AvosMediaMetadataRetriever();
         } else {
-            Log.d(TAG, "new AndroidMediaMetadataRetriever");
+            if (DBG) Log.d(TAG, "new AndroidMediaMetadataRetriever");
             return new AndroidMediaMetadataRetriever();
         }
     }
