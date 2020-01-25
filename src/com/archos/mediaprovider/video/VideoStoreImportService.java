@@ -480,12 +480,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             int window = WINDOW_SIZE;
             c.close();
             do {
+                if (window > numberOfRowsRemaining)
+                    window = numberOfRowsRemaining;
+                c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
+                if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
+                if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files new batch cursor has size " + c.getCount());
                 while (c.moveToNext()) {
-                    if (window > numberOfRowsRemaining)
-                        window = numberOfRowsRemaining;
-                    c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
-                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
-                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: delete_files new batch cursor has size " + c.getCount());
                     long id = c.getLong(0);
                     String path = c.getString(1);
                     long count = c.getLong(2);
@@ -518,12 +518,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             int window = WINDOW_SIZE;
             c.close();
             do {
+                if (window > numberOfRowsRemaining)
+                    window = numberOfRowsRemaining;
+                c = db.rawQuery("SELECT * FROM vob_insert ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
+                if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
+                if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert new batch cursor has size " + c.getCount());
                 while (c.moveToNext()) {
-                    if (window > numberOfRowsRemaining)
-                        window = numberOfRowsRemaining;
-                    c = db.rawQuery("SELECT * FROM vob_insert ORDER BY " + BaseColumns._ID + " ASC LIMIT " + window, null);
-                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert new batch fetching window=" + window + " entries <=" + numberOfRowsRemaining);
-                    if (DBG) Log.d(TAG, "processDeleteFileAndVobCallback: vob_insert new batch cursor has size " + c.getCount());
                     long id = c.getLong(0);
                     String path = c.getString(1);
                     if (DBG) Log.d(TAG, "vob_insert " + String.valueOf(id) + " path " + path);
