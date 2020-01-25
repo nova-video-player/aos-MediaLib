@@ -103,16 +103,16 @@ public class MediaThumbnailService extends Service {
             bind(ctx);
             if (sMediaThumbnailService == null) {
                 try {
-                    Log.d(TAG, "sMediaThumbnailService == null");
+                    if (DBG) Log.d(TAG, "sMediaThumbnailService == null");
                     sLock.wait(3000);
                     if(sMediaThumbnailService == null&&sFirst) {
                         Toast.makeText(ArchosUtils.getGlobalContext(), "timeout: sMediaThumbnailService == null", Toast.LENGTH_LONG).show();
                         sFirst = false;
                     }
-                    Log.d(TAG, "bind_sync end of wait : sMediaThumbnailService == null "+(sMediaThumbnailService == null));
+                    if (DBG) Log.d(TAG, "bind_sync end of wait : sMediaThumbnailService == null "+(sMediaThumbnailService == null));
 
                 } catch (InterruptedException e) {
-                    Log.d(TAG, "bind_sync interrupted");
+                    Log.w(TAG, "bind_sync interrupted");
                     if(sFirst)
                     Toast.makeText(ArchosUtils.getGlobalContext(), "bind_sync interrupted", Toast.LENGTH_LONG).show();
                     sFirst = false;
