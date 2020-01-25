@@ -473,6 +473,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         try {
             // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
             // note that the db is being modified during import
+            if (c != null) c.close();
             c = db.rawQuery("SELECT * FROM delete_files", null);
             int numberOfRows = c.getCount();
             int numberOfRowsRemaining = numberOfRows;
@@ -511,6 +512,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         try {
             // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
             // note that the db is being modified during import
+            if (c != null) c.close();
             c = db.rawQuery("SELECT * FROM vob_insert", null);
             int numberOfRows = c.getCount();
             int numberOfRowsRemaining = numberOfRows;
