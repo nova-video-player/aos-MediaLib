@@ -39,12 +39,16 @@ import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
 import com.archos.mediascraper.themoviedb3.JSONFileFetcher;
 import com.archos.mediascraper.themoviedb3.MovieId;
+import com.archos.mediascraper.themoviedb3.MovieId2;
 import com.archos.mediascraper.themoviedb3.MovieIdDescription;
+import com.archos.mediascraper.themoviedb3.MovieIdDescription2;
 import com.archos.mediascraper.themoviedb3.MovieIdImages;
+import com.archos.mediascraper.themoviedb3.MovieIdImages2;
 import com.archos.mediascraper.themoviedb3.MovieIdResult;
 import com.archos.mediascraper.themoviedb3.SearchMovie;
 import com.archos.mediascraper.themoviedb3.SearchMovieResult;
 import com.archos.mediascraper.themoviedb3.SearchMovieTrailer;
+import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
 import com.uwetrottmann.tmdb2.Tmdb;
 import com.uwetrottmann.tmdb2.entities.BaseMember;
 import com.uwetrottmann.tmdb2.entities.BaseMovie;
@@ -73,7 +77,7 @@ public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private final static String TAG = "MovieScraper3";
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
     private final static boolean DBG_RETROFIT = false;
     private final static boolean CACHE = true;
 
@@ -237,58 +241,34 @@ public class MovieScraper3 extends BaseScraper2 {
         if (tmdb == null) tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
         if (moviesService == null) moviesService = tmdb.moviesService();
 
-        Response<Movie> movieResponse = null;
-        try {
-            movieResponse = moviesService.summary((int) movieId, language).execute();
-            // fallback to english if no result
-            // TODO: check if this works as a fallback
-            if (movieResponse.body() == null && !language.equals("en")) {
-                movieResponse = moviesService.summary((int) movieId, "en").execute();
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "getDetailsInternal: caught IOException getting summary");
-        }
-        if (movieResponse.isSuccessful() && movieResponse.body() != null) {
-            if (DBG) Log.d(TAG, "found something");
-        } else if (movieResponse.code() != 404) { // TODO: probably treat other cases of errors
-            if (DBG) Log.d(TAG, "error");
-        }
-
-        // return ScrapeDetailResult containing baseTags for a single movieID
-        // get base info through movieSearch based on ID
-        // get trailers
-        // get posters and backdrops
-        // get plots
-
-        HttpCache cache = HttpCache.getInstance(MediaScraper.getXmlCacheDirectory(mContext),
-                MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
-                MediaScraper.CACHE_OVERWRITE_DIRECTORY);
-        JSONFileFetcher jff = new JSONFileFetcher(cache);
-
         // get base info
-        MovieIdResult search = MovieId.getBaseInfo(movieId, language, jff);
+        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, moviesService);
         if (search.status != ScrapeStatus.OKAY) {
             return new ScrapeDetailResult(search.tag, true, null, search.status, search.reason);
         }
         MovieTags tag = search.tag;
         tag.setFile(searchFile);
-        SearchMovieTrailer.addTrailers(movieId, tag, language, jff);
+
+        SearchMovieTrailer2.addTrailers(movieId, tag, language, moviesService);
+
         // add posters and backdrops
         // TODO: CHANGE POSTER SIZE HERE?
-        MovieIdImages.addImages(movieId, tag, language,
+        MovieIdImages2.addImages(movieId, tag, language,
                 ImageConfiguration.PosterSize.W342, // large poster
                 ImageConfiguration.PosterSize.W92,  // thumb poster
                 ImageConfiguration.BackdropSize.W1280, // large bd
                 ImageConfiguration.BackdropSize.W300,  // thumb bd
-                searchFile.toString(), jff, mContext);
+                searchFile.toString(), moviesService, mContext);
         ScraperImage defaultPoster = tag.getDefaultPoster();
         if (defaultPoster != null) {
             tag.setCover(defaultPoster.getLargeFileF());
         }
 
+        // TODO REALLY check if it is not better to do once the two requests one in english and one in language to serve all!!!!!
+
         // if there was no movie description in the native language get it from default
         if (tag.getPlot() == null) {
-            MovieIdDescription.addDescription(movieId, tag, jff);
+            MovieIdDescription2.addDescription(movieId, tag, moviesService);
         }
         tag.downloadPoster(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
