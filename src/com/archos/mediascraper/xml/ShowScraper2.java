@@ -256,6 +256,7 @@ public class ShowScraper2 extends BaseScraper2 {
         if (theTvdb == null)
             theTvdb = new MyTheTVdb(mContext.getString(R.string.tvdb_api_2_key));
         try {
+            // TODO: combine search in en + language sort by language and levenstein then treat by id to revert to language
             if (DBG) Log.d(TAG, "getMatches2: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
             Response<SeriesResultsResponse> response = theTvdb.search()
                 .series(searchInfo.getShowName(), null, null, null, language)
@@ -285,6 +286,8 @@ public class ShowScraper2 extends BaseScraper2 {
             Log.e(TAG, "getMatches2", e);
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
+        // TODO globalResponse.code() 404 is not found
+        // TODO globalResponse.code() 401 is JWT token invalid --> check JWT lifecycle handling
         ScrapeStatus status = results.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
         if (DBG)
             if (results.isEmpty())
