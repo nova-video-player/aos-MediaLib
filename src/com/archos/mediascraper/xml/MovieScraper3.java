@@ -23,8 +23,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.archos.medialib.R;
-import com.archos.mediascraper.HttpCache;
-import com.archos.mediascraper.MediaScraper;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
@@ -33,33 +31,23 @@ import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.MovieSearchInfo;
 import com.archos.mediascraper.preprocess.SearchInfo;
-import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.settings.ScraperSetting;
 import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
-import com.archos.mediascraper.themoviedb3.JSONFileFetcher;
-import com.archos.mediascraper.themoviedb3.MovieId;
 import com.archos.mediascraper.themoviedb3.MovieId2;
-import com.archos.mediascraper.themoviedb3.MovieIdDescription;
 import com.archos.mediascraper.themoviedb3.MovieIdDescription2;
-import com.archos.mediascraper.themoviedb3.MovieIdImages;
 import com.archos.mediascraper.themoviedb3.MovieIdImages2;
 import com.archos.mediascraper.themoviedb3.MovieIdResult;
-import com.archos.mediascraper.themoviedb3.SearchMovie;
+import com.archos.mediascraper.themoviedb3.SearchMovie2;
 import com.archos.mediascraper.themoviedb3.SearchMovieResult;
-import com.archos.mediascraper.themoviedb3.SearchMovieTrailer;
 import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
 import com.uwetrottmann.tmdb2.Tmdb;
-import com.uwetrottmann.tmdb2.entities.BaseMember;
 import com.uwetrottmann.tmdb2.entities.BaseMovie;
-import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.entities.MovieResultsPage;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -134,6 +122,10 @@ public class MovieScraper3 extends BaseScraper2 {
         }
     }
 
+    public void reauth() {
+        tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
+    }
+
     private List<SearchResult> processTmDbSearch(Response<MovieResultsPage> response,
                                                  MovieSearchInfo searchInfo, int maxItems, String language) {
         List<SearchResult> results = new LinkedList<>();
@@ -179,55 +171,26 @@ public class MovieScraper3 extends BaseScraper2 {
 
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
-        // search all movies matches based on pre-processed filename and return list of results
         // check input
         if (info == null || !(info instanceof MovieSearchInfo)) {
             Log.e(TAG, "bad search info: " + info == null ? "null" : "tvshow in movie scraper");
             return new ScrapeSearchResult(null, true, ScrapeStatus.ERROR, null);
         }
         MovieSearchInfo searchInfo = (MovieSearchInfo) info;
-        Pair<List<SearchResult>, Boolean> searchResults = null;
+        if (DBG) Log.d(TAG, "getMatches2: movie search:" + searchInfo.getName());
+        if (tmdb == null) reauth();
+        if (searchService == null) searchService = tmdb.searchService();
         // get configured language
         String language = getLanguage(mContext);
-        response = null;
-        if (DBG) Log.d(TAG, "getMatches2: movie search:" + searchInfo.getName());
-        if (tmdb == null) tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
-        try {
-            Integer year = null;
-            try {
-                year = Integer.parseInt(searchInfo.getYear());
-            } catch(NumberFormatException nfe) {
-                Log.w(TAG, "getMatches2: searchInfo.getYear() is not an integer");
-                year = null;
+        if (DBG) Log.d(TAG, "movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
+        SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService);
+        if (searchResult.status == ScrapeStatus.OKAY) {
+            for (SearchResult result : searchResult.result) {
+                result.setScraper(this);
+                result.setFile(searchInfo.getFile());
             }
-            searchResults = searchMovie(searchInfo, maxItems, year, language);
-            if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-            // fallback in english if result is empty
-            if (searchResults.first.isEmpty() && !language.equals("en")) {
-                searchResults = searchMovie(searchInfo, maxItems, year, "en");
-                if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-            }
-            if (year != null) { // search were made with a non null year
-                // still no result try with empty year with default language
-                if (searchResults.first.isEmpty()) {
-                    searchResults = searchMovie(searchInfo, maxItems, null, language);
-                    if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-                }
-                // still no result try with empty year with english
-                if (searchResults.first.isEmpty() && !language.equals("en")) {
-                    searchResults = searchMovie(searchInfo, maxItems, null, "en");
-                    if (searchResults.second) return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "getMatches2", e);
-            return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
-        ScrapeStatus status = searchResults.first.isEmpty() ? ScrapeStatus.NOT_FOUND : ScrapeStatus.OKAY;
-        if (DBG)
-            if (searchResults.first.isEmpty()) Log.d(TAG,"ScrapeSearchResult ScrapeStatus.NOT_FOUND");
-            else Log.d(TAG,"ScrapeSearchResult ScrapeStatus.OKAY found " + searchResults.first);
-        return new ScrapeSearchResult(searchResults.first, false, status, null);
+        return new ScrapeSearchResult(searchResult.result, true, searchResult.status, searchResult.reason);
     }
 
     @Override
@@ -238,7 +201,7 @@ public class MovieScraper3 extends BaseScraper2 {
         long movieId = result.getId();
         Uri searchFile = result.getFile();
 
-        if (tmdb == null) tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
+        if (tmdb == null) reauth();
         if (moviesService == null) moviesService = tmdb.moviesService();
 
         // get base info
@@ -265,6 +228,7 @@ public class MovieScraper3 extends BaseScraper2 {
         }
 
         // TODO REALLY check if it is not better to do once the two requests one in english and one in language to serve all!!!!!
+        // idea would be to fallback to en always if there is an empty field
 
         // if there was no movie description in the native language get it from default
         if (tag.getPlot() == null) {

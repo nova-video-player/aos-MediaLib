@@ -21,4 +21,5 @@ public enum ScrapeStatus {
     ERROR_NETWORK,
     ERROR_PARSER,
     ERROR,
+    AUTH_ERROR,
 }

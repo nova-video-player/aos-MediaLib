@@ -32,6 +32,7 @@ public class SearchMovieTrailerParser2 {
             if (i < limit) {
                 SearchMovieTrailerResult.TrailerResult item = new SearchMovieTrailerResult.TrailerResult();
                 if (trailer.site != null) item.setService(trailer.site);
+                // TODO: put the two letter language instead and use the code in ISO639codes.java
                 if (trailer.iso_639_1 != null) {
                     Locale locale = new Locale(trailer.iso_639_1);
                     item.setLanguage(locale.getDisplayLanguage());
