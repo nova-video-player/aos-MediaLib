@@ -16,21 +16,14 @@ package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
 
-import com.archos.mediascraper.FileFetcher;
-import com.archos.mediascraper.FileFetcher.FileFetchResult;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.SearchResult;
-import com.archos.mediascraper.xml.MovieScraper3;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.entities.MovieResultsPage;
-import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import retrofit2.Response;
 
@@ -58,14 +51,18 @@ public class SearchMovie2 {
         List<SearchResult> parserResult = null;
         Response<MovieResultsPage> response = null;
 
+        if (DBG) Log.d(TAG, "search " + query + " for year " + year + " in "+ language);
+
         Integer annee = null;
-        try {
-            annee = Integer.parseInt(year);
-        } catch(NumberFormatException nfe) {
-            Log.w(TAG, "getMatches2: searchInfo.getYear() is not an integer");
-            annee = null;
+        if (year != null) {
+            try {
+                annee = Integer.parseInt(year);
+            } catch (NumberFormatException nfe) {
+                Log.w(TAG, "search: year is not an integer");
+                annee = null;
+            }
         }
-        if (DBG) Log.d(TAG, "searchMovie: quering tmdb for " + query + " year " + year + " in " + language);
+        if (DBG) Log.d(TAG, "search: quering tmdb for " + query + " year " + year + " in " + language);
         try {
             response = searchService.movie(query, null, language,
                     null, true, annee, null).execute();

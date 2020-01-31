@@ -14,21 +14,17 @@
 
 package com.archos.mediascraper.themoviedb3;
 
-import com.archos.mediascraper.FileFetcher;
+import android.util.Log;
+
 import com.archos.mediascraper.MovieTags;
-import com.archos.mediascraper.ScrapeStatus;
-import com.archos.mediascraper.ScraperTrailer;
 import com.uwetrottmann.tmdb2.entities.BaseCompany;
 import com.uwetrottmann.tmdb2.entities.CastMember;
+import com.uwetrottmann.tmdb2.entities.Credits;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.Movie;
-import com.uwetrottmann.tmdb2.entities.Videos;
-import com.uwetrottmann.tmdb2.enumerations.VideoType;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MovieIdParser2 {
@@ -38,7 +34,7 @@ public class MovieIdParser2 {
 
     private static final String DIRECTOR = "Director";
 
-    public static MovieTags getResult(Movie movie) {
+    public static MovieTags getResult(Movie movie, Credits credits) {
 
         MovieTags result = new MovieTags();
         if (movie.id != null) result.setOnlineId(movie.id);
@@ -56,19 +52,19 @@ public class MovieIdParser2 {
             result.setYear(cal.get(Calendar.YEAR));
         }
         if (movie.title != null) result.setTitle(movie.title);
-        if (movie.vote_average != null) result.setRating(movie.vote_average.floatValue());
-        if (movie.credits != null) {
-            if (movie.credits.guest_stars != null)
-                for (CastMember guestStar: movie.credits.guest_stars)
+        if (movie.vote_average != null)
+            result.setRating(movie.vote_average.floatValue());
+        if (credits != null)
+            if (credits.guest_stars != null)
+                for (CastMember guestStar: credits.guest_stars)
                     result.addActorIfAbsent(guestStar.name, guestStar.character);
-            if (movie.credits.cast != null)
-                for (CastMember actor: movie.credits.cast)
+            if (credits.cast != null)
+                for (CastMember actor: credits.cast)
                     result.addActorIfAbsent(actor.name, actor.character);
-            if (movie.credits.crew != null)
-                for (CrewMember crew: movie.credits.crew)
+            if (credits.crew != null)
+                for (CrewMember crew: credits.crew)
                     if (crew.job == DIRECTOR)
                         result.addDirectorIfAbsent(crew.name);
-        }
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         // TODO: add Collection belongs_to_collection
         result.setContentRating(null);

@@ -14,21 +14,24 @@
 
 package com.archos.mediascraper.themoviedb3;
 
-import com.uwetrottmann.tmdb2.entities.Movie;
+import android.util.Log;
+
 import com.uwetrottmann.tmdb2.entities.Videos;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+
 
 public class SearchMovieTrailerParser2 {
-    public static List<SearchMovieTrailerResult.TrailerResult> getResult(Movie movie) {
+    private static final String TAG = SearchMovieTrailerParser2.class.getSimpleName();
+    private static final boolean DBG = false;
+
+    public static List<SearchMovieTrailerResult.TrailerResult> getResult(Videos videos) {
         List<SearchMovieTrailerResult.TrailerResult> result = new LinkedList<SearchMovieTrailerResult.TrailerResult>();
         final int limit = 40; // limit number of trailers
         int i = 0;
-        for (Videos.Video trailer : movie.videos.results) {
+        for (Videos.Video trailer: videos.results) {
             if (i < limit) {
                 SearchMovieTrailerResult.TrailerResult item = new SearchMovieTrailerResult.TrailerResult();
                 if (trailer.site != null) item.setService(trailer.site);
@@ -40,6 +43,7 @@ public class SearchMovieTrailerParser2 {
                 if (trailer.key != null) item.setKey(trailer.key);
                 if (trailer.name != null) item.setName(trailer.name);
                 if (trailer.type != null) item.setType(trailer.type.toString());
+                if (DBG) Log.d(TAG, "found trailer " + trailer.name + " of type " + trailer.type);
                 result.add(item);
             }
             i++;

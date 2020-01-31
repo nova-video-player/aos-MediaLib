@@ -20,7 +20,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.Pair;
 
 import com.archos.medialib.R;
 import com.archos.mediascraper.MediaScraper;
@@ -44,35 +43,28 @@ import com.archos.mediascraper.themoviedb3.SearchMovie2;
 import com.archos.mediascraper.themoviedb3.SearchMovieResult;
 import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
 import com.uwetrottmann.tmdb2.Tmdb;
-import com.uwetrottmann.tmdb2.entities.BaseMovie;
-import com.uwetrottmann.tmdb2.entities.MovieResultsPage;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Response;
 
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private final static String TAG = "MovieScraper3";
-    private final static boolean DBG = true;
+    private final static boolean DBG = false;
     private final static boolean DBG_RETROFIT = false;
     private final static boolean CACHE = true;
 
     private static ScraperSettings sSettings;
-    private Response<MovieResultsPage> response = null;
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     static Cache cache;
@@ -149,6 +141,8 @@ public class MovieScraper3 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
+
+        // TODO: why it searches every first level result?
 
         String language = getLanguage(mContext);
 

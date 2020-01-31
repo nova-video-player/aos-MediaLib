@@ -17,10 +17,7 @@ package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
 
-import com.archos.mediascraper.FileFetcher;
-import com.archos.mediascraper.FileFetcher.FileFetchResult;
 import com.archos.mediascraper.MovieTags;
-import com.archos.mediascraper.ScrapeStatus;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
@@ -44,12 +41,9 @@ public class MovieIdDescription2 {
     private static final boolean DBG = false;
 
     public static boolean addDescription(long movieId, MovieTags tag, MoviesService moviesService) {
-
         if (tag == null)
             return false;
-
         Response<Movie> movieResponse = null;
-
         try {
             movieResponse = moviesService.summary((int) movieId, "en").execute();
         } catch (IOException e) {

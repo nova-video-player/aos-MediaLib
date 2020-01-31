@@ -16,23 +16,14 @@ package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
 
-import com.archos.mediascraper.FileFetcher;
-import com.archos.mediascraper.FileFetcher.FileFetchResult;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeStatus;
-import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperTrailer;
-import com.archos.mediascraper.SearchResult;
-import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.entities.Videos;
-import com.uwetrottmann.tmdb2.enumerations.VideoType;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import retrofit2.Response;
 
@@ -47,26 +38,25 @@ import retrofit2.Response;
  */
 public class SearchMovieTrailer2 {
     private static final String TAG = SearchMovieTrailer2.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
 
     public static SearchMovieTrailerResult addTrailers(long movieId, MovieTags tag, String language, MoviesService moviesService) {
 
         List<SearchMovieTrailerResult.TrailerResult> parserResult = null;
         SearchMovieTrailerResult myResult = new SearchMovieTrailerResult();
-        Response<Movie> movieResponse = null;
-        Response<Movie> movieResponseEn = null;
+        Response<Videos> videosResponse = null;
+        Response<Videos> videosResponseEn = null;
 
         try {
-            movieResponse = moviesService.summary((int) movieId, language).execute();
+            videosResponse = moviesService.videos((int) movieId, language).execute();
             // TODO ADD if (! movieResponse.isSuccessful())
-            Movie movie = movieResponse.body();
-            if (movie != null)
-                parserResult = SearchMovieTrailerParser2.getResult(movie);
+            if (videosResponse.body() != null)
+                parserResult = SearchMovieTrailerParser2.getResult(videosResponse.body());
             if (!language.equals("en")) { //also ask for english trailers
-                movieResponseEn = moviesService.summary((int) movieId, "en").execute();
+                videosResponseEn = moviesService.videos((int) movieId, "en").execute();
                 // TODO ADD if (! movieResponse.isSuccessful())
-                if (movieResponseEn.body() != null) {
-                    List<SearchMovieTrailerResult.TrailerResult> parserResultEn = SearchMovieTrailerParser2.getResult(movieResponseEn.body());
+                if (videosResponseEn.body() != null) {
+                    List<SearchMovieTrailerResult.TrailerResult> parserResultEn = SearchMovieTrailerParser2.getResult(videosResponseEn.body());
                     if (parserResultEn != null)
                         parserResult.addAll(parserResultEn);
                 }

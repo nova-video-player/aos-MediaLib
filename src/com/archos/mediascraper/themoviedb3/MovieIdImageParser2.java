@@ -14,7 +14,7 @@
 
 package com.archos.mediascraper.themoviedb3;
 
-import com.uwetrottmann.tmdb2.entities.Movie;
+import com.uwetrottmann.tmdb2.entities.Images;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,14 +56,14 @@ public class MovieIdImageParser2 {
         }
     }
 
-    public static MovieIdImagesResult getResult(Movie movie, String preferredLanguage) throws IOException {
+    public static MovieIdImagesResult getResult(Images images, String preferredLanguage) throws IOException {
         MovieIdImagesResult myResult = new MovieIdImagesResult();
         LinkedList<Image> posters = new LinkedList<Image>();
         LinkedList<Image> backdrops = new LinkedList<Image>();
-        if (movie.images != null) {
-            if (movie.images.posters != null) {
+        if (images != null) {
+            if (images.posters != null) {
                 int imageNumber = 0;
-                for (com.uwetrottmann.tmdb2.entities.Image poster : movie.images.posters) {
+                for (com.uwetrottmann.tmdb2.entities.Image poster :images.posters) {
                     String filePath = null;
                     String language = null;
                     String name;
@@ -74,9 +74,9 @@ public class MovieIdImageParser2 {
                     imageNumber++;
                 }
             }
-            if (movie.images.backdrops != null) {
+            if (images.backdrops != null) {
                 int imageNumber = 0;
-                for (com.uwetrottmann.tmdb2.entities.Image backdrop : movie.images.backdrops) {
+                for (com.uwetrottmann.tmdb2.entities.Image backdrop: images.backdrops) {
                     String filePath = null;
                     String language = null;
                     String name;

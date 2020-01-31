@@ -16,17 +16,13 @@ package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
 
-import com.archos.mediascraper.FileFetcher;
 import com.archos.mediascraper.MovieTags;
-import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeStatus;
-import com.archos.mediascraper.FileFetcher.FileFetchResult;
+import com.uwetrottmann.tmdb2.entities.Credits;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import retrofit2.Response;
 
@@ -48,11 +44,13 @@ public class MovieId2 {
     public static MovieIdResult getBaseInfo(long movieId, String language, MoviesService moviesService) {
         MovieIdResult myResult = new MovieIdResult();
         Response<Movie> movieResponse = null;
+        Response<Credits> creditsResponse = null;
         MovieTags parserResult = null;
 
         if (DBG) Log.d(TAG, "getBaseInfo: quering tmdb for movieId " + movieId + " in " + language);
         try {
             movieResponse = moviesService.summary((int) movieId, language).execute();
+            creditsResponse = moviesService.credits((int) movieId).execute();
             switch (movieResponse.code()) {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
@@ -72,7 +70,7 @@ public class MovieId2 {
                 default:
                     if (movieResponse.isSuccessful()) {
                         if (movieResponse.body() != null) {
-                            parserResult = MovieIdParser2.getResult(movieResponse.body());
+                            parserResult = MovieIdParser2.getResult(movieResponse.body(), creditsResponse.body());
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {

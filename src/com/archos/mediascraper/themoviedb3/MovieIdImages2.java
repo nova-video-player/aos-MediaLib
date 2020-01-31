@@ -18,13 +18,10 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 import android.util.Log;
 
-import com.archos.mediascraper.FileFetcher;
 import com.archos.mediascraper.MovieTags;
-import com.archos.mediascraper.ScrapeStatus;
-import com.archos.mediascraper.FileFetcher.FileFetchResult;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperImage.Type;
-import com.uwetrottmann.tmdb2.entities.Movie;
+import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
 import java.io.IOException;
@@ -57,41 +54,50 @@ public class MovieIdImages2 {
             MoviesService moviesService,
             Context context) {
 
-        Response<Movie> movieResponse = null;
+        Response<Images> imagesResponse = null;
 
         if (tag == null)
             return false;
 
         // TODO: try catch IOException
+        if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + " in "+ language);
+        boolean retry = false;
 
         try {
-            movieResponse = moviesService.summary((int) movieId, language).execute();
+            imagesResponse = moviesService.images((int) movieId, language).execute();
         } catch (IOException e) {
             Log.e(TAG, "addImages: caught IOException getting summary");
+            imagesResponse = null;
         }
 
-        if (! movieResponse.isSuccessful()) { //first failure, try again
+        if (imagesResponse == null)
+            retry = true;
+        else if (! imagesResponse.isSuccessful())
+            retry =true;
+
+        if (retry) { //first failure, try again
             try {
                 //when requesting immediately after failure, it fails again (2500ms had still some failure).
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                Log.e(TAG, "addImages: caught InterruptedException", e);
+                Log.w(TAG, "addImages: caught InterruptedException");
+                Thread.currentThread().interrupt();
             }
             try {
-                movieResponse = moviesService.summary((int) movieId, language).execute();
+                imagesResponse = moviesService.images((int) movieId, language).execute();
             } catch (IOException e) {
                 Log.e(TAG, "addImages: caught IOException getting summary");
             }
-            if (! movieResponse.isSuccessful())
+            if (! imagesResponse.isSuccessful())
                 return false;
         }
 
-        Movie movie = movieResponse.body();
+        Images images = imagesResponse.body();
         // TODO movie can be null
 
         MovieIdImagesResult parserResult = null;
         try {
-            parserResult = MovieIdImageParser2.getResult(movie, language);
+            parserResult = MovieIdImageParser2.getResult(images, language);
             List<ScraperImage> posters = new ArrayList<ScraperImage>(parserResult.posterPaths.size());
             for (String path : parserResult.posterPaths) {
                 String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
