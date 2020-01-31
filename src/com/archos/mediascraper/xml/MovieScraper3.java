@@ -123,49 +123,6 @@ public class MovieScraper3 extends BaseScraper2 {
         tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
     }
 
-    private List<SearchResult> processTmDbSearch(Response<MovieResultsPage> response,
-                                                 MovieSearchInfo searchInfo, int maxItems, String language) {
-        List<SearchResult> results = new LinkedList<>();
-        for (BaseMovie movies : response.body().results) {
-            SearchResult result = new SearchResult();
-            result.setId(movies.id);
-            result.setLanguage(language);
-            result.setTitle(movies.original_title);
-            result.setScraper(this);
-            result.setFile(searchInfo.getFile());
-            if (maxItems < 0 || results.size() < maxItems) {
-                if (DBG)
-                    Log.d(TAG, "getMatches2: taking into account " + movies.original_title + " and poster exists i.e. poster=" + movies.poster_path);
-                results.add(result);
-            }
-        }
-        return results;
-    }
-
-    // TODO: isolate into a separate class with throwable
-    private Pair<List<SearchResult>, Boolean> searchMovie(MovieSearchInfo searchInfo, int maxItems, Integer year, String language) {
-        Boolean error = false;
-        List<SearchResult> results = new LinkedList<>();
-        if (searchService == null) searchService = tmdb.searchService();
-        if (DBG) Log.d(TAG, "searchMovie: quering tmdb for " + searchInfo.getName() + " year " + year + " in " + language);
-        try {
-            response = searchService.movie(searchInfo.getName(), null, language,
-                    null, true, year, null).execute();
-            if (response.isSuccessful() && response.body() != null) {
-                results = processTmDbSearch(response, searchInfo, maxItems, language);
-            } else if (response.code() != 404) { // TODO: probably treat other cases of errors
-                if (DBG)
-                    Log.d(TAG, "ScrapeSearchResult ScrapeStatus.ERROR response not successful or body empty");
-                error = true;
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "searchMovie: caught IOException");
-            error = true;
-            response = null;
-        }
-        return new Pair<>(results, error);
-    }
-
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
         // check input
@@ -206,6 +163,7 @@ public class MovieScraper3 extends BaseScraper2 {
         if (search.status != ScrapeStatus.OKAY) {
             return new ScrapeDetailResult(search.tag, true, null, search.status, search.reason);
         }
+
         MovieTags tag = search.tag;
         tag.setFile(searchFile);
 

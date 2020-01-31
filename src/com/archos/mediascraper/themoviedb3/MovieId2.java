@@ -47,40 +47,55 @@ public class MovieId2 {
 
     public static MovieIdResult getBaseInfo(long movieId, String language, MoviesService moviesService) {
         MovieIdResult myResult = new MovieIdResult();
-
         Response<Movie> movieResponse = null;
+        MovieTags parserResult = null;
 
+        if (DBG) Log.d(TAG, "getBaseInfo: quering tmdb for movieId " + movieId + " in " + language);
         try {
             movieResponse = moviesService.summary((int) movieId, language).execute();
-            // TODO ADD if (! movieResponse.isSuccessful())
-            // fallback to english if no result
-            // TODO: check if this works as a fallback
-            if (movieResponse.body() == null && !language.equals("en")) {
-                // TODO ADD if (! movieResponse.isSuccessful())
-                movieResponse = moviesService.summary((int) movieId, "en").execute();
+            switch (movieResponse.code()) {
+                case 401: // auth issue
+                    if (DBG) Log.d(TAG, "search: auth error");
+                    myResult.status = ScrapeStatus.AUTH_ERROR;
+                    //TODO: MovieScraper3.reauth();
+                    return myResult;
+                case 404: // not found
+                    // TODO: check year parsing because scraping still put a ( and do not remove it
+                    myResult.status = ScrapeStatus.NOT_FOUND;
+                    // fallback to english if no result
+                    if (!language.equals("en")) {
+                        if (DBG) Log.d(TAG, "getBaseInfo: retrying search for movieId " + movieId + " in en");
+                        return getBaseInfo(movieId, "en", moviesService);
+                    }
+                    if (DBG) Log.d(TAG, "getBaseInfo: movieId " + movieId + " not found");
+                    break;
+                default:
+                    if (movieResponse.isSuccessful()) {
+                        if (movieResponse.body() != null) {
+                            parserResult = MovieIdParser2.getResult(movieResponse.body());
+                            myResult.tag = parserResult;
+                            myResult.status = ScrapeStatus.OKAY;
+                        } else {
+                            myResult.status = ScrapeStatus.NOT_FOUND;
+                        }
+                    } else { // an error at this point is PARSER related
+                        if (DBG) Log.d(TAG, "getBaseInfo: error " + movieResponse.code());
+                        myResult.status = ScrapeStatus.ERROR_PARSER;
+                    }
+                    break;
             }
         } catch (IOException e) {
-            Log.e(TAG, "getDetailsInternal: caught IOException getting summary");
+            Log.e(TAG, "getBaseInfo: caught IOException getting summary");
+            myResult.status = ScrapeStatus.ERROR_PARSER;
+            myResult.reason = e;
         }
         if (movieResponse.isSuccessful() && movieResponse.body() != null) {
             if (DBG) Log.d(TAG, "getBaseInfo: found something");
             myResult.status  = ScrapeStatus.OKAY;
-        } else { // TODO: probably treat other cases of errors
+        } else {
             myResult.status = ScrapeStatus.ERROR;
             if (DBG) Log.d(TAG, "getBaseInfo: error " + movieResponse.code());
             return myResult;
-        }
-
-        MovieTags parserResult = null;
-        // TODO MARC: there is no exception there --> remove
-        try {
-            parserResult = MovieIdParser2.getResult(movieResponse.body());
-            myResult.tag = parserResult;
-            myResult.status = ScrapeStatus.OKAY;
-        } catch (Exception e) {
-            if (DBG) Log.e(TAG, e.getMessage(), e);
-            myResult.status = ScrapeStatus.ERROR_PARSER;
-            myResult.reason = e;
         }
         return myResult;
     }

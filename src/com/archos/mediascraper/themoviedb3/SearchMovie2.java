@@ -70,14 +70,12 @@ public class SearchMovie2 {
             response = searchService.movie(query, null, language,
                     null, true, annee, null).execute();
             switch (response.code()) {
-                // TODO globalResponse.code() 404 is not found
-                // TODO globalResponse.code() 401 is JWT token invalid --> check JWT lifecycle handling
-                case 401:
+                case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
                     myResult.status = ScrapeStatus.AUTH_ERROR;
-                    //MovieScraper3.reauth();
+                    //TODO: MovieScraper3.reauth();
                     return myResult;
-                case 404:
+                case 404: // not found
                     // TODO: check year parsing because scraping still put a ( and do not remove it
                     myResult.status = ScrapeStatus.NOT_FOUND;
                     if (year != null) {
@@ -95,8 +93,7 @@ public class SearchMovie2 {
                         } else {
                             myResult.status = ScrapeStatus.NOT_FOUND;
                         }
-                    } else {
-                        // gee an error that should have been treated in another case of the switch
+                    } else { // an error at this point is PARSER related
                         if (DBG) Log.d(TAG, "search: response is not successful for " + query);
                         myResult.status = ScrapeStatus.ERROR_PARSER;
                     }
@@ -111,5 +108,4 @@ public class SearchMovie2 {
         }
         return myResult;
     }
-
 }
