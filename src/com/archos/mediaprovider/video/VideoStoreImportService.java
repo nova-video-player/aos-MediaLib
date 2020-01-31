@@ -607,6 +607,5 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     private void initializeScraperData() {
         if (DBG) Log.d(TAG, "initializeScraperData()");
         Scraper scraper = new Scraper(this);
-        scraper.setupDefaultContent(false);
     }
 }

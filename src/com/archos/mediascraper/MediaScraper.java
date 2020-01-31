@@ -80,13 +80,4 @@ public final class MediaScraper {
     /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
     public static final long BACKDROP_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
 
-    public static final String[] DEFAULT_CONTENT = new String[] {
-        // those exist for G9 only
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/Demo video.avi",
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/Big Buck Bunny.avi",
-        // those exist for G10 only / Demo video.mp4 potentially on some G9
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/Demo video.mp4",
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/sintel.mp4"
-    };
-
 }

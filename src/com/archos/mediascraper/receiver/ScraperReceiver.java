@@ -84,7 +84,6 @@ public class ScraperReceiver extends BroadcastReceiver {
         AsyncTask.execute(new Runnable() {
             public void run() {
                 Scraper scraper = new Scraper(localContext);
-                scraper.setupDefaultContent(true);
             }
         });
     }
