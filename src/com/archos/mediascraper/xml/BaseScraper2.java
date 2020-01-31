@@ -80,7 +80,7 @@ public abstract class BaseScraper2 {
     public final static ScraperSettings getSettings(int scraperType, Context context) {
         switch (scraperType) {
             case BaseTags.MOVIE:
-                return MovieScraper2.generatePreferences(context);
+                return MovieScraper3.generatePreferences(context);
             case BaseTags.TV_SHOW:
                 return ShowScraper2.generatePreferences(context);
             default:
@@ -112,7 +112,7 @@ public abstract class BaseScraper2 {
     public static final BaseScraper2 getScraper(int type, Context context) {
         switch (type) {
             case BaseTags.MOVIE:
-                return new MovieScraper2(context);
+                return new MovieScraper3(context);
             case BaseTags.TV_SHOW:
                 return new ShowScraper2(context);
             default:

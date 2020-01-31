@@ -47,7 +47,7 @@ import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
-import com.archos.mediascraper.xml.MovieScraper2;
+import com.archos.mediascraper.xml.MovieScraper3;
 import com.archos.mediascraper.xml.ShowScraper2;
 
 import java.io.IOException;
@@ -449,8 +449,8 @@ public class AutoScrapeService extends Service {
                                             if (DBG) Log.d(TAG,"startScraping: rescraping movie "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
-                                            searchResult.setScraper(new MovieScraper2(AutoScrapeService.this));
-                                            result = MovieScraper2.getDetails(searchResult, null);
+                                            searchResult.setScraper(new MovieScraper3(AutoScrapeService.this));
+                                            result = MovieScraper3.getDetails(searchResult, null);
                                         }
                                         else searchOnline = true;
                                     }
