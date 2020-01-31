@@ -23,10 +23,12 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.archos.medialib.R;
+import com.archos.mediascraper.MediaScraper;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.ScrapeStatus;
+import com.archos.mediascraper.ScraperCache;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.MovieSearchInfo;
@@ -72,9 +74,7 @@ public class MovieScraper3 extends BaseScraper2 {
     private static ScraperSettings sSettings;
     private Response<MovieResultsPage> response = null;
 
-    // TODO: make it a scraper cache class and link with global parameters!
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
-    protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
     static Cache cache;
 
     static MyTmdb tmdb = null;
@@ -85,8 +85,7 @@ public class MovieScraper3 extends BaseScraper2 {
         super(context);
         // ensure cache is initialized
         synchronized (MovieScraper3.class) {
-            if (cache == null)
-                cache = new Cache(context.getCacheDir(), cacheSize);
+            cache = ScraperCache.getCache(context);
         }
     }
 
@@ -95,11 +94,9 @@ public class MovieScraper3 extends BaseScraper2 {
         public class CacheInterceptor implements Interceptor {
             @Override
             public okhttp3.Response intercept(Chain chain) throws IOException {
-                // TODO: use for cache data MediaScraper.XML_CACHE_TIMEOUT, MediaScraper.CACHE_FALLBACK_DIRECTORY,
-                //  MediaScraper.CACHE_OVERWRITE_DIRECTORY)
                 okhttp3.Response response = chain.proceed(chain.request());
                 CacheControl cacheControl = new CacheControl.Builder()
-                        .maxAge(2, TimeUnit.HOURS) // 2 hours cache
+                        .maxAge(MediaScraper.SCRAPER_CACHE_TIMEOUT_COUNT, MediaScraper.SCRAPER_CACHE_TIMEOUT_UNIT)
                         .build();
                 return response.newBuilder()
                         .removeHeader("Pragma")

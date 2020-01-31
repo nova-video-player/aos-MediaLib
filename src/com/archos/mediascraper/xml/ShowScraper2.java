@@ -25,10 +25,12 @@ import android.util.SparseArray;
 
 import com.archos.medialib.R;
 import com.archos.mediascraper.EpisodeTags;
+import com.archos.mediascraper.MediaScraper;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.Scraper;
+import com.archos.mediascraper.ScraperCache;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.ShowTags;
@@ -83,7 +85,6 @@ public class ShowScraper2 extends BaseScraper2 {
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
-    protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
     static Cache cache;
 
     static MyTheTVdb theTvdb = null;
@@ -92,23 +93,7 @@ public class ShowScraper2 extends BaseScraper2 {
         super(context);
         // ensure cache is initialized
         synchronized (ShowScraper2.class) {
-            if (cache == null)
-                cache = new Cache(context.getCacheDir(), cacheSize);
-        }
-    }
-
-    public void dumpCacheInfo() {
-        if (cache == null) {
-            Log.d(TAG, "Cache not initialized");
-            return;
-        }
-        try {
-            double fillRatio = (cache.maxSize() / (double) cache.size());
-            double hitRatio = cache.hitCount() / (double) cache.requestCount();
-            Log.d(TAG, "Cache filled " + fillRatio + "%");
-            Log.d(TAG, "Cache hit " + hitRatio + "%");
-        } catch (IOException e) {
-            e.printStackTrace();
+            cache = ScraperCache.getCache(context);
         }
     }
 
@@ -121,7 +106,7 @@ public class ShowScraper2 extends BaseScraper2 {
             public okhttp3.Response intercept(Chain chain) throws IOException {
                 okhttp3.Response response = chain.proceed(chain.request());
                 CacheControl cacheControl = new CacheControl.Builder()
-                        .maxAge(2, TimeUnit.HOURS) // 2 hours cache
+                        .maxAge(MediaScraper.SCRAPER_CACHE_TIMEOUT_COUNT, MediaScraper.SCRAPER_CACHE_TIMEOUT_UNIT)
                         .build();
                 return response.newBuilder()
                         .removeHeader("Pragma")
