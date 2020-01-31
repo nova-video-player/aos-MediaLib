@@ -29,7 +29,6 @@ import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
-import com.archos.mediascraper.xml.DefaultContentScraper;
 import com.archos.mediascraper.xml.MovieScraper2;
 import com.archos.mediascraper.xml.ShowScraper2;
 
@@ -103,13 +102,6 @@ public class Scraper {
             return mShowScraper.search(info);
         }
         return mMovieScraper.search(info);
-    }
-
-
-    protected ScrapeDetailResult getDefaultContentAutoDetails(String path) {
-        Uri file = Uri.parse(path);
-        DefaultContentScraper scraper = new DefaultContentScraper(mContext);
-        return scraper.search(file, null);
     }
 
 }
