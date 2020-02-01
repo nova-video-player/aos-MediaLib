@@ -69,9 +69,6 @@ public final class MediaScraper {
         return new File(context.getExternalCacheDir(), "backdrops");
     }
 
-    public static final File CACHE_OVERWRITE_DIRECTORY = new File("/system/usr/share/scraper/overwrite");
-    public static final File CACHE_FALLBACK_DIRECTORY = new File("/system/usr/share/scraper/fallback");
-
     /** Timeout for {@link HttpCache} - 1 day since xml responses are quite dynamic */
     public static final long XML_CACHE_TIMEOUT = HttpCache.ONE_DAY;
 

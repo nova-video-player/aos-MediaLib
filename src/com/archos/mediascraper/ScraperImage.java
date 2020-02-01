@@ -528,13 +528,11 @@ public class ScraperImage {
         } else
         if (!fake) {
             long timeout = getCacheTimeout(type);
-            HttpCache httpCache = HttpCache.getInstance(cacheDir, timeout,
-                    MediaScraper.CACHE_FALLBACK_DIRECTORY,
-                    MediaScraper.CACHE_OVERWRITE_DIRECTORY);
+            HttpCache httpCache = HttpCache.getInstance(cacheDir, timeout, null, null);
             File cached = httpCache.getFile(url, false);
             imageSource = (cached==null) ? null : Uri.fromFile(cached);
         } else {
-            File cached = HttpCache.getStaticFile(url, MediaScraper.CACHE_FALLBACK_DIRECTORY, MediaScraper.CACHE_OVERWRITE_DIRECTORY);
+            File cached = HttpCache.getStaticFile(url, null, null);
             imageSource = (cached==null) ? null : Uri.fromFile(cached);
         }
         if (DBG) Log.d(TAG, "Downloading took " + dbgTimer.step());

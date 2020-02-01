@@ -116,6 +116,8 @@ public class HttpCache {
         mCacheDirectory = directory;
         mCacheTimeOut = maxAge;
 
+        if (DBG) Log.d(TAG, "HttpCache: creating cache dir " + directory.getPath());
+
         if (mCacheDirectory == null)
             throw new RuntimeException("You must specify a Directory");
 
