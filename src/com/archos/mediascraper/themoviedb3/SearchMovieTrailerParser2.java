@@ -20,8 +20,6 @@ import com.uwetrottmann.tmdb2.entities.Videos;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
-
 
 public class SearchMovieTrailerParser2 {
     private static final String TAG = SearchMovieTrailerParser2.class.getSimpleName();
@@ -35,11 +33,7 @@ public class SearchMovieTrailerParser2 {
             if (i < limit) {
                 SearchMovieTrailerResult.TrailerResult item = new SearchMovieTrailerResult.TrailerResult();
                 if (trailer.site != null) item.setService(trailer.site);
-                // TODO: put the two letter language instead and use the code in ISO639codes.java
-                if (trailer.iso_639_1 != null) {
-                    Locale locale = new Locale(trailer.iso_639_1);
-                    item.setLanguage(locale.getDisplayLanguage());
-                }
+                if (trailer.iso_639_1 != null) item.setLanguage(trailer.iso_639_1);
                 if (trailer.key != null) item.setKey(trailer.key);
                 if (trailer.name != null) item.setName(trailer.name);
                 if (trailer.type != null) item.setType(trailer.type.toString());
