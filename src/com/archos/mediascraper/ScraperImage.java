@@ -39,6 +39,7 @@ public class ScraperImage {
     private static final boolean DBG = false;
     private static final boolean DBG2 = false;
 
+    // TODO change poster resolution here?
     public static int POSTER_WIDTH = 240;
     public static int POSTER_HEIGHT = 360;
 
