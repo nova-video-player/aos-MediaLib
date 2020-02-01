@@ -83,19 +83,10 @@ public class MovieId2 {
                     break;
             }
         } catch (IOException e) {
-            Log.e(TAG, "getBaseInfo: caught IOException getting summary");
+            Log.e(TAG, "getBaseInfo: caught IOException getting summary for movieId=" + movieId);
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
         }
-        if (movieResponse.isSuccessful() && movieResponse.body() != null) {
-            if (DBG) Log.d(TAG, "getBaseInfo: found something");
-            myResult.status  = ScrapeStatus.OKAY;
-        } else {
-            myResult.status = ScrapeStatus.ERROR;
-            if (DBG) Log.d(TAG, "getBaseInfo: error " + movieResponse.code());
-            return myResult;
-        }
         return myResult;
     }
-
 }
