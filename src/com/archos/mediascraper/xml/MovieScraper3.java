@@ -73,11 +73,14 @@ public class MovieScraper3 extends BaseScraper2 {
     static SearchService searchService = null;
     static MoviesService moviesService = null;
 
+    static String apiKey = null;
+
     public MovieScraper3(Context context) {
         super(context);
         // ensure cache is initialized
         synchronized (MovieScraper3.class) {
             cache = ScraperCache.getCache(context);
+            apiKey = context.getString(R.string.tmdb_api_key);
         }
     }
 
@@ -111,8 +114,8 @@ public class MovieScraper3 extends BaseScraper2 {
         }
     }
 
-    public void reauth() {
-        tmdb = new MyTmdb(mContext.getString(R.string.tmdb_api_key));
+    public static void reauth() {
+        tmdb = new MyTmdb(apiKey);
     }
 
     @Override

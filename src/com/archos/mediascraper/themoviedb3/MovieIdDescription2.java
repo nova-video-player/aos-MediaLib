@@ -17,6 +17,7 @@ package com.archos.mediascraper.themoviedb3;
 import android.util.Log;
 
 import com.archos.mediascraper.MovieTags;
+import com.archos.mediascraper.xml.MovieScraper3;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
@@ -39,7 +40,7 @@ public class MovieIdDescription2 {
             switch (movieResponse.code()) {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
-                    //TODO: MovieScraper3.reauth();
+                    MovieScraper3.reauth();
                     return false;
                 case 404: // not found
                     if (DBG) Log.d(TAG, "getBaseInfo: movieId " + movieId + " not found");

@@ -19,6 +19,7 @@ import android.util.Log;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ScraperTrailer;
+import com.archos.mediascraper.xml.MovieScraper3;
 import com.uwetrottmann.tmdb2.entities.Videos;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
@@ -41,6 +42,7 @@ public class SearchMovieTrailer2 {
             videosResponse = moviesService.videos((int) movieId, language).execute();
             if (videosResponse.code() == 401) {
                 myResult.status = ScrapeStatus.AUTH_ERROR;
+                MovieScraper3.reauth();
                 return myResult;
             }
             if (videosResponse.isSuccessful() && videosResponse.body() != null)
@@ -49,6 +51,7 @@ public class SearchMovieTrailer2 {
                 videosResponseEn = moviesService.videos((int) movieId, "en").execute();
                 if (videosResponseEn.code() == 401) {
                     myResult.status = ScrapeStatus.AUTH_ERROR;
+                    MovieScraper3.reauth();
                     return myResult;
                 }
                 if (videosResponseEn.isSuccessful() && videosResponseEn.body() != null) {

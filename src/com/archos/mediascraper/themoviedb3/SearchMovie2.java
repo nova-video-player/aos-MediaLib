@@ -18,6 +18,7 @@ import android.util.Log;
 
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.SearchResult;
+import com.archos.mediascraper.xml.MovieScraper3;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.entities.MovieResultsPage;
 import com.uwetrottmann.tmdb2.services.SearchService;
@@ -59,7 +60,7 @@ public class SearchMovie2 {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
                     myResult.status = ScrapeStatus.AUTH_ERROR;
-                    //TODO: MovieScraper3.reauth();
+                    MovieScraper3.reauth();
                     return myResult;
                 case 404: // not found
                     // TODO: check year parsing because scraping still put a ( and do not remove it
