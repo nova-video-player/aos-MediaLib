@@ -141,9 +141,7 @@ public class MovieScraper3 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
-
         // TODO: why it searches every first level result?
-
         String language = getLanguage(mContext);
 
         long movieId = result.getId();
@@ -165,6 +163,7 @@ public class MovieScraper3 extends BaseScraper2 {
 
         // add posters and backdrops
         // TODO: CHANGE POSTER SIZE HERE?
+        // TODO: scraperimage remove httpcache that is in wrong directory
         MovieIdImages2.addImages(movieId, tag, language,
                 ImageConfiguration.PosterSize.W342, // large poster
                 ImageConfiguration.PosterSize.W92,  // thumb poster
@@ -175,9 +174,6 @@ public class MovieScraper3 extends BaseScraper2 {
         if (defaultPoster != null) {
             tag.setCover(defaultPoster.getLargeFileF());
         }
-
-        // TODO REALLY check if it is not better to do once the two requests one in english and one in language to serve all!!!!!
-        // idea would be to fallback to en always if there is an empty field
 
         // if there was no movie description in the native language get it from default
         if (tag.getPlot() == null) {

@@ -15,7 +15,6 @@
 package com.archos.mediascraper.themoviedb3;
 
 import com.uwetrottmann.tmdb2.entities.Images;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -56,7 +55,7 @@ public class MovieIdImageParser2 {
         }
     }
 
-    public static MovieIdImagesResult getResult(Images images, String preferredLanguage) throws IOException {
+    public static MovieIdImagesResult getResult(Images images, String preferredLanguage) {
         MovieIdImagesResult myResult = new MovieIdImagesResult();
         LinkedList<Image> posters = new LinkedList<Image>();
         LinkedList<Image> backdrops = new LinkedList<Image>();

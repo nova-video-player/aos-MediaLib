@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
@@ -25,17 +24,8 @@ import java.io.IOException;
 
 import retrofit2.Response;
 
-/*
- * /3/movie/{id}
- *
- * !Getting just "overview" from no language version
- *
- * Required Parameters
- * api_key
- *
- * Optional Parameters
- * language             ISO 639-1 code.
- */
+// set overview for movieId in english
+// return boolean for success
 public class MovieIdDescription2 {
     private static final String TAG = MovieIdDescription2.class.getSimpleName();
     private static final boolean DBG = false;
@@ -46,20 +36,29 @@ public class MovieIdDescription2 {
         Response<Movie> movieResponse = null;
         try {
             movieResponse = moviesService.summary((int) movieId, "en").execute();
+            switch (movieResponse.code()) {
+                case 401: // auth issue
+                    if (DBG) Log.d(TAG, "search: auth error");
+                    //TODO: MovieScraper3.reauth();
+                    return false;
+                case 404: // not found
+                    if (DBG) Log.d(TAG, "getBaseInfo: movieId " + movieId + " not found");
+                    return false;
+                default:
+                    if (movieResponse.isSuccessful()) {
+                        if (movieResponse.body() != null) {
+                            String description = movieResponse.body().overview;
+                            if (description != null && !description.isEmpty())
+                                tag.setPlot(description);
+                            return true;
+                        } else
+                            return false;
+                    } else // an error at this point is PARSER related
+                        return false;
+            }
         } catch (IOException e) {
-            Log.e(TAG, "addImages: caught IOException getting summary");
-        }
-
-        if (! movieResponse.isSuccessful())
+            Log.e(TAG, "addImages: caught IOException getting summary for movieId=" + movieId);
             return false;
-
-        if (movieResponse.body() != null) {
-            Movie movie = movieResponse.body();
-            String description = movie.overview;
-            if (description != null && !description.isEmpty())
-                tag.setPlot(description);
-            return true;
         }
-        return false;
     }
 }

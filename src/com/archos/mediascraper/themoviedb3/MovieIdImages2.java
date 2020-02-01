@@ -30,17 +30,7 @@ import java.util.List;
 
 import retrofit2.Response;
 
-/*
- * 3/movie/{id}/images
- *
- * Get the images (posters and backdrops) for a specific movie id.
- *
- * Required Parameters
- * api_key
- *
- * Optional Parameters
- * language            ISO 639-1 code.
- */
+// Get the images (posters and backdrops) for a specific movie id and language (ISO 939-1 code)
 public class MovieIdImages2 {
     private static final String TAG = MovieIdImages2.class.getSimpleName();
     private static final boolean DBG = false;
@@ -53,28 +43,22 @@ public class MovieIdImages2 {
             String nameSeed,
             MoviesService moviesService,
             Context context) {
-
         Response<Images> imagesResponse = null;
 
         if (tag == null)
             return false;
-
-        // TODO: try catch IOException
         if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + " in "+ language);
-        boolean retry = false;
-
         try {
             imagesResponse = moviesService.images((int) movieId, language).execute();
         } catch (IOException e) {
             Log.e(TAG, "addImages: caught IOException getting summary");
             imagesResponse = null;
         }
-
+        boolean retry = false;
         if (imagesResponse == null)
             retry = true;
         else if (! imagesResponse.isSuccessful())
             retry =true;
-
         if (retry) { //first failure, try again
             try {
                 //when requesting immediately after failure, it fails again (2500ms had still some failure).
@@ -87,44 +71,54 @@ public class MovieIdImages2 {
                 imagesResponse = moviesService.images((int) movieId, language).execute();
             } catch (IOException e) {
                 Log.e(TAG, "addImages: caught IOException getting summary");
+                return false;
             }
-            if (! imagesResponse.isSuccessful())
+            if (imagesResponse == null)
+                return false;
+            else if (! imagesResponse.isSuccessful())
                 return false;
         }
-
-        Images images = imagesResponse.body();
-        // TODO movie can be null
-
-        MovieIdImagesResult parserResult = null;
-        try {
-            parserResult = MovieIdImageParser2.getResult(images, language);
-            List<ScraperImage> posters = new ArrayList<ScraperImage>(parserResult.posterPaths.size());
-            for (String path : parserResult.posterPaths) {
-                String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
-                String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
-                ScraperImage image = new ScraperImage(Type.MOVIE_POSTER, nameSeed);
-                image.setLargeUrl(fullUrl);
-                image.setThumbUrl(thumbUrl);
-                image.generateFileNames(context);
-                posters.add(image);
-            }
-            tag.setPosters(posters);
-            List<ScraperImage> backdrops = new ArrayList<ScraperImage>(parserResult.backdropPaths.size());
-            for (String path : parserResult.backdropPaths) {
-                String fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
-                String thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
-                ScraperImage image = new ScraperImage(Type.MOVIE_BACKDROP, nameSeed);
-                image.setLargeUrl(fullUrl);
-                image.setThumbUrl(thumbUrl);
-                image.generateFileNames(context);
-                backdrops.add(image);
-            }
-            tag.setBackdrops(backdrops);
-            return true;
-        } catch (IOException e) {
-            if (DBG) Log.e(TAG, e.getMessage(), e);
+        switch (imagesResponse.code()) {
+            case 401: // auth issue
+                if (DBG) Log.d(TAG, "search: auth error");
+                //TODO: MovieScraper3.reauth();
+                return false;
+            case 404: // not found
+                if (DBG) Log.d(TAG, "getBaseInfo: movieId " + movieId + " not found");
+                return false;
+            default:
+                if (imagesResponse.isSuccessful()) {
+                    if (imagesResponse.body() != null) {
+                        Images images = imagesResponse.body();
+                        MovieIdImagesResult parserResult = null;
+                        parserResult = MovieIdImageParser2.getResult(images, language);
+                        List<ScraperImage> posters = new ArrayList<ScraperImage>(parserResult.posterPaths.size());
+                        for (String path : parserResult.posterPaths) {
+                            String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
+                            String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
+                            ScraperImage image = new ScraperImage(Type.MOVIE_POSTER, nameSeed);
+                            image.setLargeUrl(fullUrl);
+                            image.setThumbUrl(thumbUrl);
+                            image.generateFileNames(context);
+                            posters.add(image);
+                        }
+                        tag.setPosters(posters);
+                        List<ScraperImage> backdrops = new ArrayList<ScraperImage>(parserResult.backdropPaths.size());
+                        for (String path : parserResult.backdropPaths) {
+                            String fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
+                            String thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
+                            ScraperImage image = new ScraperImage(Type.MOVIE_BACKDROP, nameSeed);
+                            image.setLargeUrl(fullUrl);
+                            image.setThumbUrl(thumbUrl);
+                            image.generateFileNames(context);
+                            backdrops.add(image);
+                        }
+                        tag.setBackdrops(backdrops);
+                        return true;
+                    } else
+                        return false;
+                } else // an error at this point is PARSER related
+                    return false;
         }
-        return false;
     }
-
 }

@@ -14,8 +14,6 @@
 
 package com.archos.mediascraper.themoviedb3;
 
-import android.util.Log;
-
 import com.archos.mediascraper.MovieTags;
 import com.uwetrottmann.tmdb2.entities.BaseCompany;
 import com.uwetrottmann.tmdb2.entities.CastMember;

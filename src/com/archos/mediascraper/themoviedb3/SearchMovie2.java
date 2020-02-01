@@ -27,19 +27,8 @@ import java.util.List;
 
 import retrofit2.Response;
 
-/*
- * /3/search/movie
- *
- * Required Parameters
- * api_key
- * query            CGI escaped string
- *
- * Optional Parameters
- * page
- * language         ISO 639-1 code.
- * include_adult    Toggle the inclusion of adult titles.
- * year             Filter results to only include this value.
- */
+// Search Movie for name query for year in language (ISO 639-1 code)
+// does not include_adult (Toggle the inclusion of adult titles)
 public class SearchMovie2 {
     private static final String TAG = SearchMovie2.class.getSimpleName();
     private static final boolean DBG = false;

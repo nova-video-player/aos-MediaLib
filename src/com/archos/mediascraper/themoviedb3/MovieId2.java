@@ -26,17 +26,7 @@ import java.io.IOException;
 
 import retrofit2.Response;
 
-/*
- * /3/movie/{id}
- *
- * Get the basic movie information for a specific movie id.
- *
- * Required Parameters
- * api_key
- *
- * Optional Parameters
- * language             ISO 639-1 code.
- */
+// Get the basic movie information for a specific movie id and language (ISO 639-1 code)
 public class MovieId2 {
     private static final String TAG = MovieId2.class.getSimpleName();
     private static final boolean DBG = false;
