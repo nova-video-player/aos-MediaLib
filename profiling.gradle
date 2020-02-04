@@ -1,0 +1,96 @@
+android {
+   buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    // cmake Debug build type uses -O0, which makes the code slow.
+                    arguments "-DCMAKE_BUILD_TYPE=Release", "-DUSE_SAN=ON"
+                }
+            }
+            // Add lib/xxx/wrap.sh in the apk. This is to enable java profiling on Android O
+            // devices.
+            sourceSets {
+                debug {
+                    resources {
+                        srcDir {
+                            "profiling_apk_add_dir"
+                        }
+
+                    }
+                    jniLibs.srcDirs += "profiling_apk_add_dir/libs"
+                }
+            }
+        }
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('generate')) {
+            task.dependsOn createProfilingApkAddDir
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('clean')) {
+        task.dependsOn deleteSan
+    }
+}
+
+task deleteSan(type: Delete) {
+    delete 'profiling_apk_add_dir'
+}
+
+clean.dependsOn(deleteSan)
+
+def supportedAbis = ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"]
+
+static def archFromAbi(abi) {
+    def arch = "undef"
+    switch (abi) {
+        case "armeabi-v7a": arch = "arm"; break
+        case "arm64-v8a": arch = "aarch64"; break
+        case "x86": arch = "i686"; break
+        case "x86_64": arch = "x86_64"; break
+    }
+    arch
+}
+
+static def writeWrapScript(wrapFile, abi) {
+    def arch = archFromAbi(abi)
+    wrapFile.withWriter { writer ->
+        writer.write('#!/system/bin/sh\n')
+        writer.write('HERE="$(cd "$(dirname "$0")" && pwd)"\n')
+        writer.write('export ASAN_OPTIONS=log_to_syslog=false,allow_user_segv_handler=1\n')
+        writer.write("export LD_PRELOAD=\$HERE/libclang_rt.asan-${arch}-android.so\n")
+        writer.write('\$@\n')
+    }
+}
+
+
+//todo understand lib arch mixup with multiarch config
+task copySanLibs(type: Copy) {
+    for (String abi : supportedAbis) {
+        def arch = archFromAbi(abi)
+        def dir = file("profiling_apk_add_dir/libs/${abi}/")
+        dir.mkdirs()
+        def sanPath = "/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/9.0.8/lib/linux/"
+        println android.ndkDirectory.path + sanPath + "libclang_rt.asan-${arch}-android.so"
+        copy {
+            from(android.ndkDirectory.path + sanPath) {
+                include "libclang_rt.asan-${arch}-android.so"
+            }
+            into dir
+        }
+        println "copy *san for arch ${arch} files in abi ${abi} dir " + dir
+    }
+}
+
+task createProfilingApkAddDir(dependsOn: copySanLibs) {
+    for (String abi : supportedAbis) {
+        def dir = file("profiling_apk_add_dir/lib/${abi}")
+        dir.mkdirs()
+        def wrapFile = new File(dir, "wrap.sh")
+        writeWrapScript(wrapFile, abi)
+        println "write file " + wrapFile.path
+    }
+}
