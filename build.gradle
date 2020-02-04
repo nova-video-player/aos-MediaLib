@@ -100,6 +100,10 @@ android {
     }
 }
 
+def useSan = false
+if (useSan)
+    apply from: 'profiling.gradle'
+
 dependencies {
     implementation project(':FileCoreLibrary')
     //implementation 'com.android.support:support-v4:28.0.0'
