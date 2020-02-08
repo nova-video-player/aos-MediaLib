@@ -76,7 +76,7 @@ public class Trakt {
     private static final String API_URL = "https://api.trakt.tv";
     private static String API_KEY;
     private static String API_SECRET;
-    private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
     public static final int SCROBBLE_THRESHOLD = 85;
     // TODO: question do we want more?
     public static final int LIMIT_RESPONSES = 10000;
