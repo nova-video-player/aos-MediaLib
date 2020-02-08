@@ -60,6 +60,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -75,7 +76,7 @@ public class Trakt {
     private static final String API_URL = "https://api.trakt.tv";
     private static String API_KEY;
     private static String API_SECRET;
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
+    private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
     public static final int SCROBBLE_THRESHOLD = 85;
     // TODO: question do we want more?
     public static final int LIMIT_RESPONSES = 10000;
@@ -323,7 +324,12 @@ public class Trakt {
     }
 
     public static String getDateFormat(long currentTimeSecond) {
-        return currentTimeSecond > 0 ? DATE_FORMAT.format(new Date(currentTimeSecond * 1000L)) : null;
+        // all currentTimeSecond are computed as since January 1, 1970, 00:00:00 GMT
+        // need to align on current timeZone i.e. adjust by the difference with current timezone and GMT
+        int millisecondsGmtRawOffset = TimeZone.getTimeZone("GMT").getRawOffset();
+        int millisecondsLocaleRawOffset = TimeZone.getDefault().getRawOffset();
+        long millisecondsOffset = millisecondsGmtRawOffset - millisecondsLocaleRawOffset;
+        return currentTimeSecond > 0 ? DATE_FORMAT.format(new Date(currentTimeSecond * 1000L + millisecondsOffset)) : null;
     }
    
     public Result markAs(final String action, final SyncItems param, final boolean isShow, final int trial){
