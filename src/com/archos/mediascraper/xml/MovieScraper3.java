@@ -133,6 +133,7 @@ public class MovieScraper3 extends BaseScraper2 {
         String language = getLanguage(mContext);
         if (DBG) Log.d(TAG, "movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
         SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService);
+        // TODO: this triggers scrape for all search results, is this intended?
         if (searchResult.status == ScrapeStatus.OKAY) {
             for (SearchResult result : searchResult.result) {
                 result.setScraper(this);

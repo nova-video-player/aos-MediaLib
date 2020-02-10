@@ -36,8 +36,6 @@ public class SearchMovie2 {
 
     public static SearchMovieResult search(String query, String language, String year, int resultLimit, SearchService searchService) {
         SearchMovieResult myResult = new SearchMovieResult();
-        Response<Movie> movieResponse = null;
-
         List<SearchResult> parserResult = null;
         Response<MovieResultsPage> response = null;
 
@@ -59,11 +57,11 @@ public class SearchMovie2 {
             switch (response.code()) {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
+                    myResult.result = SearchMovieResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.AUTH_ERROR;
                     MovieScraper3.reauth();
                     return myResult;
                 case 404: // not found
-                    // TODO: check year parsing because scraping still put a ( and do not remove it
                     myResult.status = ScrapeStatus.NOT_FOUND;
                     if (year != null) {
                         if (DBG) Log.d(TAG, "search: retrying search for '" + query + "' without year.");
