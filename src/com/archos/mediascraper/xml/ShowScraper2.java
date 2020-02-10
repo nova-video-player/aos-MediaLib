@@ -275,7 +275,7 @@ public class ShowScraper2 extends BaseScraper2 {
                     .series(searchInfo.getShowName(), null, null, null, "en")
                     .execute();
                 if (globalResponse.isSuccessful() && globalResponse.body() != null)
-                    results = processTheTvDbSearch(response, extra, searchInfo, maxItems, "en");
+                    results = processTheTvDbSearch(globalResponse, extra, searchInfo, maxItems, "en");
                 else if (globalResponse.code() != 404) {
                     if (DBG) Log.d(TAG, "ScrapeSearchResult en ScrapeStatus.ERROR response not successful or body empty");
                     return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
