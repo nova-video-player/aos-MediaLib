@@ -351,9 +351,8 @@ public class ShowScraper2 extends BaseScraper2 {
                     else {
                         if (DBG) Log.w(TAG,"ScrapeDetailResult serie ScrapeStatus.ERROR_PARSER for showId=" + showId);
                         return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
-                    }
+                       }
                 }
-
                 // actors
                 if (!basicShow && !basicEpisode) {
                     List<Actor> tempActors = new ArrayList<>();
@@ -543,7 +542,7 @@ public class ShowScraper2 extends BaseScraper2 {
                                  */
 
                                 if ((episode.overview == null || episode.episodeName == null) && !resultLanguage.equals("en")) {
-                                    if (globalEpisodes == null) {
+                                    if (globalEpisodes == null) { // do it only once
                                         globalEpisodes = new SparseArray<>();
                                         Integer globalPage = 1;
                                         while (globalPage != null) {
