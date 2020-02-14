@@ -49,6 +49,7 @@ import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.MovieScraper3;
 import com.archos.mediascraper.xml.ShowScraper2;
+import com.archos.mediascraper.xml.ShowScraper3;
 
 import java.io.IOException;
 
@@ -442,8 +443,8 @@ public class AutoScrapeService extends Service {
                                             if (DBG) Log.d(TAG,"startScraping: rescraping episode "+videoID);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
-                                            searchResult.setScraper(new ShowScraper2(AutoScrapeService.this));
-                                            result = ShowScraper2.getDetails(new SearchResult(0,title, (int) videoID), null);
+                                            searchResult.setScraper(new ShowScraper3(AutoScrapeService.this));
+                                            result = ShowScraper3.getDetails(new SearchResult(0,title, (int) videoID), null);
 
                                         } else if (scraperType==BaseTags.MOVIE) {
                                             if (DBG) Log.d(TAG,"startScraping: rescraping movie "+videoID);
