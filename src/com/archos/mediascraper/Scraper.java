@@ -30,7 +30,7 @@ import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
 import com.archos.mediascraper.xml.MovieScraper3;
-import com.archos.mediascraper.xml.ShowScraper2;
+import com.archos.mediascraper.xml.ShowScraper3;
 
 public class Scraper {
     private static final String TAG = "Scraper";
@@ -50,11 +50,11 @@ public class Scraper {
     public Scraper(Context context) {
         if (DBG) Log.d(TAG, "CTOR");
         mContext = context;
-        mShowScraper = new ShowScraper2(mContext);
+        mShowScraper = new ShowScraper3(mContext);
         mMovieScraper = new MovieScraper3(mContext);
     }
 
-    private final ShowScraper2 mShowScraper;
+    private final ShowScraper3 mShowScraper;
     private final MovieScraper3 mMovieScraper;
 
     private ScrapeSearchResult getMatches(SearchInfo info, int maxItems) {

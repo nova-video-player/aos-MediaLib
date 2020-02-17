@@ -22,7 +22,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.archos.medialib.R;
-import com.archos.mediascraper.MediaScraper;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
@@ -39,30 +38,24 @@ import com.archos.mediascraper.themoviedb3.MovieId2;
 import com.archos.mediascraper.themoviedb3.MovieIdDescription2;
 import com.archos.mediascraper.themoviedb3.MovieIdImages2;
 import com.archos.mediascraper.themoviedb3.MovieIdResult;
+import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.themoviedb3.SearchMovie2;
 import com.archos.mediascraper.themoviedb3.SearchMovieResult;
 import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
-import com.uwetrottmann.tmdb2.Tmdb;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
 import okhttp3.Cache;
-import okhttp3.CacheControl;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
+
 
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private final static String TAG = "MovieScraper3";
     private final static boolean DBG = false;
-    private final static boolean DBG_RETROFIT = false;
-    private final static boolean CACHE = true;
 
     private static ScraperSettings sSettings;
 
@@ -84,38 +77,8 @@ public class MovieScraper3 extends BaseScraper2 {
         }
     }
 
-    static class MyTmdb extends Tmdb {
-        public MyTmdb(String apiKey) { super(apiKey); }
-        public class CacheInterceptor implements Interceptor {
-            @Override
-            public okhttp3.Response intercept(Chain chain) throws IOException {
-                okhttp3.Response response = chain.proceed(chain.request());
-                CacheControl cacheControl = new CacheControl.Builder()
-                        .maxAge(MediaScraper.SCRAPER_CACHE_TIMEOUT_COUNT, MediaScraper.SCRAPER_CACHE_TIMEOUT_UNIT)
-                        .build();
-                return response.newBuilder()
-                        .removeHeader("Pragma")
-                        .removeHeader("Cache-Control")
-                        .header("Cache-Control", cacheControl.toString())
-                        .build();
-            }
-        }
-        @Override
-        protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
-            super.setOkHttpClientDefaults(builder);
-            if (DBG_RETROFIT) {
-                HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-                logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-                builder.addNetworkInterceptor(logging).addInterceptor(logging);
-            }
-            if (CACHE) {
-                builder.cache(cache).addNetworkInterceptor(new MyTmdb.CacheInterceptor());
-            }
-        }
-    }
-
     public static void reauth() {
-        tmdb = new MyTmdb(apiKey);
+        tmdb = new MyTmdb(apiKey, cache);
     }
 
     @Override
@@ -168,6 +131,7 @@ public class MovieScraper3 extends BaseScraper2 {
         // add posters and backdrops
         // TODO: CHANGE POSTER SIZE HERE?
         // TODO: scraperimage remove httpcache that is in wrong directory
+        // TODO: use ShowScraper3 way?
         MovieIdImages2.addImages(movieId, tag, language,
                 ImageConfiguration.PosterSize.W342, // large poster
                 ImageConfiguration.PosterSize.W92,  // thumb poster
