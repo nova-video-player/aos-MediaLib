@@ -129,6 +129,7 @@ public class ShowIdPosters {
             }
         } catch (IOException e) {
             Log.e(TAG, "getActors: caught IOException getting actors for showId=" + showId);
+            myResult.posters = ShowIdPostersResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
         }
