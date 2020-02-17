@@ -48,7 +48,6 @@ import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.MovieScraper3;
-import com.archos.mediascraper.xml.ShowScraper2;
 import com.archos.mediascraper.xml.ShowScraper3;
 
 import java.io.IOException;
