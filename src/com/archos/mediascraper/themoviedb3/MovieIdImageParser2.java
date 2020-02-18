@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper.themoviedb3;
 
+import android.util.Log;
+
 import com.uwetrottmann.tmdb2.entities.Images;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class MovieIdImageParser2 {
+    private static final String TAG = MovieIdImageParser2.class.getSimpleName();
+    private static final boolean DBG = false;
 
     private static class Image implements Comparable<Image>{
         // 2 bit << 29 = 31 bit
@@ -62,10 +66,10 @@ public class MovieIdImageParser2 {
         if (images != null) {
             if (images.posters != null) {
                 int imageNumber = 0;
-                for (com.uwetrottmann.tmdb2.entities.Image poster :images.posters) {
+                for (com.uwetrottmann.tmdb2.entities.Image poster : images.posters) {
                     String filePath = null;
                     String language = null;
-                    String name;
+                    if (DBG) Log.d(TAG, "getResult: poster " + poster.file_path);
                     if (poster.file_path != null) filePath = poster.file_path;
                     if (poster.iso_639_1 != null) language = poster.iso_639_1;
                     Image image = new Image(filePath, language, preferredLanguage, imageNumber);
@@ -78,7 +82,7 @@ public class MovieIdImageParser2 {
                 for (com.uwetrottmann.tmdb2.entities.Image backdrop: images.backdrops) {
                     String filePath = null;
                     String language = null;
-                    String name;
+                    if (DBG) Log.d(TAG, "getResult: backdrop " + backdrop.file_path);
                     if (backdrop.file_path != null) filePath = backdrop.file_path;
                     if (backdrop.iso_639_1 != null) language = backdrop.iso_639_1;
                     Image image = new Image(filePath, language, preferredLanguage, imageNumber);

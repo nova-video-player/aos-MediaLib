@@ -48,7 +48,7 @@ public class MovieIdImages2 {
 
         if (tag == null)
             return false;
-        if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + " in "+ language);
+        if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + ", movieId=" + movieId + " in "+ language);
         try {
             imagesResponse = moviesService.images((int) movieId, language).execute();
         } catch (IOException e) {
@@ -81,11 +81,11 @@ public class MovieIdImages2 {
         }
         switch (imagesResponse.code()) {
             case 401: // auth issue
-                if (DBG) Log.d(TAG, "search: auth error");
+                if (DBG) Log.d(TAG, "addImages: auth error");
                 MovieScraper3.reauth();
                 return false;
             case 404: // not found
-                if (DBG) Log.d(TAG, "getBaseInfo: movieId " + movieId + " not found");
+                if (DBG) Log.d(TAG, "addImages: movieId " + movieId + " not found");
                 return false;
             default:
                 if (imagesResponse.isSuccessful()) {
@@ -95,6 +95,7 @@ public class MovieIdImages2 {
                         parserResult = MovieIdImageParser2.getResult(images, language);
                         List<ScraperImage> posters = new ArrayList<ScraperImage>(parserResult.posterPaths.size());
                         for (String path : parserResult.posterPaths) {
+                            if (DBG) Log.d(TAG, "addImages: treating poster " + path);
                             String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
                             String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
                             ScraperImage image = new ScraperImage(Type.MOVIE_POSTER, nameSeed);
@@ -106,6 +107,7 @@ public class MovieIdImages2 {
                         tag.setPosters(posters);
                         List<ScraperImage> backdrops = new ArrayList<ScraperImage>(parserResult.backdropPaths.size());
                         for (String path : parserResult.backdropPaths) {
+                            if (DBG) Log.d(TAG, "addImages: treating backdrop " + path);
                             String fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
                             String thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
                             ScraperImage image = new ScraperImage(Type.MOVIE_BACKDROP, nameSeed);
