@@ -27,50 +27,61 @@ import java.util.List;
 
 import retrofit2.Response;
 
-// Search Show for name query for year in language (ISO 639-1 code)
+// Search Show for name query for year in language (ISO 639-1 code) and en
 public class SearchShow {
     private static final String TAG = SearchShow.class.getSimpleName();
     private static final boolean DBG = false;
 
     public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper3 showScraper, MyTheTVdb theTvdb) {
         SearchShowResult myResult = new SearchShowResult();
-
-        List<SearchResult> parserResult = null;
         Response<SeriesResultsResponse> response = null;
+        Response<SeriesResultsResponse> globalResponse = null;
 
-        if (DBG) Log.d(TAG, "getMatches2: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
+        boolean authIssue = false;
+        boolean notFoundIssue = true;
+
+        boolean isResponseOk = false;
+        boolean isResponseEmpty = false;
+        boolean isGlobalResponseOk = false;
+        boolean isGlobalResponseEmpty = false;
+
+        if (DBG) Log.d(TAG, "search: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
         try {
             response = theTvdb.search().series(searchInfo.getShowName(), null, null, null, language).execute();
-            switch (response.code()) {
-                case 401: // auth issue
-                    if (DBG) Log.d(TAG, "search: auth error");
+            if (response.code() == 401) authIssue = true; // this is an OR
+            if (response.code() != 404) notFoundIssue = false; // this is an AND
+            if (response.isSuccessful()) isResponseOk = true;
+            if (response.body() == null) isResponseEmpty = true;
+            if (!language.equals("en")) {
+                globalResponse = theTvdb.search().series(searchInfo.getShowName(), null, null, null, "en").execute();
+                if (globalResponse.code() == 401) authIssue = true; // this is an OR
+                if (globalResponse.code() != 404) notFoundIssue = false; // this is an AND
+                if (globalResponse.isSuccessful()) isGlobalResponseOk = true;
+                if (globalResponse.body() == null) isGlobalResponseEmpty = true;
+            }
+            if (authIssue) {
+                if (DBG) Log.d(TAG, "search: auth error");
+                myResult.status = ScrapeStatus.AUTH_ERROR;
+                myResult.result = SearchShowResult.EMPTY_LIST;
+                ShowScraper3.reauth();
+                return myResult;
+            }
+            if (notFoundIssue) {
+                if (DBG) Log.d(TAG, "search: not found");
+                myResult.result = SearchShowResult.EMPTY_LIST;
+                myResult.status = ScrapeStatus.NOT_FOUND;
+            } else {
+                if (isResponseEmpty && isGlobalResponseEmpty) {
+                    if (DBG) Log.d(TAG, "search: error");
                     myResult.result = SearchShowResult.EMPTY_LIST;
-                    myResult.status = ScrapeStatus.AUTH_ERROR;
-                    ShowScraper3.reauth();
-                    return myResult;
-                case 404: // not found
-                    myResult.status = ScrapeStatus.NOT_FOUND;
-                    if (!language.equals("en")) {
-                        if (DBG) Log.d(TAG, "search: retrying search for '" + searchInfo.getShowName() + "' in en.");
-                        return search(searchInfo, "en", resultLimit, showScraper, theTvdb);
-                    }
-                    if (DBG) Log.d(TAG, "search: " + searchInfo.getShowName() + " not found");
-                    break;
-                default:
-                    // TODO: combine search in en + language sort by language and levenstein then treat by id to revert to language
-                    if (response.isSuccessful()) {
-                        if (response.body() != null) {
-                            parserResult = SearchShowParser.getResult(response, searchInfo, language, resultLimit, showScraper);
-                            myResult.result = parserResult;
-                            myResult.status = ScrapeStatus.OKAY;
-                        } else {
-                            myResult.status = ScrapeStatus.NOT_FOUND;
-                        }
-                    } else { // an error at this point is PARSER related
-                        if (DBG) Log.d(TAG, "search: response is not successful for " + searchInfo.getShowName());
-                        myResult.status = ScrapeStatus.ERROR_PARSER;
-                    }
-                    break;
+                    myResult.status = ScrapeStatus.ERROR_PARSER;
+                } else {
+                    myResult.result = SearchShowParser.getResult(
+                            (isResponseOk) ? response.body() : null,
+                            (isGlobalResponseOk) ? globalResponse.body() : null,
+                            searchInfo, language, resultLimit, showScraper);
+                    myResult.status = ScrapeStatus.OKAY;
+                }
             }
         } catch (IOException e) {
             Log.e(TAG, "search: caught IOException");

@@ -109,7 +109,7 @@ public class ShowIdPosters {
             } else {
                 if (isPostersResponseEmpty && isSeasonsResponseEmpty
                         && isGlobalPostersResponseEmpty && isGlobalSeasonsResponseEmpty) {
-                    if (DBG) Log.d(TAG, "getPosters: error ");
+                    if (DBG) Log.d(TAG, "getPosters: error");
                     myResult.posters = ShowIdPostersResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.ERROR_PARSER;
                 } else {
