@@ -62,44 +62,42 @@ public class SearchShowParser {
                 result.setScraper(showScraper);
                 result.setFile(searchInfo.getFile());
                 result.setExtra(extra);
-                if (maxItems < 0 || results.size() < maxItems) {
-                    // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
-                    isDecisionTaken = false;
-                    if (series.banner != null) {
-                        if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
-                            if (DBG)
-                                Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
-                            resultsNoBanner.add(result);
-                            isDecisionTaken = true;
-                        }
-                    } else if (series.image != null) {
-                        if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg")) {
-                            if (DBG)
-                                Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
-                            resultsNoBanner.add(result);
-                            isDecisionTaken = true;
-                        }
-                    }
-                    if (! isDecisionTaken) {
+                // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
+                isDecisionTaken = false;
+                if (series.banner != null) {
+                    if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
                         if (DBG)
-                            Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner/image exists");
-                        if (series.slug.matches("^[0-9]+$")) {
-                            // Put in lower priority any entry that has numeric slug
-                            if (DBG)
-                                Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
-                            isDecisionTaken = true;
-                            resultsNumericSlug.add(result);
-                        } else {
-                            if (DBG)
-                                Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
-                            isDecisionTaken = true;
-                            resultsProbable.add(new Pair<>(result,
-                                    levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                                            result.getTitle().toLowerCase())));
-                        }
-                        if (! isDecisionTaken)
-                            Log.w(TAG, "processTheTvDbSearch: ignore serie since banner/image is null for " + series.seriesName);
+                            Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                        resultsNoBanner.add(result);
+                        isDecisionTaken = true;
                     }
+                } else if (series.image != null) {
+                    if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg")) {
+                        if (DBG)
+                            Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
+                        resultsNoBanner.add(result);
+                        isDecisionTaken = true;
+                    }
+                }
+                if (! isDecisionTaken) {
+                    if (DBG)
+                        Log.d(TAG, "getMatches2: taking into account " + series.seriesName + " because banner/image exists");
+                    if (series.slug.matches("^[0-9]+$")) {
+                        // Put in lower priority any entry that has numeric slug
+                        if (DBG)
+                            Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                        isDecisionTaken = true;
+                        resultsNumericSlug.add(result);
+                    } else {
+                        if (DBG)
+                            Log.d(TAG, "getMatches2: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                        isDecisionTaken = true;
+                        resultsProbable.add(new Pair<>(result,
+                                levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                                        result.getTitle().toLowerCase())));
+                    }
+                    if (! isDecisionTaken)
+                        Log.w(TAG, "processTheTvDbSearch: ignore serie since banner/image is null for " + series.seriesName);
                 }
             }
         }
@@ -119,15 +117,18 @@ public class SearchShowParser {
         if (DBG) Log.d(TAG, "getMatches2: appplying Levenshtein distance resultsProbableSorted=" + resultsProbable.toString());
         if (resultsProbable.size()>0)
             for (Pair<SearchResult,Integer> pair : resultsProbable)
-                resultsProbableSorted.add(pair.first);
-        if (resultsProbableSorted.size()>0)
-            results.addAll(resultsProbableSorted);
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(pair.first);
         if (resultsNumericSlug.size()>0)
-            results.addAll(resultsNumericSlug);
+            for (SearchResult result : resultsNumericSlug)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(result);
         // skip shows without a banner/poster
         /*
         if (resultsNoBanner.size()>0)
-            results.addAll(resultsNoBanner);
+            for (SearchResult result : resultsNoBanner)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(result);
          */
         return results;
     }
