@@ -94,7 +94,7 @@
     </style>
 
     <!-- Info dialog -->
-    <style name="InfoDialogButton" parent="android:Widget.Holo.Button.Small">
+    <style name="InfoDialogButton" parent="Widget.AppCompat.Button.Small">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:paddingRight">15dip</item>
@@ -115,7 +115,7 @@
         <item name="android:listSelector">@drawable/list_selector_categories</item>
     </style>
 
-    <style name="Theme.Holo.Transparent" parent="android:Theme.Holo.NoActionBar">
+    <style name="Theme.Holo.Transparent" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
         <item name="android:windowIsTranslucent">true</item>
@@ -152,7 +152,7 @@
     </style>
 
     <style name="CoverDescription.Overlay">
-        <item name="android:background">#BB555555</item>
+        <item name="background">#BB555555</item>
         <item name="android:paddingLeft">10dip</item>
     </style>
 

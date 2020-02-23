@@ -4,24 +4,24 @@
 
     <style name="MusicDialogTheme" parent="@android:style/Theme.Holo.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowNoTitle">true</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="ArchosTheme" parent="@android:style/Theme.DeviceDefault">
-        <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos</item>
+        <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos</item>
     </style>
 
     <style name="ArchosThemeBlue" parent="ArchosTheme">
         <item name="android:windowBackground">@drawable/background_2014</item>
-        <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos</item>
+        <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos</item>
     </style>
     <style name="ArchosThemeBlueCompat" parent="Theme.AppCompat">
         <item name="android:windowBackground">@drawable/background_2014</item>
-        <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
+        <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
         <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
     </style>
     <style name="ArchosThemeBlueCompatOverlay" parent="ArchosThemeBlueCompat">
-        <item name="android:windowActionBarOverlay">true</item>
+        <item name="windowActionBarOverlay">true</item>
         <item name="windowActionBarOverlay">true</item>
     </style>
     <style name="ArchosThemeBlueCompatTransparent" parent="ArchosThemeBlueCompat">
@@ -36,7 +36,7 @@
     <style name="ArchosThemeBlueNoActionBarCommon" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@color/lightblue800</item>
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
+        <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
         <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
         <item name="colorPrimary">@color/lightblue500</item>
         <item name="colorPrimaryDark">#002642</item>

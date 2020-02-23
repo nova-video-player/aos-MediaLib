@@ -15,7 +15,6 @@
 package com.archos.mediacenter.cover;
 
 import android.app.Activity;
-import androidx.loader.app.LoaderManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
@@ -37,6 +36,9 @@ import android.view.View;
 import android.view.View.OnFocusChangeListener;
 import android.view.ViewTreeObserver.OnTouchModeChangeListener;
 import android.view.WindowManager;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.loader.app.LoaderManager;
 
 import com.archos.environment.ArchosFeatures;
 import com.archos.mediacenter.utils.InfoDialog;
@@ -64,7 +66,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 	private static final int STATE_RUNNING = 3; 		// Actively displaying stuff
 
 	private int mState = STATE_INVALID;
-	protected Activity mActivity;					// Used for contextmenu and dialog stuff only
+	protected AppCompatActivity mActivity;					// Used for contextmenu and dialog stuff only
 	protected LoaderManager mLoaderManager;
 
 	protected CoversRenderer mRenderer = null;	// The thing doing the GL drawing
@@ -201,7 +203,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 	    checkIfStateIsSet(); // update state
 	}
 
-	public void setActivity(Activity activity) {
+	public void setActivity(AppCompatActivity activity) {
 		if(DBG) Log.d(TAG, "STATE_SET");
 		mActivity = activity;
 	}
