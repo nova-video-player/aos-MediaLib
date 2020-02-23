@@ -18,6 +18,8 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.core.util.Pair;
+
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperImage.Type;
@@ -36,6 +38,70 @@ public class MovieIdImages2 {
     private static final String TAG = MovieIdImages2.class.getSimpleName();
     private static final boolean DBG = false;
 
+    private static boolean authIssue = false;
+    private static boolean notFoundIssue = true;
+
+    private static boolean retry = false;
+    private static boolean globalRetry = false;
+
+    private static Response<Images> imagesResponse = null;
+    private static Response<Images> globalImagesResponse = null;
+
+    private static List<ScraperImage> posters = new ArrayList<ScraperImage>();
+    private static List<ScraperImage> backdrops = new ArrayList<ScraperImage>();
+
+    private static Pair<Response<Images>, Boolean> tryResponse(long movieId, String language, MoviesService moviesService) {
+        Boolean again = false;
+        Response<Images> response;
+        try {
+            response = moviesService.images((int) movieId, language).execute();
+            if (response.code() == 401) authIssue = true; // this is an OR
+            if (response.code() != 404) notFoundIssue = false; // this is an AND
+        } catch (IOException e) {
+            Log.e(TAG, "tryResponse: caught IOException getting summary");
+            response = null;
+            again = false;
+        }
+        if (response == null)
+            again = true;
+        else if (! response.isSuccessful())
+            again =true;
+        if (DBG) if (response == null) Log.d(TAG, "tryResponse: response null in " + language + " for movieId=" + movieId);
+        if (DBG) if (! response.isSuccessful()) Log.d(TAG, "tryResponse: response not successful in " + language + " for movieId=" + movieId);
+        return new Pair<>(response, again);
+    }
+
+    private static void getImages(Response<Images> response,
+                           ImageConfiguration.PosterSize posterFullSize,
+                           ImageConfiguration.PosterSize posterThumbSize,
+                           ImageConfiguration.BackdropSize backdropFullSize,
+                           ImageConfiguration.BackdropSize backdropThumbSize,
+                           String nameSeed, String language, Context context) {
+        Images images = response.body();
+        MovieIdImagesResult parserResult = null;
+        parserResult = MovieIdImagesParser2.getResult(images, language);
+        for (String path : parserResult.posterPaths) {
+            if (DBG) Log.d(TAG, "addImages: treating poster " + path);
+            String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
+            String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
+            ScraperImage image = new ScraperImage(Type.MOVIE_POSTER, nameSeed);
+            image.setLargeUrl(fullUrl);
+            image.setThumbUrl(thumbUrl);
+            image.generateFileNames(context);
+            posters.add(image);
+        }
+        for (String path : parserResult.backdropPaths) {
+            if (DBG) Log.d(TAG, "addImages: treating backdrop " + path);
+            String fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
+            String thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
+            ScraperImage image = new ScraperImage(Type.MOVIE_BACKDROP, nameSeed);
+            image.setLargeUrl(fullUrl);
+            image.setThumbUrl(thumbUrl);
+            image.generateFileNames(context);
+            backdrops.add(image);
+        }
+    }
+
     public static boolean addImages(long movieId, MovieTags tag, String language,
             ImageConfiguration.PosterSize posterFullSize,
             ImageConfiguration.PosterSize posterThumbSize,
@@ -44,23 +110,17 @@ public class MovieIdImages2 {
             String nameSeed,
             MoviesService moviesService,
             Context context) {
-        Response<Images> imagesResponse = null;
 
         if (tag == null)
             return false;
-        if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + ", movieId=" + movieId + " in "+ language);
-        try {
-            imagesResponse = moviesService.images((int) movieId, language).execute();
-        } catch (IOException e) {
-            Log.e(TAG, "addImages: caught IOException getting summary");
-            imagesResponse = null;
-        }
-        boolean retry = false;
-        if (imagesResponse == null)
-            retry = true;
-        else if (! imagesResponse.isSuccessful())
-            retry =true;
+        if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + ", movieId=" + movieId + " in "+ language + " and en");
+
+        Pair<Response<Images>, Boolean> responseRetry = tryResponse(movieId, language, moviesService);
+        imagesResponse = responseRetry.first;
+        retry = responseRetry.second;
         if (retry) { //first failure, try again
+            authIssue = false;
+            notFoundIssue = true;
             try {
                 //when requesting immediately after failure, it fails again (2500ms had still some failure).
                 Thread.sleep(3000);
@@ -68,60 +128,69 @@ public class MovieIdImages2 {
                 Log.w(TAG, "addImages: caught InterruptedException");
                 Thread.currentThread().interrupt();
             }
-            try {
-                imagesResponse = moviesService.images((int) movieId, language).execute();
-            } catch (IOException e) {
-                Log.e(TAG, "addImages: caught IOException getting summary");
-                return false;
+            responseRetry = tryResponse(movieId, language, moviesService);
+            imagesResponse = responseRetry.first;
+            retry = responseRetry.second;
+        }
+        // need to search images in en too since it can be empty in language...
+        if (!language.equals("en")) {
+            Pair<Response<Images>, Boolean> globalResponseRetry =  tryResponse(movieId, "en", moviesService);
+            globalImagesResponse = globalResponseRetry.first;
+            globalRetry = globalResponseRetry.second;
+            if (retry) { //first failure, try again
+                authIssue = false;
+                notFoundIssue = true;
+                try {
+                    //when requesting immediately after failure, it fails again (2500ms had still some failure).
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    Log.w(TAG, "addImages: caught InterruptedException");
+                    Thread.currentThread().interrupt();
+                }
+                globalResponseRetry =  tryResponse(movieId, "en", moviesService);
+                globalImagesResponse = globalResponseRetry.first;
+                globalRetry = globalResponseRetry.second;
             }
+        }
+        if (authIssue) {
+            if (DBG) Log.d(TAG, "addImages: auth error");
+            MovieScraper3.reauth();
+            return false;
+        }
+        if (notFoundIssue) {
+            if (DBG) Log.d(TAG, "addImages: not found");
+            return false;
+        }
+        if (imagesResponse == null && globalImagesResponse == null) {
+            if (DBG) Log.d(TAG, "addImages: all responses null");
+            return false;
+        } else {
             if (imagesResponse == null)
-                return false;
-            else if (! imagesResponse.isSuccessful())
-                return false;
-        }
-        switch (imagesResponse.code()) {
-            case 401: // auth issue
-                if (DBG) Log.d(TAG, "addImages: auth error");
-                MovieScraper3.reauth();
-                return false;
-            case 404: // not found
-                if (DBG) Log.d(TAG, "addImages: movieId " + movieId + " not found");
-                return false;
-            default:
-                if (imagesResponse.isSuccessful()) {
-                    if (imagesResponse.body() != null) {
-                        Images images = imagesResponse.body();
-                        MovieIdImagesResult parserResult = null;
-                        parserResult = MovieIdImageParser2.getResult(images, language);
-                        List<ScraperImage> posters = new ArrayList<ScraperImage>(parserResult.posterPaths.size());
-                        for (String path : parserResult.posterPaths) {
-                            if (DBG) Log.d(TAG, "addImages: treating poster " + path);
-                            String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
-                            String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
-                            ScraperImage image = new ScraperImage(Type.MOVIE_POSTER, nameSeed);
-                            image.setLargeUrl(fullUrl);
-                            image.setThumbUrl(thumbUrl);
-                            image.generateFileNames(context);
-                            posters.add(image);
-                        }
-                        tag.setPosters(posters);
-                        List<ScraperImage> backdrops = new ArrayList<ScraperImage>(parserResult.backdropPaths.size());
-                        for (String path : parserResult.backdropPaths) {
-                            if (DBG) Log.d(TAG, "addImages: treating backdrop " + path);
-                            String fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
-                            String thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
-                            ScraperImage image = new ScraperImage(Type.MOVIE_BACKDROP, nameSeed);
-                            image.setLargeUrl(fullUrl);
-                            image.setThumbUrl(thumbUrl);
-                            image.generateFileNames(context);
-                            backdrops.add(image);
-                        }
-                        tag.setBackdrops(backdrops);
-                        return true;
-                    } else
-                        return false;
-                } else // an error at this point is PARSER related
+                if (! globalImagesResponse.isSuccessful())
                     return false;
+            if (globalImagesResponse == null)
+                if (! imagesResponse.isSuccessful())
+                    return false;
+            if (imagesResponse != null) {
+                if (imagesResponse.isSuccessful()) {
+                    if (DBG) Log.d(TAG, "addImages: imagesResponse successful");
+                    getImages(imagesResponse,
+                            posterFullSize, posterThumbSize, backdropFullSize, backdropThumbSize,
+                            nameSeed, language, context);
+                }
+            }
+            if (globalImagesResponse != null) {
+                if (globalImagesResponse.isSuccessful()) {
+                    if (DBG) Log.d(TAG, "addImages: globalImagesResponse successful");
+                    getImages(globalImagesResponse,
+                            posterFullSize, posterThumbSize, backdropFullSize, backdropThumbSize,
+                            nameSeed, "en", context);
+                }
+            }
         }
+        if (DBG) Log.d(TAG, "addImages: adding " + backdrops.size() + " backdrops and " + posters.size() + " posters to tag");
+        tag.setBackdrops(backdrops);
+        tag.setPosters(posters);
+        return true;
     }
 }

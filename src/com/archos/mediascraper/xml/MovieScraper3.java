@@ -138,13 +138,6 @@ public class MovieScraper3 extends BaseScraper2 {
                 ImageConfiguration.BackdropSize.W1280, // large bd
                 ImageConfiguration.BackdropSize.W300,  // thumb bd
                 searchFile.toString(), moviesService, mContext);
-        // need to search images in en too since it can be empty in language...
-        MovieIdImages2.addImages(movieId, tag, "en",
-                ImageConfiguration.PosterSize.W342, // large poster
-                ImageConfiguration.PosterSize.W92,  // thumb poster
-                ImageConfiguration.BackdropSize.W1280, // large bd
-                ImageConfiguration.BackdropSize.W300,  // thumb bd
-                searchFile.toString(), moviesService, mContext);
         ScraperImage defaultPoster = tag.getDefaultPoster();
         if (defaultPoster != null) {
             tag.setCover(defaultPoster.getLargeFileF());

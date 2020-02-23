@@ -22,8 +22,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MovieIdImageParser2 {
-    private static final String TAG = MovieIdImageParser2.class.getSimpleName();
+public class MovieIdImagesParser2 {
+    private static final String TAG = MovieIdImagesParser2.class.getSimpleName();
     private static final boolean DBG = false;
 
     private static class Image implements Comparable<Image>{
