@@ -47,8 +47,8 @@ public class MovieIdImages2 {
     private static Response<Images> imagesResponse = null;
     private static Response<Images> globalImagesResponse = null;
 
-    private static List<ScraperImage> posters = new ArrayList<ScraperImage>();
-    private static List<ScraperImage> backdrops = new ArrayList<ScraperImage>();
+    private static List<ScraperImage> posters = null;
+    private static List<ScraperImage> backdrops = null;
 
     private static Pair<Response<Images>, Boolean> tryResponse(long movieId, String language, MoviesService moviesService) {
         Boolean again = false;
@@ -114,6 +114,13 @@ public class MovieIdImages2 {
         if (tag == null)
             return false;
         if (DBG) Log.d(TAG, "addImages for " + tag.getTitle() + ", movieId=" + movieId + " in "+ language + " and en");
+
+        posters = new ArrayList<ScraperImage>();
+        backdrops = new ArrayList<ScraperImage>();
+        retry = false;
+        globalRetry = false;
+        authIssue = false;
+        notFoundIssue = true;
 
         Pair<Response<Images>, Boolean> responseRetry = tryResponse(movieId, language, moviesService);
         imagesResponse = responseRetry.first;
