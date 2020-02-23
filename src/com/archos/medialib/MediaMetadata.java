@@ -67,7 +67,7 @@ public class MediaMetadata implements Parcelable
     /**
      * {@hide}
      */
-    public static final Set<Integer> MATCH_NONE = Collections.EMPTY_SET;
+    public static final Set MATCH_NONE = Collections.EMPTY_SET;
     /**
      * {@hide}
      */

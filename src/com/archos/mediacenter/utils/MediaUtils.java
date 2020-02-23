@@ -306,7 +306,7 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
         matrix.postScale(scale, scale);
         matrix.postTranslate(vwidth/2, vheight/2);  // Move bitmap center to view center
         c.drawBitmap(bm, matrix, paint);
-        v.setBackgroundDrawable(new BitmapDrawable(bg));
+        v.setBackground(new BitmapDrawable(v.getResources(), bg));
     }
 
     public static void setStreamMusicMute(AudioManager audioManager, boolean mute) {

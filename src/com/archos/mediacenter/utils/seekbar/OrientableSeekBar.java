@@ -71,7 +71,7 @@ public class OrientableSeekBar extends SeekBar {
                         setSelected(true);
                         if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN))
                             if ((getThumb() != null)) {
-                                invalidate(getThumb().getBounds()); // This may be within the padding region
+                                invalidate(); // This may be within the padding region
                             }
                         onStartTrackingTouchVertical();
                         trackTouchEvent(event);
@@ -90,7 +90,7 @@ public class OrientableSeekBar extends SeekBar {
                             setPressed(true);
                             if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN))
                                 if (getThumb() != null) {
-                                    invalidate(getThumb().getBounds()); // This may be within the padding region
+                                    invalidate(); // This may be within the padding region
                                 }
                             onStartTrackingTouchVertical();
                             trackTouchEvent(event);

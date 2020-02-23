@@ -86,7 +86,7 @@ public class GlobalResumeView extends RelativeLayout {
         if (cbm != sbm) {
             sbm.recycle();
         }
-        setBackgroundDrawable(new BitmapDrawable(cbm));
+        setBackground(new BitmapDrawable(getResources(), cbm));
     }
 
     public void launchOpenAnimation(AnimatorListener listener) {

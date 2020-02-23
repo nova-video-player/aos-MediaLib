@@ -362,7 +362,6 @@ public class VideoProvider extends ContentProvider {
                     if (c != null && c.getCount() == 1) {
                         c.moveToFirst();
                         String mimeType = c.getString(1);
-                        c.deactivate();
                         return mimeType;
                     }
                 } finally {

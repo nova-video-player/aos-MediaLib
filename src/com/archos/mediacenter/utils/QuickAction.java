@@ -19,6 +19,7 @@ import android.database.ContentObserver;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -135,8 +136,9 @@ public class QuickAction extends CustomPopupWindow {
         // Compute the size of the usable area in the screen
         //----------------------------------------------------------------------
         // Retrieve the full screen size
-        int screenWidth = windowManager.getDefaultDisplay().getWidth();
-        int screenHeight = windowManager.getDefaultDisplay().getHeight();
+        DisplayMetrics metrics = anchor.getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        int screenHeight = metrics.heightPixels;
 
         //----------------------------------------------------------------------
         // Check if the popup must be displayed above or below the (+) symbol

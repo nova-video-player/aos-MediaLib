@@ -24,6 +24,7 @@ import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -84,7 +85,8 @@ public class HelpOverlayActivity extends Activity {
         mPopupView.setContentLayoutId(mPopupContentLayoutId);
 
         WindowManager wm = (WindowManager)getSystemService(Context.WINDOW_SERVICE);
-        mScreenWidth = wm.getDefaultDisplay().getWidth();
+        DisplayMetrics metrics = getBaseContext().getResources().getDisplayMetrics();
+        mScreenWidth = metrics.widthPixels;
         mPopupRightOffset = res.getDimensionPixelSize(R.dimen.help_overlay_right_offset);
 
         updateGlobalLayout();

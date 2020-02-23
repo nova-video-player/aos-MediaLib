@@ -593,7 +593,7 @@ public class XmlDb  implements Callback {
                 if (DBG) Log.d(TAG, "MSG_PARSE_OK");
                 synchronized (mOnParseListeners) {
                     // some listeners want to remove themselves for list after being called. to avoid concurrent exception, to not iterate on main list
-                    List<ParseListener> tmp = new ArrayList(mOnParseListeners);
+                    List<ParseListener> tmp = new ArrayList<>(mOnParseListeners);
                     for (ParseListener pl : tmp) {
                         pl.onParseOk((ParseResult) msg.obj);
                     }
@@ -608,7 +608,7 @@ public class XmlDb  implements Callback {
                     sRemoteParseTasks.remove(location.toString());
                     synchronized (mOnParseListeners) {
                         // some listeners want to remove themselves for list after being called. to avoid concurrent exception, to not iterate on main list
-                        List<ParseListener> tmp = new ArrayList(mOnParseListeners);
+                        List<ParseListener> tmp = new ArrayList<>(mOnParseListeners);
                         for (ParseListener pl : tmp) {
                             pl.onParseFail(new ParseResult(location, false));
                         }

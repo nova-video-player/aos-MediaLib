@@ -72,6 +72,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static android.net.wifi.WifiManager.WIFI_MODE_FULL;
+import static android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF;
+
 @SuppressLint("LongLogTag")
 public class NetworkScannerServiceVideo extends Service implements Handler.Callback {
     /*
@@ -402,7 +406,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 }
             }
             WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
-            WifiLock wifiLock = wifiManager.createWifiLock("ArchosNetworkIndexer");
+            WifiLock wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
             wifiLock.acquire();
 
             // send out a sticky broadcast telling the world that we started scanning

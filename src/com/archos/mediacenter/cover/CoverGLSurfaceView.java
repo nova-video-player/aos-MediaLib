@@ -1489,7 +1489,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 
 		//Log.d(TAG,"Orientation=" +  mDisplay.getOrientation() + " " + event.values[0] + " " + event.values[1] + " " + event.values[2]);
 		float value;
-		switch(mDisplay.getOrientation()) {
+		switch(mDisplay.getRotation()) {
 		case Surface.ROTATION_90:
 			value = -event.values[1]*ORIENTATION_FACTOR;
 			break;

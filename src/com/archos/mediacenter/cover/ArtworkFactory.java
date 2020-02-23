@@ -29,6 +29,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -97,7 +98,9 @@ public class ArtworkFactory {
 		// Also no need for dithering. OpenGL will do a good job at displaying it without.
 		//TODO: check if using ARGB888 is not faster since it will be converted after anyway
 		mBitmapOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-		mBitmapOptions.inDither = ARTWORK_BITMAP_DITHERING;
+		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) { // ignored as of Android N
+			mBitmapOptions.inDither = ARTWORK_BITMAP_DITHERING;
+		}
 		mBitmapOptions.inSampleSize = 1; // no sub-sampling
 		mBitmapOptions.inJustDecodeBounds = false;
 
@@ -475,6 +478,14 @@ public class ArtworkFactory {
         paint.setTypeface(Typeface.SANS_SERIF);
         paint.setAntiAlias(true);
 
-        return (new StaticLayout(text, paint, width, Layout.Alignment.ALIGN_CENTER, 1.1f, 0f, true));
-    }
+        if (Build.VERSION.SDK_INT >= 23) {
+			StaticLayout.Builder sb = StaticLayout.Builder.obtain(text, 0, text.length(), paint, width)
+					.setAlignment(Layout.Alignment.ALIGN_CENTER)
+					.setLineSpacing(0f, 1.1f)
+					.setIncludePad(true);
+			return sb.build();
+		} else {
+			return (new StaticLayout(text, paint, width, Layout.Alignment.ALIGN_CENTER, 1.1f, 0f, true));
+		}
+	}
 }

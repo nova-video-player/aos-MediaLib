@@ -15,6 +15,7 @@
 package com.archos.mediacenter.utils;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
@@ -82,7 +83,8 @@ public class CustomPopupWindow {
         onShow();
 
         if (background == null) {
-            window.setBackgroundDrawable(new BitmapDrawable());
+            window.setBackgroundDrawable(null);
+
         } else {
             window.setBackgroundDrawable(background);
         }
