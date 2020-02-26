@@ -109,18 +109,6 @@ public class MediaUtils {
         return joystickZone;
     }
 
-    public static boolean getSuggestionDialogPref(Context context, boolean def) {
-        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
-        return prefs.getBoolean(PREFS_SHOW_SUGGESTION_DIALOG_KEY, def);
-    }
-
-    public static void setSuggestionDialogPref(Context context, boolean value) {
-        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
-        Editor ed = prefs.edit();
-        ed.putBoolean(PREFS_SHOW_SUGGESTION_DIALOG_KEY, value);
-        ed.commit();
-    }
-
     public static int getPositionForSection(int sectionIndex, SparseArray<String> indexer, int fileListSize, String[] sections) {
         // The Android documentation says that sectionIndex might be out of range
         int size = indexer.size();
