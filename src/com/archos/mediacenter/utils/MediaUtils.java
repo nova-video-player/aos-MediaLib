@@ -28,6 +28,7 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
@@ -304,7 +305,12 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
             setStreamMuteSystemNoUI.invoke(audioManager, AudioManager.STREAM_MUSIC, mute);
         } catch (Exception e) {
             Log.d(TAG, "setStreamMusicMute failed!", e);
-            audioManager.setStreamMute(AudioManager.STREAM_MUSIC, mute);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                        mute ? AudioManager.ADJUST_MUTE : AudioManager.ADJUST_UNMUTE, 0);
+            } else {
+                audioManager.setStreamMute(AudioManager.STREAM_MUSIC, mute);
+            }
         }
     }
 
