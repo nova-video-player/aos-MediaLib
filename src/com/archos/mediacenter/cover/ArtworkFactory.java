@@ -98,7 +98,7 @@ public class ArtworkFactory {
 		// Also no need for dithering. OpenGL will do a good job at displaying it without.
 		//TODO: check if using ARGB888 is not faster since it will be converted after anyway
 		mBitmapOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) { // ignored as of Android N
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) { // ignored as of Android N
 			mBitmapOptions.inDither = ARTWORK_BITMAP_DITHERING;
 		}
 		mBitmapOptions.inSampleSize = 1; // no sub-sampling
