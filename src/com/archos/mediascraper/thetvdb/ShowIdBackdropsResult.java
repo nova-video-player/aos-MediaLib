@@ -18,6 +18,7 @@ import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ScraperImage;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ShowIdBackdropsResult {
@@ -25,4 +26,7 @@ public class ShowIdBackdropsResult {
     public List<ScraperImage> backdrops;
     public ScrapeStatus status;
     public Throwable reason;
+    public ShowIdBackdropsResult() {
+        this.backdrops = new LinkedList<>();
+    }
 }

@@ -18,6 +18,7 @@ import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ScraperImage;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ShowIdPostersResult {
@@ -25,4 +26,7 @@ public class ShowIdPostersResult {
     public List<ScraperImage> posters;
     public ScrapeStatus status;
     public Throwable reason;
+    public ShowIdPostersResult() {
+        this.posters = new LinkedList<>();
+    }
 }
