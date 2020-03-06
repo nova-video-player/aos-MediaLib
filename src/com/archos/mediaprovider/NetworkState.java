@@ -29,7 +29,6 @@ public class NetworkState {
     private static final boolean DBG = false;
 
     private boolean mConnected;
-    private boolean mConnectedOrConnecting;
     private boolean mHasLocalConnection;
     // abusing WeakHashMap to have a list of WeakReferences to Observers
     private final WeakHashMap<Observer, Void> mObservers = new WeakHashMap<Observer, Void>();
