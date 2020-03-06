@@ -2,4 +2,6 @@
     package="com.archos.medialib"
     android:versionCode="1"
     android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 </manifest>
