@@ -25,4 +25,7 @@ public class ShowIdEpisodesResult {
     public Map<String, EpisodeTags> episodes;
     public ScrapeStatus status;
     public Throwable reason;
+    public ShowIdEpisodesResult() {
+        this.episodes = EMPTY_MAP;
+    }
 }

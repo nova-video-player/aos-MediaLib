@@ -18,6 +18,7 @@ import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.SearchResult;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class SearchShowResult {
@@ -25,4 +26,7 @@ public class SearchShowResult {
     public List<SearchResult> result;
     public ScrapeStatus status;
     public Throwable reason;
+    public SearchShowResult() {
+        this.result = new LinkedList<>();
+    }
 }

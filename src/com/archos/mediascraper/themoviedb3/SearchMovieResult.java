@@ -25,4 +25,7 @@ public class SearchMovieResult {
     public List<SearchResult> result;
     public ScrapeStatus status;
     public Throwable reason;
+    public SearchMovieResult() {
+        this.result = EMPTY_LIST;
+    }
 }

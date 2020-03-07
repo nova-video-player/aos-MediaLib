@@ -24,4 +24,7 @@ public class ShowIdActorsResult {
     public Map<String, String> actors;
     public ScrapeStatus status;
     public Throwable reason;
+    public ShowIdActorsResult() {
+        this.actors = EMPTY_MAP;
+    }
 }

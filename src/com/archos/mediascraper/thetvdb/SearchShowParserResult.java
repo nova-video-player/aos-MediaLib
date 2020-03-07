@@ -18,7 +18,6 @@ import android.util.Pair;
 
 import com.archos.mediascraper.SearchResult;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 

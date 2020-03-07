@@ -14,9 +14,15 @@
 
 package com.archos.mediascraper.themoviedb3;
 
+import java.util.Collections;
 import java.util.List;
 
 public class MovieIdImagesResult {
+    public static final List<String> EMPTY_LIST = Collections.<String>emptyList();
     public List<String> posterPaths;
     public List<String> backdropPaths;
+    public MovieIdImagesResult() {
+        this.posterPaths = EMPTY_LIST;
+        this.backdropPaths = EMPTY_LIST;
+    }
 }
