@@ -91,11 +91,10 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
     }
 
     protected void handleDb(Context context, boolean hasConnection, boolean hasLocalConnection) {
-        if(mUpnpId==null)
-            mUpnpId =new ConcurrentHashMap<>();
+        if(mUpnpId==null) mUpnpId =new ConcurrentHashMap<>();
         mUpnpId.clear();
         final ContentResolver cr = context.getContentResolver();
-        if (DBG) Log.d(TAG, "hasConnection "+String.valueOf(hasConnection));
+        if (DBG) Log.d(TAG, "handleDb: hasConnection=" + hasConnection + ", hasLocalConnection=" + hasLocalConnection);
         if (hasConnection) {
             Lmhosts.reset();
             final long now = System.currentTimeMillis() / 1000;
@@ -138,7 +137,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                             }.start();
                         } else {
                             if (DBG) Log.d(TAG, "no local connectivity setting all smb servers inactive");
-                            setSmbServersInactive(context, cr);
+                            setLocalServersInactive(context, cr);
                         }
                     } else if(server.startsWith("upnp")) {
                         mUpnpId.put(server,new Pair<>(id, active));
@@ -160,14 +159,14 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
             } else if (DBG) {
                 Log.d(TAG, "server query returned NULL");
             }
-        } else{
-                if (DBG) Log.d(TAG, "no connectivity setting all smb servers inactive");
-                setSmbServersInactive(context, cr);
+        } else {
+            if (DBG) Log.d(TAG, "no connectivity setting all smb servers inactive");
+            setAllServersInactive(context, cr);
         }
     }
 
-    protected final static void setSmbServersInactive(Context context, ContentResolver contentResolver) {
-        // no more smb servers.
+    protected final static void setAllServersInactive(Context context, ContentResolver contentResolver) {
+        // no more servers.
         ContentValues cv = new ContentValues(1);
         cv.put(VideoStore.SmbServer.SmbServerColumns.ACTIVE, "0");
         // update everything with inactive.
@@ -176,12 +175,24 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
         contentResolver.notifyChange(NOTIFY_URI, null);
     }
 
+    protected final static void setLocalServersInactive(Context context, ContentResolver contentResolver) {
+        // no more local (smb+upnp) servers.
+        ContentValues cv = new ContentValues(1);
+        cv.put(VideoStore.SmbServer.SmbServerColumns.ACTIVE, "0");
+        // update local remote with inactive.
+        contentResolver.update(SERVER_URI, cv, SELECTION_LOCAL_REMOTE, null);
+        // and tell the world
+        contentResolver.notifyChange(NOTIFY_URI, null);
+    }
+
     protected final static boolean updateServerDb(long id, ContentResolver cr, int oldState,
             int newState, long time) {
+        if (DBG) Log.d(TAG, "updateServerDb: id=" + id + ", oldState=" + oldState + ", newState=" + newState);
         if (oldState == newState) return false;
         ContentValues cv = new ContentValues();
         cv.put(VideoStore.SmbServer.SmbServerColumns.ACTIVE, String.valueOf(newState));
         if (newState != 0) {
+            if (DBG) Log.d(TAG, "updateServerDb: tag as last seen now");
             // update last seen only if it's active now
             cv.put(VideoStore.SmbServer.SmbServerColumns.LAST_SEEN, String.valueOf(time));
         }
