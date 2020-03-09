@@ -59,7 +59,7 @@ import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.DbHolder;
 import com.archos.mediaprovider.IMediaThumbnailService;
 import com.archos.mediaprovider.MediaThumbnailService;
-import com.archos.mediaprovider.NetworkState;
+import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.VideoDb;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 import com.archos.mediaprovider.video.VideoStore.Video;

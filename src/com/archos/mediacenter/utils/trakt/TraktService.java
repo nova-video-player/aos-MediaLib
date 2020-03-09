@@ -44,7 +44,7 @@ import com.archos.mediacenter.utils.trakt.Trakt.Status;
 import com.archos.mediacenter.utils.videodb.IndexHelper;
 import com.archos.mediacenter.utils.videodb.VideoDbInfo;
 import com.archos.medialib.R;
-import com.archos.mediaprovider.NetworkState;
+import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.ScrapeStatus;
 import com.uwetrottmann.trakt5.entities.BaseEpisode;

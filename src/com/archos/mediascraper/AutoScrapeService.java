@@ -38,11 +38,11 @@ import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
+import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
@@ -325,8 +325,8 @@ public class AutoScrapeService extends Service {
                         else
                             Log.d(TAG, "startScraping: go for not scraped");
                     }
-                    if (DBG) Log.d(TAG, "startScraping: isLocalNetworkConnected=" + ArchosUtils.isLocalNetworkConnected(AutoScrapeService.this) +
-                            ", isNetworkConnected=" + ArchosUtils.isNetworkConnected(AutoScrapeService.this));
+                    if (DBG) Log.d(TAG, "startScraping: isLocalNetworkConnected=" + NetworkState.isLocalNetworkConnected(AutoScrapeService.this) +
+                            ", isNetworkConnected=" + NetworkState.isNetworkConnected(AutoScrapeService.this));
                     if (DBG) Log.d(TAG, "startScraping: is AutoScrapeService enabled? " + isEnable(AutoScrapeService.this));
 
                     do{
@@ -362,7 +362,7 @@ public class AutoScrapeService extends Service {
                             restartOnNextRound = true;
                             while (cursor.moveToNext() && isEnable(AutoScrapeService.this)) {
                                 // stop if disconnected while scraping
-                                if(!ArchosUtils.isLocalNetworkConnected(AutoScrapeService.this)&&!ArchosUtils.isNetworkConnected(AutoScrapeService.this)) {
+                                if(!NetworkState.isLocalNetworkConnected(AutoScrapeService.this)&&!NetworkState.isNetworkConnected(AutoScrapeService.this)) {
                                     cursor.close();
                                     sNumberOfFilesRemainingToProcess = 0;
                                     if(DBG) Log.d(TAG, "startScraping disconnected from network calling stopService");

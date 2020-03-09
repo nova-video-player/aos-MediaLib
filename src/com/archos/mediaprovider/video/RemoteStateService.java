@@ -30,7 +30,7 @@ import com.archos.filecorelibrary.FileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
 import com.archos.mediaprovider.ArchosMediaCommon;
-import com.archos.mediaprovider.NetworkState;
+import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
 import org.fourthline.cling.model.meta.Device;

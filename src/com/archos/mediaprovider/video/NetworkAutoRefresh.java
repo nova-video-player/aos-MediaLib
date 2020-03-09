@@ -32,6 +32,7 @@ import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.mediacenter.utils.ShortcutDbAdapter;
 import com.archos.mediaprovider.ArchosMediaIntent;
+import com.archos.environment.NetworkState;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -131,7 +132,7 @@ public class NetworkAutoRefresh extends BroadcastReceiver {
             }
             cursor.close();
             ShortcutDbAdapter.VIDEO.close();
-            if(ArchosUtils.isLocalNetworkConnected(context)) {
+            if(NetworkState.isLocalNetworkConnected(context)) {
                 PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(AUTO_RESCAN_ERROR, 0).commit();//reset error
                 for (Uri uri : toUpdate) {
                     Log.d(TAG, "scanning "+uri);
