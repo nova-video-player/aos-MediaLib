@@ -33,11 +33,11 @@ import java.util.WeakHashMap;
  * Any Activity between onStart / onStop will trigger that
  */
 public class AppState {
-    static final String TAG = "AppState";
-    static final boolean DBG = false;
+    private static final String TAG = "AppState";
+    private static final boolean DBG = false;
 
-    static final HashSet<Integer> sStartedActivities = new HashSet<Integer>();
-    static boolean sChangingConfiguration = false;
+    private static final HashSet<Integer> sStartedActivities = new HashSet<Integer>();
+    private static boolean sChangingConfiguration = false;
 
     public static boolean isForeGround() {
         synchronized (sStartedActivities) {
@@ -56,16 +56,17 @@ public class AppState {
             sListeners.put(listener, "1");
         }
     }
+
     public static void removeOnForeGroundListener(OnForeGroundListener listener) {
         synchronized (sListeners) {
             sListeners.remove(listener);
         }
     }
-    protected static void notifyListener(Activity activity, boolean foreground) {
-        if (DBG) Log.d(TAG, "notifyListener: " + foreground);
 
+    private static void notifyListener(Activity activity, boolean foreground) {
+        if (DBG) Log.d(TAG, "notifyListener: " + foreground);
         // copy keyset into an array to allow removing of listener from listener.
-        OnForeGroundListener onForegroundListenerArray[] = null;
+        OnForeGroundListener[] onForegroundListenerArray = null;
         synchronized (sListeners) {
             if (sListeners.size() > 0) {
                 int i = 0;
@@ -83,7 +84,6 @@ public class AppState {
 
     public static final Application.ActivityLifecycleCallbacks sCallbackHandler =
             new ActivityLifecycleCallbacks() {
-
                 @Override
                 public void onActivityStopped(Activity activity) {
                     if (DBG) Log.d(TAG, "onActivityStopped:" + activity);
@@ -100,7 +100,6 @@ public class AppState {
                         }
                     }
                 }
-
                 private boolean isActuallyForeground(Context context) {
                     ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
                     List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
@@ -111,16 +110,13 @@ public class AppState {
                     }
                     return false;
                 }
-
                 @Override
                 public void onActivityStarted(Activity activity) {
                     if (DBG) Log.d(TAG, "onActivityStarted:" + activity);
-
                     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
                         if (!isActuallyForeground(activity))
                             return;
                     }
-
                     int activityKey = System.identityHashCode(activity);
                     synchronized (sStartedActivities) {
                         boolean foregroundOld = isForeGround();
@@ -135,31 +131,25 @@ public class AppState {
                         }
                     }
                 }
-
                 @Override
                 public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
                     if (DBG) Log.d(TAG, "onActivitySaveInstanceState:" + activity);
                 }
-
                 @Override
                 public void onActivityResumed(Activity activity) {
                     if (DBG) Log.d(TAG, "onActivityResumed:" + activity);
                 }
-
                 @Override
                 public void onActivityPaused(Activity activity) {
                     if (DBG) Log.d(TAG, "onActivityPaused:" + activity);
                 }
-
                 @Override
                 public void onActivityDestroyed(Activity activity) {
                     if (DBG) Log.d(TAG, "onActivityDestroyed:" + activity);
                 }
-
                 @Override
                 public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
                     if (DBG) Log.d(TAG, "onActivityCreated:" + activity);
                 }
             };
-
 }

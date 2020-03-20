@@ -78,7 +78,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
         if (DBG) Log.d(TAG, "onHandleIntent " + intent);
         if (ACTION_CHECK_SMB.equals(intent.getAction())) {
             NetworkState state = NetworkState.instance(this);
-            state.updateFrom(this);
+            state.updateFrom();
             handleDb(this, state.isConnected(), state.hasLocalConnection());
         }
     }

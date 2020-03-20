@@ -16,15 +16,12 @@ package com.archos.mediacenter.utils.trakt;
 
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
@@ -61,6 +58,8 @@ import com.uwetrottmann.trakt5.entities.SyncItems;
 import com.uwetrottmann.trakt5.entities.SyncMovie;
 import com.uwetrottmann.trakt5.entities.TraktList;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,9 +69,9 @@ public class TraktService extends Service {
     private static final boolean DBG = false;
 
     private SharedPreferences mPreferences;
-    private boolean mNetworkStateReceiverRegistered = false;
-    private boolean mWaitNetworkStateReceiver = false;
-    private long mLastTimeNetworkRegistered = -1;
+    private boolean mNetworkStateListenerAdded = false;
+    private boolean mWaitNetworkStateListener = false;
+    private long mLastTimeNetworkAdded = -1;
     private Trakt mTrakt = null;
     private boolean mBusy = false;
     private final IBinder mBinder = new TraktBinder();
@@ -89,7 +88,6 @@ public class TraktService extends Service {
     private static final int MSG_REGISTER_RECEIVER = 3;
     private static final int MSG_HANDLER_LIST[] = { MSG_INTENT, MSG_NETWORK_ON, MSG_REGISTER_RECEIVER };
 
-    private static final IntentFilter NETWORK_INTENT_FILTER = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
     private static final long NETWORK_REGISTER_DELAY = 600000; // in ms: 10min
     private static final long NOTIFY_DELAY = 5000; // in ms: 5sec
 
@@ -115,6 +113,9 @@ public class TraktService extends Service {
     public static final int FLAG_SYNC_FULL = FLAG_SYNC_TO_DB | FLAG_SYNC_TO_TRAKT | FLAG_SYNC_MOVIES | FLAG_SYNC_SHOWS;
 
     private static final long TRAKT_SYNC_DELAY = 30; // in sec
+
+    private NetworkState networkState = null;
+    private PropertyChangeListener propertyChangeListener = null;
 
     public class TraktBinder extends Binder {
         TraktService getService() {
@@ -283,25 +284,25 @@ public class TraktService extends Service {
                     }
                 }
             } else if (msg.what == MSG_NETWORK_ON) {
-                unregisterReceiver();
+                removeListener();
                 if (mTrakt != null) {
                     if (DBG) Log.d(TAG, "MSG_NETWORK_ON: sync");
                     sync(FLAG_SYNC_AUTO);
                 }
             } else if (msg.what == MSG_REGISTER_RECEIVER) {
-                registerReceiver(true);
+                addListener(true);
                 return;
             }
 
             if (mTrakt != null) {
                 if (needSendCache(TraktService.this)) {
-                    registerReceiver(false);
+                    addListener(false);
                 } else {
-                    unregisterReceiver();
+                    removeListener();
                 }
             }
             if (mTrakt == null ||
-                    (!mBusy && !mNetworkStateReceiverRegistered && !mWaitNetworkStateReceiver && !hasOtherMessagesPending(msg.what)))
+                    (!mBusy && !mNetworkStateListenerAdded && !mWaitNetworkStateListener && !hasOtherMessagesPending(msg.what)))
                 stopSelf();
         }
     }
@@ -407,7 +408,7 @@ public class TraktService extends Service {
     }
 
     private Trakt.Result wipe() {
-        unregisterReceiver();
+        removeListener();
 
         // wipe trakt* from db
         final ContentResolver cr = getContentResolver();
@@ -867,8 +868,8 @@ public class TraktService extends Service {
 
         if (DBG) Log.d(TAG, "sync with flag=" + flag);
         if ((flag & FLAG_SYNC_NOW) != 0)
-            unregisterReceiver();
-        if (mNetworkStateReceiverRegistered || mWaitNetworkStateReceiver||!mNetworkState.isConnected())
+            removeListener();
+        if (mNetworkStateListenerAdded || mWaitNetworkStateListener||!mNetworkState.isConnected())
             return handleSyncStatus(Trakt.Status.ERROR_NETWORK, flag, null);
 
         if (flag == 0 || flag == FLAG_SYNC_AUTO)
@@ -1212,7 +1213,7 @@ public class TraktService extends Service {
     @Override
     public void onDestroy() {
         if (DBG) Log.d(TAG, "onDestroy");
-        unregisterReceiver();
+        removeListener();
         mBackgroundHandler.removeCallbacksAndMessages(null);
         if (mBackgroundHandlerThread.quit()) {
             try {
@@ -1226,61 +1227,67 @@ public class TraktService extends Service {
         super.onDestroy();
     }
 
-    private final BroadcastReceiver mNetworkStateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            mNetworkState.updateFrom(context);
-            if (mNetworkState.isConnected()) {
-                mBackgroundHandler.removeMessages(MSG_NETWORK_ON);
-                mBackgroundHandler.sendEmptyMessage(MSG_NETWORK_ON);
-            }
-        }
-    };
-
-    private void registerReceiver(boolean waited) {
+    private void addListener(boolean waited) {
         if (waited) {
-            mWaitNetworkStateReceiver = false;
-            mLastTimeNetworkRegistered = -1;
+            mWaitNetworkStateListener = false;
+            mLastTimeNetworkAdded = -1;
         }
-        if (!mNetworkStateReceiverRegistered && !mWaitNetworkStateReceiver) {
-            if (DBG) Log.d(TAG, "registerReceiver: " + waited);
+        if (!mNetworkStateListenerAdded && !mWaitNetworkStateListener) {
+            if (DBG) Log.d(TAG, "mNetworkStateListenerAdded: " + waited);
 
             if (!waited) {
                 // if connexion is ok on our side, wait to avoid a flood
-                mNetworkState.updateFrom(this);
+                mNetworkState.updateFrom();
                 if (mNetworkState.isConnected())
-                    mLastTimeNetworkRegistered = System.currentTimeMillis();
+                    mLastTimeNetworkAdded = System.currentTimeMillis();
 
-                if (mLastTimeNetworkRegistered != -1) {
-                    if (System.currentTimeMillis() - mLastTimeNetworkRegistered < NETWORK_REGISTER_DELAY) {
+                if (mLastTimeNetworkAdded != -1) {
+                    if (System.currentTimeMillis() - mLastTimeNetworkAdded < NETWORK_REGISTER_DELAY) {
                         if (DBG) Log.d(TAG, "avoid flood, register only every 10min");
                         mBackgroundHandler.removeMessages(MSG_REGISTER_RECEIVER);
                         mBackgroundHandler.sendMessageDelayed(mBackgroundHandler.obtainMessage(MSG_REGISTER_RECEIVER), NETWORK_REGISTER_DELAY + 1000);
-                        mWaitNetworkStateReceiver = true;
+                        mWaitNetworkStateListener = true;
                         return;
                     }
                 }
             }
-            registerReceiver(mNetworkStateReceiver, NETWORK_INTENT_FILTER);
-            mNetworkStateReceiverRegistered = true;
+            if (DBG) Log.d(TAG, "addListener: networkState.addPropertyChangeListener");
+            networkState.addPropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = true;
         }
     }
 
-    private void unregisterReceiver() {
-        if (mWaitNetworkStateReceiver)
+    private void removeListener() {
+        if (mWaitNetworkStateListener)
             mBackgroundHandler.removeMessages(MSG_REGISTER_RECEIVER);
-        mWaitNetworkStateReceiver = false;
+        mWaitNetworkStateListener = false;
 
-        if (mNetworkStateReceiverRegistered) {
-            if (DBG) Log.d(TAG, "unregisterReceiver");
-            unregisterReceiver(mNetworkStateReceiver);
-            mNetworkStateReceiverRegistered = false;
+        if (mNetworkStateListenerAdded) {
+            if (DBG) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            networkState.removePropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = false;
         }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (DBG) Log.d(TAG, "Received start id " + startId + ": " + intent);
+
+        networkState = NetworkState.instance(getApplicationContext());
+        if (propertyChangeListener == null)
+            propertyChangeListener = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if (evt.getOldValue() != evt.getNewValue()) {
+                        if (DBG) Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                        mNetworkState.updateFrom();
+                        if (mNetworkState.isConnected()) {
+                            mBackgroundHandler.removeMessages(MSG_NETWORK_ON);
+                            mBackgroundHandler.sendEmptyMessage(MSG_NETWORK_ON);
+                        }
+                    }
+                }
+            };
 
         String action = intent != null ? intent.getAction() : null;
 

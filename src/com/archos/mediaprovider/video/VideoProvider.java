@@ -14,7 +14,6 @@
 
 package com.archos.mediaprovider.video;
 
-import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -22,8 +21,6 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.OperationApplicationException;
 import android.content.SharedPreferences;
 import android.content.UriMatcher;
@@ -32,7 +29,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.Bitmap;
-import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -66,6 +62,8 @@ import com.archos.mediaprovider.video.VideoStore.Video;
 import com.archos.mediaprovider.video.VideoStore.Files.FileColumns;
 import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -79,7 +77,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 
 public class VideoProvider extends ContentProvider {
-    private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoProvider";
+    private static final String TAG = "VideoProvider";
     public static final String TAG_DOCTOR_WHO =  "DoctorWhoDebug";
 
     private static final boolean LOCAL_DBG = false;
@@ -90,7 +88,11 @@ public class VideoProvider extends ContentProvider {
     private Handler mThumbHandler;
     private VobHandler mVobHandler;
     private ScraperProvider mScraperProvider;
+
     private OnSharedPreferenceChangeListener mPreferencechChangeListener;
+
+    private NetworkState networkState = null;
+    private PropertyChangeListener propertyChangeListener = null;
 
     private static final int IMAGE_THUMB = 2;
     // yes max retry of 5 is not enough I saw it fail and succeed at 7...
@@ -140,6 +142,19 @@ public class VideoProvider extends ContentProvider {
         }catch(java.lang.IllegalStateException e){
             Log.w(TAG, "onCreate: VideoStoreImportService.startService failed!");
         }
+
+        // handles NetworkState changes
+        networkState = NetworkState.instance(context);
+        if (propertyChangeListener == null)
+            propertyChangeListener = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if (evt.getOldValue() != evt.getNewValue()) {
+                        if (DBG_NET) Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                        RemoteStateService.start(context);
+                    }
+                }
+            };
         // handles connectivity changes
         AppState.addOnForeGroundListener(mForeGroundListener);
         handleForeGround(AppState.isForeGround());
@@ -1367,27 +1382,8 @@ static class MediaThumbRequest {
     }
 }
 
-    // ---------------------------------------------------------------------- //
-    // ------------ Network State change handling --------------------------- //
-    // ---------------------------------------------------------------------- //
-    protected int mNetworkState = -1;
-    protected static final IntentFilter INTENT_FILTER = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-    private boolean mNetworkStateReceiverRegistered = false;
-    private final BroadcastReceiver mNetworkStateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            NetworkState networkState = NetworkState.instance(context);
-            networkState.updateFrom(context);
-            int newState = (networkState.isConnected() ? 1 : 0 )+(networkState.hasLocalConnection() ? 1 : 0);
-            if (newState != mNetworkState) {
-                if (DBG_NET) Log.d(TAG, "NetworkState changed " + mNetworkState + " -> " + newState);
-                mNetworkState = newState;
-                RemoteStateService.start(context);
-            }
-        }
-    };
+    // TODO should it be done at each foreground? probably
     private final AppState.OnForeGroundListener mForeGroundListener = new AppState.OnForeGroundListener() {
-
         @Override
         public void onForeGroundState(Context applicationContext, boolean foreground) {
             if(foreground) {
@@ -1401,33 +1397,25 @@ static class MediaThumbRequest {
         }
     };
 
+    // TODO MARC: see if trakt has handleForeGround or not for not being wakeup by intent
     protected void handleForeGround(boolean foreground) {
         final Context context = getContext();
         if (foreground) {
             if (DBG_NET) Log.d(TAG, "App now in ForeGround");
-            // coming back to front: register network receiver
-            if (!mNetworkStateReceiverRegistered) {
-                context.registerReceiver(mNetworkStateReceiver, INTENT_FILTER);
-                mNetworkStateReceiverRegistered = true;
-            }
             UpnpServiceManager.restartUpnpServiceIfWasStartedBefore();
-
-            // get current network state
-            NetworkState networkState = NetworkState.instance(context);
-            networkState.updateFrom(context);
-            mNetworkState = (networkState.isConnected() ? 1 : 0 )+(networkState.hasLocalConnection() ? 1 : 0);
             // force check
             RemoteStateService.start(context);
+            if (propertyChangeListener != null) {
+                if (DBG) Log.d(TAG, "handleForeGround: networkState.addPropertyChangeListener");
+                networkState.addPropertyChangeListener(propertyChangeListener);
+            }
         } else {
             if (DBG_NET) Log.d(TAG, "App now in BackGround");
-            // going back to background, unregister receiver and set network state
-            // to unknown
-            if (mNetworkStateReceiverRegistered) {
-                context.unregisterReceiver(mNetworkStateReceiver);
-                mNetworkStateReceiverRegistered = false;
-            }
             UpnpServiceManager.stopServiceIfLaunched();
-            mNetworkState = -1;
+            if (propertyChangeListener != null) {
+                if (DBG) Log.d(TAG, "handleForeGround: networkState.removePropertyChangeListener");
+                networkState.removePropertyChangeListener(propertyChangeListener);
+            }
         }
     }
 }

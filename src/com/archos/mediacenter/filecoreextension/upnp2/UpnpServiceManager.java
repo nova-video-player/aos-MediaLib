@@ -14,18 +14,17 @@
 
 package com.archos.mediacenter.filecoreextension.upnp2;
 
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+
+import com.archos.environment.NetworkState;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
@@ -42,6 +41,8 @@ import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,34 +56,13 @@ import java.util.Set;
 /**
  * Created by vapillon on 06/05/15.
  */
-public class UpnpServiceManager extends BroadcastReceiver {
+public class UpnpServiceManager {
 
     private boolean mHasStarted;
     private boolean mStopLock;
-    /*
-    we want upnpservice to stop when the app goes in background BUT
-    do not stop service when, for example, the app goes in background while rawlister is used by indexing
-    */
 
-    @Override
-    public void onReceive(Context context, Intent intent) {
-
-        //we need to restart upnp service on network state change
-        if (mAndroidUpnpService!=null&&mState==State.RUNNING&&mHasStarted) {
-            if(DBG) Log.d(TAG, "restarting");
-            mDevices.clear();
-            informListenersOfDeviceListUpdate(mListeners);
-            mAndroidUpnpService.getRegistry().removeListener(mRegistryListener);
-            try {
-                    mContext.unbindService(mServiceConnection);
-            } catch (java.lang.IllegalArgumentException e) {
-                //this is bad, but I haven't found any other way to avoid "java.lang.IllegalArgumentException: Service not registered"
-            }
-            mState = State.NOT_RUNNING;
-            start();
-        }
-
-    }
+    private NetworkState networkState = null;
+    private PropertyChangeListener propertyChangeListener = null;
 
     private static final String TAG = "UpnpServiceManager";
     private static final boolean DBG = false;
@@ -142,13 +122,39 @@ public class UpnpServiceManager extends BroadcastReceiver {
         return singleton;
     }
 
+    /*
+    we want upnpservice to stop when the app goes in background BUT
+    do not stop service when, for example, the app goes in background while rawlister is used by indexing
+    */
+
     private void startUpnpServiceIfNotStartedYet() {
         if(!mHasStarted&&mContext!=null) { // just a test to ensure context has been set
-
-            mContext.registerReceiver(
-                    this,
-                    new IntentFilter(
-                            ConnectivityManager.CONNECTIVITY_ACTION));
+            networkState = NetworkState.instance(mContext);
+            if (propertyChangeListener == null)
+                propertyChangeListener = new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if (evt.getOldValue() != evt.getNewValue()) {
+                            if (DBG) Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                            //we need to restart upnp service on network state change
+                            if (mAndroidUpnpService!=null&&mState==State.RUNNING&&mHasStarted) {
+                                if(DBG) Log.d(TAG, "restarting");
+                                mDevices.clear();
+                                informListenersOfDeviceListUpdate(mListeners);
+                                mAndroidUpnpService.getRegistry().removeListener(mRegistryListener);
+                                try {
+                                    mContext.unbindService(mServiceConnection);
+                                } catch (java.lang.IllegalArgumentException e) {
+                                    //this is bad, but I haven't found any other way to avoid "java.lang.IllegalArgumentException: Service not registered"
+                                }
+                                mState = State.NOT_RUNNING;
+                                start();
+                            }
+                        }
+                    }
+                };
+            if (DBG) Log.d(TAG, "startUpnpServiceIfNotStartedYet: networkState.addPropertyChangeListener");
+            networkState.addPropertyChangeListener(propertyChangeListener);
             mHasStarted = true;
             mState = State.NOT_RUNNING;
             if (DBG) Log.d(TAG, "State NOT_RUNNING");
@@ -225,8 +231,9 @@ public class UpnpServiceManager extends BroadcastReceiver {
         }
         if(mHasStarted) {
             try {
-            mContext.unregisterReceiver(this);
-            mDevices.clear();
+                if (DBG) Log.d(TAG, "stop: networkState.removePropertyChangeListener");
+                networkState.removePropertyChangeListener(propertyChangeListener);
+                mDevices.clear();
                 if (mAndroidUpnpService != null)
                     mContext.unbindService(mServiceConnection);
             } catch (java.lang.IllegalArgumentException e) {
