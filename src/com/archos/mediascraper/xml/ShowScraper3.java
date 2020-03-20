@@ -70,7 +70,7 @@ public class ShowScraper3 extends BaseScraper2 {
 
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
 
-    private static ScraperSettings sSettings;
+    private static ScraperSettings sSettings = null;
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     static Cache cache;
@@ -141,7 +141,7 @@ public class ShowScraper3 extends BaseScraper2 {
                 if (searchId.status != ScrapeStatus.OKAY)
                     return new ScrapeDetailResult(searchId.tag, true, null, searchId.status, searchId.reason);
                 // if there was no show description in the native language get it from default
-                if ((searchId.tag.getPlot() == null || searchId.tag.getTitle() == null) && !resultLanguage.equals("en"))
+                if ((searchId.tag.getPlot().length() == 0 || searchId.tag.getTitle().length() == 0) && !resultLanguage.equals("en"))
                     ShowIdDescription.addDescription(showId, searchId.tag, theTvdb);
                 showTags = searchId.tag;
                 // actors
