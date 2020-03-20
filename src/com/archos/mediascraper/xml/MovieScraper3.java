@@ -57,7 +57,7 @@ public class MovieScraper3 extends BaseScraper2 {
     private final static String TAG = "MovieScraper3";
     private final static boolean DBG = false;
 
-    private static ScraperSettings sSettings;
+    private static ScraperSettings sSettings = null;
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     static Cache cache;
@@ -144,7 +144,8 @@ public class MovieScraper3 extends BaseScraper2 {
         }
 
         // if there was no movie description in the native language get it from default
-        if (tag.getPlot() == null) {
+        if (tag.getPlot().length() == 0) {
+            if (DBG) Log.d(TAG, "ScrapeDetailResult: getting description in en because plot non existent in " + language);
             MovieIdDescription2.addDescription(movieId, tag, moviesService);
         }
         tag.downloadPoster(mContext);
@@ -167,6 +168,7 @@ public class MovieScraper3 extends BaseScraper2 {
             // <settings><setting label="info_language" type="labelenum" id="language" values="$$8" sort="yes" default="en"></setting></settings>
             ScraperSetting setting = new ScraperSetting("language", ScraperSetting.STR_LABELENUM);
             String defaultLang = Locale.getDefault().getLanguage();
+            if (DBG) Log.d(TAG, "generatePreferences: defaultLang=" + defaultLang);
             if (!TextUtils.isEmpty(defaultLang) && LANGUAGES.contains(defaultLang))
                 setting.setDefault(defaultLang);
             else
