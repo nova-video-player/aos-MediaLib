@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!--
+    This string is used as the format string in a String.format call,
+    and 5 additional arguments are available for printing:
+    1 - hours
+    2 - minutes
+    3 - minutes%60
+    4 - seconds
+    5 - second%60
+    -->
+    <!-- Do not translate. Duration format for duration < 1 hour -->
+    <!-- Do not translate. Duration format for duration >= 1 hour -->
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Media failų indeksavimas</string>
+    <string name="network_unscan_msg">Šalinami media failai iš mediatekos</string>
+    <!-- .nfo export options -->
+    <string name="nfo_export_category">Media informacijos eksportas</string>
+    <string name="nfo_export_auto_title">Po paieškos eksportuoti automatiškai</string>
+    <string name="nfo_export_manual_title">Eksportuoti jau atpažintus video</string>
+    <string name="nfo_export_auto_summary">Automatiškai eksportuoti .nfo failus po sėkmingos paieškos tinkle</string>
+    <string name="nfo_export_manual_summary">Eksportuoti .nfo failus kiekvieno atpažinto video</string>
+    <string name="nfo_export_button">Eksportuoti .nfo</string>
+    <string name="nfo_export_folder">Eksportuoti visą šio aplanko turinį į .nfo</string>
+    <string name="nfo_export_all">Eksportuoti visą mediateką į .nfo</string>
+    <string name="nfo_export_exporting">Eksportuojamas .nfo</string>
+    <string name="nfo_export_exporting_all">viską</string>
+    <string name="rescrap_all_title">Atpažinti visus</string>
+    <!-- trakt.tv -->
+    <string name="trakt_toast_syncing_error">Nepavyksta sinchronizuoti su Trakt</string>
+    <!-- Title of screen when no sd card is present -->
+    <string name="sdcard_missing_title">Nėra SD kortelės</string>
+    <!-- label underneath icon used to indicate that no sd card is present -->
+    <string name="sdcard_missing_message">Įrenginyje nėra SD kortelės.</string>
+    <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
+    <string name="sdcard_busy_title">SD kortelė nepasiekiama</string>
+    <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
+    <string name="sdcard_busy_message">SD kortelė užimta.</string>
+    <!-- Title of screen when there was an error accessing the sd card -->
+    <string name="sdcard_error_title">SD kortelės klaida</string>
+    <!-- label underneath icon used to indicate there was an error accessing the sd card -->
+    <string name="sdcard_error_message">Klaida jūsų SD kortelėje.</string>
+    <!-- Title of screen when no storage is present -->
+    <string name="storage_missing_title">Vidinė saugykla nepasiekiama</string>
+    <!-- label underneath icon used to indicate that no storage is present -->
+    <string name="storage_missing_message">Jūsų įrenginio vidinė saugykla nepasiekiama.</string>
+    <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
+    <string name="storage_busy_title">Vidinė saugykla nepasiekiama</string>
+    <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
+    <string name="storage_busy_message">Negalite naudoti vidinės saugyklos kol ji prijungta per USB.</string>
+    <!-- Title of screen when there was an error accessing the internal storage -->
+    <string name="storage_error_title">Vidinės saugyklos klaida</string>
+    <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
+    <string name="storage_error_message">Klaida jūsų vidinėje saugykloje.</string>
+    <string name="scraper_no_settings">Šiam šaltiniui nustatymų nėra.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Įjungti Fanart</item>
+        <item>info_language:Kalba</item>
+    </string-array>
+    <string name="tv_show_genre_action">Veiksmo</string>
+    <string name="tv_show_genre_adventure">Nuotykiai</string>
+    <string name="tv_show_genre_animation">Animaciniai</string>
+    <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_children">Vaikams</string>
+    <string name="tv_show_genre_comedy">Komedijos</string>
+    <string name="tv_show_genre_crime">Kriminaliniai</string>
+    <string name="tv_show_genre_documentary">Dokumentiniai</string>
+    <string name="tv_show_genre_drama">Dramos</string>
+    <string name="tv_show_genre_family">Šeimai</string>
+    <string name="tv_show_genre_fantasy">Fantastiniai</string>
+    <string name="tv_show_genre_food">Maistas</string>
+    <string name="tv_show_genre_game_show">Žaidimų šou</string>
+    <string name="tv_show_genre_home_garden">Namai ir sodas</string>
+    <string name="tv_show_genre_horror">Siaubo</string>
+    <string name="tv_show_genre_mini_series">Mini serialai</string>
+    <string name="tv_show_genre_news">Naujienos</string>
+    <string name="tv_show_genre_reality">Realybės šou</string>
+    <string name="tv_show_genre_romance">Romantiniai</string>
+    <string name="tv_show_genre_science_fiction">Mokslinė fantastika</string>
+    <string name="tv_show_genre_soap">Muilo operos</string>
+    <string name="tv_show_genre_special_interest">Kitokie</string>
+    <string name="tv_show_genre_sport">Sporto</string>
+    <string name="tv_show_genre_suspense">Detektyvai</string>
+    <string name="tv_show_genre_talk_show">Pokalbių šou</string>
+    <string name="tv_show_genre_thriller">Trileriai</string>
+    <string name="tv_show_genre_travel">Kelionės</string>
+    <string name="tv_show_genre_western">Vesternai</string>
+    <!--
+      STRINGS BELOW ARE FOR MUSIC ONLY.
+      I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
+      BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
+    -->
+    <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
+    <string name="artist_label">Atlieka</string>
+    <string name="scraping_in_progress">Vykdomas atpažinimas</string>
+    <string name="remaining_videos_to_process">Liko media failų:</string>
+    <string name="video_store_import">Importuojami lokalūs media failai</string>
+</resources>
