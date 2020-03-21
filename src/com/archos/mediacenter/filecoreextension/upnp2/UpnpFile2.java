@@ -16,6 +16,7 @@ package com.archos.mediacenter.filecoreextension.upnp2;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.MetaFile2;
@@ -32,6 +33,9 @@ import java.io.IOException;
 import java.util.List;
 
 public class UpnpFile2 extends MetaFile2 {
+
+    private static final String TAG = "UpnpFile2";
+    private static boolean DBG = false;
 
     private final long mLength;
     private String mName;
@@ -224,13 +228,13 @@ public class UpnpFile2 extends MetaFile2 {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "fromUri: caught IoException ", e);
             } catch (AuthenticationException e) {
-                e.printStackTrace();
+                Log.e(TAG, "fromUri: caught AuthenticationException ", e);
             } catch (SftpException e) {
-                e.printStackTrace();
+                Log.e(TAG, "fromUri: caught SftpException ", e);
             } catch (JSchException e) {
-                e.printStackTrace();
+                Log.e(TAG, "fromUri: caught JSchException ", e);
             }
             return null;
         }
