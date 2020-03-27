@@ -94,7 +94,7 @@
 
      <!-- Archos GridView theme for the browser -->
      <style name="ArchosGridView">
-       <item name="android:id">@+id/browser_items</item>
+       <item name="android:id">@id/browser_items</item>
        <item name="android:layout_width">match_parent</item>
        <item name="android:layout_height">match_parent</item>
 <item name="android:textSize">13sp</item>
@@ -105,6 +105,8 @@
        <item name="android:textFilterEnabled">true</item>
        <item name="android:listSelector">@drawable/list_selector_categories</item>
      </style>
+    <item name="browser_items" type="id" />
+
 
     <style name="Theme.Holo.Transparent" parent="android:Theme.Holo.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
