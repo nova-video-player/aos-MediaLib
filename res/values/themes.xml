@@ -2,35 +2,69 @@
 
 <resources>
 
-    <style name="MusicDialogTheme" parent="@android:style/Theme.Holo.Dialog">
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowNoTitle">true</item>
+    <style name="ArchosTheme" parent="@android:style/Theme.Material">
+        <item name="android:actionBarStyle">@style/Widget.Material.ActionBar.Archos</item>
+        <item name="android:colorPrimary">@color/lightblue500</item>
+        <item name="android:colorPrimaryDark">#002642</item>
+        <item name="android:colorAccent">@color/lightblue400</item>
+        <item name="android:navigationBarColor">#001b30</item>
+        <item name="android:alertDialogTheme">@style/Theme.AlertDialog</item>
     </style>
 
-    <style name="ArchosTheme" parent="@android:style/Theme.DeviceDefault">
-        <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos</item>
+
+    <style name="Widget.Material.ActionBar.Archos" parent="@android:style/Widget.Material.ActionBar">
+        <item name="android:background">@null</item>
+        <item name="colorControlNormal">@android:color/holo_red_dark</item>
+        <item name="android:colorControlNormal">@android:color/holo_red_dark</item>
+    </style>
+
+    <style name="ArchosThemeBlueCompatNoActionBar" parent="ArchosThemeBlueNoActionBarCommon">
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
     </style>
 
     <style name="ArchosThemeBlue" parent="ArchosTheme">
         <item name="android:windowBackground">@drawable/background_2014</item>
         <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos</item>
     </style>
+
     <style name="ArchosThemeBlueCompat" parent="Theme.AppCompat">
         <item name="android:windowBackground">@drawable/background_2014</item>
         <item name="android:actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
         <item name="actionBarStyle">@style/Widget.Holo.ActionBar.Archos2</item>
+        <item name="android:colorPrimary">@color/lightblue500</item>
+        <item name="android:colorPrimaryDark">#002642</item>
+        <item name="android:colorAccent">@color/lightblue400</item>
+        <item name="colorPrimary">@color/lightblue500</item>
+        <item name="colorPrimaryDark">#002642</item>
+        <item name="colorAccent">@color/lightblue400</item>
+        <item name="android:navigationBarColor">#001b30</item>
+        <item name="android:alertDialogTheme">@style/Theme.AlertDialog</item>
     </style>
+
+    <style name="Theme.AlertDialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorPrimary">@color/lightblue500</item>
+        <item name="android:colorPrimaryDark">#002642</item>
+        <item name="android:colorAccent">@color/lightblue400</item>
+    </style>
+
     <style name="ArchosThemeBlueCompatOverlay" parent="ArchosThemeBlueCompat">
         <item name="android:windowActionBarOverlay">true</item>
         <item name="windowActionBarOverlay">true</item>
     </style>
+
     <style name="ArchosThemeBlueCompatTransparent" parent="ArchosThemeBlueCompat">
         <item name="android:windowIsTranslucent">true</item>
     </style>
+
     <style name="Theme.TransparentCompat" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorPrimary">@color/lightblue500</item>
+        <item name="android:colorAccent">@color/lightblue400</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
         <item name="android:windowIsTranslucent">true</item>
+        <item name="android:alertDialogTheme">@style/Theme.AlertDialog</item>
     </style>
 
     <style name="ArchosThemeBlueNoActionBarCommon" parent="Theme.AppCompat.NoActionBar">
@@ -41,10 +75,6 @@
         <item name="colorPrimary">@color/lightblue500</item>
         <item name="colorPrimaryDark">#002642</item>
         <item name="colorAccent">@color/lightblue400</item>
-
-    </style>
-
-    <style name="ArchosThemeBlueCompatNoActionBar" parent="ArchosThemeBlueNoActionBarCommon">
     </style>
 
     <style name="Theme.Transparent" parent="@android:style/Theme.DeviceDefault.NoActionBar">
@@ -53,6 +83,10 @@
         <item name="android:windowIsTranslucent">true</item>
     </style>
 
-    <style name="Theme.DialogMinWidth" parent="@android:style/Theme.DeviceDefault.Dialog.MinWidth">
+    <style name="Theme.DialogMinWidth" parent="@android:style/Theme.Material.Dialog.MinWidth">
+        <item name="android:colorPrimary">@color/lightblue500</item>
+        <item name="android:colorAccent">@color/lightblue200</item>
+        <item name="android:alertDialogTheme">@style/Theme.AlertDialog</item>
     </style>
+
 </resources>
