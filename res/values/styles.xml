@@ -203,8 +203,5 @@
         <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
     </style>
 
-    <style name="Widget.Holo.ActionBar.Archos2" parent="@style/Widget.AppCompat.ActionBar">
-        <item name="background">@null</item>
-    </style>
 
 </resources>
