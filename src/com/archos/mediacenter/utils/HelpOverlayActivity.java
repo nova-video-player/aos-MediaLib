@@ -14,26 +14,24 @@
 
 package com.archos.mediacenter.utils;
 
-import com.archos.medialib.R;
-
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.view.WindowManager;
+import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.archos.medialib.R;
 
 
-public class HelpOverlayActivity extends Activity {
+public class HelpOverlayActivity extends AppCompatActivity {
     private final static String TAG = "HelpOverlayActivity";
     private final static boolean DBG = false; 
 

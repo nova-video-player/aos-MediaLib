@@ -1,5 +1,6 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="@dimen/quick_action_row_height"
@@ -39,6 +40,6 @@
             android:layout_height="wrap_content"
             android:scaleType="fitXY"
             android:gravity="fill_horizontal"
-            android:src="@drawable/quick_action_item_separator"/>
+            app:srcCompat="@drawable/quick_action_item_separator"/>
 
 </LinearLayout>

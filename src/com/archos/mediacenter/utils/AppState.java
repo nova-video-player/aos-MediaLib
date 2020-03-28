@@ -24,6 +24,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.WeakHashMap;
@@ -63,6 +65,7 @@ public class AppState {
         }
     }
 
+    // TODO MARC AppCompatActivity -> Activity
     private static void notifyListener(Activity activity, boolean foreground) {
         if (DBG) Log.d(TAG, "notifyListener: " + foreground);
         // copy keyset into an array to allow removing of listener from listener.

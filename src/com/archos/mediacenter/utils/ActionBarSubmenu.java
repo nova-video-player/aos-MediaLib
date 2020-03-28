@@ -13,8 +13,6 @@
 // limitations under the License.
 
 package com.archos.mediacenter.utils;
- 
-import com.archos.medialib.R;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -23,8 +21,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
-import androidx.core.content.ContextCompat;
-
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -35,14 +31,18 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.ListPopupWindow;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
+import androidx.appcompat.widget.ListPopupWindow;
+import androidx.core.content.ContextCompat;
+
+import com.archos.medialib.R;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class ActionBarSubmenu implements OnMenuItemClickListener, OnItemClickListener {
