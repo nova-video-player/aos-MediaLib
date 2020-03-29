@@ -146,7 +146,7 @@ public class ShowIdEpisodes {
                 }
             }
         } catch (IOException e) {
-            Log.e(TAG, "getEpisodes: caught IOException getting actors for showId=" + showId);
+            Log.e(TAG, "getEpisodes: caught IOException getting episodes for showId=" + showId);
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
             myResult.reason = e;
