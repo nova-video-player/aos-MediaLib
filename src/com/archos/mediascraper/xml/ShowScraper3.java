@@ -140,9 +140,12 @@ public class ShowScraper3 extends BaseScraper2 {
                 ShowIdResult searchId = ShowId.getBaseInfo(showId, resultLanguage, basicShow, basicEpisode, theTvdb, mContext);
                 if (searchId.status != ScrapeStatus.OKAY)
                     return new ScrapeDetailResult(searchId.tag, true, null, searchId.status, searchId.reason);
-                // if there was no show description in the native language get it from default
-                if ((searchId.tag.getPlot().length() == 0 || searchId.tag.getTitle().length() == 0) && !resultLanguage.equals("en"))
+                // for some obscur shows sometimes getPlot() or getTitle() returns null, try to fill it again with addDescription in "en" that will set it to "" if there is a problem
+                if (searchId.tag.getPlot() == null || searchId.tag.getTitle() == null)
                     ShowIdDescription.addDescription(showId, searchId.tag, theTvdb);
+                else // if there was no show description in the native language get it from default
+                    if ((searchId.tag.getPlot().length() == 0 || searchId.tag.getTitle().length() == 0) && !resultLanguage.equals("en"))
+                        ShowIdDescription.addDescription(showId, searchId.tag, theTvdb);
                 showTags = searchId.tag;
                 // actors
                 ShowIdActorsResult searchActors = ShowIdActors.getActors(showId, theTvdb);
