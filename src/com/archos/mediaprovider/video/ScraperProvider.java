@@ -925,7 +925,7 @@ public class ScraperProvider extends ContentProvider {
 
         if(DBG) Log.d(TAG, "Query handling ended.");
         SQLiteDatabase db = mDbHolder.get();
-        // TODO: MARC put a try/catch but this needs fixing!
+        // TODO: try/catch used but this needs fixing!
         try {
             c = qb.query(db, projection, selection, selectionArgs, null,
                     null, sortOrder);

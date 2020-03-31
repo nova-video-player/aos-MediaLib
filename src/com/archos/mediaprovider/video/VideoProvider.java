@@ -1114,273 +1114,266 @@ public class VideoProvider extends ContentProvider {
         return result;
     }
 
-/**
- * Instances of this class are created and put in a queue to be executed sequentially to see if
- * it needs to (re)generate the thumbnails.
- */
-static class MediaThumbRequest {
-    private static final String TAG = ArchosMediaCommon.TAG_PREFIX + "MediaThumbRequest";
-    private static final boolean DBG = false;
-    static final int PRIORITY_LOW = 20;
-    static final int PRIORITY_NORMAL = 10;
-    static final int PRIORITY_HIGH = 5;
-    static final int PRIORITY_CRITICAL = 0;
-    static enum State {WAIT, DONE, CANCEL}
-    private static final String[] THUMB_PROJECTION = new String[] {
-        BaseColumns._ID // 0
-    };
-
-    ContentResolver mCr;
-    Context mContext;
-    String mPath;
-    long mRequestTime = System.currentTimeMillis();
-    int mCallingPid = Binder.getCallingPid();
-    long mGroupId;
-    int mPriority;
-    Uri mUri;
-    Uri mThumbUri;
-    String mOrigColumnName;
-    boolean mIsVideo;
-    long mOrigId;
-    State mState = State.WAIT;
-    long mMagic;
-
-    private static final Random sRandom = new Random();
-
-    static Comparator<MediaThumbRequest> getComparator() {
-        return new Comparator<MediaThumbRequest>() {
-            public int compare(MediaThumbRequest r1, MediaThumbRequest r2) {
-                if (r1.mPriority != r2.mPriority) {
-                    return r1.mPriority < r2.mPriority ? -1 : 1;
-                }
-                return r1.mRequestTime == r2.mRequestTime ? 0 :
-                    r1.mRequestTime < r2.mRequestTime ? -1 : 1;
-            }
-        };
-    }
-
-    MediaThumbRequest(Context ctx, String path, Uri uri, int priority, long magic) {
-        mContext = ctx;
-        mCr = ctx.getContentResolver();
-        mPath = path;
-        mPriority = priority;
-        mMagic = magic;
-        mUri = uri;
-        mIsVideo = "video".equals(uri.getPathSegments().get(1));
-        mOrigId = ContentUris.parseId(uri);
-        mThumbUri = VideoStore.Video.Thumbnails.EXTERNAL_CONTENT_URI;
-        mOrigColumnName = VideoStore.Video.Thumbnails.VIDEO_ID;
-        // Only requests from Thumbnail API has this group_id parameter. In other cases,
-        // mGroupId will always be zero and can't be canceled due to pid mismatch.
-        String groupIdParam = uri.getQueryParameter("group_id");
-        if (groupIdParam != null) {
-            mGroupId = Long.parseLong(groupIdParam);
-        }
-    }
-
-    Uri updateDatabase(Bitmap thumbnail) {
-        Cursor c = mCr.query(mThumbUri, THUMB_PROJECTION,
-                mOrigColumnName+ " = " + mOrigId, null, null);
-        if (c == null) return null;
-        try {
-            if (c.moveToFirst()) {
-                return ContentUris.withAppendedId(mThumbUri, c.getLong(0));
-            }
-        } finally {
-            if (c != null) c.close();
-        }
-
-        ContentValues values = new ContentValues(4);
-        values.put(Video.Thumbnails.KIND, Integer.valueOf(Video.Thumbnails.MINI_KIND));
-        values.put(mOrigColumnName, Long.valueOf(mOrigId));
-        values.put(Video.Thumbnails.WIDTH, Integer.valueOf(thumbnail.getWidth()));
-        values.put(Video.Thumbnails.HEIGHT, Integer.valueOf(thumbnail.getHeight()));
-        try {
-            if (DBG) Log.d(TAG, "insert Thumbnail " + mThumbUri + " val:" + values);
-            return mCr.insert(mThumbUri, values);
-        } catch (Exception ex) {
-            Log.w(TAG, ex);
-            return null;
-        }
-    }
-
     /**
-     * Check if the corresponding thumbnail and mini-thumb have been created
-     * for the given uri. This method creates both of them if they do not
-     * exist yet or have been changed since last check. After thumbnails are
-     * created, MINI_KIND thumbnail is stored in JPEG file and MICRO_KIND
-     * thumbnail is stored in a random access file (MiniThumbFile).
-     *
-     * @throws IOException
+     * Instances of this class are created and put in a queue to be executed sequentially to see if
+     * it needs to (re)generate the thumbnails.
      */
-    void execute() throws IOException {
-        if(DBG) Log.d(TAG_DOCTOR_WHO," executing thumb creation ");
+    static class MediaThumbRequest {
+        private static final String TAG = ArchosMediaCommon.TAG_PREFIX + "MediaThumbRequest";
+        private static final boolean DBG = false;
+        static final int PRIORITY_LOW = 20;
+        static final int PRIORITY_NORMAL = 10;
+        static final int PRIORITY_HIGH = 5;
+        static final int PRIORITY_CRITICAL = 0;
+        static enum State {WAIT, DONE, CANCEL}
+        private static final String[] THUMB_PROJECTION = new String[] {
+            BaseColumns._ID // 0
+        };
 
-        long magic = mMagic;
-        if (magic != 0) {
-            Cursor c = null;
-            ParcelFileDescriptor pfd = null;
-            try {
-                c = mCr.query(mThumbUri, THUMB_PROJECTION,
-                        mOrigColumnName + " = " + mOrigId, null, null);
-                if (c != null && c.moveToFirst()) {
-                    pfd = mCr.openFileDescriptor(
-                            mThumbUri.buildUpon().appendPath(c.getString(0)).build(), "r");
+        ContentResolver mCr;
+        Context mContext;
+        String mPath;
+        long mRequestTime = System.currentTimeMillis();
+        int mCallingPid = Binder.getCallingPid();
+        long mGroupId;
+        int mPriority;
+        Uri mUri;
+        Uri mThumbUri;
+        String mOrigColumnName;
+        boolean mIsVideo;
+        long mOrigId;
+        State mState = State.WAIT;
+        long mMagic;
+
+        private static final Random sRandom = new Random();
+
+        static Comparator<MediaThumbRequest> getComparator() {
+            return new Comparator<MediaThumbRequest>() {
+                public int compare(MediaThumbRequest r1, MediaThumbRequest r2) {
+                    if (r1.mPriority != r2.mPriority) {
+                        return r1.mPriority < r2.mPriority ? -1 : 1;
+                    }
+                    return Long.compare(r1.mRequestTime, r2.mRequestTime);
                 }
-            } catch (IOException ex) {
-                // MINI_THUMBNAIL not exists, ignore the exception and generate one.
+            };
+        }
+
+        MediaThumbRequest(Context ctx, String path, Uri uri, int priority, long magic) {
+            mContext = ctx;
+            mCr = ctx.getContentResolver();
+            mPath = path;
+            mPriority = priority;
+            mMagic = magic;
+            mUri = uri;
+            mIsVideo = "video".equals(uri.getPathSegments().get(1));
+            mOrigId = ContentUris.parseId(uri);
+            mThumbUri = VideoStore.Video.Thumbnails.EXTERNAL_CONTENT_URI;
+            mOrigColumnName = VideoStore.Video.Thumbnails.VIDEO_ID;
+            // Only requests from Thumbnail API has this group_id parameter. In other cases,
+            // mGroupId will always be zero and can't be canceled due to pid mismatch.
+            String groupIdParam = uri.getQueryParameter("group_id");
+            if (groupIdParam != null) {
+                mGroupId = Long.parseLong(groupIdParam);
+            }
+        }
+
+        Uri updateDatabase(Bitmap thumbnail) {
+            Cursor c = mCr.query(mThumbUri, THUMB_PROJECTION,
+                    mOrigColumnName+ " = " + mOrigId, null, null);
+            if (c == null) return null;
+            try {
+                if (c.moveToFirst()) {
+                    return ContentUris.withAppendedId(mThumbUri, c.getLong(0));
+                }
             } finally {
                 if (c != null) c.close();
-                if (pfd != null) {
-                    pfd.close();
-                    if (DBG) Log.d(TAG, "ThumbRequest, already exists.");
-                }
             }
-            return;
+
+            ContentValues values = new ContentValues(4);
+            values.put(Video.Thumbnails.KIND, Integer.valueOf(Video.Thumbnails.MINI_KIND));
+            values.put(mOrigColumnName, Long.valueOf(mOrigId));
+            values.put(Video.Thumbnails.WIDTH, Integer.valueOf(thumbnail.getWidth()));
+            values.put(Video.Thumbnails.HEIGHT, Integer.valueOf(thumbnail.getHeight()));
+            try {
+                if (DBG) Log.d(TAG, "insert Thumbnail " + mThumbUri + " val:" + values);
+                return mCr.insert(mThumbUri, values);
+            } catch (Exception ex) {
+                Log.w(TAG, ex);
+                return null;
+            }
         }
-        if (DBG) Log.d(TAG, "ThumbRequest, creating.");
-        // If we can't retrieve the thumbnail, first check if there is one
-        // embedded in the EXIF data. If not, or it's not big enough,
-        // decompress the full size image.
-        Bitmap bitmap = null;
 
-        if (mPath != null) {
-            if (mIsVideo) {
-                // ARCHOS: this uses libavos
-                if(DBG) Log.d(TAG_DOCTOR_WHO,"is video");
+        /**
+         * Check if the corresponding thumbnail and mini-thumb have been created
+         * for the given uri. This method creates both of them if they do not
+         * exist yet or have been changed since last check. After thumbnails are
+         * created, MINI_KIND thumbnail is stored in JPEG file and MICRO_KIND
+         * thumbnail is stored in a random access file (MiniThumbFile).
+         *
+         * @throws IOException
+         */
+        void execute() throws IOException {
+            if(DBG) Log.d(TAG_DOCTOR_WHO," executing thumb creation ");
 
-                bitmap = createVideoThumbnail(mContext, mPath,
-                        Video.Thumbnails.MINI_KIND);
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "test 2 for bitmap  "+String.valueOf(bitmap==null));
-
-            }
-            if (bitmap == null) {
-                Log.w(TAG, "Can't create mini thumbnail for " + mPath);
+            long magic = mMagic;
+            if (magic != 0) {
+                Cursor c = null;
+                ParcelFileDescriptor pfd = null;
+                try {
+                    c = mCr.query(mThumbUri, THUMB_PROJECTION,
+                            mOrigColumnName + " = " + mOrigId, null, null);
+                    if (c != null && c.moveToFirst()) {
+                        pfd = mCr.openFileDescriptor(
+                                mThumbUri.buildUpon().appendPath(c.getString(0)).build(), "r");
+                    }
+                } catch (IOException ex) {
+                    // MINI_THUMBNAIL not exists, ignore the exception and generate one.
+                } finally {
+                    if (c != null) c.close();
+                    if (pfd != null) {
+                        pfd.close();
+                        if (DBG) Log.d(TAG, "ThumbRequest, already exists.");
+                    }
+                }
                 return;
             }
+            if (DBG) Log.d(TAG, "ThumbRequest, creating.");
+            // If we can't retrieve the thumbnail, first check if there is one
+            // embedded in the EXIF data. If not, or it's not big enough,
+            // decompress the full size image.
+            Bitmap bitmap = null;
 
-            Uri uri = updateDatabase(bitmap);
-            if (uri != null) {
-                OutputStream thumbOut = mCr.openOutputStream(uri);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, thumbOut);
-                thumbOut.close();
-                if (DBG) Log.d(TAG, "ThumbRequest written bitmap");
-                // also put some random mini_thumb_magic
-                do {
-                    magic = sRandom.nextLong();
-                } while (magic == 0);
+            if (mPath != null) {
+                if (mIsVideo) {
+                    // ARCHOS: this uses libavos
+                    if(DBG) Log.d(TAG_DOCTOR_WHO,"is video");
 
-                ContentValues values = new ContentValues();
+                    bitmap = createVideoThumbnail(mContext, mPath,
+                            Video.Thumbnails.MINI_KIND);
+                    if(DBG) Log.d(TAG_DOCTOR_WHO, "test 2 for bitmap  "+String.valueOf(bitmap==null));
 
-                values.put(VideoColumns.MINI_THUMB_MAGIC, magic);
-                mCr.update(mUri, values, null, null);
-            }
-        }
-    }
+                }
+                if (bitmap == null) {
+                    Log.w(TAG, "Can't create mini thumbnail for " + mPath);
+                    return;
+                }
 
-    /**
-     * Create a video thumbnail for a video. May return null if the video is
-     * corrupt or the format is not supported.
-     *
-     * @param filePath the path of video file
-     * @param kind could be MINI_KIND or MICRO_KIND
-     */
-    public static Bitmap createVideoThumbnail(Context ctx, String filePath, int kind) {
-        Bitmap res = createVideoThumbnail_(ctx, filePath, kind);
-        if (DBG) Log.d(TAG, "createVideoThumbnail: " + res);
-        return res;
-    }
-    private static class Result{
-        Bitmap bm;
-        public Result(){
+                Uri uri = updateDatabase(bitmap);
+                if (uri != null) {
+                    OutputStream thumbOut = mCr.openOutputStream(uri);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, thumbOut);
+                    thumbOut.close();
+                    if (DBG) Log.d(TAG, "ThumbRequest written bitmap");
+                    // also put some random mini_thumb_magic
+                    do {
+                        magic = sRandom.nextLong();
+                    } while (magic == 0);
 
-        }
-        public void setBitmap(Bitmap bm){
-            this.bm= bm;
-        }
-    }
-    public static Bitmap createVideoThumbnail_(final Context ctx, final String filePath, int kind) {
-        Bitmap bitmap = null;
-        final Result result = new Result();
-        final IMediaThumbnailService service = MediaThumbnailService.bind_sync(ctx);
-        if ( service!= null) {
-            try {
-                Thread t = new Thread(){
-                    public void run(){
-                        try {
-                            if(DBG) Log.d(TAG_DOCTOR_WHO, "get Thumb for "+filePath);
-                            result.setBitmap(service.getThumbnail(filePath, -1));
+                    ContentValues values = new ContentValues();
 
-                        } catch (RemoteException e) {
-                            if(DBG) Log.d(TAG_DOCTOR_WHO, "get Thumb for "+filePath+ " failed (RemoteException)");
-
-                            Log.e(TAG, "can't get thumbnail, service crashed?", e);
-                        }
-                    }
-                };
-                t.start();
-                t.join();
-                bitmap = result.bm;
-
-
-                if (DBG) Log.d(TAG, "MediaThumbnailService gave us: " + bitmap);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            MediaThumbnailService.release(ctx);
-        } else {
-            Log.d(TAG, "no Thumbnail service, crash?");
-            if(DBG) Log.d(TAG_DOCTOR_WHO, "no Thumbnail service, crash?");
-
-            IMediaMetadataRetriever retriever = MediaFactory.createMetadataRetriever(ctx);
-            try {
-                retriever.setDataSource(filePath);
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "getFrameAtTime -1 ");
-
-                bitmap = retriever.getFrameAtTime(-1);
-
-            } catch (IllegalArgumentException ex) {
-                // Assume this is a corrupt video file
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "IllegalArgumentException "+ex.toString());
-
-            } catch (RuntimeException ex) {
-                // Assume this is a corrupt video file.
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "RuntimeException "+ex.toString());
-
-            } finally {
-                try {
-                    retriever.release();
-                } catch (RuntimeException ex) {
-                    // Ignore failures while cleaning up.
+                    values.put(VideoColumns.MINI_THUMB_MAGIC, magic);
+                    mCr.update(mUri, values, null, null);
                 }
             }
         }
 
-        if (bitmap == null) {
-            if(DBG) Log.d(TAG_DOCTOR_WHO, "bitmap is null ");
-
-            return null;
+        /**
+         * Create a video thumbnail for a video. May return null if the video is
+         * corrupt or the format is not supported.
+         *
+         * @param filePath the path of video file
+         * @param kind could be MINI_KIND or MICRO_KIND
+         */
+        public static Bitmap createVideoThumbnail(Context ctx, String filePath, int kind) {
+            Bitmap res = createVideoThumbnail_(ctx, filePath, kind);
+            if (DBG) Log.d(TAG, "createVideoThumbnail: " + res);
+            return res;
         }
-
-        if(DBG) Log.d(TAG_DOCTOR_WHO, "bitmap is not null ");
-        if (kind == Video.Thumbnails.MINI_KIND) {
-            if(DBG) Log.d(TAG_DOCTOR_WHO, "MINI_KIND ? ");
-            // Scale down the bitmap if it's too large.
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
-            int max = Math.max(width, height);
-            if (max > 512) {
-                float scale = 512f / max;
-                int w = Math.round(scale * width);
-                int h = Math.round(scale * height);
-                bitmap = Bitmap.createScaledBitmap(bitmap, w, h, true);
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "createScaledBitmap");
-
+        private static class Result{
+            Bitmap bm;
+            public Result(){ }
+            public void setBitmap(Bitmap bm){
+                this.bm= bm;
             }
         }
-        return bitmap;
+        public static Bitmap createVideoThumbnail_(final Context ctx, final String filePath, int kind) {
+            Bitmap bitmap = null;
+            final Result result = new Result();
+            final IMediaThumbnailService service = MediaThumbnailService.bind_sync(ctx);
+            if ( service!= null) {
+                try {
+                    Thread t = new Thread(){
+                        public void run(){
+                            try {
+                                if(DBG) Log.d(TAG_DOCTOR_WHO, "get Thumb for "+filePath);
+                                result.setBitmap(service.getThumbnail(filePath, -1));
+
+                            } catch (RemoteException e) {
+                                if(DBG) Log.d(TAG_DOCTOR_WHO, "get Thumb for "+filePath+ " failed (RemoteException)");
+
+                                Log.e(TAG, "can't get thumbnail, service crashed?", e);
+                            }
+                        }
+                    };
+                    t.start();
+                    t.join();
+                    bitmap = result.bm;
+                    if (DBG) Log.d(TAG, "MediaThumbnailService gave us: " + bitmap);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                MediaThumbnailService.release(ctx);
+            } else {
+                Log.d(TAG, "no Thumbnail service, crash?");
+                if(DBG) Log.d(TAG_DOCTOR_WHO, "no Thumbnail service, crash?");
+
+                IMediaMetadataRetriever retriever = MediaFactory.createMetadataRetriever(ctx);
+                try {
+                    retriever.setDataSource(filePath);
+                    if(DBG) Log.d(TAG_DOCTOR_WHO, "getFrameAtTime -1 ");
+
+                    bitmap = retriever.getFrameAtTime(-1);
+
+                } catch (IllegalArgumentException ex) {
+                    // Assume this is a corrupt video file
+                    if(DBG) Log.d(TAG_DOCTOR_WHO, "IllegalArgumentException "+ex.toString());
+
+                } catch (RuntimeException ex) {
+                    // Assume this is a corrupt video file.
+                    if(DBG) Log.d(TAG_DOCTOR_WHO, "RuntimeException "+ex.toString());
+
+                } finally {
+                    try {
+                        retriever.release();
+                    } catch (RuntimeException ex) {
+                        // Ignore failures while cleaning up.
+                    }
+                }
+            }
+
+            if (bitmap == null) {
+                if(DBG) Log.d(TAG_DOCTOR_WHO, "bitmap is null ");
+                return null;
+            }
+
+            if(DBG) Log.d(TAG_DOCTOR_WHO, "bitmap is not null ");
+            if (kind == Video.Thumbnails.MINI_KIND) {
+                if(DBG) Log.d(TAG_DOCTOR_WHO, "MINI_KIND ? ");
+                // Scale down the bitmap if it's too large.
+                int width = bitmap.getWidth();
+                int height = bitmap.getHeight();
+                int max = Math.max(width, height);
+                if (max > 512) {
+                    float scale = 512f / max;
+                    int w = Math.round(scale * width);
+                    int h = Math.round(scale * height);
+                    bitmap = Bitmap.createScaledBitmap(bitmap, w, h, true);
+                    if(DBG) Log.d(TAG_DOCTOR_WHO, "createScaledBitmap");
+                }
+            }
+            return bitmap;
+        }
     }
-}
 
     // TODO should it be done at each foreground? probably
     private final AppState.OnForeGroundListener mForeGroundListener = new AppState.OnForeGroundListener() {

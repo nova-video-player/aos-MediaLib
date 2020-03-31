@@ -65,7 +65,6 @@ public class AppState {
         }
     }
 
-    // TODO MARC AppCompatActivity -> Activity
     private static void notifyListener(Activity activity, boolean foreground) {
         if (DBG) Log.d(TAG, "notifyListener: " + foreground);
         // copy keyset into an array to allow removing of listener from listener.

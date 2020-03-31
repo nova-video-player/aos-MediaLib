@@ -470,7 +470,6 @@ public class TraktService extends Service {
                     result.status == Trakt.Status.SUCCESS_ALREADY)){
                 cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
                         getValuesMarkAs(library, mark), selection, null);
-   
             }
         }
         return Trakt.Status.SUCCESS;
@@ -546,62 +545,55 @@ public class TraktService extends Service {
             }
             c1.close();
         }
-
-
-    	
     	
     	//from trakt to db
 
     	//Trakt.Result result1 = mTrakt.getAllMovies(Trakt.LIBRARY_COLLECTION, true);
-    	
-        
-            if (movies!=null&&movies.size() > 0) {
-                String whereR;
-				for (GenericProgress movie : movies){
-                    if (movie.movie != null) {
-                		whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
-                                "SELECT video_id FROM movie where " + VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID +"= "+movie.movie.ids.tmdb+")";
-                	}
-                	else {
-                		whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
-                        "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID +"= "+movie.episode.ids.tvdb+")";
-                	}
-                	
-                	//final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
-                    ContentResolver resolver = getContentResolver();
-                    Cursor c= resolver.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
-                  
-                    if (c != null) {
-                        if (c.getCount() > 0) {
-                            final int idIdx = c.getColumnIndex(BaseColumns._ID);
 
-                            while (c.moveToNext()) {
-                            	int id = c.getInt(idIdx);
-                            	VideoDbInfo i = VideoDbInfo.fromId(cr, id);
-                                if (i != null) {
+        if (movies!=null&&movies.size() > 0) {
+            String whereR;
+            for (GenericProgress movie : movies){
+                if (movie.movie != null) {
+                    whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
+                            "SELECT video_id FROM movie where " + VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID +"= "+movie.movie.ids.tmdb+")";
+                }
+                else {
+                    whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
+                    "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID +"= "+movie.episode.ids.tvdb+")";
+                }
 
-                                    int newResumePercent = (int) Math.round(movie.progress);
-                            		int newResume = (int) ((float)newResumePercent/100.0*i.duration);
-                            		if(Math.abs(i.traktResume)!=newResumePercent&&i.traktSeen!=1&&newResume>i.resume&&i.resume!=-2){//i.resume = -2 is file end
+                //final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
+                ContentResolver resolver = getContentResolver();
+                Cursor c= resolver.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
 
-                            			i.traktResume = newResumePercent;
-                            			i.resume =newResume;
-                            			ContentValues values = new ContentValues();
-                                    	values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, i.traktResume );
-                                    	values.put(VideoStore.Video.VideoColumns.BOOKMARK, i.resume );
-                                        if(i.lastTimePlayed <=0 )
-                                            values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, 1); //will need to be updated with trakt watched time (last paused is null...)
-                            			cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                            values, VideoStore.Video.VideoColumns._ID+" = '"+i.id+"'", null);
-                            		}
-                            	}
+                if (c != null) {
+                    if (c.getCount() > 0) {
+                        final int idIdx = c.getColumnIndex(BaseColumns._ID);
+
+                        while (c.moveToNext()) {
+                            int id = c.getInt(idIdx);
+                            VideoDbInfo i = VideoDbInfo.fromId(cr, id);
+                            if (i != null) {
+
+                                int newResumePercent = (int) Math.round(movie.progress);
+                                int newResume = (int) ((float)newResumePercent/100.0*i.duration);
+                                if(Math.abs(i.traktResume)!=newResumePercent&&i.traktSeen!=1&&newResume>i.resume&&i.resume!=-2){//i.resume = -2 is file end
+
+                                    i.traktResume = newResumePercent;
+                                    i.resume =newResume;
+                                    ContentValues values = new ContentValues();
+                                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, i.traktResume );
+                                    values.put(VideoStore.Video.VideoColumns.BOOKMARK, i.resume );
+                                    if(i.lastTimePlayed <=0 )
+                                        values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, 1); //will need to be updated with trakt watched time (last paused is null...)
+                                    cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                        values, VideoStore.Video.VideoColumns._ID+" = '"+i.id+"'", null);
+                                }
                             }
-
                         }
-                        c.close();
-                  
                     }
-               
+                    c.close();
+                }
             }
         }
         return Trakt.Status.SUCCESS;
@@ -1414,8 +1406,8 @@ public class TraktService extends Service {
     private static final AppState.OnForeGroundListener sForeGroundListener = new AppState.OnForeGroundListener() {
         @Override
         public void onForeGroundState(Context applicationContext, boolean foreground) {
-            if (foreground)
-                TraktService.sync(applicationContext, TraktService.FLAG_SYNC_AUTO);
+        if (foreground)
+            TraktService.sync(applicationContext, TraktService.FLAG_SYNC_AUTO);
         }
     };
     public static void init() {

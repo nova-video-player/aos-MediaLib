@@ -220,7 +220,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 true, mContentObserver);
         // do a full import here to make sure that we have initial data
         // TODO is this useful to do it at each launch --> should not?
-        if (DBG) Log.d(TAG, "onCreate: MESSAGE_IMPORT_FULL, MARC is this useful?");
+        if (DBG) Log.d(TAG, "onCreate: MESSAGE_IMPORT_FULL, is this useful?");
         Message m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0);
         // assume this is the initial import although there could be data in the db already.
         ImportState.VIDEO.setState(State.INITIAL_IMPORT);
