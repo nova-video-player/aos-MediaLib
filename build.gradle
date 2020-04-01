@@ -129,8 +129,8 @@ dependencies {
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'
     // version aligned with external dependencies trakt-java thetvdb-java (check pom.xml)
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.0'
-    //implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:2.2.0'
-    api files('libs/thetvdb-java-2.2.1-SNAPSHOT.jar')
+    implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:2.3.0'
+    //api files('libs/thetvdb-java-2.2.1-SNAPSHOT.jar')
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.1.1'
     // official dependencies for cling 2.1.2 is https://github.com/4thline/cling/blob/master/distribution/src/dist/README.txt
     // no host discovery if switch from 2.1.1 to 2.1.2 supposed to be fixed in 2.1.1 https://github.com/4thline/cling/issues/164
