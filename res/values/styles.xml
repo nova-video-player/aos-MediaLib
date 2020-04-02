@@ -197,7 +197,7 @@
         <item name="android:drawablePadding">6dip</item>
     </style>
 
-    <style name="VideoInfoFileInfo.Smaller" parent="textAppearanceSmall"></style>
+    <style name="VideoInfoFileInfo.Smaller" parent="textAppearanceSmall" />
 
     <style name="HelpOverlayTextAppearance">
         <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
