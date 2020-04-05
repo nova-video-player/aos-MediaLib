@@ -67,6 +67,8 @@ import java.util.List;
 public class TraktService extends Service {
     private static final String TAG = "TraktService";
     private static final boolean DBG = false;
+    private static final boolean DBG_LISTENER = true;
+    private static final boolean DBG_NET = false;
 
     private SharedPreferences mPreferences;
     private boolean mNetworkStateListenerAdded = false;
@@ -1194,6 +1196,9 @@ public class TraktService extends Service {
         mBackgroundHandler = new TraktHandler(mBackgroundHandlerThread.getLooper(), this);
         mUiHandler = new Handler();
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        // handles foregroud/background
+        AppState.addOnForeGroundListener(mForeGroundListener);
+        handleForeGround(AppState.isForeGround());
         super.onCreate();
     }
 
@@ -1243,7 +1248,7 @@ public class TraktService extends Service {
                     }
                 }
             }
-            if (DBG) Log.d(TAG, "addListener: networkState.addPropertyChangeListener");
+            if (DBG_LISTENER) Log.d(TAG, "addListener: networkState.addPropertyChangeListener");
             networkState.addPropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = true;
         }
@@ -1255,7 +1260,7 @@ public class TraktService extends Service {
         mWaitNetworkStateListener = false;
 
         if (mNetworkStateListenerAdded) {
-            if (DBG) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
             networkState.removePropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = false;
         }
@@ -1280,6 +1285,15 @@ public class TraktService extends Service {
                     }
                 }
             };
+        // TODO MARC
+        /*
+E/AndroidRuntime:     at com.archos.environment.NetworkState.updateFrom(SourceFile:99)
+E/AndroidRuntime:     at com.archos.mediacenter.utils.trakt.TraktService$2.propertyChange(SourceFile:1283)
+E/AndroidRuntime:     at java.beans.PropertyChangeSupport.fire(PropertyChangeSupport.java:335)
+E/AndroidRuntime:     at java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:327)
+E/AndroidRuntime:     at java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:263)
+E/AndroidRuntime:     at java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:303)
+         */
 
         String action = intent != null ? intent.getAction() : null;
 
@@ -1412,5 +1426,27 @@ public class TraktService extends Service {
     };
     public static void init() {
         AppState.addOnForeGroundListener(sForeGroundListener);
+    }
+
+    private final AppState.OnForeGroundListener mForeGroundListener = new AppState.OnForeGroundListener() {
+        @Override
+        public void onForeGroundState(Context applicationContext, boolean foreground) {
+            if(foreground) {
+                if (DBG) Log.d(TAG, "mForeGroundListener: foreground");
+            }  else {
+                if (DBG) Log.d(TAG, "mForeGroundListener: background");
+            }
+            handleForeGround(foreground);
+        }
+    };
+
+    protected void handleForeGround(boolean foreground) {
+        if (foreground) {
+            if (DBG_NET) Log.d(TAG, "handleForeGround: app now in ForeGround");
+            addListener(false);
+        } else {
+            if (DBG_NET) Log.d(TAG, "handleForeGround: app now in BackGround");
+            removeListener();
+        }
     }
 }

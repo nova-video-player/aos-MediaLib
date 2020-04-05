@@ -83,6 +83,7 @@ public class VideoProvider extends ContentProvider {
     private static final boolean LOCAL_DBG = false;
     private static final boolean DBG = false;
     private static final boolean DBG_NET = false; // network state handling
+    private static final boolean DBG_LISTENER = true;
 
     private DbHolder mDbHolder;
     private Handler mThumbHandler;
@@ -93,6 +94,7 @@ public class VideoProvider extends ContentProvider {
 
     private NetworkState networkState = null;
     private PropertyChangeListener propertyChangeListener = null;
+    private boolean mNetworkStateListenerAdded = false;
 
     private static final int IMAGE_THUMB = 2;
     // yes max retry of 5 is not enough I saw it fail and succeed at 7...
@@ -110,8 +112,7 @@ public class VideoProvider extends ContentProvider {
     private static final String IMAGE_THUMB_FOLDER_NAME = "image_thumbs";
     public static final String PREFERENCE_CREATE_REMOTE_THUMBS = "pref_create_remote_thumbs";
 
-    public VideoProvider() {
-    }
+    public VideoProvider() { }
 
     @Override
     public boolean onCreate() {
@@ -1390,7 +1391,6 @@ public class VideoProvider extends ContentProvider {
         }
     };
 
-    // TODO MARC: see if trakt has handleForeGround or not for not being wakeup by intent
     protected void handleForeGround(boolean foreground) {
         final Context context = getContext();
         if (foreground) {
@@ -1398,17 +1398,29 @@ public class VideoProvider extends ContentProvider {
             UpnpServiceManager.restartUpnpServiceIfWasStartedBefore();
             // force check
             RemoteStateService.start(context);
-            if (propertyChangeListener != null) {
-                if (DBG) Log.d(TAG, "handleForeGround: networkState.addPropertyChangeListener");
-                networkState.addPropertyChangeListener(propertyChangeListener);
-            }
+            addNetworkListener();
         } else {
             if (DBG_NET) Log.d(TAG, "App now in BackGround");
             UpnpServiceManager.stopServiceIfLaunched();
-            if (propertyChangeListener != null) {
-                if (DBG) Log.d(TAG, "handleForeGround: networkState.removePropertyChangeListener");
-                networkState.removePropertyChangeListener(propertyChangeListener);
-            }
+            removeNetworkListener();
+        }
+    }
+
+    private void addNetworkListener() {
+        if (networkState == null) networkState = NetworkState.instance(getContext());
+        if (!mNetworkStateListenerAdded && propertyChangeListener != null) {
+            if (DBG_LISTENER) Log.d(TAG, "addNetworkListener: networkState.addPropertyChangeListener");
+            networkState.addPropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = true;
+        }
+    }
+
+    private void removeNetworkListener() {
+        if (networkState == null) networkState = NetworkState.instance(getContext());
+        if (mNetworkStateListenerAdded && propertyChangeListener != null) {
+            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            networkState.removePropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = false;
         }
     }
 }

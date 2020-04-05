@@ -63,9 +63,12 @@ public class UpnpServiceManager {
 
     private NetworkState networkState = null;
     private PropertyChangeListener propertyChangeListener = null;
+    private boolean mNetworkStateListenerAdded = false;
 
     private static final String TAG = "UpnpServiceManager";
     private static final boolean DBG = false;
+    private static final boolean DBG_LISTENER = true;
+
     /**
      * NOTE: this does not work like the SMB discovery.
      * We get server updates (found, removed, renamed, etc)  1 minute
@@ -153,8 +156,7 @@ public class UpnpServiceManager {
                         }
                     }
                 };
-            if (DBG) Log.d(TAG, "startUpnpServiceIfNotStartedYet: networkState.addPropertyChangeListener");
-            networkState.addPropertyChangeListener(propertyChangeListener);
+            addNetworkListener();
             mHasStarted = true;
             mState = State.NOT_RUNNING;
             if (DBG) Log.d(TAG, "State NOT_RUNNING");
@@ -231,8 +233,7 @@ public class UpnpServiceManager {
         }
         if(mHasStarted) {
             try {
-                if (DBG) Log.d(TAG, "stop: networkState.removePropertyChangeListener");
-                networkState.removePropertyChangeListener(propertyChangeListener);
+                removeNetworkListener();
                 mDevices.clear();
                 if (mAndroidUpnpService != null)
                     mContext.unbindService(mServiceConnection);
@@ -251,7 +252,6 @@ public class UpnpServiceManager {
         // If there are already some devices found we notify ths new listener right away
         // (well actually not right away in this call since it's using a post to the UI handler)
         informListenersOfDeviceListUpdate(Collections.singletonList(listener));
-
     }
 
     public void removeListener(Listener listener) {
@@ -472,5 +472,23 @@ public class UpnpServiceManager {
     public static Uri getDeviceUri(Device device) {
         // Root directory is always "0"
         return Uri.parse("upnp://" + device.hashCode() + "/0");
+    }
+
+    private void addNetworkListener() {
+        if (networkState == null) networkState = NetworkState.instance(mContext);
+        if (!mNetworkStateListenerAdded && propertyChangeListener != null) {
+            if (DBG_LISTENER) Log.d(TAG, "addNetworkListener: networkState.addPropertyChangeListener");
+            networkState.addPropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = true;
+        }
+    }
+
+    private void removeNetworkListener() {
+        if (networkState == null) networkState = NetworkState.instance(mContext);
+        if (mNetworkStateListenerAdded && propertyChangeListener != null) {
+            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            networkState.removePropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = false;
+        }
     }
 }
