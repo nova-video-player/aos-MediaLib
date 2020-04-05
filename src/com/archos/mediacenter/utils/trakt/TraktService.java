@@ -1285,15 +1285,6 @@ public class TraktService extends Service {
                     }
                 }
             };
-        // TODO MARC
-        /*
-E/AndroidRuntime:     at com.archos.environment.NetworkState.updateFrom(SourceFile:99)
-E/AndroidRuntime:     at com.archos.mediacenter.utils.trakt.TraktService$2.propertyChange(SourceFile:1283)
-E/AndroidRuntime:     at java.beans.PropertyChangeSupport.fire(PropertyChangeSupport.java:335)
-E/AndroidRuntime:     at java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:327)
-E/AndroidRuntime:     at java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:263)
-E/AndroidRuntime:     at java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:303)
-         */
 
         String action = intent != null ? intent.getAction() : null;
 
