@@ -76,7 +76,7 @@ public class UpnpServiceManager {
      * but the search need to "revived" from time to time =>  1 minute
      * (Maybe can be less often, need to test)
      */
-    private static final int SERVER_SEARCH_PERIOD_MS = 60*1000; //
+    private static final int SERVER_SEARCH_PERIOD_MS = 5*60*1000; // try 5 minutes for now
     private static UpnpServiceManager singleton = null;
 
     private enum State {
