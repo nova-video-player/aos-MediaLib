@@ -1234,6 +1234,7 @@ public class TraktService extends Service {
 
             if (!waited) {
                 // if connexion is ok on our side, wait to avoid a flood
+                if (mNetworkState == null) mNetworkState = NetworkState.instance(getApplicationContext());
                 mNetworkState.updateFrom();
                 if (mNetworkState.isConnected())
                     mLastTimeNetworkAdded = System.currentTimeMillis();
@@ -1277,6 +1278,7 @@ public class TraktService extends Service {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getOldValue() != evt.getNewValue()) {
                         if (DBG) Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                        if (mNetworkState == null) mNetworkState = NetworkState.instance(getApplicationContext());
                         mNetworkState.updateFrom();
                         if (mNetworkState.isConnected()) {
                             mBackgroundHandler.removeMessages(MSG_NETWORK_ON);
