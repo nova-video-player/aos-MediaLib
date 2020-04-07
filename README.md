@@ -5,5 +5,4 @@ Please see the entry point repo: https://github.com/nova-video-player/aos-AVP
 
 This repo contains avos player java interfaces and scrapping support.
 
-NOVA is a fork of the open source project Archos Video Player Community Edition available here https://github.c
-om/archos-sa/aos-AVP
+NOVA is a fork of the open source project Archos Video Player Community Edition available here https://github.com/archos-sa/aos-AVP
