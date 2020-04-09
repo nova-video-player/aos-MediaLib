@@ -117,10 +117,10 @@ dependencies {
     // trakt depedencies: we imported the source code
     //api 'com.uwetrottmann.trakt5:trakt-java:6.1.0'
     //api files('libs/trakt-java.jar')
-    implementation ('com.uwetrottmann.trakt5:trakt-java:6.4.0') {
+    implementation ('com.uwetrottmann.trakt5:trakt-java:6.5.0') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
-    implementation 'com.jakewharton.threetenabp:threetenabp:1.2.1'
+    implementation 'com.jakewharton.threetenabp:threetenabp:1.2.3'
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
     api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.12'
