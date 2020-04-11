@@ -18,7 +18,7 @@
     <string name="nfo_export_category">Exportar información multimedia</string>
     <string name="nfo_export_auto_title">Exportar automáticamente después de la búsqueda</string>
     <string name="nfo_export_manual_title">Exportar vídeos ya analizados</string>
-    <string name="nfo_export_auto_summary">Exporta automáticamente archivos .nfo después de una búsqueda online exitosa</string>
+    <string name="nfo_export_auto_summary">Exporta automáticamente archivos .nfo después de una búsqueda online correcta</string>
     <string name="nfo_export_manual_summary">Exporta archivos .nfo de todos los vídeos ya analizados</string>
     <string name="nfo_export_button">Exportar .nfo</string>
     <string name="nfo_export_folder">Exportar todo en esta carpeta a .nfo</string>
@@ -68,8 +68,8 @@
     <string name="tv_show_genre_drama">Drama</string>
     <string name="tv_show_genre_family">Familiar</string>
     <string name="tv_show_genre_fantasy">Fantasía</string>
-    <string name="tv_show_genre_food">Alimentos</string>
-    <string name="tv_show_genre_game_show">Juegos</string>
+    <string name="tv_show_genre_food">Comida</string>
+    <string name="tv_show_genre_game_show">Concurso</string>
     <string name="tv_show_genre_home_garden">Hogar y Jardín</string>
     <string name="tv_show_genre_horror">Terror</string>
     <string name="tv_show_genre_mini_series">Mini serie</string>
@@ -93,6 +93,6 @@
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Artista</string>
     <string name="scraping_in_progress">Escrapeado en progreso</string>
-    <string name="remaining_videos_to_process">Archivos de medios por ser procesados:</string>
+    <string name="remaining_videos_to_process">Archivos restantes a ser procesados:</string>
     <string name="video_store_import">Importar archivos de medios locales</string>
 </resources>
