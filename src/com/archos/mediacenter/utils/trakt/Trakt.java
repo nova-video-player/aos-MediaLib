@@ -473,7 +473,7 @@ public class Trakt {
         } else {
             editor.remove(KEY_TRAKT_REFRESH_TOKEN);
         }
-        editor.commit();
+        editor.apply();
     }
 
     private String getRefreshTokenFromPreferences(SharedPreferences defaultSharedPreferences) {
