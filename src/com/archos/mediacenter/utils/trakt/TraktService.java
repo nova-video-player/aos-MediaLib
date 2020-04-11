@@ -95,6 +95,7 @@ public class TraktService extends Service {
 
     private static final String INTENT_ACTION_WATCHING = "archos.mediacenter.utils.trakt.action.WATCHING";
     private static final String INTENT_ACTION_WATCHING_STOP = "archos.mediacenter.utils.trakt.action.WATCHING_STOP";
+    private static final String INTENT_ACTION_WATCHING_PAUSE = "archos.mediacenter.utils.trakt.action.WATCHING_PAUSE";
     private static final String INTENT_ACTION_MARK_AS = "archos.mediacenter.utils.trakt.action.MARK_AS";
     private static final String INTENT_ACTION_WIPE = "archos.mediacenter.utils.trakt.action.WIPE";
     private static final String INTENT_ACTION_WIPE_COLLECTION = "archos.mediacenter.utils.trakt.action.WIPE_COLLECTION";
@@ -142,6 +143,7 @@ public class TraktService extends Service {
 
         @Override
         public void handleMessage(Message msg) {
+            if (DBG) Log.d(TAG, "handleMessage msg=" + msg.toString());
             if (msg.what == MSG_INTENT) {
                 Intent intent = (Intent) msg.obj;
                 String action = intent.getAction();
@@ -187,8 +189,37 @@ public class TraktService extends Service {
                     } else if (action.equals(INTENT_ACTION_WATCHING_STOP)) {
                         final float progress = intent.getFloatExtra("progress", -1);
                         if (DBG) Log.d(TAG, "postWatchingStop progress=" + progress);
+                        if (videoInfo == null && videoID >= 0)
+                            videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
+                        if (videoInfo != null) {
+                            if (Trakt.shouldMarkAsSeen(progress)) {
+                                traktAction = Trakt.ACTION_SEEN;
+                                // get last activity before doing some activity on trakt
+                                result = mTrakt.getLastActivity();
+                                lastActivityFlag = getFlagsFromTraktLastActivity(result);
+                            }
+                            if (result == null || result.status != Trakt.Status.ERROR_NETWORK) {
+
+                                final float finalProgress = progress >= 0 ? progress : -progress;
+                                result = mTrakt.postWatchingStop(videoInfo, finalProgress);
+                                if (videoInfo.traktResume < 0 && (result.status == Trakt.Status.SUCCESS || result.status == Trakt.Status.SUCCESS_ALREADY)) {
+                                    //  videoinf.traktresume can be negative, positive value means sync ok
+                                    videoInfo.traktResume = Math.abs(videoInfo.traktResume);
+                                    ContentValues values = new ContentValues();
+                                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, videoInfo.traktResume);
+                                    getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                            values, VideoStore.Video.VideoColumns._ID + " = " + videoInfo.id, null);
+
+                                }
+                            }
+                            if (DBG) Log.d(TAG, "postWatchingStop, result: " + result.status);
+                            mBusy = false;
+                        }
+                    } else if (action.equals(INTENT_ACTION_WATCHING_PAUSE)) {
+                        final float progress = intent.getFloatExtra("progress", -1);
+                        if (DBG) Log.d(TAG, "postWatchingPause progress=" + progress);
                         if(videoInfo == null&&videoID>=0)
-                        	videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
+                            videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
                             if (Trakt.shouldMarkAsSeen(progress)) {
                                 traktAction = Trakt.ACTION_SEEN;
@@ -198,20 +229,19 @@ public class TraktService extends Service {
                             }
                             if (result == null || result.status != Trakt.Status.ERROR_NETWORK){
 
-                            	final float finalProgress = progress>=0?progress:-progress;
-                            	result = mTrakt.postWatchingStop(videoInfo, finalProgress);
+                                final float finalProgress = progress>=0?progress:-progress;
+                                result = mTrakt.postWatchingPause(videoInfo, finalProgress);
                                 if(videoInfo.traktResume<0&&(result.status== Trakt.Status.SUCCESS || result.status== Trakt.Status.SUCCESS_ALREADY)){
-                                //  videoinf.traktresume can be negative, positive value means sync ok
-                                	videoInfo.traktResume = Math.abs(videoInfo.traktResume);
-                                	ContentValues values = new ContentValues();
-                                	values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, videoInfo.traktResume );
-                                	getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                			values, VideoStore.Video.VideoColumns._ID+" = "+videoInfo.id,null);
+                                    //  videoinf.traktresume can be negative, positive value means sync ok
+                                    videoInfo.traktResume = Math.abs(videoInfo.traktResume);
+                                    ContentValues values = new ContentValues();
+                                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, videoInfo.traktResume );
+                                    getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                            values, VideoStore.Video.VideoColumns._ID+" = "+videoInfo.id,null);
 
                                 }
-                           }
-
-                            if (DBG) Log.d(TAG, "top, result: " + result.status);
+                            }
+                            if (DBG) Log.d(TAG, "postWatchingPause, result: " + result.status);
                             mBusy = false;
                         }
                     } else if (action.equals(INTENT_ACTION_MARK_AS)) {
@@ -1383,39 +1413,64 @@ public class TraktService extends Service {
             return intent;
         }
         public void watching(long videoID, float progress) {
+            if (DBG) Log.d(TAG, "watching: send INTENT_ACTION_WATCHING");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoID, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watchingStop(long videoID, float progress) {
+            if (DBG) Log.d(TAG, "watchingStop: send INTENT_ACTION_WATCHING_STOP");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoID, progress, null);
+            // do not check if isForeGround in this specific case in order to allow posting watch status when exiting
+            // video playback with home button to save state
+            //if (AppState.isForeGround()) mContext.startService(intent);
+            mContext.startService(intent);
+        }
+        public void watchingPause(long videoID, float progress) {
+            if (DBG) Log.d(TAG, "watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
+            Intent intent = prepareIntent(INTENT_ACTION_WATCHING_PAUSE, videoID, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watching(VideoDbInfo videoInfo, float progress) {
+            if (DBG) Log.d(TAG, "watching: send INTENT_ACTION_WATCHING");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoInfo, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watchingStop(VideoDbInfo videoInfo, float progress) {
+            if (DBG) Log.d(TAG, "watchingStop: send INTENT_ACTION_WATCHING_STOP");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoInfo, progress, null);
+            // do not check if isForeGround in this specific case in order to allow posting watch status when exiting
+            // video playback with home button to save state
+            //if (AppState.isForeGround()) mContext.startService(intent);
+            mContext.startService(intent);
+        }
+        public void watchingPause(VideoDbInfo videoInfo, float progress) {
+            if (DBG) Log.d(TAG, "watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
+            Intent intent = prepareIntent(INTENT_ACTION_WATCHING_PAUSE, videoInfo, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void markAs(VideoDbInfo videoInfo, String traktAction) {
+            if (DBG) Log.d(TAG, "markAs: send INTENT_ACTION_MARK_AS");
             Intent intent = prepareIntent(INTENT_ACTION_MARK_AS, videoInfo, -1, traktAction);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void wipe() {
+            if (DBG) Log.d(TAG, "wipe: send INTENT_ACTION_WIPE");
             Intent intent = prepareIntent(INTENT_ACTION_WIPE, null, -1, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void wipeCollection() {
+            if (DBG) Log.d(TAG, "wipeCollection: send INTENT_ACTION_WIPE_COLLECTION");
             Intent intent = prepareIntent(INTENT_ACTION_WIPE_COLLECTION, null, -1, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void fullSync() {
+            if (DBG) Log.d(TAG, "fullSync: send INTENT_ACTION_SYNC");
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", FLAG_SYNC_FULL);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void sync(int flag) {
+            if (DBG) Log.d(TAG, "sync: send INTENT_ACTION_SYNC");
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", flag);
             if (AppState.isForeGround()) mContext.startService(intent);

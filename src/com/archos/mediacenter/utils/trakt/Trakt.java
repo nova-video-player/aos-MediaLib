@@ -418,12 +418,16 @@ public class Trakt {
         return postWatching("stop", videoInfo, progress, 0);
     }
 
+    public Result postWatchingPause(final VideoDbInfo videoInfo, float progress) {
+        return postWatching("pause", videoInfo, progress, 0);
+    }
+
     public Result postWatching(VideoDbInfo videoInfo, float progress){
     	return  postWatching("start", videoInfo, progress, 0);
     }
 
     public Result postWatching(final String action,final VideoDbInfo videoInfo, final float progress, final int trial) {
-        if (DBG) Log.d(TAG, "postWatching progress=" + progress + ", trial=" + trial);
+        if (DBG) Log.d(TAG, "postWatching for action=" + action + ", progress=" + progress + ", trial=" + trial);
         PlaybackResponse playbackResponse = null;
         AuthParam param = fillParam(videoInfo);
         if (videoInfo.isShow) {
@@ -432,16 +436,29 @@ public class Trakt {
             SyncEpisode se = new SyncEpisode();
             EpisodeIds ids = new EpisodeIds();
             if(showParam.episode_tvdb_id!=null) {
-                if (DBG) Log.d(TAG, "this is a show with id " + showParam.episode_tvdb_id);
+                if (DBG) Log.d(TAG, "postWatching: showid=" + showParam.episode_tvdb_id);
                 ids.tvdb = Integer.valueOf(showParam.episode_tvdb_id);
             }
             se.id(ids);
             ScrobbleProgress ep = new ScrobbleProgress(se, progress, "", "");
-            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids + " season " + se.season + " number " + se.number);
-            if(action.equals("start"))
-                playbackResponse = exec(mTraktV2.scrobble().startWatching(ep));
-            else
-                playbackResponse = exec(mTraktV2.scrobble().stopWatching(ep));
+            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids.tvdb);
+            switch (action) {
+                case "start":
+                    if (DBG) Log.d(TAG, "postWatching: sending startWatching");
+                    playbackResponse = exec(mTraktV2.scrobble().startWatching(ep));
+                    break;
+                case "stop":
+                    if (DBG) Log.d(TAG, "postWatching: sending stopWatching");
+                    playbackResponse = exec(mTraktV2.scrobble().stopWatching(ep));
+                    break;
+                case "pause":
+                    if (DBG) Log.d(TAG, "postWatching: sending pauseWatching");
+                    playbackResponse = exec(mTraktV2.scrobble().pauseWatching(ep));
+                    break;
+                case "default":
+                    Log.w(TAG, "postWatching: not supported action!");
+                    break;
+            }
         } else {
             MovieWatchingParam movieParam = (MovieWatchingParam) param;
             movieParam.progress = (int) progress;
@@ -453,10 +470,23 @@ public class Trakt {
             sm.id(mi);
             ScrobbleProgress mp = new ScrobbleProgress(sm, progress, "", "");
             if (DBG) Log.d(TAG, "postWatching: MovieProgress=" + mp);
-            if(action.equals("start"))
-                playbackResponse = exec(mTraktV2.scrobble().startWatching(mp));
-            else
-                playbackResponse = exec(mTraktV2.scrobble().stopWatching(mp));
+            switch (action) {
+                case "start":
+                    if (DBG) Log.d(TAG, "postWatching: sending startWatching");
+                    playbackResponse = exec(mTraktV2.scrobble().startWatching(mp));
+                    break;
+                case "stop":
+                    if (DBG) Log.d(TAG, "postWatching: sending stopWatching");
+                    playbackResponse = exec(mTraktV2.scrobble().stopWatching(mp));
+                    break;
+                case "pause":
+                    if (DBG) Log.d(TAG, "postWatching: sending pauseWatching");
+                    playbackResponse = exec(mTraktV2.scrobble().pauseWatching(mp));
+                    break;
+                case "default":
+                    Log.w(TAG, "postWatching: not supported action!");
+                    break;
+            }
         }
         mWatchingSuccess = true;
         if (playbackResponse == null) {
