@@ -550,11 +550,14 @@ public class Trakt {
         return exec(call, MAX_TRIAL);
     }
     public <T> T exec(retrofit2.Call<T> call, int remaining) {
+        if (DBG) Log.d(TAG, "exec: call, remaining trials=" + remaining);
         try {
             retrofit2.Response<T> res = call.execute();
-            if (res.errorBody() != null) {
-                Log.e(TAG, "exec request " + res.errorBody().string(), new Throwable());
-                if (res.code() == 401) {
+            if (!res.isSuccessful()) {
+                Log.e(TAG, "exec request error code is " + res.code(), new Throwable());
+                // TODO check this new retry case with 409
+                // 409	Conflict - resource already created is happening often but no retry...
+                if (res.code() == 401 || res.code() == 409 ) {
                     if (remaining > 0) {
                         refreshAccessToken();
                         return exec(call, 0);
