@@ -292,13 +292,15 @@ public class TraktService extends Service {
                     sync(FLAG_SYNC_AUTO);
                 }
             } else if (msg.what == MSG_REGISTER_RECEIVER) {
-                addListener(true);
+                //addListener(true);
+                addListener();
                 return;
             }
 
             if (mTrakt != null) {
                 if (needSendCache(TraktService.this)) {
-                    addListener(false);
+                    //addListener(false);
+                    addListener();
                 } else {
                     removeListener();
                 }
@@ -1224,6 +1226,7 @@ public class TraktService extends Service {
         super.onDestroy();
     }
 
+    /*
     private void addListener(boolean waited) {
         if (waited) {
             mWaitNetworkStateListener = false;
@@ -1261,6 +1264,25 @@ public class TraktService extends Service {
         mWaitNetworkStateListener = false;
 
         if (mNetworkStateListenerAdded) {
+            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            networkState.removePropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = false;
+        }
+    }
+     */
+
+    private void addListener() {
+        if (networkState == null) networkState = NetworkState.instance(getApplicationContext());
+        if (!mNetworkStateListenerAdded && propertyChangeListener != null) {
+            if (DBG_LISTENER) Log.d(TAG, "addNetworkListener: networkState.addPropertyChangeListener");
+            networkState.addPropertyChangeListener(propertyChangeListener);
+            mNetworkStateListenerAdded = true;
+        }
+    }
+
+    private void removeListener() {
+        if (networkState == null) networkState = NetworkState.instance(getApplicationContext());
+        if (mNetworkStateListenerAdded && propertyChangeListener != null) {
             if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
             networkState.removePropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = false;
@@ -1436,7 +1458,8 @@ public class TraktService extends Service {
     protected void handleForeGround(boolean foreground) {
         if (foreground) {
             if (DBG_NET) Log.d(TAG, "handleForeGround: app now in ForeGround");
-            addListener(false);
+            //addListener(false);
+            addListener();
         } else {
             if (DBG_NET) Log.d(TAG, "handleForeGround: app now in BackGround");
             removeListener();
