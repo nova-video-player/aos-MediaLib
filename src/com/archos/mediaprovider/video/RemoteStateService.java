@@ -29,6 +29,7 @@ import android.util.Pair;
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
+import com.archos.mediacenter.utils.AppState;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
@@ -76,6 +77,11 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
     @Override
     protected void onHandleIntent(Intent intent) {
         if (DBG) Log.d(TAG, "onHandleIntent " + intent);
+        // prevent to be executed if app is in background
+        if (!AppState.isForeGround()) {
+            Log.w(TAG, "onHandleIntent: app is in background exiting!");
+            return;
+        }
         if (ACTION_CHECK_SMB.equals(intent.getAction())) {
             NetworkState state = NetworkState.instance(this);
             state.updateFrom();

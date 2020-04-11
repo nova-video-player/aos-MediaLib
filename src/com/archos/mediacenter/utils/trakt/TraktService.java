@@ -1322,7 +1322,12 @@ public class TraktService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (DBG) Log.d(TAG, "Received start id " + startId + ": " + intent);
-
+        // prevent to be executed if app is in background
+        if (!AppState.isForeGround()) {
+            Log.w(TAG, "onStatCommand: app is in background exiting!");
+            removeListener();
+            return START_NOT_STICKY;
+        }
         networkState = NetworkState.instance(getApplicationContext());
         if (propertyChangeListener == null)
             propertyChangeListener = new PropertyChangeListener() {
