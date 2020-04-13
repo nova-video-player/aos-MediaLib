@@ -26,7 +26,7 @@ configurations {
 
 android {
     compileSdkVersion 29
-    buildToolsVersion '29.0.2'
+    buildToolsVersion '29.0.3'
 
     gradle.startParameter.getTaskNames().each { task ->
         if (task.contains("Open")) {
@@ -109,7 +109,7 @@ dependencies {
     implementation 'androidx.core:core:1.2.0'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
     implementation 'androidx.media:media:1.1.0'
-    implementation 'androidx.fragment:fragment:1.2.3'
+    implementation 'androidx.fragment:fragment:1.2.4'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'cz.msebera.android:httpclient:4.5.8'
@@ -126,7 +126,7 @@ dependencies {
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.12'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'
     // version aligned with external dependencies trakt-java thetvdb-java (check pom.xml)
-    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.1'
     implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:2.3.0'
     //api files('libs/thetvdb-java-2.2.1-SNAPSHOT.jar')
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.1.1'
