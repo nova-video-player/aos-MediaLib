@@ -153,7 +153,7 @@ public class MediaFactory {
     public static IMediaPlayer createPlayer(Context ctx, boolean forceSoftwareDecoding) {
         if (preInit(ctx, true, forceSoftwareDecoding)) {
             if (DBG) Log.d(TAG, "new AvosMediaPlayer");
-            return new AvosMediaPlayer();
+            return new ExoMediaPlayer(ctx.getApplicationContext());
         } else {
             if (DBG) Log.d(TAG, "new AndroidMediaPlayer");
             return new AndroidMediaPlayer(ctx);
