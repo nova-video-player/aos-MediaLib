@@ -150,5 +150,5 @@ dependencies {
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
-
+    implementation 'com.google.android.exoplayer:exoplayer:2.11.4'
 }
