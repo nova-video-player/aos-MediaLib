@@ -14,16 +14,9 @@
 
 package com.archos.medialib;
 
-
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.PowerManager;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -33,29 +26,9 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 
-public class AvosMediaPlayer implements IMediaPlayer {
+public class AvosMediaPlayer extends GenericMediaPlayer {
     private static final String TAG = "AvosMediaPlayer";
     private static final boolean DBG = false;
-
-    private long mMediaPlayerHandle = 0;     // Read-only, reserved for JNI
-    private long mNativeWindowHandle = 0;    // Read-only, reserved for JNI
-
-    private IMediaPlayer.OnPreparedListener mOnPreparedListener = null;
-    private IMediaPlayer.OnCompletionListener mOnCompletionListener = null;
-    private IMediaPlayer.OnInfoListener mOnInfoListener = null;
-    private IMediaPlayer.OnErrorListener mOnErrorListener = null;
-    private IMediaPlayer.OnBufferingUpdateListener mOnBufferingUpdateListener = null;
-    private IMediaPlayer.OnRelativePositionUpdateListener mOnRelativePositionUpdateListener = null;
-    private IMediaPlayer.OnSeekCompleteListener mOnSeekCompleteListener = null;
-    private IMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = null;
-    private IMediaPlayer.OnNextTrackListener mOnNextTrackListener = null;
-    private IMediaPlayer.OnSubtitleListener mOnSubtitleListener = null;
-    private EventHandler mEventHandler;
-    private PowerManager.WakeLock mWakeLock = null;
-    private boolean mScreenOnWhilePlaying;
-    private SurfaceHolder mSurfaceHolder;
-    private boolean mStayAwake;
-    private SmbProxy mSmbProxy = null;
 
     private native void create(Object weakReference);
 
@@ -83,68 +56,12 @@ public class AvosMediaPlayer implements IMediaPlayer {
     public native void setDataSource(String path, String[] keys, String[] values)
             throws IOException, IllegalArgumentException, SecurityException, IllegalStateException;
 
-    private native void setDataSourceFD(FileDescriptor fd, long offset, long length)
+    public native void setDataSourceFD(FileDescriptor fd, long offset, long length)
             throws IOException, IllegalArgumentException, IllegalStateException;
     
     public void setDataSource(FileDescriptor fd, long offset, long length)
             throws IOException, IllegalArgumentException, IllegalStateException {
         setDataSourceFD(fd, offset, length);
-    }
-
-    public void setDataSource(Context context, Uri uri, Map<String, String> headers) throws IOException,
-            IllegalArgumentException, SecurityException, IllegalStateException {
-
-        String scheme = uri.getScheme();
-        if (SmbProxy.needToStream(scheme)){
-            mSmbProxy = SmbProxy.setDataSource(uri, this, null);
-            return;
-        }
-
-        if(scheme == null || scheme.equals("file")) {
-            String uriString = uri.getPath();
-            if (uri.getQuery() != null)
-		    uriString += "?"+uri.getQuery();
-            setDataSource2(uriString, headers);
-            return;
-        }
-
-        AssetFileDescriptor fd = null;
-        try {
-            ContentResolver resolver = context.getContentResolver();
-            fd = resolver.openAssetFileDescriptor(uri, "r");
-            if (fd == null) {
-                return;
-            }
-            // Note: using getDeclaredLength so that our behavior is the same
-            // as previous versions when the content provider is returning
-            // a full file.
-            if (fd.getDeclaredLength() < 0) {
-                setDataSource(fd.getFileDescriptor());
-            } else {
-                setDataSource(fd.getFileDescriptor(), fd.getStartOffset(), fd.getDeclaredLength());
-            }
-            return;
-        } catch (SecurityException ex) {
-        } catch (IOException ex) {
-        } finally {
-            if (fd != null) {
-                fd.close();
-            }
-        }
-
-        Log.d(TAG, "Couldn't open file on client side, trying server side");
-        setDataSource2(uri.toString(), headers);
-        return;
-    }
-
-    public void setDataSource(Context context, Uri uri) throws IOException,
-            IllegalArgumentException, SecurityException, IllegalStateException {
-        setDataSource(context, uri, null);
-    }
-
-    public void setDataSource(String path) throws IOException, IllegalArgumentException,
-            SecurityException, IllegalStateException {
-         setDataSource2(path, null);
     }
 
     public void setDataSource2(String path, Map<String, String> headers) throws IOException,
@@ -169,29 +86,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
         }
 
         setDataSource(path, keys, values);
-    }
-
-    public void setDataSource(FileDescriptor fd) throws IOException, IllegalArgumentException,
-            IllegalStateException {
-        setDataSource(fd, 0, 0);  
-    }
-
-    private void updateSurfaceScreenOn() {
-        if (mSurfaceHolder != null) {
-            mSurfaceHolder.setKeepScreenOn(mScreenOnWhilePlaying && mStayAwake);
-        }
-    }
-
-    private void stayAwake(boolean awake) {
-        if (mWakeLock != null) {
-            if (awake && !mWakeLock.isHeld()) {
-                mWakeLock.acquire();
-            } else if (!awake && mWakeLock.isHeld()) {
-                mWakeLock.release();
-            }
-        }
-        mStayAwake = awake;
-        updateSurfaceScreenOn();
     }
 
     private native void setVideoSurface(Surface surface);
@@ -225,28 +119,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     private native void nativeReset();
 
-    public void setWakeMode(Context context, int mode) {
-        boolean washeld = false;
-        if (mWakeLock != null) {
-            if (mWakeLock.isHeld()) {
-                washeld = true;
-                mWakeLock.release();
-            }
-            mWakeLock = null;
-        }
-
-        PowerManager pm = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(mode|PowerManager.ON_AFTER_RELEASE, MediaPlayer.class.getName());
-        mWakeLock.setReferenceCounted(false);
-        if (washeld) {
-            mWakeLock.acquire();
-        }
-    }
-
-    public void setScreenOnWhilePlaying(boolean screenOn) {
-        mScreenOnWhilePlaying = screenOn;
-    }
-
     private native final byte[] getMetadata();
 
     public MediaMetadata getMediaMetadata(boolean update_only, boolean apply_filter) {
@@ -262,70 +134,21 @@ public class AvosMediaPlayer implements IMediaPlayer {
         return data;
     }
 
-    public void setAudioStreamType(int streamtype) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    public void setVolume(float leftVolume, float rightVolume) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    public void setOnPreparedListener(IMediaPlayer.OnPreparedListener listener) {
-        mOnPreparedListener = listener;
-    }
-
-    public void setOnCompletionListener(IMediaPlayer.OnCompletionListener listener) {
-        mOnCompletionListener = listener;
-    }
-
-    public void setOnInfoListener(IMediaPlayer.OnInfoListener listener) {
-        mOnInfoListener = listener;
-    }
-
-    public void setOnErrorListener(IMediaPlayer.OnErrorListener listener) {
-        mOnErrorListener = listener;
-    }
-
-    public void setOnBufferingUpdateListener(IMediaPlayer.OnBufferingUpdateListener listener) {
-        mOnBufferingUpdateListener = listener;
-    }
-
-    public void setOnRelativePositionUpdateListener(IMediaPlayer.OnRelativePositionUpdateListener listener) {
-        mOnRelativePositionUpdateListener = listener;
-    }
-
-    public void setOnSeekCompleteListener(IMediaPlayer.OnSeekCompleteListener listener) {
-        mOnSeekCompleteListener = listener;
-    }
-
-    public void setOnVideoSizeChangedListener(IMediaPlayer.OnVideoSizeChangedListener listener) {
-        mOnVideoSizeChangedListener = listener;
-    }
-
-    public void setOnNextTrackListener(IMediaPlayer.OnNextTrackListener listener) {
-        mOnNextTrackListener = listener;
-    }
-
-    public void setOnSubtitleListener(OnSubtitleListener listener) {
-        mOnSubtitleListener = listener;
-    }
-
     private native void nativeRelease();
+
     public void release() {
         stayAwake(false);
         updateSurfaceScreenOn();
-        mOnPreparedListener = null;
-        mOnCompletionListener = null;
-        mOnInfoListener = null;
-        mOnErrorListener = null;
-        mOnBufferingUpdateListener = null;
-        mOnRelativePositionUpdateListener = null;
-        mOnSeekCompleteListener = null;
-        mOnVideoSizeChangedListener = null;
-        mOnNextTrackListener = null;
-        mOnSubtitleListener = null;
+        setOnPreparedListener(null);
+        setOnCompletionListener(null);
+        setOnInfoListener(null);
+        setOnErrorListener(null);
+        setOnBufferingUpdateListener(null);
+        setOnRelativePositionUpdateListener(null);
+        setOnSeekCompleteListener(null);
+        setOnVideoSizeChangedListener(null);
+        setOnNextTrackListener(null);
+        setOnSubtitleListener(null);
         nativeRelease();
         if (mSmbProxy != null) {
             mSmbProxy.stop();
@@ -380,11 +203,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     public native int getAudioSessionId();
 
-    @Override
-    public int doesCurrentFileExists() {
-        return mSmbProxy!=null?mSmbProxy.doesCurrentFileExists():-1;
-    }
-
     public native void checkSubtitles();
 
     public native boolean setSubtitleTrack(int stream);
@@ -422,122 +240,4 @@ public class AvosMediaPlayer implements IMediaPlayer {
         }
     }
 
-    /* Do not change these values without updating their counterparts
-     * in include/media/mediaplayer.h!
-     */
-    private static final int MEDIA_NOP = 0; // interface test message
-    private static final int MEDIA_PREPARED = 1;
-    private static final int MEDIA_PLAYBACK_COMPLETE = 2;
-    private static final int MEDIA_BUFFERING_UPDATE = 3;
-    private static final int MEDIA_SEEK_COMPLETE = 4;
-    private static final int MEDIA_SET_VIDEO_SIZE = 5;
-    private static final int MEDIA_RELATIVE_POSITION_UPDATE = 6;
-    private static final int MEDIA_NEXT_TRACK = 7;
-    private static final int MEDIA_SET_VIDEO_ASPECT = 8;
-    private static final int MEDIA_ERROR = 100;
-    private static final int MEDIA_INFO = 200;
-    private static final int MEDIA_SUBTITLE = 1000;
-
-    private class EventHandler extends Handler
-    {
-        private AvosMediaPlayer mMediaPlayer;
-
-        public EventHandler(AvosMediaPlayer mp, Looper looper) {
-            super(looper);
-            mMediaPlayer = mp;
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            if (mMediaPlayerHandle == 0) {
-                Log.w(TAG, "mediaplayer went away with unhandled events");
-                return;
-            }
-            switch(msg.what) {
-            case MEDIA_PREPARED:
-                if (mOnPreparedListener != null)
-                    mOnPreparedListener.onPrepared(mMediaPlayer);
-                return;
-
-            case MEDIA_PLAYBACK_COMPLETE:
-                if (mOnCompletionListener != null)
-                    mOnCompletionListener.onCompletion(mMediaPlayer);
-                stayAwake(false);
-                return;
-            case MEDIA_NEXT_TRACK:
-                if (mOnNextTrackListener != null)
-                    mOnNextTrackListener.onNextTrack(mMediaPlayer);
-                return;
-            case MEDIA_BUFFERING_UPDATE:
-                if (mOnBufferingUpdateListener != null)
-                    mOnBufferingUpdateListener.onBufferingUpdate(mMediaPlayer, msg.arg1);
-                return;
-
-            case MEDIA_RELATIVE_POSITION_UPDATE:
-                if (mOnRelativePositionUpdateListener != null)
-                    mOnRelativePositionUpdateListener.onRelativePositionUpdate(mMediaPlayer, msg.arg1);
-                return;
-            case MEDIA_SEEK_COMPLETE:
-              if (mOnSeekCompleteListener != null) {
-                  mOnSeekCompleteListener.onSeekComplete(mMediaPlayer);
-                  if (msg.arg1 == 0)
-                      mOnSeekCompleteListener.onAllSeekComplete(mMediaPlayer);
-              }
-              return;
-
-            case MEDIA_SET_VIDEO_SIZE:
-              if (mOnVideoSizeChangedListener != null)
-                  mOnVideoSizeChangedListener.onVideoSizeChanged(mMediaPlayer, msg.arg1, msg.arg2);
-              return;
-
-            case MEDIA_SET_VIDEO_ASPECT:
-                if (mOnVideoSizeChangedListener != null)
-                    mOnVideoSizeChangedListener.onVideoAspectChanged(mMediaPlayer, (double)msg.arg1 / (double) msg.arg2);
-                return;
-
-            case MEDIA_ERROR:
-                // For PV specific error values (msg.arg2) look in
-                // opencore/pvmi/pvmf/include/pvmf_return_codes.h
-                Log.e(TAG, "Error (" + msg.arg1 + "," + msg.arg2 + ")");
-                boolean error_was_handled = false;
-                if (mOnErrorListener != null) {
-                    error_was_handled = mOnErrorListener.onError(mMediaPlayer, msg.arg1, msg.arg2,
-                            msg.obj != null && msg.obj instanceof String ? (String)msg.obj : null);
-                }
-                if (mOnCompletionListener != null && ! error_was_handled) {
-                    mOnCompletionListener.onCompletion(mMediaPlayer);
-                }
-                stayAwake(false);
-                return;
-
-            case MEDIA_INFO:
-                if (msg.arg1 != MEDIA_INFO_VIDEO_TRACK_LAGGING) {
-                    Log.i(TAG, "Info (" + msg.arg1 + "," + msg.arg2 + ")");
-                }
-                if (mOnInfoListener != null) {
-                    mOnInfoListener.onInfo(mMediaPlayer, msg.arg1, msg.arg2);
-                }
-                // No real default action so far.
-                return;
-            case MEDIA_SUBTITLE:
-                if (mOnSubtitleListener != null) {
-                    if (msg.obj == null) {
-                        Log.e(TAG, "MEDIA_SUBTITLE with null object");
-                        return;
-                    }
-                    if (msg.obj instanceof Subtitle)
-                        mOnSubtitleListener.onSubtitle(mMediaPlayer, (Subtitle)msg.obj);
-                    else
-                        Log.e(TAG, "MEDIA_SUBTITLE with wrong object");
-                }
-                return;
-            case MEDIA_NOP: // interface test message - ignore
-                break;
-
-            default:
-                Log.e(TAG, "Unknown message type " + msg.what);
-                return;
-            }
-        }
-    }
 }
