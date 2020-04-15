@@ -69,7 +69,9 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
 
     @Override
     public void prepareAsync() throws IllegalStateException {
-
+        exoPlayer.prepare(videoSource);
+        start();
+        mOnPreparedListener.onPrepared(this);
     }
 
     @Override
