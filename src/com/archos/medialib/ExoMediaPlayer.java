@@ -6,21 +6,25 @@ import android.os.Looper;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.video.VideoListener;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.Map;
 
-public class ExoMediaPlayer extends GenericMediaPlayer {
+public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventListener, VideoListener {
     private SimpleExoPlayer exoPlayer;
     private DataSource.Factory dataSourceFactory;
     private MediaSource videoSource;
+    private int startTime = 0;
 
     ExoMediaPlayer(Context context) {
         Looper looper;
@@ -32,6 +36,9 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
             mEventHandler = null;
         }
         exoPlayer = new SimpleExoPlayer.Builder(context).setLooper(looper).build();
+        exoPlayer.setSeekParameters(SeekParameters.CLOSEST_SYNC);
+        exoPlayer.addListener(this);
+        exoPlayer.addVideoListener(this);
         dataSourceFactory = new DefaultDataSourceFactory(context,
                 Util.getUserAgent(context, "NovaVideoPlayer"));
     }
@@ -70,8 +77,7 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
     @Override
     public void prepareAsync() throws IllegalStateException {
         exoPlayer.prepare(videoSource);
-        start();
-        mOnPreparedListener.onPrepared(this);
+        mEventHandler.post(() -> mOnPreparedListener.onPrepared(this));
     }
 
     @Override
@@ -86,10 +92,7 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
 
     @Override
     public void pause() throws IllegalStateException {
-        if (isPlaying())
             exoPlayer.setPlayWhenReady(false);
-        else
-            start();
     }
 
     @Override
@@ -99,12 +102,14 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
 
     @Override
     public void seekTo(int msec) throws IllegalStateException {
-        exoPlayer.seekTo(msec);
+        exoPlayer.seekTo(msec + startTime);
     }
 
     @Override
     public boolean setStartTime(int msec) {
-        return false;
+        startTime = msec;
+        exoPlayer.seekTo(startTime);
+        return true;
     }
 
     @Override
@@ -119,11 +124,13 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
 
     @Override
     public MediaMetadata getMediaMetadata(boolean update_only, boolean apply_filter) {
-        return null;
+        return new MediaMetadata();
     }
 
     @Override
     public void release() {
+        exoPlayer.removeVideoListener(this);
+        exoPlayer.removeListener(this);
         exoPlayer.release();
     }
 
@@ -134,12 +141,15 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
 
     @Override
     public void setLooping(boolean looping) {
-
+        if (looping)
+            exoPlayer.setRepeatMode(Player.REPEAT_MODE_ALL);
+        else
+            exoPlayer.setRepeatMode(Player.REPEAT_MODE_OFF);
     }
 
     @Override
     public boolean isLooping() {
-        return false;
+        return exoPlayer.getRepeatMode() == Player.REPEAT_MODE_ALL;
     }
 
     @Override
@@ -185,5 +195,27 @@ public class ExoMediaPlayer extends GenericMediaPlayer {
     @Override
     public int getAudioSessionId() {
         return 0;
+    }
+
+    @Override
+    public void onSeekProcessed() {
+        mEventHandler.post(() -> mOnSeekCompleteListener.onAllSeekComplete(this));
+    }
+
+    @Override
+    public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
+        if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT)
+            mEventHandler.post(() -> mOnSeekCompleteListener.onSeekComplete(this));
+    }
+
+    @Override
+    public void onPlayerStateChanged(boolean playWhenReady, @Player.State int playbackState) {
+        if (playbackState == Player.STATE_ENDED)
+            mEventHandler.post(() -> mOnCompletionListener.onCompletion(this));
+    }
+
+    @Override
+    public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+        mEventHandler.post(() -> mOnVideoSizeChangedListener.onVideoSizeChanged(this, width, height));
     }
 }
