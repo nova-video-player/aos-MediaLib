@@ -43,6 +43,7 @@ public class AppState {
 
     public static boolean isForeGround() {
         synchronized (sStartedActivities) {
+            if (DBG) Log.d(TAG, "isForeGround=" + (sStartedActivities.size() > 0));
             return sStartedActivities.size() > 0;
         }
     }
@@ -98,7 +99,7 @@ public class AppState {
                             boolean foregroundNew = isForeGround();
                             if (foregroundNew != foregroundOld)
                                 notifyListener(activity, foregroundNew);
-                            if (DBG) Log.d(TAG, "isForeGround:" + isForeGround());
+                            if (DBG) Log.d(TAG, "onActivityStopped isForeGround: " + isForeGround());
                         }
                     }
                 }
@@ -127,7 +128,7 @@ public class AppState {
                             boolean foregroundNew = isForeGround();
                             if (foregroundNew != foregroundOld)
                                 notifyListener(activity, foregroundNew);
-                            if (DBG) Log.d(TAG, "isForeGround:" + isForeGround());
+                            if (DBG) Log.d(TAG, "onActivityStarted isForeGround: " + isForeGround());
                         } else {
                             sChangingConfiguration = false;
                         }
