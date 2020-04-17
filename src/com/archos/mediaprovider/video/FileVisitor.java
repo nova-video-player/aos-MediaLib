@@ -50,7 +50,7 @@ public class FileVisitor {
             /*
                 before starting to visit, we should check if a parent of this file is within a folder with a .nomedia
              */
-                recurse(root, listener, recursionLimit);
+            recurse(root, listener, recursionLimit);
             listener.onStop(root);
         }
     }

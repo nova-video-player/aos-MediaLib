@@ -14,18 +14,11 @@
 
 package com.archos.mediascraper;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.BaseColumns;
 import android.util.Log;
 
-import com.archos.mediaprovider.video.VideoStore.MediaColumns;
-import com.archos.mediaprovider.video.VideoStore.Video;
-import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
+
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
@@ -33,7 +26,7 @@ import com.archos.mediascraper.xml.MovieScraper3;
 import com.archos.mediascraper.xml.ShowScraper3;
 
 public class Scraper {
-    private static final String TAG = "Scraper";
+    private static final String TAG = Scraper.class.getSimpleName();
     private static final boolean DBG = false;
 
     public static final int ALL_MATCHES = -1;

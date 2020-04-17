@@ -41,6 +41,9 @@ import java.util.regex.Pattern;
  */
 class MovieDefaultMatcher implements InputMatcher {
 
+    private static final String TAG = MovieDefaultMatcher.class.getSimpleName();
+    private static final boolean DBG = false;
+
     public static MovieDefaultMatcher instance() {
         return INSTANCE;
     }
