@@ -611,6 +611,15 @@ public class VideoStoreImportImpl {
         // return true if file or any parent directory has name starting with a dot
         if (path.indexOf("/.") >= 0) return true;
 
+        // TODO: determine if this method needs to be fully implemented to work with smb://
+        if (path.startsWith("smb://")) {
+            Log.w(TAG, "isNoMediaPath not fully checking " + path);
+            return false;
+        }
+
+        // TODO: in order to re-enable the nomedia walkthrough with smb:// first level MUST NOT be checked since it is a share name
+        // one thus need to do a Uri.parse(path).getScheme().length()+3+length_until_next_slash
+
         // now check to see if any parent directories have a ".nomedia" file
         // start from 1 so we don't bother checking in the root directory
         int offset = Uri.parse(path).getScheme()!=null?Uri.parse(path).getScheme().length()+3:1;//go after smb://
