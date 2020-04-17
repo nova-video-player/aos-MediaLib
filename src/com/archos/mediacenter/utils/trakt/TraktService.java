@@ -66,8 +66,8 @@ import java.util.List;
 
 public class TraktService extends Service {
     private static final String TAG = "TraktService";
-    private static final boolean DBG = true;
-    private static final boolean DBG_LISTENER = true;
+    private static final boolean DBG = false;
+    private static final boolean DBG_LISTENER = false;
     private static final boolean DBG_NET = false;
 
     private SharedPreferences mPreferences;

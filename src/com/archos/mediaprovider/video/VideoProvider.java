@@ -83,7 +83,7 @@ public class VideoProvider extends ContentProvider {
     private static final boolean LOCAL_DBG = false;
     private static final boolean DBG = false;
     private static final boolean DBG_NET = false; // network state handling
-    private static final boolean DBG_LISTENER = true;
+    private static final boolean DBG_LISTENER = false;
 
     private DbHolder mDbHolder;
     private Handler mThumbHandler;

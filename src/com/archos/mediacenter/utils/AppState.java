@@ -36,7 +36,7 @@ import java.util.WeakHashMap;
  */
 public class AppState {
     private static final String TAG = "AppState";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private static final HashSet<Integer> sStartedActivities = new HashSet<Integer>();
     private static boolean sChangingConfiguration = false;

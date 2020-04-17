@@ -67,7 +67,7 @@ public class UpnpServiceManager {
 
     private static final String TAG = "UpnpServiceManager";
     private static final boolean DBG = false;
-    private static final boolean DBG_LISTENER = true;
+    private static final boolean DBG_LISTENER = false;
 
     /**
      * NOTE: this does not work like the SMB discovery.
