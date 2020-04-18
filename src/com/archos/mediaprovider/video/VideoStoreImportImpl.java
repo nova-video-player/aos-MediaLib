@@ -52,6 +52,8 @@ import com.archos.mediascraper.NfoParser;
 import java.io.File;
 import java.util.ArrayList;
 
+import static com.archos.filecorelibrary.FileUtils.isNetworkShare;
+
 /**
  * The media db import logic
  */
@@ -611,8 +613,8 @@ public class VideoStoreImportImpl {
         // return true if file or any parent directory has name starting with a dot
         if (path.indexOf("/.") >= 0) return true;
 
-        // TODO: determine if this method needs to be fully implemented to work with smb://
-        if (path.startsWith("smb://")) {
+        // TODO: determine if this method needs to be fully implemented to work with smb:// or network shares
+        if (isNetworkShare(uri)) {
             Log.w(TAG, "isNoMediaPath not fully checking " + path);
             return false;
         }
@@ -650,8 +652,8 @@ public class VideoStoreImportImpl {
         // return true if file or any parent directory has name starting with a dot
         if (path.indexOf("/.") >= 0) return true;
 
-        // TODO: determine if this method needs to be fully implemented to work with smb://
-        if (path.startsWith("smb://")) {
+        // TODO: determine if this method needs to be fully implemented to work with smb:// or network shares
+        if (isNetworkShare(path)) {
             Log.w(TAG, "isNoMediaPath not fully checking " + path);
             return false;
         }
