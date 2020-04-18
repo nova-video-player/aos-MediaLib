@@ -53,6 +53,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import static com.archos.filecorelibrary.FileUtils.isNetworkShare;
+import static com.archos.filecorelibrary.FileUtils.isSlowRemote;
 
 /**
  * The media db import logic
@@ -608,30 +609,34 @@ public class VideoStoreImportImpl {
 
     public static boolean isNoMediaPath(Uri uri) {
         String path = uri.toString();
+        if (DBG) Log.d(TAG,"isNoMediaPath: check " + path);
+
         if (path == null) return false;
 
         // return true if file or any parent directory has name starting with a dot
         if (path.indexOf("/.") >= 0) return true;
 
-        // TODO: determine if this method needs to be fully implemented to work with smb:// or network shares
-        if (isNetworkShare(uri)) {
+        // perhaps better to avoid this recursive check on slowRemotes or even samba (isNetworkShare)
+        if (isSlowRemote(uri)) {
             Log.w(TAG, "isNoMediaPath not fully checking " + path);
             return false;
         }
 
-        // TODO: in order to re-enable the nomedia walkthrough with smb:// first level MUST NOT be checked since it is a share name
-        // one thus need to do a Uri.parse(path).getScheme().length()+3+length_until_next_slash
-
         // now check to see if any parent directories have a ".nomedia" file
         // start from 1 so we don't bother checking in the root directory
         int offset = Uri.parse(path).getScheme()!=null?Uri.parse(path).getScheme().length()+3:1;//go after smb://
+
+        // in case of smb, skip checking smb://SERVER/.nomedia since it makes jcifs-ng crash
+        if ("smb".equals(uri.getScheme())) // in case of smb server skip the serveur name since exists causes a crash with jcifs-ng
+            offset = path.indexOf('/', offset) + 1; // +1 moves past next slash
+
         while (offset >= 0) {
             int slashIndex = path.indexOf('/', offset);
             // Archos NOTE: here must be >= instead of >
             if (slashIndex >= offset) {
                 slashIndex++; // move past slash
                 Uri file = Uri.parse(path.substring(0, slashIndex) + ".nomedia");
-
+                if (DBG) Log.d(TAG,"isNoMediaPath: check " + file.toString());
                 FileEditor fe = FileEditorFactoryWithUpnp.getFileEditorForUrl(file, null);
                 if (fe.exists()) {
                     // we have a .nomedia in one of the parent directories
