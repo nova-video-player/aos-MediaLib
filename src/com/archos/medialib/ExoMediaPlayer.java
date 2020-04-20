@@ -9,6 +9,7 @@ import android.view.SurfaceHolder;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.RendererCapabilities;
 import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -194,11 +195,13 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
             return false;
         for (int i = 0; i < mappedTrackInfo.getRendererCount(); i++) {
             if (mappedTrackInfo.getRendererType(i) == type) {
-                TrackGroupArray trackGroupArray = mappedTrackInfo.getTrackGroups(i);
-                trackSelector.setParameters(trackSelector
-                        .buildUponParameters().setSelectionOverride(i,
-                                trackGroupArray, new DefaultTrackSelector.SelectionOverride(stream, 0)));
-                return true;
+                if (mappedTrackInfo.getTrackSupport(i, stream, 0) == RendererCapabilities.FORMAT_HANDLED) {
+                    TrackGroupArray trackGroupArray = mappedTrackInfo.getTrackGroups(i);
+                    trackSelector.setParameters(trackSelector
+                            .buildUponParameters().setSelectionOverride(i,
+                                    trackGroupArray, new DefaultTrackSelector.SelectionOverride(stream, 0)));
+                    return true;
+                }
             }
         }
         return false;
