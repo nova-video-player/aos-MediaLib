@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 class MovieDefaultMatcher implements InputMatcher {
 
     private static final String TAG = MovieDefaultMatcher.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
 
     public static MovieDefaultMatcher instance() {
         return INSTANCE;

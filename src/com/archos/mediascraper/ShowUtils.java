@@ -31,6 +31,13 @@ import java.util.regex.Pattern;
  * Class used to parse the file names and try to guess if we have a tv show.
  */
 public final class ShowUtils {
+
+    private static final String TAG = ShowUtils.class.getSimpleName();
+    private static final boolean DBG = true;
+
+    // disable for now the SxxEyy-showName does not exist and makes ./serie/The Flash/S02/S02E01 lahlah.mkv not identified
+    private static final boolean ENABLE_PATTERNS_EPISODE_FIRST = false;
+
     public static final String EPNUM = "epnum";
     public static final String SEASON = "season";
     public static final String SHOW = "show";
@@ -84,11 +91,13 @@ public final class ShowUtils {
      *  If the filename doesn't match a tv show pattern, returns null.
      */
     public static Map<String, String> parseShowName(String filename) {
+        if (DBG) Log.d(TAG, "parseShowName: " + filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
         for(Pattern regexp: patternsShowFirst) {
             Matcher matcher = regexp.matcher(filename);
             try {
                 if(matcher.find()) {
+                    if (DBG) Log.d(TAG, "getMatch: patternsShowFirst " + cleanUpName(matcher.group(1)) + " season " + matcher.group(2) + " episode " + matcher.group(3));
                     buffer.put(SHOW, cleanUpName(matcher.group(1)));
                     buffer.put(SEASON, matcher.group(2));
                     buffer.put(EPNUM, matcher.group(3));
@@ -96,17 +105,19 @@ public final class ShowUtils {
                 }
             } catch (IllegalArgumentException ignored) {}
         }
-        for(Pattern regexp: patternsEpisodeFirst) {
-            Matcher matcher = regexp.matcher(filename);
-            try {
-                if(matcher.find()) {
-                    buffer.put(SHOW, cleanUpName(matcher.group(3)));
-                    buffer.put(SEASON, matcher.group(1));
-                    buffer.put(EPNUM, matcher.group(2));
-                    return buffer;
-                }
-            } catch (IllegalArgumentException ignored) {}
-        }
+        if (ENABLE_PATTERNS_EPISODE_FIRST)
+            for(Pattern regexp: patternsEpisodeFirst) {
+                Matcher matcher = regexp.matcher(filename);
+                try {
+                    if(matcher.find()) {
+                        if (DBG) Log.d(TAG, "getMatch: patternsEpisodeFirst " + cleanUpName(matcher.group(3)) + " season " + matcher.group(1) + " episode " + matcher.group(2));
+                        buffer.put(SHOW, cleanUpName(matcher.group(3)));
+                        buffer.put(SEASON, matcher.group(1));
+                        buffer.put(EPNUM, matcher.group(2));
+                        return buffer;
+                    }
+                } catch (IllegalArgumentException ignored) {}
+            }
         return null;
     }
 
@@ -131,7 +142,8 @@ public final class ShowUtils {
                     return true;
             } catch (IllegalArgumentException ignored) {}
         }
-        for(Pattern regexp: patternsEpisodeFirst) {
+        if (ENABLE_PATTERNS_EPISODE_FIRST)
+            for(Pattern regexp: patternsEpisodeFirst) {
             Matcher m = regexp.matcher(filename);
             try {
                 if(m.matches())
