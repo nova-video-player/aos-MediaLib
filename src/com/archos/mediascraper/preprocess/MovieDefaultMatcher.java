@@ -156,7 +156,7 @@ class MovieDefaultMatcher implements InputMatcher {
             "COMPLETE", "PROPER", "iNTERNAL", "INTERNAL",
             "SUBBED", "ANiME", "LIMITED", "REMUX", "DCPRip",
             "TS", "TC", "REAL", "HD", "DDR", "WEB",
-            "EN", "ENG", "FR", "ES", "IT", "NL", "VFQ", "VF", "VO", "VOSTFR", "Eng",
+            "EN", "ENG", "FR", "ES", "IT", "NL", "VFQ", "VF", "VO", "VOF", "VOSTFR", "Eng",
             "VOST", "VFF", "VF2", "VFI", "VFSTFR",
     };
 
