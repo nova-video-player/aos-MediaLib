@@ -41,7 +41,7 @@ class TvShowPathMatcher implements InputMatcher {
     // e.g. "/series/Galactica/Season 1/galactica.ep3.avi"
 
     private static final String SHOW_SEASON_EPISODE_PATH =
-             "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+";
+             "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE|WEBISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+";
     private static final Pattern PATTERN_ =
             Pattern.compile(SHOW_SEASON_EPISODE_PATH);
 
