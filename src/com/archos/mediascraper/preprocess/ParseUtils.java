@@ -15,11 +15,18 @@
 
 package com.archos.mediascraper.preprocess;
 
+import android.util.Log;
+import android.util.Pair;
+
 import com.archos.mediascraper.StringUtils;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ParseUtils {
+
+    private static final String TAG = ParseUtils.class.getSimpleName();
+    private static final boolean DBG = true;
 
     /* ( whitespace | punctuation)+, matches dots, spaces, brackets etc */
     private static final Pattern MULTI_NON_CHARACTER_PATTERN = Pattern.compile("[\\s\\p{Punct}&&[^']]+");
@@ -35,6 +42,10 @@ public class ParseUtils {
     private static final char[] ALTERNATE_APOSTROPHES = new char[] {
         '’', '‘'
     };
+
+    // Strip out everything after empty parenthesis (after year pattern removal)
+    // i.e. movieName (1969) garbage -> movieName () garbage -> movieName
+    private static final Pattern EMPTY_PARENTHESIS_PATTERN = Pattern.compile("[\\s\\p{Punct}]([(][)])[\\s\\p{Punct}]");
 
     /**
      * Removes leading numbering like "1. A Movie" => "A Movie",
@@ -61,6 +72,25 @@ public class ParseUtils {
         String result = unifyApostrophes(input);
         result = replaceAcronyms(result);
         return StringUtils.replaceAll(result, " ", MULTI_NON_CHARACTER_PATTERN).trim();
+    }
+
+    // remove all what is after empty parenthesis
+    // only apply to movieName (1928) junk -> movieName () junk -> movieName
+    public static String removeAfterEmptyParenthesis(String input) {
+        if (DBG) Log.d(TAG,"removeAfterEmptyParenthesis input: " + input);
+        Matcher matcher = EMPTY_PARENTHESIS_PATTERN.matcher(input);
+        int start = 0;
+        int stop = 0;
+        boolean found = false;
+        while (matcher.find()) {
+            found = true;
+            start = matcher.start(1);
+        }
+        // get the first match and extract it from the string
+        if (found)
+            input = input.substring(0, start);
+        if (DBG) Log.d(TAG, "removeAfterEmptyParenthesis remove junk after (): " + input);
+        return input;
     }
 
     private ParseUtils() {

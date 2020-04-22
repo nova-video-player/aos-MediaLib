@@ -16,6 +16,8 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
+import android.util.Log;
+import android.util.Pair;
 
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.StringUtils;
@@ -23,6 +25,8 @@ import com.archos.mediascraper.StringUtils;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
 
 /**
  * Matches everything. Tries to strip away all junk, not very reliable.
@@ -81,23 +85,18 @@ class MovieDefaultMatcher implements InputMatcher {
 
     private static SearchInfo getMatch(String input, Uri file) {
         String name = input;
-        String year = null;
 
         // extract the last year from the string
-        Matcher matcher = YEAR_PATTERN.matcher(name);
-        int start = 0;
-        int stop = 0;
-        boolean found = false;
-        while (matcher.find()) {
-            found = true;
-            start = matcher.start(1);
-            stop = matcher.end(1);
-        }
-        // get the last match and extract it from the string
-        if (found) {
-            year = name.substring(start, stop);
-            name = name.substring(0, start) + name.substring(stop);
-        }
+        String year = null;
+        // matches "[space or punctuation/brackets etc]year", year is group 1
+        // "[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)"
+        Pair<String, String> nameYear = yearExtractor(name);
+        name = nameYear.first;
+        year = nameYear.second;
+
+        // remove junk behind () that was containing year
+        // applies to movieName (1928) junk -> movieName () junk -> movieName
+        name = removeAfterEmptyParenthesis(name);
 
         // Strip out starting numbering for collections
         name = ParseUtils.removeNumbering(name);
@@ -212,6 +211,27 @@ class MovieDefaultMatcher implements InputMatcher {
 
         // return substring from input -> keep case
         return input.substring(0, firstGarbage);
+    }
+
+    private static Pair<String, String> yearExtractor(String input) {
+        if (DBG) Log.d(TAG, "yearExtractor input: " + input);
+        String year = null;
+        Matcher matcher = YEAR_PATTERN.matcher(input);
+        int start = 0;
+        int stop = 0;
+        boolean found = false;
+        while (matcher.find()) {
+            found = true;
+            start = matcher.start(1);
+            stop = matcher.end(1);
+        }
+        // get the last match and extract it from the string
+        if (found) {
+            year = input.substring(start, stop);
+            input = input.substring(0, start) + input.substring(stop);
+        }
+        if (DBG) Log.d(TAG, "yearExtractor release year: " + input + " year: " + year);
+        return new Pair<>(input, year);
     }
 
 }
