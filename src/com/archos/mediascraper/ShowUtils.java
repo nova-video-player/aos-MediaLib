@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
+
 /**
  * Class used to parse the file names and try to guess if we have a tv show.
  */
@@ -135,6 +137,8 @@ public final class ShowUtils {
                 return false;
             filename = FileUtils.getName(file);
         }
+        // remove trailing '/' if it exists
+        filename = removeTrailingSlash(filename);
         for(Pattern regexp: patternsShowFirst) {
             Matcher m = regexp.matcher(filename);
             try {

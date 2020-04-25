@@ -14,12 +14,17 @@
 
 package com.archos.mediascraper;
 
+import android.util.Log;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class StringUtils {
+
+    private static final String TAG = StringUtils.class.getSimpleName();
+    private static final boolean DBG = false;
 
     /**
      * Splits Strings upon finding a character<p>
@@ -283,6 +288,14 @@ public class StringUtils {
             }
         }
         return modified ? new String(buffer) : input;
+    }
+
+    public static String removeTrailingSlash(String input) {
+        if (DBG) Log.d(TAG, "removeLastSegment input: " + input);
+        if (input != null && input.length() > 0 && input.charAt(input.length() - 1) == '/')
+            input = input.substring(0, input.length() - 1);
+        if (DBG) Log.d(TAG, "removeLastSegment output: " + input);
+        return input;
     }
 
     private StringUtils() {

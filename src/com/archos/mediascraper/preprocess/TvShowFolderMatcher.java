@@ -11,6 +11,7 @@ import com.archos.mediascraper.StringUtils;
 import java.util.Map;
 
 import static com.archos.filecorelibrary.FileUtils.getName;
+import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
 
 /**
  * Matches all sorts of "Tv Show title S01E01/randomgarbage.mkv" and similar things
@@ -33,7 +34,6 @@ class TvShowFolderMatcher extends TvShowMatcher {
 
     @Override
     public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
-
         return ShowUtils.isTvShow(FileUtils.getParentUrl(fileInput), null);
     }
 
@@ -44,6 +44,8 @@ class TvShowFolderMatcher extends TvShowMatcher {
 
     private static SearchInfo getMatch(String matchString, Uri file) {
         if (DBG) Log.d(TAG, "getMatch: matchString " + matchString + " file " + file.getPath());
+        // clean trailing "/" if exists
+        matchString = removeTrailingSlash(matchString);
         // clean leading "/"
         matchString = getName(matchString);
         Map<String, String> showName = ShowUtils.parseShowName(matchString);
