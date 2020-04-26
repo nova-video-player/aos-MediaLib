@@ -35,7 +35,7 @@ import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
 public final class ShowUtils {
 
     private static final String TAG = ShowUtils.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     // disable for now the SxxEyy-showName does not exist and makes ./serie/The Flash/S02/S02E01 lahlah.mkv not identified
     private static final boolean ENABLE_PATTERNS_EPISODE_FIRST = false;

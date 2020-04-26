@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class ParseUtils {
 
     private static final String TAG = ParseUtils.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     /* ( whitespace | punctuation)+, matches dots, spaces, brackets etc */
     private static final Pattern MULTI_NON_CHARACTER_PATTERN = Pattern.compile("[\\s\\p{Punct}&&[^']]+");

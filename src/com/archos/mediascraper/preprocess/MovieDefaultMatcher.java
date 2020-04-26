@@ -46,7 +46,7 @@ import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyPare
 class MovieDefaultMatcher implements InputMatcher {
 
     private static final String TAG = MovieDefaultMatcher.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     public static MovieDefaultMatcher instance() {
         return INSTANCE;

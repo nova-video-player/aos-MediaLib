@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 class TvShowPathMatcher implements InputMatcher {
 
     private static final String TAG = TvShowPathMatcher.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     // pattern that allows
     // "stuff / [words/numbers] / Season XX / random stuff Episode XX random stuff"

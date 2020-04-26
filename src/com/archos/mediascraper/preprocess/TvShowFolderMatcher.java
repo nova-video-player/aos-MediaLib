@@ -19,7 +19,7 @@ import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
 class TvShowFolderMatcher extends TvShowMatcher {
 
     private static final String TAG = TvShowFolderMatcher.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     public static TvShowFolderMatcher instance() {
         return INSTANCE;
