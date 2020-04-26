@@ -8,6 +8,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.RendererCapabilities;
 import com.google.android.exoplayer2.SeekParameters;
@@ -55,8 +56,9 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
             mEventHandler = null;
         }
         trackSelector = new DefaultTrackSelector(context);
+        DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
         exoPlayer = new SimpleExoPlayer
-                .Builder(context)
+                .Builder(context, renderersFactory)
                 .setTrackSelector(trackSelector)
                 .setLooper(looper)
                 .build();
