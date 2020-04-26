@@ -312,6 +312,9 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
                                 Log.d(TAG, "video track: " +  group.getFormat(k)) ;
                                 videoTracksCount++;
                                 metadataDelegate.addExoVideo(group.getFormat(k));
+                                metadataDelegate.addInt(METADATA_KEY_VIDEO_WIDTH, group.getFormat(k).width);
+                                metadataDelegate.addInt(METADATA_KEY_VIDEO_HEIGHT, group.getFormat(k).height);
+                                metadataDelegate.addInt(METADATA_KEY_DURATION, (int) exoPlayer.getContentDuration());
                             } else {
                                 Log.w(TAG, "Warning: more than 2 video tracks !");
                             }
