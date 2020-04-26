@@ -14,9 +14,11 @@ import static com.archos.medialib.LibAvos.MP_DECODER_EXOPLAYER;
 class MetadataDelegate extends MediaMetadata {
     private final Object mMetadata;
     private final MetadataDelegate.Custom mCustom = new MetadataDelegate.Custom();
+    private int mFirstCustomIndex = IMediaPlayer.METADATA_FIRST_CUSTOM;
 
     MetadataDelegate() {
         mMetadata = null;
+        mFirstCustomIndex = 0;
     }
 
     MetadataDelegate(Object data, int videoWidth, int videoHeight, MediaPlayerProxy.Tracks tracks, String[] timedTextLangs) {
@@ -153,7 +155,7 @@ class MetadataDelegate extends MediaMetadata {
     }
 
     private boolean isCustom(int key) {
-        return key >= IMediaPlayer.METADATA_FIRST_CUSTOM;
+        return key >= mFirstCustomIndex;
     }
 
     @Override
