@@ -131,7 +131,10 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
 
     @Override
     public boolean isPlaying() {
-        return exoPlayer.isPlaying();
+        int playbackState = exoPlayer.getPlaybackState();
+        return  (playbackState == Player.STATE_READY || playbackState == Player.STATE_BUFFERING)
+                && exoPlayer.getPlayWhenReady()
+                && exoPlayer.getPlaybackSuppressionReason() == Player.PLAYBACK_SUPPRESSION_REASON_NONE;
     }
 
     @Override
