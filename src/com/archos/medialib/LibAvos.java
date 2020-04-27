@@ -309,6 +309,7 @@ public class LibAvos {
     public static final int MP_DECODER_HW_OMXCODEC = 3;
     public static final int MP_DECODER_HW_MEDIACODEC = 4;
     public static final int MP_DECODER_HW_OMXPLUS = 5;
+    public static final int MP_DECODER_EXOPLAYER = 6;
     // audio output
     public static final int MP_AUDIO_INTERFACE_ANY = 0;
     public static final int MP_AUDIO_INTERFACE_AUDIOTRACK = 1;
