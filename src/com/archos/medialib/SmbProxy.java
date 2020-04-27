@@ -15,6 +15,9 @@
 package com.archos.medialib;
 
 import android.net.Uri;
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
 
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.MetaFile2Factory;
@@ -24,6 +27,8 @@ import com.archos.mediacenter.filecoreextension.UriUtils;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import jcifs.smb.SmbFile;
 
@@ -36,21 +41,25 @@ public class SmbProxy extends Proxy{
     public static boolean needToStream(String scheme){
             return "smb".equalsIgnoreCase(scheme) || "ftp".equalsIgnoreCase(scheme)||"ftps".equalsIgnoreCase(scheme) || "sftp".equalsIgnoreCase(scheme) || UriUtils.isContentUri(Uri.parse(scheme+"://test"));
     }
+    @RequiresApi(api = Build.VERSION_CODES.N)
     protected Uri start() {
         stop();
         String mimeType = MimeUtils.guessMimeTypeFromExtension(mUri.getLastPathSegment());
         MetaFile2 file = null;
         try {
-            try {
-                file = MetaFile2Factory.getMetaFileForUrl(mUri);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            file = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return MetaFile2Factory.getMetaFileForUrl(mUri);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }).get();
             if(file != null)
                 mStream = new StreamOverHttp(file, mimeType);
             else
                 mStream = new StreamOverHttp(mUri, mimeType);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException | ExecutionException e) {
             return null;
         }
         return mStream.getUri(file != null ? file.getName():mUri.getLastPathSegment());
