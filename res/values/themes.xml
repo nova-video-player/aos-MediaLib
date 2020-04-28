@@ -31,6 +31,7 @@
         <item name="actionOverflowButtonStyle">@style/OverflowButtonStyle</item>
         <!-- for the white back arrow -->
         <item name="colorControlNormal">@android:color/white</item>
+        <item name="android:navigationBarColor">#001b30</item>
     </style>
 
     <style name="DrawerArrowStyle" parent="Widget.AppCompat.DrawerArrowToggle">
