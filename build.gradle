@@ -112,7 +112,8 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.2.4'
     implementation 'androidx.appcompat:appcompat:1.2.0-beta01'
     implementation 'androidx.preference:preference:1.1.1'
-    implementation 'cz.msebera.android:httpclient:4.5.8'
+    //implementation 'cz.msebera.android:httpclient:4.5.8'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.0'
     implementation group: 'org.json', name: 'json', version: '20180813'
     // trakt depedencies: we imported the source code
     //api 'com.uwetrottmann.trakt5:trakt-java:6.1.0'
@@ -138,4 +139,5 @@ dependencies {
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.25'
+    implementation 'com.jcraft:jsch:0.1.55'
 }

@@ -17,32 +17,20 @@
 //  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THIS SOFTWARE.
 
-
 package httpimage;
 
 import java.io.IOException;
-import cz.msebera.android.httpclient.HttpResponse;
-import cz.msebera.android.httpclient.HttpVersion;
-import cz.msebera.android.httpclient.client.HttpClient;
-import cz.msebera.android.httpclient.client.methods.HttpGet;
-import cz.msebera.android.httpclient.conn.params.ConnManagerParams;
-import cz.msebera.android.httpclient.conn.params.ConnPerRouteBean;
-import cz.msebera.android.httpclient.conn.scheme.PlainSocketFactory;
-import cz.msebera.android.httpclient.conn.scheme.Scheme;
-import cz.msebera.android.httpclient.conn.scheme.SchemeRegistry;
-import cz.msebera.android.httpclient.conn.scheme.SocketFactory;
-import cz.msebera.android.httpclient.conn.ssl.SSLSocketFactory;
-import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
-import cz.msebera.android.httpclient.impl.client.DefaultHttpRequestRetryHandler;
-import cz.msebera.android.httpclient.impl.conn.tsccm.ThreadSafeClientConnManager;
-import cz.msebera.android.httpclient.params.BasicHttpParams;
-import cz.msebera.android.httpclient.params.HttpConnectionParams;
-import cz.msebera.android.httpclient.params.HttpParams;
-import cz.msebera.android.httpclient.params.HttpProtocolParams;
-import cz.msebera.android.httpclient.protocol.HTTP;
+import java.net.ProxySelector;
+
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
 
 import android.net.Uri;
 import android.util.Log;
+
 
 
 /**
@@ -54,7 +42,7 @@ public class NetworkResourceLoader {
     public static final String TAG = "NetworkResourceLoader";
     public static final boolean DEBUG = true;
 
-    private HttpClient mHttpClient = createHttpClient();
+    private CloseableHttpClient mHttpClient = createHttpClient();
 
     
     /**
@@ -65,7 +53,7 @@ public class NetworkResourceLoader {
      * @return the input stream to read from
      * @throws IOException
      */
-    public HttpResponse load (Uri uri) throws IOException{
+    public CloseableHttpResponse load (Uri uri) throws IOException{
         if (DEBUG) Log.d(TAG, "Requesting: " + uri);
         HttpGet httpGet = new HttpGet(uri.toString());
         httpGet.addHeader("Accept-Encoding", "gzip");
@@ -81,7 +69,38 @@ public class NetworkResourceLoader {
      *
      * @return HttpClient
      */
-    public final DefaultHttpClient createHttpClient() {
+    //public final HttpClient createHttpClient() {
+    public final CloseableHttpClient createHttpClient() {
+
+        if (DEBUG) Log.d(TAG, "createHttpClient");
+
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setRoutePlanner(new SystemDefaultRoutePlanner(ProxySelector.getDefault()))
+                .build();
+
+        return httpClient;
+
+        /*
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(context, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
+        private static CloseableHttpClient client =
+                HttpClients.custom().setSSLHostnameVerifier(new NoopHostnameVerifier()).build();
+
+        builder.setSSLSocketFactory(sslConnectionFactory);
+
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("https", sslConnectionFactory)
+                .build();
+
+        HttpClientConnectionManager ccm = new BasicHttpClientConnectionManager(registry);
+
+        builder.setConnectionManager(ccm);
+
+        return builder.build();
+         */
+
+        /*
         HttpParams params = new BasicHttpParams();
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);  
         HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);  
@@ -115,6 +134,7 @@ public class NetworkResourceLoader {
         httpClient.setHttpRequestRetryHandler(new DefaultHttpRequestRetryHandler(3, true));
         
         return httpClient;
+         */
     }
 
 }

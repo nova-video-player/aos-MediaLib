@@ -33,9 +33,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
-import cz.msebera.android.httpclient.Header;
-import cz.msebera.android.httpclient.HttpEntity;
-import cz.msebera.android.httpclient.HttpResponse;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -94,7 +94,7 @@ import android.widget.ImageView;
 public class HttpImageManager{
 
     private static final String TAG = "HttpImageManager";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     public static final int DEFAULT_CACHE_SIZE = 64;
     public static final int UNCONSTRAINED = -1;
@@ -323,9 +323,10 @@ public class HttpImageManager{
                             long millis = System.currentTimeMillis();
                             
                             byte[] binary = null;
-                            HttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
+                            //HttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
+                            CloseableHttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
 
-                            Header[] headers = httpResp.getAllHeaders();
+                            Header[] headers = httpResp.getHeaders();
                             for (Header header : headers) {
                                 if(DEBUG) Log.i(TAG, header.toString());
                                 if (header.getName().equalsIgnoreCase("Content-Type") && !header.getValue().startsWith("image"))
@@ -336,10 +337,19 @@ public class HttpImageManager{
                             if (entity != null) {
                                 InputStream responseStream = entity.getContent();
                                 try {
+                                    /*
                                     Header header = entity.getContentEncoding();
+                                    String contentEncoding = entity.getContentEncoding();
                                     if (header != null && header.getValue() != null && header.getValue().contains("gzip")) {
                                         responseStream =  new GZIPInputStream(responseStream);
                                     }
+                                     */
+                                    String contentEncoding = entity.getContentEncoding();
+                                    if (DEBUG) Log.d(TAG, "contentEncoding=" + contentEncoding);
+                                    if (contentEncoding != null && contentEncoding.length() >0 && contentEncoding.contains("gzip")) {
+                                        responseStream =  new GZIPInputStream(responseStream);
+                                    }
+
                                     responseStream = new FlushedInputStream(responseStream); //patch the inputstream
                                     long contentSize = entity.getContentLength();
                                     binary = readInputStreamProgressively(responseStream, (int)contentSize, request);
