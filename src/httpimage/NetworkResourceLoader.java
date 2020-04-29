@@ -25,12 +25,18 @@ import java.net.ProxySelector;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
+import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.http.config.Registry;
+import org.apache.hc.core5.http.config.RegistryBuilder;
 
 import android.net.Uri;
 import android.util.Log;
-
 
 
 /**
@@ -74,31 +80,18 @@ public class NetworkResourceLoader {
 
         if (DEBUG) Log.d(TAG, "createHttpClient");
 
-        CloseableHttpClient httpClient = HttpClients.custom()
+
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("https", SSLConnectionSocketFactory.getSocketFactory())
+                .register("http", new PlainConnectionSocketFactory())
+                .build();
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+        HttpClients.custom().setConnectionManager(connectionManager);
+        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(connectionManager)
                 .setRoutePlanner(new SystemDefaultRoutePlanner(ProxySelector.getDefault()))
                 .build();
 
         return httpClient;
-
-        /*
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(context, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-        private static CloseableHttpClient client =
-                HttpClients.custom().setSSLHostnameVerifier(new NoopHostnameVerifier()).build();
-
-        builder.setSSLSocketFactory(sslConnectionFactory);
-
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("https", sslConnectionFactory)
-                .build();
-
-        HttpClientConnectionManager ccm = new BasicHttpClientConnectionManager(registry);
-
-        builder.setConnectionManager(ccm);
-
-        return builder.build();
-         */
 
         /*
         HttpParams params = new BasicHttpParams();
