@@ -41,7 +41,7 @@ public class BitmapUtil {
 
     private static final int UNCONSTRAINED = -1;
 
-    private static String TAG = "ImageUtil";
+    private static String TAG = "BitmapUtil";
     private static boolean DEBUG = true;
 
 
@@ -84,7 +84,7 @@ public class BitmapUtil {
     
     
     public static Bitmap decodeFile(String filePath, int maxNumOfPixels) {
-        
+        if (DEBUG) Log.d(TAG, "decodeFile " + filePath + "maxNumOfPixels " + maxNumOfPixels);
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(new File(filePath));
@@ -99,7 +99,6 @@ public class BitmapUtil {
                 try { fis.close(); } catch (IOException e) {}
             }
         }
-        
     }
     
     

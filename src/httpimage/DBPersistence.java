@@ -38,7 +38,7 @@ import android.util.Log;
 public class DBPersistence implements BitmapCache{
     
     private static final String TAG = "DBPersistence";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     
     
     public DBPersistence(Context context) {
@@ -56,7 +56,7 @@ public class DBPersistence implements BitmapCache{
         Bitmap bitmap = null;
         
         Uri image = Uri.withAppendedPath(DBImageTable.CONTENT_URI, key);
-        if (DEBUG) Log.d(TAG, "loaddata " + image.toString());
+        if (DEBUG) Log.d(TAG, "loadData " + image.toString());
         String[] returnCollums = new String[] {
             DBImageTable.DATA,
         };

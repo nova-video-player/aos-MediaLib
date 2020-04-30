@@ -74,8 +74,8 @@ public class FileSystemPersistence implements BitmapCache{
         if( !exists(key) ) {
             return null;
         }
-        
         File file = new File( new File(mBaseDir), key) ;
+        if(DEBUG) Log.e(TAG, "loadData: file " + file.getParent());
         return BitmapUtil.decodeFile(file.getAbsolutePath(), HttpImageManager.DECODING_MAX_PIXELS_DEFAULT);
     }
 

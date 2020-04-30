@@ -94,7 +94,7 @@ import android.widget.ImageView;
 public class HttpImageManager{
 
     private static final String TAG = "HttpImageManager";
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static final int DEFAULT_CACHE_SIZE = 64;
     public static final int UNCONSTRAINED = -1;

@@ -30,7 +30,6 @@ import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
 import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.http.config.Registry;
 import org.apache.hc.core5.http.config.RegistryBuilder;
@@ -46,7 +45,7 @@ import android.util.Log;
  */
 public class NetworkResourceLoader {
     public static final String TAG = "NetworkResourceLoader";
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     private CloseableHttpClient mHttpClient = createHttpClient();
 
