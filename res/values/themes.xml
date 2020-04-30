@@ -68,6 +68,7 @@
         <item name="android:colorBackgroundCacheHint">@null</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="alertDialogTheme">@style/Theme.AlertDialog</item>
+        <item name="android:navigationBarColor">#001b30</item>
     </style>
 
     <style name="Theme.Transparent" parent="Theme.AppCompat.NoActionBar">
