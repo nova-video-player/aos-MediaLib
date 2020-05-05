@@ -63,6 +63,11 @@ android {
         myCmd.add("native_avos_full")
         myCmd.add("native_torrentd")
         //myCmd.add("trakt-java")
+        myCmd.add("cling-core")
+        myCmd.add("cling-support")
+        myCmd.add("seamless-util")
+        myCmd.add("seamless-http")
+        myCmd.add("seamless-xml")
         commandLine myCmd
     }
 
@@ -72,6 +77,11 @@ android {
         myCmd.add("make")
         myCmd.add("native_clean")
         //myCmd.add("external_clean_trakt-java")
+        myCmd.add("external_clean_cling-core")
+        myCmd.add("external_clean_cling-support")
+        myCmd.add("external_clean_seamless-util")
+        myCmd.add("external_clean_seamless-http")
+        myCmd.add("external_clean_seamless-xml")
         commandLine myCmd
     }
 
@@ -133,8 +143,13 @@ dependencies {
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.1.1'
     // official dependencies for cling 2.1.2 is https://github.com/4thline/cling/blob/master/distribution/src/dist/README.txt
     // no host discovery if switch from 2.1.1 to 2.1.2 supposed to be fixed in 2.1.1 https://github.com/4thline/cling/issues/164
-    api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
-    implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
+    //api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
+    //implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
+    api files('libs/cling-core-2.1.2.jar');
+    implementation files('libs/cling-support-2.1.2.jar');
+    implementation files('libs/seamless-util-1.1.2.jar');
+    implementation files('libs/seamless-http-1.1.2.jar');
+    implementation files('libs/seamless-xml-1.1.2.jar');
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
