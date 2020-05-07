@@ -63,11 +63,8 @@ android {
         myCmd.add("native_avos_full")
         myCmd.add("native_torrentd")
         //myCmd.add("trakt-java")
-        myCmd.add("cling-core")
-        myCmd.add("cling-support")
-        myCmd.add("seamless-util")
-        myCmd.add("seamless-http")
-        myCmd.add("seamless-xml")
+        myCmd.add("cling")
+        myCmd.add("seamless")
         commandLine myCmd
     }
 
@@ -77,11 +74,8 @@ android {
         myCmd.add("make")
         myCmd.add("native_clean")
         //myCmd.add("external_clean_trakt-java")
-        myCmd.add("external_clean_cling-core")
-        myCmd.add("external_clean_cling-support")
-        myCmd.add("external_clean_seamless-util")
-        myCmd.add("external_clean_seamless-http")
-        myCmd.add("external_clean_seamless-xml")
+        myCmd.add("external_clean_cling")
+        myCmd.add("external_clean_seamless")
         commandLine myCmd
     }
 
@@ -150,6 +144,7 @@ dependencies {
     implementation files('libs/seamless-util-1.1.2.jar');
     implementation files('libs/seamless-http-1.1.2.jar');
     implementation files('libs/seamless-xml-1.1.2.jar');
+    implementation files('libs/seamless-swing-1.1.2.jar');
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
