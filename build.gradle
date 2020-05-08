@@ -15,6 +15,8 @@ allprojects {
         tasks.withType(JavaCompile) {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
+        // to generate the required jar dependencies e.g. cling seamless
+        preBuild.dependsOn(ndkBuild)
     }
 }
 
@@ -54,31 +56,6 @@ android {
 	multiDexEnabled true
     }
 
-    task ndkBuild(type:Exec) {
-        workingDir = "../"
-        List<String> myCmd = new ArrayList<String>()
-        myCmd.add("make")
-        myCmd.add("native_libyuv")
-        myCmd.add("native_libnativehelper")
-        myCmd.add("native_avos_full")
-        myCmd.add("native_torrentd")
-        //myCmd.add("trakt-java")
-        //myCmd.add("seamless")
-        //myCmd.add("cling")
-        commandLine myCmd
-    }
-
-    task ndkClean(type:Exec) {
-        workingDir = "../"
-        List<String> myCmd = new ArrayList<String>()
-        myCmd.add("make")
-        myCmd.add("native_clean")
-        //myCmd.add("external_clean_trakt-java")
-        //myCmd.add("external_clean_seamless")
-        //myCmd.add("external_clean_cling")
-        commandLine myCmd
-    }
-
     tasks.withType(JavaCompile) {
         compileTask -> compileTask.dependsOn ndkBuild
     }
@@ -101,6 +78,31 @@ android {
         exclude 'META-INF/maven'
         exclude 'README'
     }
+}
+
+task ndkBuild(type:Exec) {
+    workingDir = "../"
+    List<String> myCmd = new ArrayList<String>()
+    myCmd.add("make")
+    myCmd.add("native_libyuv")
+    myCmd.add("native_libnativehelper")
+    myCmd.add("native_avos_full")
+    myCmd.add("native_torrentd")
+    //myCmd.add("trakt-java")
+    myCmd.add("seamless")
+    myCmd.add("cling")
+    commandLine myCmd
+}
+
+task ndkClean(type:Exec) {
+    workingDir = "../"
+    List<String> myCmd = new ArrayList<String>()
+    myCmd.add("make")
+    myCmd.add("native_clean")
+    //myCmd.add("external_clean_trakt-java")
+    myCmd.add("external_clean_seamless")
+    myCmd.add("external_clean_cling")
+    commandLine myCmd
 }
 
 def useSan = false
