@@ -27,7 +27,7 @@ configurations {
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 'android-R'
     buildToolsVersion '29.0.3'
 
     gradle.startParameter.getTaskNames().each { task ->
@@ -52,7 +52,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 29
+        targetSdkVersion 'R'
 	multiDexEnabled true
     }
 
