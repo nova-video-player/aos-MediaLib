@@ -55,8 +55,9 @@ public final class ShowUtils {
     }
 
     // Separators: Punctuation or Whitespace
-    private static final String SEP_OPTIONAL = "[\\p{Punct}\\s]*+";
-    private static final String SEP_MANDATORY = "[\\p{Punct}\\s]++";
+    // remove the "(" and ")" in punctuation to avoid matching end parenthesis of date in "show (1987) s01e01 title.mkv"
+    private static final String SEP_OPTIONAL = "[[\\p{Punct}&&[^()]]\\s]*+";
+    private static final String SEP_MANDATORY = "[[\\p{Punct}&&[^()]]\\s]++";
 
     // Name patterns where the show is present first. Examples below.
     private static final Pattern[] patternsShowFirst = {
