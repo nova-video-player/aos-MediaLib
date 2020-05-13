@@ -15,6 +15,8 @@ allprojects {
         tasks.withType(JavaCompile) {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
+        // to generate the required jar dependencies e.g. cling seamless
+        preBuild.dependsOn(ndkBuild)
     }
 }
 
@@ -54,27 +56,6 @@ android {
 	multiDexEnabled true
     }
 
-    task ndkBuild(type:Exec) {
-        workingDir = "../"
-        List<String> myCmd = new ArrayList<String>()
-        myCmd.add("make")
-        myCmd.add("native_libyuv")
-        myCmd.add("native_libnativehelper")
-        myCmd.add("native_avos_full")
-        myCmd.add("native_torrentd")
-        //myCmd.add("trakt-java")
-        commandLine myCmd
-    }
-
-    task ndkClean(type:Exec) {
-        workingDir = "../"
-        List<String> myCmd = new ArrayList<String>()
-        myCmd.add("make")
-        myCmd.add("native_clean")
-        //myCmd.add("external_clean_trakt-java")
-        commandLine myCmd
-    }
-
     tasks.withType(JavaCompile) {
         compileTask -> compileTask.dependsOn ndkBuild
     }
@@ -97,6 +78,31 @@ android {
         exclude 'META-INF/maven'
         exclude 'README'
     }
+}
+
+task ndkBuild(type:Exec) {
+    workingDir = "../"
+    List<String> myCmd = new ArrayList<String>()
+    myCmd.add("make")
+    myCmd.add("native_libyuv")
+    myCmd.add("native_libnativehelper")
+    myCmd.add("native_avos_full")
+    myCmd.add("native_torrentd")
+    //myCmd.add("trakt-java")
+    myCmd.add("seamless")
+    myCmd.add("cling")
+    commandLine myCmd
+}
+
+task ndkClean(type:Exec) {
+    workingDir = "../"
+    List<String> myCmd = new ArrayList<String>()
+    myCmd.add("make")
+    myCmd.add("native_clean")
+    //myCmd.add("external_clean_trakt-java")
+    //myCmd.add("external_clean_seamless")
+    //myCmd.add("external_clean_cling")
+    commandLine myCmd
 }
 
 def useSan = false
@@ -133,8 +139,14 @@ dependencies {
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.1.1'
     // official dependencies for cling 2.1.2 is https://github.com/4thline/cling/blob/master/distribution/src/dist/README.txt
     // no host discovery if switch from 2.1.1 to 2.1.2 supposed to be fixed in 2.1.1 https://github.com/4thline/cling/issues/164
-    api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
-    implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
+    //api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
+    //implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
+    api files('libs/cling-core-2.1.2.jar');
+    implementation files('libs/cling-support-2.1.2.jar');
+    implementation files('libs/seamless-util-1.1.2.jar');
+    implementation files('libs/seamless-http-1.1.2.jar');
+    implementation files('libs/seamless-xml-1.1.2.jar');
+    implementation files('libs/seamless-swing-1.1.2.jar');
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
