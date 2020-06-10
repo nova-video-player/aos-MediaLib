@@ -71,7 +71,7 @@ public class MovieIdImages2 {
         return new Pair<>(response, again);
     }
 
-    private static void getImages(Response<Images> response,
+    private static void getImages(Response<Images> response, String defaultPosterPath, String defaultBackdropPath,
                            ImageConfiguration.PosterSize posterFullSize,
                            ImageConfiguration.PosterSize posterThumbSize,
                            ImageConfiguration.BackdropSize backdropFullSize,
@@ -80,6 +80,8 @@ public class MovieIdImages2 {
         Images images = response.body();
         MovieIdImagesResult parserResult = null;
         parserResult = MovieIdImagesParser2.getResult(images, language);
+        // add default poster coming from SearchMovie
+        if (defaultPosterPath != null) parserResult.posterPaths.add(0, defaultPosterPath);
         for (String path : parserResult.posterPaths) {
             if (DBG) Log.d(TAG, "addImages: treating poster " + path);
             String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
@@ -90,6 +92,8 @@ public class MovieIdImages2 {
             image.generateFileNames(context);
             posters.add(image);
         }
+        // add default backdrop coming from SearchMovie
+        if (defaultBackdropPath != null) parserResult.backdropPaths.add(0, defaultBackdropPath);
         for (String path : parserResult.backdropPaths) {
             if (DBG) Log.d(TAG, "addImages: treating backdrop " + path);
             String fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
@@ -102,7 +106,7 @@ public class MovieIdImages2 {
         }
     }
 
-    public static boolean addImages(long movieId, MovieTags tag, String language,
+    public static boolean addImages(long movieId, MovieTags tag, String language, String defaultPosterPath, String defaultBackdropPath,
             ImageConfiguration.PosterSize posterFullSize,
             ImageConfiguration.PosterSize posterThumbSize,
             ImageConfiguration.BackdropSize backdropFullSize,
@@ -121,7 +125,6 @@ public class MovieIdImages2 {
         globalRetry = false;
         authIssue = false;
         notFoundIssue = true;
-
         Pair<Response<Images>, Boolean> responseRetry = tryResponse(movieId, language, moviesService);
         imagesResponse = responseRetry.first;
         retry = responseRetry.second;
@@ -141,7 +144,7 @@ public class MovieIdImages2 {
         }
         // need to search images in en too since it can be empty in language...
         if (!language.equals("en")) {
-            Pair<Response<Images>, Boolean> globalResponseRetry =  tryResponse(movieId, "en", moviesService);
+            Pair<Response<Images>, Boolean> globalResponseRetry = tryResponse(movieId, "en", moviesService);
             globalImagesResponse = globalResponseRetry.first;
             globalRetry = globalResponseRetry.second;
             if (retry) { //first failure, try again
@@ -181,7 +184,7 @@ public class MovieIdImages2 {
             if (imagesResponse != null) {
                 if (imagesResponse.isSuccessful()) {
                     if (DBG) Log.d(TAG, "addImages: imagesResponse successful");
-                    getImages(imagesResponse,
+                    getImages(imagesResponse, defaultPosterPath, defaultBackdropPath,
                             posterFullSize, posterThumbSize, backdropFullSize, backdropThumbSize,
                             nameSeed, language, context);
                 }
@@ -189,7 +192,7 @@ public class MovieIdImages2 {
             if (globalImagesResponse != null) {
                 if (globalImagesResponse.isSuccessful()) {
                     if (DBG) Log.d(TAG, "addImages: globalImagesResponse successful");
-                    getImages(globalImagesResponse,
+                    getImages(globalImagesResponse, null, null,
                             posterFullSize, posterThumbSize, backdropFullSize, backdropThumbSize,
                             nameSeed, "en", context);
                 }

@@ -38,6 +38,11 @@ public class SearchMovieParser2 {
                 if (movie.id != null) result.setId(movie.id);
                 if (movie.original_title != null) result.setTitle(movie.original_title);
                 if (DBG) Log.d(TAG, "getResult: taking into account " + movie.original_title);
+                // add backdrop and poster here already if it exists because MovieIdImages can return empty results...
+                if (DBG) Log.d(TAG, "getResult: poster path " + movie.poster_path);
+                if (movie.poster_path != null) result.setPosterPath(movie.poster_path);
+                if (DBG) Log.d(TAG, "getResult: backdrop path " + movie.backdrop_path);
+                if (movie.backdrop_path != null) result.setBackdropPath(movie.backdrop_path);
                 results.add(result);
             }
             i++;

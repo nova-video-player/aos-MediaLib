@@ -29,6 +29,8 @@ public class SearchResult implements Parcelable {
     private BaseScraper2 mScraper;
     private Uri mFile;
     private Bundle mExtra;
+    private String mPosterPath;
+    private String mBackdropPath;
 
     public SearchResult() {
     }
@@ -59,6 +61,12 @@ public class SearchResult implements Parcelable {
     public void setScraper(BaseScraper2 scraper) { mScraper = scraper; }
     public void setFile(Uri file) { mFile = file; }
     public void setExtra(Bundle extra) { mExtra = extra; }
+
+    public String getPosterPath() { return mPosterPath; }
+    public String getBackdropPath() { return mBackdropPath; }
+
+    public void setPosterPath(String path) { mPosterPath = path; }
+    public void setBackdropPath(String path) { mBackdropPath = path;  }
 
     public static final Parcelable.Creator<SearchResult> CREATOR = new Parcelable.Creator<SearchResult>() {
         public SearchResult createFromParcel(Parcel in) {

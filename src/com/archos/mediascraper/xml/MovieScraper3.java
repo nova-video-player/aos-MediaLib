@@ -132,7 +132,7 @@ public class MovieScraper3 extends BaseScraper2 {
         // TODO: CHANGE POSTER SIZE HERE?
         // TODO: scraperimage remove httpcache that is in wrong directory
         // TODO: use ShowScraper3 way?
-        MovieIdImages2.addImages(movieId, tag, language,
+        MovieIdImages2.addImages(movieId, tag, language, result.getPosterPath(), result.getBackdropPath(),
                 ImageConfiguration.PosterSize.W342, // large poster
                 ImageConfiguration.PosterSize.W92,  // thumb poster
                 ImageConfiguration.BackdropSize.W1280, // large bd
