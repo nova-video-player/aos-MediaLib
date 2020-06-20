@@ -9,7 +9,6 @@
     4 - seconds
     5 - second%60
     -->
-    <skip></skip>
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
