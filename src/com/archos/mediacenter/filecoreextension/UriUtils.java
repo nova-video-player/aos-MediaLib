@@ -59,6 +59,7 @@ public class UriUtils {
      */
 
     public static boolean isImplementedByFileCore(Uri uri){
+        if (uri == null || uri.getScheme() == null) return false;
         return FileUtils.isLocal(uri)||uri.getScheme().equals("smb")||
                 uri.getScheme().equals("upnp")||
                 uri.getScheme().equals("ftps")||
