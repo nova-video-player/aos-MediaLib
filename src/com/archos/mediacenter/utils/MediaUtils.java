@@ -194,23 +194,7 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
         }
         return newPositionToSelect;
     }
-   
-    public static File getOldSubsDir(Context context){
-        StringBuilder sb = new StringBuilder();
-        sb.append(STORAGE_PATH).append("/Android/data/").append(context.getPackageName()).append("/subtitles");
-        File subsDir = new File(sb.toString());
-        return subsDir;
-    }
-    public static void clearOldSubDir(Context context){
-        
-        try {
-            File subdir = getOldSubsDir(context);
 
-            if (subdir.exists()) {
-                FileEditorFactory.getFileEditorForUrl(Uri.fromFile(subdir), context).delete();
-            }
-        }catch (Exception e){e.printStackTrace();}
-    }
     /*
   * returns the path of local subtitles directory
   */
