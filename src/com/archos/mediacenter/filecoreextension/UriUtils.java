@@ -48,6 +48,7 @@ public class UriUtils {
     }
 
     public static boolean isWebUri(Uri uri){
+        if (uri == null || uri.getScheme() == null) return false;
         return uri.getScheme().equals("https")||
                 uri.getScheme().equals("http");
     }
