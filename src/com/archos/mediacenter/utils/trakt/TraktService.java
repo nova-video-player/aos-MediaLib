@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -310,7 +311,9 @@ public class TraktService extends Service {
                 if (messenger != null) {
                     Message remoteMsg = Message.obtain();
                     remoteMsg.what = MSG_RESULT;
-                    remoteMsg.obj = result;
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("status", result.status);
+                    remoteMsg.obj = bundle;
                     try {
                         messenger.send(remoteMsg);
                     } catch (RemoteException e) {
@@ -1284,7 +1287,7 @@ public class TraktService extends Service {
         private final Messenger mMessenger;
         private final boolean mNotify;
         public interface Listener {
-            public void onResult(Trakt.Result result);
+            void onResult(Bundle result);
         }
 
         public Client(Context context, Listener listener, boolean notify) {
@@ -1296,7 +1299,7 @@ public class TraktService extends Service {
                     @Override
                     public boolean handleMessage(Message msg) {
                         if (msg.what == MSG_RESULT) {
-                            mListener.onResult((Trakt.Result) msg.obj);
+                            mListener.onResult((Bundle) msg.obj);
                         }
                         return false;
                     }
