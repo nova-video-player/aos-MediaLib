@@ -80,7 +80,7 @@ public class AppState {
         }
         if (onForegroundListenerArray != null) {
             for (OnForeGroundListener listener : onForegroundListenerArray) {
-                listener.onForeGroundState(activity.getApplicationContext(), foreground);
+                if (listener != null) listener.onForeGroundState(activity.getApplicationContext(), foreground);
             }
         }
     }
