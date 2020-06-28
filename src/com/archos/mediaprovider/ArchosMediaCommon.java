@@ -14,9 +14,6 @@
 
 package com.archos.mediaprovider;
 
-import com.archos.environment.ArchosUtils;
-import com.archos.medialib.BuildConfig;
-
 import android.os.Environment;
 
 public final class ArchosMediaCommon {
