@@ -377,6 +377,8 @@ public final class ScraperStore {
 
     public static class MovieCollections {
         public static final String COLLECTION_ID = "m_coll_id";
+        public static final String COLLECTION_NAME = "m_coll_name";
+        public static final String COLLECTION_DESCRIPTION = "m_coll_description";
         public static final String COLLECTION_POSTER_LARGE_URL = "m_coll_po_large_url";
         public static final String COLLECTION_POSTER_LARGE_FILE = "m_coll_po_large_file";
         public static final String COLLECTION_BACKDROP_LARGE_URL = "m_coll_bd_large_url";

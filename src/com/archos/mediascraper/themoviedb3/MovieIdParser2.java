@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class MovieIdParser2 {
 
     private static final String TAG = MovieIdParser2.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
 
     private static final String DIRECTOR = "Director";
 
@@ -56,10 +56,12 @@ public class MovieIdParser2 {
             result.setYear(cal.get(Calendar.YEAR));
         }
         if (movie.belongs_to_collection != null) {
-            if (DBG) Log.d(TAG, "collection id: " + movie.belongs_to_collection.id);
+            if (DBG) Log.d(TAG, "getResult collection id: " + movie.belongs_to_collection.id + ", for " + movie.belongs_to_collection.name);
             result.setCollectionId(movie.belongs_to_collection.id);
             result.setCollectionBackdropPath(movie.belongs_to_collection.backdrop_path);
             result.setCollectionPosterPath(movie.belongs_to_collection.poster_path);
+            result.setCollectionName(movie.belongs_to_collection.name);
+            if (DBG) Log.d(TAG, "getResult collection overview: " + movie.belongs_to_collection.overview);
         } else
             result.setCollectionId(-1);
         if (movie.title != null) result.setTitle(movie.title);

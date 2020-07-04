@@ -70,6 +70,15 @@ public class MovieTags extends VideoTags {
     public void setCollectionId(int collectionId) { mCollectionId = collectionId; }
     public int getCollectionId() { return mCollectionId; }
 
+    protected String mCollectionName = null;
+    public void setCollectionName(String collectionName) { mCollectionName = collectionName; }
+    public String getCollectionName() { return mCollectionName; }
+
+    protected String mCollectionDescription = null;
+    public void setCollectionDescription(String collectionDescription) { mCollectionDescription = collectionDescription; }
+    public String getCollectionDescription() { return mCollectionDescription; }
+
+
     protected String mCollectionPosterPath = null;
     public void setCollectionPosterPath(String collectionPosterUrl) { mCollectionPosterPath = collectionPosterUrl; }
     public String getCollectionPosterPath() { return mCollectionPosterPath; }
@@ -188,6 +197,9 @@ public class MovieTags extends VideoTags {
 
         if (mCollectionId != -1) {
             cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_NAME, mCollectionName);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_DESCRIPTION, mCollectionName);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
             cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
             cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE, mCollectionPosterLargeFile);
             cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, mCollectionPosterThumbUrl);

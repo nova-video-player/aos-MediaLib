@@ -15,8 +15,6 @@
 package com.archos.mediaprovider.video;
 
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
-
 
 public final class ScraperTables {
     private ScraperTables() { /* empty */ }
@@ -1056,6 +1054,8 @@ public final class ScraperTables {
     private static final String CREATE_MOVIE_COLLECTION_TABLE =
             "CREATE TABLE " + MOVIE_COLLECTION_TABLE_NAME + " ( \n" +
                     ScraperStore.MovieCollections.COLLECTION_ID + " INTEGER PRIMARY KEY NOT NULL,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_NAME + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_DESCRIPTION + " TEXT,\n" +
                     ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL + " TEXT,\n" +
                     ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
                     ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL + " TEXT,\n" +
