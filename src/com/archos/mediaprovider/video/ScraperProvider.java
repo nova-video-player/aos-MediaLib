@@ -127,6 +127,16 @@ public class ScraperProvider extends ContentProvider {
     private static final int MOVIE_TRAILERS_ID = SCRAPER_PROVIDER_OFFSET + 143;
     private static final int MOVIE_TRAILERS_MOVIE_ID = SCRAPER_PROVIDER_OFFSET + 144;
 
+    private static final int MOVIE_COLLECTION = SCRAPER_PROVIDER_OFFSET + 150;
+    private static final int MOVIE_COLLECTION_ID = SCRAPER_PROVIDER_OFFSET + 151;
+    private static final int MOVIE_COLLECTION_POSTER_LARGE_URL = SCRAPER_PROVIDER_OFFSET + 152;
+    private static final int MOVIE_COLLECTION_POSTER_LARGE_FILE = SCRAPER_PROVIDER_OFFSET + 153;
+    private static final int MOVIE_COLLECTION_POSTER_THUMB_URL = SCRAPER_PROVIDER_OFFSET + 154;
+    private static final int MOVIE_COLLECTION_POSTER_THUMB_FILE = SCRAPER_PROVIDER_OFFSET + 155;
+    private static final int MOVIE_COLLECTION_BACKDROP_LARGE_URL = SCRAPER_PROVIDER_OFFSET + 156;
+    private static final int MOVIE_COLLECTION_BACKDROP_LARGE_FILE = SCRAPER_PROVIDER_OFFSET + 157;
+    private static final int MOVIE_COLLECTION_BACKDROP_THUMB_URL = SCRAPER_PROVIDER_OFFSET + 158;
+    private static final int MOVIE_COLLECTION_BACKDROP_THUMB_FILE = SCRAPER_PROVIDER_OFFSET + 159;
 
     private static UriMatcher sUriMatcher;
 
@@ -293,6 +303,12 @@ public class ScraperProvider extends ContentProvider {
                 MOVIE_TRAILERS_ID);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieTrailers.URI.BY_MOVIE_ID) + "/#",
                 MOVIE_TRAILERS_MOVIE_ID);
+
+        // movie collection
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieCollections.URI.BASE),
+                MOVIE_COLLECTION);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieCollections.URI.BY_COLLECTION_ID) + "/#",
+                MOVIE_COLLECTION_ID);
     }
 
     // Uris that need to be notified when inserting a Show or Episode
@@ -621,6 +637,16 @@ public class ScraperProvider extends ContentProvider {
                             ScraperImage.Type.SHOW_BACKDROP, values);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.ShowBackdrops.URI.BASE, cr);
+                break;
+            case MOVIE_COLLECTION:
+                // see MOVIE_POSTERS
+                rowId = db.insert(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
+                        ScraperStore.MovieCollections.COLLECTION_ID, values);
+                if (rowId < 0) {
+                    rowId = findScraperImage(db, ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
+                            ScraperImage.Type.SHOW_BACKDROP, values);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.MovieCollections.URI.BASE, cr);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);

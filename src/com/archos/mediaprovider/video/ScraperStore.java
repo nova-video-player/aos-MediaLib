@@ -88,6 +88,8 @@ public final class ScraperStore {
             public static final String NAME = "name_v_belongs_movie";
             public static final String GENRE = "genre_v_belongs_movie";
         }
+
+        public static final String COLLECTION_ID = "m_collection_id";
     }
 
     public static class Show {
@@ -370,6 +372,22 @@ public final class ScraperStore {
         public static class URI { //these uris are interpretated by scraperprovider
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/movietrailers");
             public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/movietrailers/byremote");
+        }
+    }
+
+    public static class MovieCollections {
+        public static final String COLLECTION_ID = "m_coll_id";
+        public static final String COLLECTION_POSTER_LARGE_URL = "m_coll_po_large_url";
+        public static final String COLLECTION_POSTER_LARGE_FILE = "m_coll_po_large_file";
+        public static final String COLLECTION_BACKDROP_LARGE_URL = "m_coll_bd_large_url";
+        public static final String COLLECTION_BACKDROP_LARGE_FILE = "m_coll_bd_large_file";
+        public static final String COLLECTION_POSTER_THUMB_URL = "m_coll_po_thumb_url";
+        public static final String COLLECTION_POSTER_THUMB_FILE = "m_coll_po_thumb_file";
+        public static final String COLLECTION_BACKDROP_THUMB_URL = "m_coll_bd_thumb_url";
+        public static final String COLLECTION_BACKDROP_THUMB_FILE = "m_coll_bd_thumb_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections");
+            public static final Uri BY_COLLECTION_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections/byremote");
         }
     }
 

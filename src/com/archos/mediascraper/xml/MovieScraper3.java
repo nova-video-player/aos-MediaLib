@@ -118,7 +118,7 @@ public class MovieScraper3 extends BaseScraper2 {
         if (moviesService == null) moviesService = tmdb.moviesService();
 
         // get base info
-        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, moviesService);
+        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, moviesService, mContext);
         if (search.status != ScrapeStatus.OKAY) {
             return new ScrapeDetailResult(search.tag, true, null, search.status, search.reason);
         }
@@ -129,7 +129,7 @@ public class MovieScraper3 extends BaseScraper2 {
         SearchMovieTrailer2.addTrailers(movieId, tag, language, moviesService);
 
         // add posters and backdrops
-        // TODO: CHANGE POSTER SIZE HERE?
+        // TODO: CHANGE POSTER SIZE HERE? i.e. ORIGINAL
         // TODO: scraperimage remove httpcache that is in wrong directory
         // TODO: use ShowScraper3 way?
         MovieIdImages2.addImages(movieId, tag, language, result.getPosterPath(), result.getBackdropPath(),
@@ -143,6 +143,13 @@ public class MovieScraper3 extends BaseScraper2 {
             tag.setCover(defaultPoster.getLargeFileF());
         }
 
+        downloadCollectionImage(tag,
+                ImageConfiguration.PosterSize.W342, // large poster
+                ImageConfiguration.PosterSize.W92,  // thumb poster
+                ImageConfiguration.BackdropSize.W1280, // large bd
+                ImageConfiguration.BackdropSize.W300,  // thumb bd
+                searchFile.toString());
+
         // if there was no movie description in the native language get it from default
         if (tag.getPlot().length() == 0) {
             if (DBG) Log.d(TAG, "ScrapeDetailResult: getting description in en because plot non existent in " + language);
@@ -150,6 +157,43 @@ public class MovieScraper3 extends BaseScraper2 {
         }
         tag.downloadPoster(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
+    }
+
+    private void downloadCollectionImage(MovieTags tag,
+                                         ImageConfiguration.PosterSize posterFullSize,
+                                         ImageConfiguration.PosterSize posterThumbSize,
+                                         ImageConfiguration.BackdropSize backdropFullSize,
+                                         ImageConfiguration.BackdropSize backdropThumbSize,
+                                         String nameSeed) {
+        if (tag.getCollectionId() != -1) {
+            String path = tag.getCollectionPosterPath();
+            if (DBG) Log.d(TAG, "getResult: treating collection poster  " + path);
+            String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
+            String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
+            ScraperImage image = new ScraperImage(ScraperImage.Type.COLLECTION_POSTER, nameSeed);
+            image.setLargeUrl(fullUrl);
+            image.setThumbUrl(thumbUrl);
+            image.generateFileNames(mContext);
+            image.download(mContext);
+            tag.setCollectionPosterLargeFile(image.getLargeFile());
+            tag.setCollectionPosterLargeUrl(fullUrl);
+            tag.setCollectionPosterThumbFile(image.getThumbFile());
+            tag.setCollectionPosterThumbUrl(thumbUrl);
+
+            path = tag.getCollectionBackdropPath();
+            if (DBG) Log.d(TAG, "getResult: treating collection backdrop " + path);
+            fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
+            thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
+            image = new ScraperImage(ScraperImage.Type.COLLECTION_BACKDROP, nameSeed);
+            image.setLargeUrl(fullUrl);
+            image.setThumbUrl(thumbUrl);
+            image.generateFileNames(mContext);
+            image.download(mContext);
+            tag.setCollectionBackdropLargeFile(image.getLargeFile());
+            tag.setCollectionBackdropLargeUrl(fullUrl);
+            tag.setCollectionBackdropThumbFile(image.getThumbFile());
+            tag.setCollectionBackdropThumbUrl(thumbUrl);
+        }
     }
 
     public static String getLanguage(Context context) {

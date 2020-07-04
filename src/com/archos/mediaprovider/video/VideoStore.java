@@ -1553,6 +1553,12 @@ public final class VideoStore {
              * <P>TYPE: INTEGER<P>
              */
             public static final String NOVA_PINNED = "Nova_pinned";
+
+            /**
+             * MediaScraper: Movie Collection id<br>
+             * <P>TYPE: <code>Integer</code> or <code>null</code>
+             */
+            public static final String SCRAPER_M_COLLECTION_ID = ScraperStore.Movie.COLLECTION_ID;
         }
 
         public static final class Media implements VideoColumns {

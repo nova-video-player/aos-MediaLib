@@ -14,6 +14,7 @@
 
 package com.archos.mediascraper.themoviedb3;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.archos.mediascraper.MovieTags;
@@ -32,7 +33,7 @@ public class MovieId2 {
     private static final String TAG = MovieId2.class.getSimpleName();
     private static final boolean DBG = false;
 
-    public static MovieIdResult getBaseInfo(long movieId, String language, MoviesService moviesService) {
+    public static MovieIdResult getBaseInfo(long movieId, String language, MoviesService moviesService, Context context) {
         MovieIdResult myResult = new MovieIdResult();
         Response<Movie> movieResponse = null;
         Response<Credits> creditsResponse = null;
@@ -54,14 +55,14 @@ public class MovieId2 {
                     // fallback to english if no result
                     if (!language.equals("en")) {
                         if (DBG) Log.d(TAG, "getBaseInfo: retrying search for movieId " + movieId + " in en");
-                        return getBaseInfo(movieId, "en", moviesService);
+                        return getBaseInfo(movieId, "en", moviesService, context);
                     }
                     if (DBG) Log.d(TAG, "getBaseInfo: movieId " + movieId + " not found");
                     break;
                 default:
                     if (movieResponse.isSuccessful()) {
                         if (movieResponse.body() != null) {
-                            parserResult = MovieIdParser2.getResult(movieResponse.body(), creditsResponse.body());
+                            parserResult = MovieIdParser2.getResult(movieResponse.body(), creditsResponse.body(), context);
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {

@@ -66,6 +66,46 @@ public class MovieTags extends VideoTags {
 
     public int getYear() { return mYear; }
 
+    protected int mCollectionId = -1;
+    public void setCollectionId(int collectionId) { mCollectionId = collectionId; }
+    public int getCollectionId() { return mCollectionId; }
+
+    protected String mCollectionPosterPath = null;
+    public void setCollectionPosterPath(String collectionPosterUrl) { mCollectionPosterPath = collectionPosterUrl; }
+    public String getCollectionPosterPath() { return mCollectionPosterPath; }
+
+    protected String mCollectionPosterLargeUrl = null;
+    public void setCollectionPosterLargeUrl(String collectionPosterLargeUrl) { mCollectionPosterLargeUrl = collectionPosterLargeUrl; }
+    public String getCollectionPosterLargeUrl() { return mCollectionPosterLargeUrl; }
+    protected String mCollectionPosterLargeFile = null;
+    public void setCollectionPosterLargeFile(String collectionPosterLargeFile) { mCollectionPosterLargeFile = collectionPosterLargeFile; }
+    public String getCollectionPosterLargeFile() { return mCollectionPosterLargeFile; }
+
+    protected String mCollectionPosterThumbUrl = null;
+    public void setCollectionPosterThumbUrl(String collectionPosterThumbUrl) { mCollectionPosterThumbUrl = collectionPosterThumbUrl; }
+    public String getCollectionPosterThumbUrl() { return mCollectionPosterThumbUrl; }
+    protected String mCollectionPosterThumbFile = null;
+    public void setCollectionPosterThumbFile(String collectionPosterThumbFile) { mCollectionPosterThumbFile = collectionPosterThumbFile; }
+    public String getCollectionPosterThumbFile() { return mCollectionPosterThumbFile; }
+
+    protected String mCollectionBackdropPath = null;
+    public void setCollectionBackdropPath(String collectionBackdropPath) { mCollectionBackdropPath = collectionBackdropPath; }
+    public String getCollectionBackdropPath() { return mCollectionBackdropPath; }
+
+    protected String mCollectionBackdropLargeUrl = null;
+    public void setCollectionBackdropLargeUrl(String collectionBackdropLargeUrl) { mCollectionBackdropLargeUrl = collectionBackdropLargeUrl; }
+    public String getCollectionBackdropLargeUrl() { return mCollectionBackdropLargeUrl; }
+    protected String mCollectionBackdropLargeFile = null;
+    public void setCollectionBackdropLargeFile(String collectionBackdropLargeFile) { mCollectionBackdropLargeFile = collectionBackdropLargeFile; }
+    public String getCollectionBackdropLargeFile() { return mCollectionBackdropLargeFile; }
+
+    protected String mCollectionBackdropThumbUrl = null;
+    public void setCollectionBackdropThumbUrl(String collectionBackdropThumbUrl) { mCollectionBackdropThumbUrl = collectionBackdropThumbUrl; }
+    public String getCollectionBackdropThumbUrl() { return mCollectionBackdropThumbUrl; }
+    protected String mCollectionBackdropThumbFile = null;
+    public void setCollectionBackdropThumbFile(String collectionBackdropThumbFile) { mCollectionBackdropThumbFile = collectionBackdropThumbFile; }
+    public String getCollectionBackdropThumbFile() { return mCollectionBackdropThumbFile; }
+
     @Override
     public void setCover(File file) {
         if (file == null) return;
@@ -85,7 +125,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.NAME, mTitle);
         values.put(ScraperStore.Movie.YEAR, Integer.valueOf(mYear));
         values.put(ScraperStore.Movie.RATING, Float.valueOf(mRating));
-
+        values.put(ScraperStore.Movie.COLLECTION_ID, Integer.valueOf(mCollectionId));
 
         /*if(trailer!=null)
             values.put(ScraperStore.Movie.TRAILER_KEY, Float.valueOf(trailer.getKey()));*/
@@ -143,6 +183,20 @@ public class MovieTags extends VideoTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Genre.URI.MOVIE);
             cop.withValue(ScraperStore.Movie.Genre.NAME, genre);
             cop.withValueBackReference(ScraperStore.Movie.Genre.MOVIE, 0);
+            allOperations.add(cop.build());
+        }
+
+        if (mCollectionId != -1) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE, mCollectionPosterLargeFile);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, mCollectionPosterThumbUrl);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE, mCollectionPosterThumbFile);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, mCollectionBackdropLargeUrl);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE, mCollectionBackdropLargeFile);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, mCollectionBackdropThumbUrl);
+            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
+            cop.withValueBackReference(ScraperStore.MovieCollections.COLLECTION_ID, 0);
             allOperations.add(cop.build());
         }
 
@@ -225,7 +279,6 @@ public class MovieTags extends VideoTags {
         return result;
     }
 
-
     public List<ScraperTrailer> getAllTrailersInDb(Context context) {
         ContentResolver cr = context.getContentResolver();
         Uri uri = ContentUris.withAppendedId(ScraperStore.MovieTrailers.URI.BY_MOVIE_ID, mId);
@@ -240,7 +293,6 @@ public class MovieTags extends VideoTags {
         }
         return result;
     }
-
 
     @Override
     public List<ScraperImage> getAllBackdropsInDb(Context context) {
