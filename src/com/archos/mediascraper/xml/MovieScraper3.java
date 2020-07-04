@@ -55,6 +55,7 @@ import java.util.Locale;
 
 import okhttp3.Cache;
 
+import static com.archos.mediascraper.MovieTags.isCollectionAlreadyKnown;
 import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.downloadCollectionImage;
 
 
@@ -150,7 +151,7 @@ public class MovieScraper3 extends BaseScraper2 {
         }
 
         // MovieCollection poster/backdrops and information are handled in the MovieTag because it is easier
-        if (tag.getCollectionId() != -1) { // in presence of a movie collection/saga
+        if (tag.getCollectionId() != -1 && ! isCollectionAlreadyKnown(tag.getCollectionId(), mContext)) { // in presence of a movie collection/saga
             if (collectionService == null) collectionService = tmdb.collectionService();
             CollectionResult collectionResult = MovieCollection.getInfo(tag.getCollectionId(), language, collectionService);
             if (collectionResult.status == ScrapeStatus.OKAY && collectionResult.collectionInfo != null) {
