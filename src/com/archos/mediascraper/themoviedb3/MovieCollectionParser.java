@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class MovieCollectionParser {
 
     private static final String TAG = MovieCollectionParser.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     public static CollectionInfo getResult(Collection collection) {
 

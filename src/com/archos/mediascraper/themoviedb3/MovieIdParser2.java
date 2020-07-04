@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class MovieIdParser2 {
 
     private static final String TAG = MovieIdParser2.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     private static final String DIRECTOR = "Director";
 
