@@ -166,7 +166,6 @@ public class MovieScraper3 extends BaseScraper2 {
                     ImageConfiguration.BackdropSize.W1280, // large bd
                     ImageConfiguration.BackdropSize.W300,  // thumb bd
                     searchFile.toString(), mContext);
-
         }
 
         // if there was no movie description in the native language get it from default

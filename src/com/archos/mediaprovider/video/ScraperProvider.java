@@ -296,7 +296,6 @@ public class ScraperProvider extends ContentProvider {
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowBackdrops.URI.BY_SHOW_ID) + "/#",
                 SHOW_BACKDROPS_SHOW_ID);
 
-
         // movie trailers
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieTrailers.URI.BASE),
                 MOVIE_TRAILERS);
@@ -713,7 +712,6 @@ public class ScraperProvider extends ContentProvider {
                 qb.setTables(ScraperTables.SHOW_TABLE_NAME);
                 break;
 
-
             case EPISODE_ID:
                 qb.setTables(ScraperTables.EPISODE_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Episode.ID + " = ");
@@ -841,7 +839,6 @@ public class ScraperProvider extends ContentProvider {
                 qb.appendWhereEscapeString(data);
                 break;
 
-
             case STUDIO_ID:
                 qb.setTables(ScraperTables.STUDIOS_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Studio.ID + "=");
@@ -946,6 +943,11 @@ public class ScraperProvider extends ContentProvider {
             case MOVIE_TRAILERS:
                 qb.setTables(ScraperTables.MOVIE_TRAILERS_TABLE_NAME);
                 break;
+
+            case MOVIE_COLLECTION:
+                qb.setTables(ScraperTables.MOVIE_COLLECTION_TABLE_NAME);
+                break;
+
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }

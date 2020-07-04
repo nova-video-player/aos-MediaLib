@@ -41,6 +41,8 @@ import java.util.List;
 
 public class MovieTags extends VideoTags {
     private static final String TAG = "MovieTags";
+    private static final boolean DBG = false;
+
     protected int mYear;
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
@@ -77,7 +79,6 @@ public class MovieTags extends VideoTags {
     protected String mCollectionDescription = null;
     public void setCollectionDescription(String collectionDescription) { mCollectionDescription = collectionDescription; }
     public String getCollectionDescription() { return mCollectionDescription; }
-
 
     protected String mCollectionPosterPath = null;
     public void setCollectionPosterPath(String collectionPosterUrl) { mCollectionPosterPath = collectionPosterUrl; }
@@ -196,20 +197,38 @@ public class MovieTags extends VideoTags {
         }
 
         if (mCollectionId != -1) {
-            cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_NAME, mCollectionName);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_DESCRIPTION, mCollectionName);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE, mCollectionPosterLargeFile);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, mCollectionPosterThumbUrl);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE, mCollectionPosterThumbFile);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, mCollectionBackdropLargeUrl);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE, mCollectionBackdropLargeFile);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, mCollectionBackdropThumbUrl);
-            cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
-            cop.withValueBackReference(ScraperStore.MovieCollections.COLLECTION_ID, 0);
-            allOperations.add(cop.build());
+            // Check if this Movie Collection is already referenced in the scraperDB
+            // TODO MARC: make it alreadyDownloaded boolean even in image fetching
+            // TODO MARC: do that also for all tvshows --> huge boost since no image rescaling!
+            String[] selectionArgs = { String.valueOf(mCollectionId) };
+            String[] baseProjection = { ScraperStore.MovieCollections.COLLECTION_ID };
+            String nameSelection = ScraperStore.MovieCollections.COLLECTION_ID + "=?";
+            Cursor cursor = cr.query(ScraperStore.MovieCollections.URI.BASE, baseProjection,
+                    nameSelection, selectionArgs, null);
+            if (cursor != null) {
+                if (! cursor.moveToFirst()) {
+                    if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " does not exist, saving it");
+                    cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_ID, mCollectionId);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_NAME, mCollectionName);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_DESCRIPTION, mCollectionDescription);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE, mCollectionPosterLargeFile);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, mCollectionPosterThumbUrl);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE, mCollectionPosterThumbFile);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, mCollectionBackdropLargeUrl);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE, mCollectionBackdropLargeFile);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, mCollectionBackdropThumbUrl);
+                    cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
+                    allOperations.add(cop.build());
+                } else {
+                    if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " already exists, skipping insert");
+                }
+                cursor.close();
+            } else {
+                if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " already exists, skipping insert");
+            }
         }
 
         // backreferences to first poster / backdrop. Set to the position of
