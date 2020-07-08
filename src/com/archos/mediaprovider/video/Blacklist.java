@@ -126,7 +126,8 @@ public class Blacklist {
             }
             c.moveToNext();
         }
-        
+        c.close();
+
         return blacklisteds;
     }
 }
