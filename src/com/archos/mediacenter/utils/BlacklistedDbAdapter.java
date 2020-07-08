@@ -150,7 +150,6 @@ public enum BlacklistedDbAdapter {
 
     public Cursor getAllBlacklisteds(Context context, String where, String [] whereArgs) {
         try {
-
             open(context);
             Cursor cursor = mDb.query(mDatabaseTable,
                     BLACKLISTED_COLS,
@@ -161,8 +160,7 @@ public enum BlacklistedDbAdapter {
                     null);
 
             return cursor;
-        }
-        catch (SQLiteException e) {
+        } catch (SQLiteException e) {
             // The table corresponding to this type does not exist yet
             Log.w(TAG, e);
             return null;
