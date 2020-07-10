@@ -1150,13 +1150,13 @@ public final class ScraperTables {
         db.execSQL(CREATE_MOVIE_TRAILERS_TABLE);
     }
 
-    public static void upgradeTo (SQLiteDatabase db, int toVersion) {
+    public static void upgradeTo(SQLiteDatabase db, int toVersion) {
         if (toVersion == 37) {
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
         }
         if (toVersion == 38) {
-            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_M_COLLECTION_ID + " INTEGER DEFAULT (-1)");
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_C_ID + " INTEGER DEFAULT (-1)");
             db.execSQL(CREATE_MOVIE_COLLECTION_TABLE);
         }
     }
