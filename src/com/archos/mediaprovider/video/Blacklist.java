@@ -35,8 +35,8 @@ public class Blacklist {
     private static final boolean DBG = false;
 
     private static Blacklist DEFAULT_INSTANCE;
-
-    private Context mContext;
+    private static Context mContext;
+    private static ArrayList<String> mBlacklisteds = null;
 
     private Blacklist(Context context) {
         /*
@@ -46,12 +46,14 @@ public class Blacklist {
          * For now it's only blacklisting files ending with "sample" or "trailer"
          */
         mContext = context;
+        updateBlacklisteds();
     }
 
     public static Blacklist getInstance(Context context) {
-        if (DEFAULT_INSTANCE == null)
+        if (DEFAULT_INSTANCE == null) {
             DEFAULT_INSTANCE = new Blacklist(context);
-        
+            updateBlacklisteds();
+        }
         return DEFAULT_INSTANCE;
     }
 
@@ -76,38 +78,31 @@ public class Blacklist {
     public boolean isBlacklisted(Uri file) {
         if (DBG) Log.d(TAG,"isBlacklisted: ExternalStorageDirectory=" + Environment.getExternalStorageDirectory().getPath() + ", ExtSdcards=" + ExtStorageManager.getExtStorageManager().getExtSdcards());
         if (file == null) return true;
-        if (DBG) Log.d(TAG,"isBlacklisted: checking now on default camera dir " + BLACKLISTED_CAMERA);
-        for (String blacklisted : BLACKLISTED_CAMERA) {
-            if (DBG) Log.d(TAG,"isBlacklisted: " + file.getPath() + " starts with " + blacklisted);
-            if (FileUtils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
+        String filePath = file.getPath();
+        if (FileUtils.isLocal(file)) { // only makes sense if file is locale
+            for (String blacklisted : BLACKLISTED_CAMERA)
+                if (filePath.startsWith(blacklisted)) return true;
+            List<String> extPathList = ExtStorageManager.getExtStorageManager().getExtSdcards();
+            extPathList.add(Environment.getExternalStorageDirectory().getPath());
+            for (String extPath: extPathList)
+                for (String blacklistedDir : BLACKLISTED_CAM_DIRS)
+                    if (filePath.startsWith(extPath+blacklistedDir)) return true;
+            for (String blacklisted : mBlacklisteds)
+                if (filePath.startsWith(blacklisted)) return true;
         }
-        List<String> extPathList = ExtStorageManager.getExtStorageManager().getExtSdcards();
-        extPathList.add(Environment.getExternalStorageDirectory().getPath());
-        if (DBG) Log.d(TAG,"isBlacklisted: checking now on app blacklisted" + extPathList);
-        for (String extPath: extPathList) {
-            for (String blacklistedDir : BLACKLISTED_CAM_DIRS)  {
-                if (DBG) Log.d(TAG,"isBlacklisted: " + file.getPath() + " starts with " + extPath+blacklistedDir);
-                if (FileUtils.isLocal(file) && file.getPath().startsWith(extPath+blacklistedDir)) return true;
-            }
-        }
-        for (String blacklisted : getBlacklisteds()) {
-            if (DBG) Log.d(TAG,"isBlacklisted: " + file.getPath() + " starts with " + blacklisted);
-            if (FileUtils.isLocal(file) && file.getPath().startsWith(blacklisted)) return true;
-        }
+        // this one needs to be done on networkscannerservicevideo: the shortcut is done
         return isFilenameBlacklisted(file.getLastPathSegment());
     }
 
-    private boolean isFilenameBlacklisted(String fileName) {
+    public boolean isFilenameBlacklisted(String fileName) { // check if fileName contains sample|trailer
         if (fileName != null) {
-            if (DBG) Log.d(TAG,"isFilenameBlacklisted: " + fileName + " contains sample|trailer");
             Matcher matcher = BLACKLISTED.matcher(fileName);
-            if (matcher.matches())
-                return true;
+            if (matcher.matches()) return true;
         }
         return false;
     }
 
-    private ArrayList<String> getBlacklisteds() {
+    private static ArrayList<String> getBlacklisteds() {
         ArrayList<String> blacklisteds = new ArrayList<>();
         Cursor c = BlacklistedDbAdapter.VIDEO.queryAllBlacklisteds(mContext);
         final int pathColumn = c.getColumnIndexOrThrow(BlacklistedDbAdapter.KEY_PATH);
@@ -117,10 +112,8 @@ public class Blacklist {
                     String blacklistedPath = c.getString(pathColumn);
                     if (blacklistedPath != null) {
                         blacklistedPath = Uri.parse(blacklistedPath).getPath();
-
                         if (!blacklistedPath.endsWith("/"))
                             blacklistedPath += "/";
-
                         blacklisteds.add(blacklistedPath);
                     }
                     c.moveToNext();
@@ -135,4 +128,9 @@ public class Blacklist {
         }
         return blacklisteds;
     }
+
+    public static void updateBlacklisteds() {
+        mBlacklisteds = getBlacklisteds();
+    }
+
 }

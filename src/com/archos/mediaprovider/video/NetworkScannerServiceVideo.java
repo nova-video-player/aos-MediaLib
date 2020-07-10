@@ -580,9 +580,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             int fileType = getFileType(file);
             if (!isValidType(fileType)) return;
             if (ArchosMediaFile.isHiddenFile(file)) return;
-            // blacklist not implemented on network storage yet, no need to go through this
-            //if (mBlacklist.isBlacklisted(file.getUri())) return;
-
+            // shortcut for blacklist check for trailer/sample, full should be isBlacklisted
+            if (mBlacklist.isFilenameBlacklisted(file.getUri().getLastPathSegment())) return;
             if (DBG) Log.d(TAG, "FileVisitListener.onFile: File " + file.getUri().toString());
             String p = file.getUri().toString();
             PrescanItem existingItem = null;
