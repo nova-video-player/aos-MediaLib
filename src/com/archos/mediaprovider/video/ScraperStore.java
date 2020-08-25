@@ -89,7 +89,7 @@ public final class ScraperStore {
             public static final String GENRE = "genre_v_belongs_movie";
         }
 
-        public static final String COLLECTION_ID = "m_collection_id";
+        public static final String COLLECTION_ID = "m_coll_id";
     }
 
     public static class Show {
