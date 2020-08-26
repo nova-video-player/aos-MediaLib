@@ -87,34 +87,35 @@ public class VideoDbInfo implements Parcelable {
     public static final String SELECTION_PATH = VideoStore.MediaColumns.DATA + "=?";
 
     public static final String[] COLUMNS = {
-        BaseColumns._ID,                                            //  0
-        VideoStore.MediaColumns.DATA,                               //  1
-        VideoStore.MediaColumns.TITLE,                              //  2
-        VideoStore.Video.VideoColumns.DURATION,                     //  3
-        VideoStore.Video.VideoColumns.BOOKMARK,                     //  4
-        VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK,              //  5
-        VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS,         //  6
-        VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, //  7
-        VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, //  8
-        VideoStore.Video.VideoColumns.ARCHOS_NUMBER_OF_SUBTITLE_TRACKS, // 9
-        VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED,      //  10
-        VideoStore.Video.VideoColumns.ARCHOS_TRAKT_SEEN,            //  11
-        VideoStore.Video.VideoColumns.ARCHOS_TRAKT_LIBRARY,         //  12
-        VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 			//	13
-        VideoStore.Video.VideoColumns.ARCHOS_VIDEO_STEREO,          //  14
-        VideoStore.Video.VideoColumns.ARCHOS_VIDEO_DEFINITION,      //  15
-        // scraper infos
-        VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,    // 16
-        VideoStore.Video.VideoColumns.SCRAPER_TITLE,                // 17
-        VideoStore.Video.VideoColumns.SCRAPER_COVER,                // 18
-        VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE,            // 19
-        VideoStore.Video.VideoColumns.SCRAPER_E_SEASON,             // 20
-        VideoStore.Video.VideoColumns.SCRAPER_E_NAME,               // 21
-        VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID,          // 22
-        VideoStore.Video.VideoColumns.SCRAPER_S_ONLINE_ID,          // 23
-        VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 24
-        VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 25
-        VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 26
+            BaseColumns._ID,                                            //  0
+            VideoStore.MediaColumns.DATA,                               //  1
+            VideoStore.MediaColumns.TITLE,                              //  2
+            VideoStore.Video.VideoColumns.DURATION,                     //  3
+            VideoStore.Video.VideoColumns.BOOKMARK,                     //  4
+            VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK,              //  5
+            VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS,         //  6
+            VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, //  7
+            VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, //  8
+            VideoStore.Video.VideoColumns.ARCHOS_NUMBER_OF_SUBTITLE_TRACKS, // 9
+            VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED,      //  10
+            VideoStore.Video.VideoColumns.ARCHOS_TRAKT_SEEN,            //  11
+            VideoStore.Video.VideoColumns.ARCHOS_TRAKT_LIBRARY,         //  12
+            VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME,            //	13
+            VideoStore.Video.VideoColumns.ARCHOS_VIDEO_STEREO,          //  14
+            VideoStore.Video.VideoColumns.ARCHOS_VIDEO_DEFINITION,      //  15
+            // scraper infos
+            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,    // 16
+            VideoStore.Video.VideoColumns.SCRAPER_TITLE,                // 17
+            VideoStore.Video.VideoColumns.SCRAPER_COVER,                // 18
+            VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE,            // 19
+            VideoStore.Video.VideoColumns.SCRAPER_E_SEASON,             // 20
+            VideoStore.Video.VideoColumns.SCRAPER_E_NAME,               // 21
+            VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID,          // 22
+            VideoStore.Video.VideoColumns.SCRAPER_S_ONLINE_ID,          // 23
+            VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 24
+            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 25
+            // TODO MARC there should be a migration not for scraperTables for video table (not movie...) to add this column
+            VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 26
     };
 
     public static final int IDX_ID =                     0;
