@@ -124,7 +124,7 @@ dependencies {
     // trakt depedencies: we imported the source code
     //api 'com.uwetrottmann.trakt5:trakt-java:6.1.0'
     //api files('libs/trakt-java.jar')
-    implementation ('com.uwetrottmann.trakt5:trakt-java:6.5.0') {
+    implementation ('com.uwetrottmann.trakt5:trakt-java:6.8.0') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
     implementation 'com.jakewharton.threetenabp:threetenabp:1.2.3'

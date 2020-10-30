@@ -633,7 +633,7 @@ public class Trakt {
         if (DBG) Log.d(TAG, "addList");
         TraktList list = new TraktList();
         list.name = title;
-        list.privacy = ListPrivacy.fromValue("private");
+        list.privacy = ListPrivacy.PRIVATE;
 
         TraktList result = exec(mTraktV2.users().createList(UserSlug.ME, list));
         if (result == null)
