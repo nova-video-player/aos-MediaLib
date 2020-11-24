@@ -217,7 +217,6 @@ public class AutoScrapeService extends Service {
 
                             } else if (scraperType == BaseTags.MOVIE) {
                                 baseTags = TagsFactory.buildMovieTags(AutoScrapeService.this, movieID);
-
                             }
                             sNumberOfFilesRemainingToProcess--;
                             sTotalNumberOfFilesRemainingToProcess--;

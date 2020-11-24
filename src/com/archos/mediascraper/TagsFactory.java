@@ -18,6 +18,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
@@ -140,6 +141,17 @@ public class TagsFactory {
             backdropTFile = getCol(c, VideoColumns.SCRAPER_BACKDROP_THUMB_FILE);
             backdropTUrl = getCol(c, VideoColumns.SCRAPER_BACKDROP_THUMB_URL);
             backdropId = getCol(c, VideoColumns.SCRAPER_BACKDROP_ID);
+            collectionId = getCol(c, VideoColumns.SCRAPER_C_ID);
+            collectionName = getCol(c, VideoColumns.SCRAPER_C_NAME);
+            collectionDescription = getCol(c, VideoColumns.SCRAPER_C_DESCRIPTION);
+            posterCLFile = getCol(c, VideoColumns.SCRAPER_C_POSTER_LARGE_FILE);
+            posterCLUrl = getCol(c, VideoColumns.SCRAPER_C_POSTER_LARGE_URL);
+            posterCTFile = getCol(c, VideoColumns.SCRAPER_C_POSTER_THUMB_FILE);
+            posterCTUrl = getCol(c, VideoColumns.SCRAPER_C_POSTER_THUMB_URL);
+            backdropCLFile = getCol(c, VideoColumns.SCRAPER_C_BACKDROP_LARGE_FILE);
+            backdropCLUrl = getCol(c, VideoColumns.SCRAPER_C_BACKDROP_LARGE_URL);
+            backdropCTFile = getCol(c, VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE);
+            backdropCTUrl = getCol(c, VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL);
         }
 
         private static int getCol(Cursor c, String name) {
@@ -197,6 +209,17 @@ public class TagsFactory {
         public final int posterSTFile;
         public final int posterSTUrl;
         public final int posterSId;
+        public final int collectionId;
+        public final int collectionName;
+        public final int collectionDescription;
+        public final int posterCLFile;
+        public final int posterCLUrl;
+        public final int posterCTFile;
+        public final int posterCTUrl;
+        public final int backdropCLFile;
+        public final int backdropCLUrl;
+        public final int backdropCTFile;
+        public final int backdropCTUrl;
     }
 
     public static final String[] VIDEO_COLUMNS = {
@@ -244,7 +267,18 @@ public class TagsFactory {
         VideoColumns.SCRAPER_BACKDROP_LARGE_URL,
         VideoColumns.SCRAPER_BACKDROP_THUMB_FILE,
         VideoColumns.SCRAPER_BACKDROP_THUMB_URL,
-        VideoColumns.SCRAPER_BACKDROP_ID
+        VideoColumns.SCRAPER_BACKDROP_ID,
+        VideoColumns.SCRAPER_C_ID,
+        VideoColumns.SCRAPER_C_NAME,
+        VideoColumns.SCRAPER_C_DESCRIPTION,
+        VideoColumns.SCRAPER_C_POSTER_LARGE_FILE,
+        VideoColumns.SCRAPER_C_POSTER_LARGE_URL,
+        VideoColumns.SCRAPER_C_POSTER_THUMB_FILE,
+        VideoColumns.SCRAPER_C_POSTER_THUMB_URL,
+        VideoColumns.SCRAPER_C_BACKDROP_LARGE_FILE,
+        VideoColumns.SCRAPER_C_BACKDROP_LARGE_URL,
+        VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE,
+        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL
     };
 
     /**
@@ -340,6 +374,17 @@ public class TagsFactory {
             String posterLUrl = getStringCol(cur, cols.posterLUrl);
             String posterTFile = getStringCol(cur, cols.posterTFile);
             String posterTUrl = getStringCol(cur, cols.posterTUrl);
+            int collectionId = getIntCol(cur, cols.collectionId);
+            String collectionName = getStringCol(cur, cols.collectionName);
+            String collectionDescription = getStringCol(cur, cols.collectionDescription);
+            String backdropCLFile = getStringCol(cur, cols.backdropCLFile);
+            String backdropCLUrl = getStringCol(cur, cols.backdropCLUrl);
+            String backdropCTFile = getStringCol(cur, cols.backdropCTFile);
+            String backdropCTUrl = getStringCol(cur, cols.backdropCTUrl);
+            String posterCLFile = getStringCol(cur, cols.posterCLFile);
+            String posterCLUrl = getStringCol(cur, cols.posterCLUrl);
+            String posterCTFile = getStringCol(cur, cols.posterCTFile);
+            String posterCTUrl = getStringCol(cur, cols.posterCTUrl);
             if (scraperType == ScraperStore.SCRAPER_TYPE_MOVIE) {
                 MovieTags tag = new MovieTags();
                 tag.setId(scraperId);
@@ -388,6 +433,20 @@ public class TagsFactory {
                     image.setId(posterId);
                     image.setRemoteId(scraperId);
                     tag.setPosters(image.asList());
+                }
+
+                if (collectionId > 0) {
+                    tag.setCollectionId(collectionId);
+                    tag.setCollectionName(collectionName);
+                    tag.setCollectionDescription(collectionDescription);
+                    tag.setCollectionPosterLargeFile(posterCLFile);
+                    tag.setCollectionPosterLargeUrl(posterCLUrl);
+                    tag.setCollectionPosterThumbFile(posterCTFile);
+                    tag.setCollectionPosterThumbUrl(posterCTUrl);
+                    tag.setCollectionBackdropLargeFile(backdropCLFile);
+                    tag.setCollectionBackdropLargeUrl(backdropCLUrl);
+                    tag.setCollectionBackdropThumbFile(backdropCTFile);
+                    tag.setCollectionBackdropThumbUrl(backdropCTUrl);
                 }
 
                 resultList.add(tag);
@@ -509,7 +568,6 @@ public class TagsFactory {
 
     public static List<MovieTags> buildMovieFromCursor(Cursor cur) {
         Hashtable<Long, MovieTags> tags = new Hashtable<Long, MovieTags>();
-        if(DBG) Log.d(TAG, "Building MovieTags from Cursor");
         if(!cur.moveToFirst())
             return null;
         do {
@@ -527,6 +585,8 @@ public class TagsFactory {
 
             String backdropUrl = getStringCol(cur, ScraperStore.Movie.BACKDROP_URL);
             String backdropPath = getStringCol(cur, ScraperStore.Movie.BACKDROP);
+
+            Integer collectionId = getIntCol(cur, ScraperStore.Movie.COLLECTION_ID);
 
             MovieTags tag = tags.get(id);
             if(tag == null) {
@@ -555,6 +615,9 @@ public class TagsFactory {
                 image.setLargeFile(backdropPath);
                 tag.setBackdrops(image.asList());
             }
+
+            if (collectionId > 0)
+                tag.setCollectionId(collectionId);
 
         } while(cur.moveToNext());
         return new ArrayList<MovieTags>(tags.values());
@@ -657,6 +720,7 @@ public class TagsFactory {
     }
 
     public static MovieTags buildMovieTags(Context context, long movieId) {
+        if (DBG) Log.d(TAG, "buildMovieTags: movieId=" + movieId);
         MovieTags result = null;
         ContentResolver cr = context.getContentResolver();
         Cursor c = cr.query(
@@ -677,6 +741,17 @@ public class TagsFactory {
                         VideoColumns.ARCHOS_LAST_TIME_PLAYED,   // 12
                         MediaColumns.DATA,                      // 13
                         BaseColumns._ID,                        // 14
+                        VideoColumns.SCRAPER_C_ID,                  // 15
+                        VideoColumns.SCRAPER_C_NAME,                // 16
+                        VideoColumns.SCRAPER_C_DESCRIPTION,         // 17
+                        VideoColumns.SCRAPER_C_POSTER_LARGE_FILE,   // 18
+                        VideoColumns.SCRAPER_C_POSTER_LARGE_URL,    // 19
+                        VideoColumns.SCRAPER_C_POSTER_THUMB_FILE,   // 20
+                        VideoColumns.SCRAPER_C_POSTER_THUMB_URL,    // 21
+                        VideoColumns.SCRAPER_C_BACKDROP_LARGE_FILE, // 22
+                        VideoColumns.SCRAPER_C_BACKDROP_LARGE_URL,  // 23
+                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE, // 24
+                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL   // 25
                 },
                 VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + "=?",
                 new String[] { String.valueOf(movieId) },
@@ -702,6 +777,17 @@ public class TagsFactory {
                 result.setLastPlayed(c.getLong(12), TimeUnit.SECONDS);
                 result.setFile(Uri.parse(c.getString(13)));
                 result.setVideoId(c.getLong(14));
+                result.setCollectionId(c.getInt(15));
+                result.setCollectionName(c.getString(16));
+                result.setCollectionDescription(c.getString(17));
+                result.setCollectionPosterLargeFile(c.getString(18));
+                result.setCollectionPosterLargeUrl(c.getString(19));
+                result.setCollectionPosterThumbFile(c.getString(20));
+                result.setCollectionPosterThumbUrl(c.getString(21));
+                result.setCollectionBackdropLargeFile(c.getString(22));
+                result.setCollectionBackdropLargeUrl(c.getString(23));
+                result.setCollectionBackdropThumbFile(c.getString(24));
+                result.setCollectionBackdropThumbUrl(c.getString(25));
             }
             c.close();
             c = null;
