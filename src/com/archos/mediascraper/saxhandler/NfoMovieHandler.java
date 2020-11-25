@@ -102,6 +102,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("video", VIDEO);
         STRINGS.addKey("durationinseconds", DURATIONINSECONDS);
         // STRINGS.addKey("lastplayed", LASTPLAYED); // no way to use that atm
+        STRINGS.addKey("set", SET);
         STRINGS.addKey("overview", OVERVIEW);
         STRINGS.addKey("posterLarge", POSTERLARGE);
         STRINGS.addKey("posterThumb", POSTERTHUMB);
@@ -181,7 +182,6 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     }
 
     private boolean startMovie(int hierarchyLevel, String localName) {
-        if (DBG) Log.d(TAG, "startMovie " + localName);
         switch (hierarchyLevel) {
             case 1:
                 switch (STRINGS.match(localName)) {
@@ -204,7 +204,6 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         return true;
                     // actor needs sub node parsing
                     case SET:
-                        if (DBG) Log.d(TAG, "startMovie: mInset=true, clear all fields");
                         mInSet = true;
                         mInSetId = -1;
                         mInSetName = null;
@@ -249,7 +248,6 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     mInStreamdetails = true;
                 }
                 if (mInSet) {
-                    if (DBG) Log.d(TAG, "startMovie: mInset=true, level two no action");
                     switch (STRINGS.match(localName)) {
                         // name and role need text parsing, return true
                         case ID:
@@ -259,7 +257,6 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         case POSTERTHUMB:
                         case BACKDROPLARGE:
                         case BACKDROPTHUMB:
-                            if (DBG) Log.d(TAG, "startMovie: mInset=true, found trigger key");
                             return true;
                         default:
                             break;
@@ -283,7 +280,6 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     }
 
     private void endMovie(int hierarchyLevel, String localName) {
-        if (DBG) Log.d(TAG, "endMovie " + localName);
         switch (hierarchyLevel) {
             case 1:
                 switch (STRINGS.match(localName)) {
@@ -384,15 +380,12 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         // name and role need text parsing, return true
                         case ID:
                             mInSetId = getInt();
-                            if (DBG) Log.d(TAG, "endMovie: mInSetId=" + mInSetId);
                             break;
                         case NAME:
                             mInSetName = getString();
-                            if (DBG) Log.d(TAG, "endMovie: mInSetName=" + mInSetName);
                             break;
                         case OVERVIEW:
                             mInSetOverview = getString();
-                            if (DBG) Log.d(TAG, "endMovie: mInSetOverview=" + mInSetOverview);
                             break;
                         case POSTERLARGE:
                             mInSetPosterLarge = getString();
@@ -428,6 +421,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     }
 
     public MovieTags getResult(Context context, Uri movieFile) {
+        if (DBG) Log.d(TAG, "getResult: processing " + movieFile.getPath());
         if (mCanParse) {
             if (!mMoviePosterUrls.isEmpty()) {
                 ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mMoviePosterUrls.size());
@@ -456,12 +450,15 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                 mMovie.setBackdrops(images);
             }
 
-            downloadCollectionImage(mMovie,
-                    ImageConfiguration.PosterSize.W342,    // large poster
-                    ImageConfiguration.PosterSize.W92,     // thumb poster
-                    ImageConfiguration.BackdropSize.W1280, // large bd
-                    ImageConfiguration.BackdropSize.W300,  // thumb bd
-                    mInSetPosterLarge, context);
+            if (mMovie.getCollectionId() > 0) {
+                if (DBG) Log.d(TAG, "getResult: ");
+                downloadCollectionImage(mMovie,
+                        ImageConfiguration.PosterSize.W342,    // large poster
+                        ImageConfiguration.PosterSize.W92,     // thumb poster
+                        ImageConfiguration.BackdropSize.W1280, // large bd
+                        ImageConfiguration.BackdropSize.W300,  // thumb bd
+                        mInSetPosterLarge, context);
+            }
 
             mMovie.setFile(movieFile);
             return mMovie;
