@@ -40,7 +40,7 @@ import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.download
 public class NfoMovieHandler extends BasicSubParseHandler {
 
     private final static String TAG = "NfoMovieHandler";
-    private final static boolean DBG = true;
+    private final static boolean DBG = false;
 
     private static final StringMatcher STRINGS = new StringMatcher();
     private static final int ROOT_MOVIE = 1;
@@ -340,13 +340,16 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case SET:
                         mInSet = false;
-                        if (DBG) Log.d(TAG, "endMovie: mInset=false, adding the whole collection");
                         mMovie.setCollectionId(mInSetId);
                         mMovie.setCollectionName(mInSetName);
                         mMovie.setCollectionDescription(mInSetOverview);
                         mMovie.setCollectionPosterLargeUrl(mInSetPosterLarge);
+                        if (mInSetPosterLarge != null) // need to isolate fileName at the end of url but keep the start /
+                            mMovie.setCollectionPosterPath(mInSetPosterLarge.substring(mInSetPosterLarge.lastIndexOf('/')));
                         mMovie.setCollectionPosterThumbUrl(mInSetPosterThumb);
                         mMovie.setCollectionBackdropLargeUrl(mInSetBackdropLarge);
+                        if (mInSetBackdropLarge != null) // need to isolate fileName at the end of url but keep the start /
+                            mMovie.setCollectionBackdropPath(mInSetBackdropLarge.substring(mInSetBackdropLarge.lastIndexOf('/')));
                         mMovie.setCollectionBackdropThumbUrl(mInSetBackdropThumb);
                         break;
                     default:
@@ -375,7 +378,6 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     mInStreamdetails = mInVideo = false;
                 }
                 if (mInSet) {
-                    if (DBG) Log.d(TAG, "endMovie: mInset=true");
                     switch (STRINGS.match(localName)) {
                         // name and role need text parsing, return true
                         case ID:
