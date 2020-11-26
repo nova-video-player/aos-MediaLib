@@ -346,10 +346,14 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         mMovie.setCollectionPosterLargeUrl(mInSetPosterLarge);
                         if (mInSetPosterLarge != null) // need to isolate fileName at the end of url but keep the start /
                             mMovie.setCollectionPosterPath(mInSetPosterLarge.substring(mInSetPosterLarge.lastIndexOf('/')));
+                        else
+                            mMovie.setCollectionPosterPath(null);
                         mMovie.setCollectionPosterThumbUrl(mInSetPosterThumb);
                         mMovie.setCollectionBackdropLargeUrl(mInSetBackdropLarge);
                         if (mInSetBackdropLarge != null) // need to isolate fileName at the end of url but keep the start /
                             mMovie.setCollectionBackdropPath(mInSetBackdropLarge.substring(mInSetBackdropLarge.lastIndexOf('/')));
+                        else
+                            mMovie.setCollectionBackdropPath(null);
                         mMovie.setCollectionBackdropThumbUrl(mInSetBackdropThumb);
                         break;
                     default:
@@ -452,15 +456,13 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                 mMovie.setBackdrops(images);
             }
 
-            if (mMovie.getCollectionId() > 0) {
-                if (DBG) Log.d(TAG, "getResult: ");
+            if (mMovie.getCollectionId() > 0)
                 downloadCollectionImage(mMovie,
                         ImageConfiguration.PosterSize.W342,    // large poster
                         ImageConfiguration.PosterSize.W92,     // thumb poster
                         ImageConfiguration.BackdropSize.W1280, // large bd
                         ImageConfiguration.BackdropSize.W300,  // thumb bd
                         mInSetPosterLarge, context);
-            }
 
             mMovie.setFile(movieFile);
             return mMovie;

@@ -35,31 +35,37 @@ public class MovieCollectionImages {
         if (tag.getCollectionId() != -1) {
             String path = tag.getCollectionPosterPath();
             if (DBG) Log.d(TAG, "getResult: treating collection poster  " + path);
-            String fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
-            String thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
-            ScraperImage image = new ScraperImage(ScraperImage.Type.COLLECTION_POSTER, nameSeed);
-            image.setLargeUrl(fullUrl);
-            image.setThumbUrl(thumbUrl);
-            image.generateFileNames(context);
-            image.download(context);
-            tag.setCollectionPosterLargeFile(image.getLargeFile());
-            tag.setCollectionPosterLargeUrl(fullUrl);
-            tag.setCollectionPosterThumbFile(image.getThumbFile());
-            tag.setCollectionPosterThumbUrl(thumbUrl);
+            String fullUrl, thumbUrl;
+            ScraperImage image;
+            if (path != null) {
+                fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
+                thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
+                image = new ScraperImage(ScraperImage.Type.COLLECTION_POSTER, nameSeed);
+                image.setLargeUrl(fullUrl);
+                image.setThumbUrl(thumbUrl);
+                image.generateFileNames(context);
+                image.download(context);
+                tag.setCollectionPosterLargeFile(image.getLargeFile());
+                tag.setCollectionPosterLargeUrl(fullUrl);
+                tag.setCollectionPosterThumbFile(image.getThumbFile());
+                tag.setCollectionPosterThumbUrl(thumbUrl);
+            }
 
             path = tag.getCollectionBackdropPath();
             if (DBG) Log.d(TAG, "getResult: treating collection backdrop " + path);
-            fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
-            thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
-            image = new ScraperImage(ScraperImage.Type.COLLECTION_BACKDROP, nameSeed);
-            image.setLargeUrl(fullUrl);
-            image.setThumbUrl(thumbUrl);
-            image.generateFileNames(context);
-            image.download(context);
-            tag.setCollectionBackdropLargeFile(image.getLargeFile());
-            tag.setCollectionBackdropLargeUrl(fullUrl);
-            tag.setCollectionBackdropThumbFile(image.getThumbFile());
-            tag.setCollectionBackdropThumbUrl(thumbUrl);
+            if (path != null) {
+                fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
+                thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
+                image = new ScraperImage(ScraperImage.Type.COLLECTION_BACKDROP, nameSeed);
+                image.setLargeUrl(fullUrl);
+                image.setThumbUrl(thumbUrl);
+                image.generateFileNames(context);
+                image.download(context);
+                tag.setCollectionBackdropLargeFile(image.getLargeFile());
+                tag.setCollectionBackdropLargeUrl(fullUrl);
+                tag.setCollectionBackdropThumbFile(image.getThumbFile());
+                tag.setCollectionBackdropThumbUrl(thumbUrl);
+            }
         }
     }
 }
