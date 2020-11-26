@@ -14,23 +14,9 @@
 
 package com.archos.mediascraper.themoviedb3;
 
-import android.content.Context;
 import android.util.Log;
 
-import com.archos.mediascraper.MovieTags;
-import com.archos.mediascraper.ScraperImage;
-import com.uwetrottmann.tmdb2.entities.BaseCompany;
-import com.uwetrottmann.tmdb2.entities.CastMember;
 import com.uwetrottmann.tmdb2.entities.Collection;
-import com.uwetrottmann.tmdb2.entities.Credits;
-import com.uwetrottmann.tmdb2.entities.CrewMember;
-import com.uwetrottmann.tmdb2.entities.Genre;
-import com.uwetrottmann.tmdb2.entities.Image;
-import com.uwetrottmann.tmdb2.entities.Images;
-import com.uwetrottmann.tmdb2.entities.Movie;
-
-import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
 
 public class MovieCollectionParser {
 
