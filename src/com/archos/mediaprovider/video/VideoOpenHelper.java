@@ -107,7 +107,6 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                 "WHERE _data=NEW._data;\n" +
              "END";
     // trigger to delete from files table if the corresponding id was deleted in files_import
-    // trigger to delete from files table if the corresponding id was deleted in files_import
     private static final String CREATE_FILES_IMPORT_TRIGGER_DELETE_V20 =
             "CREATE TRIGGER IF NOT EXISTS after_delete_files_import " +
             "AFTER DELETE ON " + FILES_IMPORT_TABLE_NAME + " " +
