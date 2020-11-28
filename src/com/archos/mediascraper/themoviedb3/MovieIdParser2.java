@@ -14,12 +14,18 @@
 
 package com.archos.mediascraper.themoviedb3;
 
+import android.content.Context;
+import android.util.Log;
+
 import com.archos.mediascraper.MovieTags;
+import com.archos.mediascraper.ScraperImage;
 import com.uwetrottmann.tmdb2.entities.BaseCompany;
 import com.uwetrottmann.tmdb2.entities.CastMember;
 import com.uwetrottmann.tmdb2.entities.Credits;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
+import com.uwetrottmann.tmdb2.entities.Image;
+import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.entities.Movie;
 
 import java.util.Calendar;
@@ -32,7 +38,7 @@ public class MovieIdParser2 {
 
     private static final String DIRECTOR = "Director";
 
-    public static MovieTags getResult(Movie movie, Credits credits) {
+    public static MovieTags getResult(Movie movie, Credits credits, Context context) {
 
         MovieTags result = new MovieTags();
         if (movie.id != null) result.setOnlineId(movie.id);
@@ -49,6 +55,15 @@ public class MovieIdParser2 {
             cal.setTime(movie.release_date);
             result.setYear(cal.get(Calendar.YEAR));
         }
+        if (movie.belongs_to_collection != null) {
+            if (DBG) Log.d(TAG, "getResult collection id: " + movie.belongs_to_collection.id + ", for " + movie.belongs_to_collection.name);
+            result.setCollectionId(movie.belongs_to_collection.id);
+            result.setCollectionBackdropPath(movie.belongs_to_collection.backdrop_path);
+            result.setCollectionPosterPath(movie.belongs_to_collection.poster_path);
+            result.setCollectionName(movie.belongs_to_collection.name);
+            if (DBG) Log.d(TAG, "getResult collection overview: " + movie.belongs_to_collection.overview);
+        } else
+            result.setCollectionId(-1);
         if (movie.title != null) result.setTitle(movie.title);
         if (movie.vote_average != null)
             result.setRating(movie.vote_average.floatValue());
@@ -64,7 +79,6 @@ public class MovieIdParser2 {
                     if (crew.job == DIRECTOR)
                         result.addDirectorIfAbsent(crew.name);
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
-        // TODO: add Collection belongs_to_collection
         result.setContentRating(null);
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 

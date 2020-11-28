@@ -16,6 +16,7 @@ package com.archos.mediascraper.saxhandler;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.NfoParser;
@@ -30,11 +31,16 @@ import org.xml.sax.Attributes;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.downloadCollectionImage;
+
 /**
  * Parser for movie .nfo files as described in
  * http://wiki.xbmc.org/index.php?title=Import-export_library#Video_.nfo_Files
  */
 public class NfoMovieHandler extends BasicSubParseHandler {
+
+    private final static String TAG = "NfoMovieHandler";
+    private final static boolean DBG = false;
 
     private static final StringMatcher STRINGS = new StringMatcher();
     private static final int ROOT_MOVIE = 1;
@@ -62,6 +68,12 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int LASTPLAYED = 24;
     private static final int RESUME = 25;
     private static final int BOOKMARK = 26;
+    private static final int SET = 27;
+    private static final int OVERVIEW = 28;
+    private static final int POSTERLARGE = 29;
+    private static final int POSTERTHUMB = 30;
+    private static final int BACKDROPLARGE = 31;
+    private static final int BACKDROPTHUMB = 32;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -90,6 +102,12 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("video", VIDEO);
         STRINGS.addKey("durationinseconds", DURATIONINSECONDS);
         // STRINGS.addKey("lastplayed", LASTPLAYED); // no way to use that atm
+        STRINGS.addKey("set", SET);
+        STRINGS.addKey("overview", OVERVIEW);
+        STRINGS.addKey("posterLarge", POSTERLARGE);
+        STRINGS.addKey("posterThumb", POSTERTHUMB);
+        STRINGS.addKey("backdropLarge", BACKDROPLARGE);
+        STRINGS.addKey("backdropThumb", BACKDROPTHUMB);
     }
 
     private MovieTags mMovie;
@@ -100,7 +118,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private String mActorName, mActorRole;
     private boolean mInActor;
     private boolean mInFanart;
-
+    private boolean mInSet;
+    private int mInSetId;
+    private String mInSetName, mInSetOverview, mInSetPosterLarge, mInSetPosterThumb, mInSetBackdropLarge, mInSetBackdropThumb;
     private boolean mInFileinfo, mInStreamdetails, mInVideo;
 
     @Override
@@ -120,6 +140,14 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         mInFileinfo = false;
         mInStreamdetails = false;
         mInVideo = false;
+        mInSet = false;
+        mInSetId = -1;
+        mInSetName = null;
+        mInSetOverview = null;
+        mInSetPosterLarge = null;
+        mInSetPosterThumb = null;
+        mInSetBackdropLarge = null;
+        mInSetBackdropThumb = null;
     }
 
     @Override
@@ -175,6 +203,16 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case RESUME:
                         return true;
                     // actor needs sub node parsing
+                    case SET:
+                        mInSet = true;
+                        mInSetId = -1;
+                        mInSetName = null;
+                        mInSetOverview = null;
+                        mInSetPosterLarge = null;
+                        mInSetPosterThumb = null;
+                        mInSetBackdropLarge = null;
+                        mInSetBackdropThumb = null;
+                        break;
                     case ACTOR:
                         mInActor = true;
                         mActorName = null;
@@ -208,6 +246,21 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                 }
                 if (mInFileinfo && STRINGS.match(localName) == STREAMDETAILS) {
                     mInStreamdetails = true;
+                }
+                if (mInSet) {
+                    switch (STRINGS.match(localName)) {
+                        // name and role need text parsing, return true
+                        case ID:
+                        case NAME:
+                        case OVERVIEW:
+                        case POSTERLARGE:
+                        case POSTERTHUMB:
+                        case BACKDROPLARGE:
+                        case BACKDROPTHUMB:
+                            return true;
+                        default:
+                            break;
+                    }
                 }
                 break;
             case 3:
@@ -285,6 +338,24 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case BOOKMARK:
                         mMovie.setBookmark(getLong());
                         break;
+                    case SET:
+                        mInSet = false;
+                        mMovie.setCollectionId(mInSetId);
+                        mMovie.setCollectionName(mInSetName);
+                        mMovie.setCollectionDescription(mInSetOverview);
+                        mMovie.setCollectionPosterLargeUrl(mInSetPosterLarge);
+                        if (mInSetPosterLarge != null) // need to isolate fileName at the end of url but keep the start /
+                            mMovie.setCollectionPosterPath(mInSetPosterLarge.substring(mInSetPosterLarge.lastIndexOf('/')));
+                        else
+                            mMovie.setCollectionPosterPath(null);
+                        mMovie.setCollectionPosterThumbUrl(mInSetPosterThumb);
+                        mMovie.setCollectionBackdropLargeUrl(mInSetBackdropLarge);
+                        if (mInSetBackdropLarge != null) // need to isolate fileName at the end of url but keep the start /
+                            mMovie.setCollectionBackdropPath(mInSetBackdropLarge.substring(mInSetBackdropLarge.lastIndexOf('/')));
+                        else
+                            mMovie.setCollectionBackdropPath(null);
+                        mMovie.setCollectionBackdropThumbUrl(mInSetBackdropThumb);
+                        break;
                     default:
                         break;
                 }
@@ -310,6 +381,34 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                 if (mInFileinfo && STRINGS.match(localName) == STREAMDETAILS) {
                     mInStreamdetails = mInVideo = false;
                 }
+                if (mInSet) {
+                    switch (STRINGS.match(localName)) {
+                        // name and role need text parsing, return true
+                        case ID:
+                            mInSetId = getInt();
+                            break;
+                        case NAME:
+                            mInSetName = getString();
+                            break;
+                        case OVERVIEW:
+                            mInSetOverview = getString();
+                            break;
+                        case POSTERLARGE:
+                            mInSetPosterLarge = getString();
+                            break;
+                        case POSTERTHUMB:
+                            mInSetPosterThumb = getString();
+                            break;
+                        case BACKDROPLARGE:
+                            mInSetBackdropLarge = getString();
+                            break;
+                        case BACKDROPTHUMB:
+                            mInSetBackdropThumb = getString();
+                            break;
+                        default:
+                            break;
+                    }
+                }
                 break;
             case 3:
                 if (mInVideo && STRINGS.match(localName) == VIDEO) {
@@ -328,6 +427,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     }
 
     public MovieTags getResult(Context context, Uri movieFile) {
+        if (DBG) Log.d(TAG, "getResult: processing " + movieFile.getPath());
         if (mCanParse) {
             if (!mMoviePosterUrls.isEmpty()) {
                 ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mMoviePosterUrls.size());
@@ -355,6 +455,15 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                 }
                 mMovie.setBackdrops(images);
             }
+
+            if (mMovie.getCollectionId() > 0)
+                downloadCollectionImage(mMovie,
+                        ImageConfiguration.PosterSize.W342,    // large poster
+                        ImageConfiguration.PosterSize.W92,     // thumb poster
+                        ImageConfiguration.BackdropSize.W1280, // large bd
+                        ImageConfiguration.BackdropSize.W300,  // thumb bd
+                        mInSetPosterLarge, context);
+
             mMovie.setFile(movieFile);
             return mMovie;
         }

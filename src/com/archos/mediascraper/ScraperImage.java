@@ -66,6 +66,7 @@ public class ScraperImage {
                 null, ScraperStore.ShowBackdrops.URI.BASE, ScraperStore.ShowBackdrops.SHOW_ID,
                 ImageScaler.Type.SCALE_OUTSIDE
                 ),
+
         SHOW_POSTER(
                 ScraperStore.ShowPosters.THUMB_URL, ScraperStore.ShowPosters.THUMB_FILE,
                 ScraperStore.ShowPosters.LARGE_URL, ScraperStore.ShowPosters.LARGE_FILE,
@@ -83,8 +84,19 @@ public class ScraperImage {
                 ScraperStore.ShowPosters.LARGE_URL, ScraperStore.ShowPosters.LARGE_FILE,
                 null, ScraperStore.ShowPosters.URI.BASE, ScraperStore.ShowPosters.SHOW_ID,
                 ImageScaler.Type.SCALE_INSIDE
+        ),
+        COLLECTION_POSTER(
+                ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE,
+                ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE,
+                null, ScraperStore.MovieCollections.URI.BASE, ScraperStore.MovieCollections.COLLECTION_ID,
+                ImageScaler.Type.SCALE_OUTSIDE
+        ),
+        COLLECTION_BACKDROP(
+                ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE,
+                ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE,
+                null, ScraperStore.MovieCollections.URI.BASE, ScraperStore.MovieCollections.COLLECTION_ID,
+                ImageScaler.Type.SCALE_OUTSIDE
         );
-
 
         public final String thumbUrlColumn;
         public final String thumbFileColumn;
@@ -330,16 +342,21 @@ public class ScraperImage {
             case EPISODE_POSTER:
             case MOVIE_POSTER:
             case SHOW_POSTER:
+            case COLLECTION_POSTER:
                 ret =  MediaScraper.getPosterDirectory(context);
+                if (DBG) Log.d(TAG, "getDir for collection poster: " + ret.getPath());
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
+                if (DBG) Log.d(TAG, "getDir for collection backdrop: " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though
                 Log.e(TAG, "could not determine Directory, fallback to public dir");
                 ret = Environment.getExternalStorageDirectory();
+                if (DBG) Log.d(TAG, "getDir default: " + ret.getPath());
                 break;
         }
         // if dir does not exists, create it.
@@ -357,11 +374,15 @@ public class ScraperImage {
             case EPISODE_POSTER:
             case MOVIE_POSTER:
             case SHOW_POSTER:
+            case COLLECTION_POSTER:
                 ret = MediaScraper.getImageCacheDirectory(context);
+                if (DBG) Log.d(TAG, "getCacheDir for collection poster: " + ret.getPath());
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
+                if (DBG) Log.d(TAG, "getCacheDir for collection backdrop: " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though
@@ -382,9 +403,11 @@ public class ScraperImage {
             case EPISODE_POSTER:
             case MOVIE_POSTER:
             case SHOW_POSTER:
+            case COLLECTION_POSTER:
                 return MediaScraper.IMAGE_CACHE_TIMEOUT;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case COLLECTION_BACKDROP:
                 return MediaScraper.BACKDROP_CACHE_TIMEOUT;
             default:
                 return 0;
@@ -490,6 +513,7 @@ public class ScraperImage {
             case EPISODE_POSTER:
             case MOVIE_POSTER:
             case SHOW_POSTER:
+            case COLLECTION_POSTER:
                 // TODO those values should be taken from resources. Problem: this class is used by MediaCenter
                 // and ArchosWidget and we have no common resouces :/
                 maxWidth = POSTER_WIDTH;
@@ -498,11 +522,11 @@ public class ScraperImage {
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case COLLECTION_BACKDROP:
                 if (thumb) {
                     maxWidth = thumbWidth;
                     maxHeight = thumbHeight;
                 } else {
-                        
                     // TODO maybe use fixed values here. In case we are connected to a high res display
                     // we might get a wrong / temporary size here.
                     DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
@@ -581,7 +605,6 @@ public class ScraperImage {
                 selection = ScraperStore.Episode.ID + "=? ";
                 selectionArgs = new String[] {
                         String.valueOf(mRemoteId),
-
                 };
                 break;
             case SHOW_POSTER:

@@ -80,39 +80,42 @@ public class VideoDbInfo implements Parcelable {
     public int traktResume = 0; // a negative value means -> has been set but not synchronized with trakt
     public int videoStereo = -1;
     public int videoDefinition = -1;
+    public int scraperCollectionID = -1;
 
     public static final Uri URI = VideoStore.Video.Media.EXTERNAL_CONTENT_URI;
     public static final String SELECTION_ID = BaseColumns._ID + "=?";
     public static final String SELECTION_PATH = VideoStore.MediaColumns.DATA + "=?";
 
     public static final String[] COLUMNS = {
-        BaseColumns._ID,                                            //  0
-        VideoStore.MediaColumns.DATA,                               //  1
-        VideoStore.MediaColumns.TITLE,                              //  2
-        VideoStore.Video.VideoColumns.DURATION,                     //  3
-        VideoStore.Video.VideoColumns.BOOKMARK,                     //  4
-        VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK,              //  5
-        VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS,         //  6
-        VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, //  7
-        VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, //  8
-        VideoStore.Video.VideoColumns.ARCHOS_NUMBER_OF_SUBTITLE_TRACKS, // 9
-        VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED,      //  10
-        VideoStore.Video.VideoColumns.ARCHOS_TRAKT_SEEN,            //  11
-        VideoStore.Video.VideoColumns.ARCHOS_TRAKT_LIBRARY,         //  12
-        VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 			//	13
-        VideoStore.Video.VideoColumns.ARCHOS_VIDEO_STEREO,          //  14
-        VideoStore.Video.VideoColumns.ARCHOS_VIDEO_DEFINITION,      //  15
-        // scraper infos
-        VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,    // 16
-        VideoStore.Video.VideoColumns.SCRAPER_TITLE,                // 17
-        VideoStore.Video.VideoColumns.SCRAPER_COVER,                // 18
-        VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE,            // 19
-        VideoStore.Video.VideoColumns.SCRAPER_E_SEASON,             // 20
-        VideoStore.Video.VideoColumns.SCRAPER_E_NAME,               // 21
-        VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID,          // 22
-        VideoStore.Video.VideoColumns.SCRAPER_S_ONLINE_ID,          // 23
-        VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 24
-        VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,    // 25
+            BaseColumns._ID,                                            //  0
+            VideoStore.MediaColumns.DATA,                               //  1
+            VideoStore.MediaColumns.TITLE,                              //  2
+            VideoStore.Video.VideoColumns.DURATION,                     //  3
+            VideoStore.Video.VideoColumns.BOOKMARK,                     //  4
+            VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK,              //  5
+            VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS,         //  6
+            VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, //  7
+            VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, //  8
+            VideoStore.Video.VideoColumns.ARCHOS_NUMBER_OF_SUBTITLE_TRACKS, // 9
+            VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED,      //  10
+            VideoStore.Video.VideoColumns.ARCHOS_TRAKT_SEEN,            //  11
+            VideoStore.Video.VideoColumns.ARCHOS_TRAKT_LIBRARY,         //  12
+            VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME,            //	13
+            VideoStore.Video.VideoColumns.ARCHOS_VIDEO_STEREO,          //  14
+            VideoStore.Video.VideoColumns.ARCHOS_VIDEO_DEFINITION,      //  15
+            // scraper infos
+            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,    // 16
+            VideoStore.Video.VideoColumns.SCRAPER_TITLE,                // 17
+            VideoStore.Video.VideoColumns.SCRAPER_COVER,                // 18
+            VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE,            // 19
+            VideoStore.Video.VideoColumns.SCRAPER_E_SEASON,             // 20
+            VideoStore.Video.VideoColumns.SCRAPER_E_NAME,               // 21
+            VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID,          // 22
+            VideoStore.Video.VideoColumns.SCRAPER_S_ONLINE_ID,          // 23
+            VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 24
+            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 25
+            // TODO MARC there should be a migration not for scraperTables for video table (not movie...) to add this column
+            VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 26
     };
 
     public static final int IDX_ID =                     0;
@@ -140,7 +143,8 @@ public class VideoDbInfo implements Parcelable {
     public static final int IDX_SCRAPER_M_ONLINE_ID =   22;
     public static final int IDX_SCRAPER_S_ONLINE_ID =   23;
     public static final int IDX_SCRAPER_E_ONLINE_ID =   24;
-    public static final int IDX_SCRAPER_ID =          25;
+    public static final int IDX_SCRAPER_ID =            25;
+    public static final int IDX_SCRAPER_M_COLLECTION_ID = 26;
     public static VideoDbInfo fromId(ContentResolver cr, long id) {
         if (id >= 0) {
             String[] selectionArgs = { String.valueOf(id) };
@@ -220,6 +224,7 @@ public class VideoDbInfo implements Parcelable {
             result.scraperMovieId = c.getString(IDX_SCRAPER_M_ONLINE_ID);
             result.scraperShowId = c.getString(IDX_SCRAPER_S_ONLINE_ID);
             result.scraperEpisodeId = c.getString(IDX_SCRAPER_E_ONLINE_ID);
+            result.scraperCollectionID = c.getInt(IDX_SCRAPER_M_COLLECTION_ID);
         }
         return result;
     }
@@ -325,6 +330,7 @@ public class VideoDbInfo implements Parcelable {
         traktResume = another.traktResume;
         videoStereo = another.videoStereo;
         videoDefinition = another.videoDefinition;
+        scraperCollectionID = another.scraperCollectionID;
     }
 
     public VideoDbInfo(Parcel in) {
@@ -357,7 +363,7 @@ public class VideoDbInfo implements Parcelable {
         traktResume = in.readInt();
         videoStereo = in.readInt();
         videoDefinition = in.readInt();
-
+        scraperCollectionID = in.readInt();
     }
 
     @Override
@@ -395,6 +401,7 @@ public class VideoDbInfo implements Parcelable {
         dest.writeInt(traktResume);
         dest.writeInt(videoStereo);
         dest.writeInt(videoDefinition);
+        dest.writeInt(scraperCollectionID);
     }
 
     public static final Parcelable.Creator<VideoDbInfo> CREATOR = new Parcelable.Creator<VideoDbInfo>() {

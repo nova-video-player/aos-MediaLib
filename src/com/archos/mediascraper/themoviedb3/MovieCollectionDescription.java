@@ -18,39 +18,39 @@ import android.util.Log;
 
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.xml.MovieScraper3;
-import com.uwetrottmann.tmdb2.entities.Movie;
-import com.uwetrottmann.tmdb2.services.MoviesService;
+import com.uwetrottmann.tmdb2.entities.Collection;
+import com.uwetrottmann.tmdb2.services.CollectionsService;
 
 import java.io.IOException;
 
 import retrofit2.Response;
 
-// set overview for movieId in english
+// set overview for collectionId in english
 // return boolean for success
-public class MovieIdDescription2 {
-    private static final String TAG = MovieIdDescription2.class.getSimpleName();
+public class MovieCollectionDescription {
+    private static final String TAG = MovieCollectionDescription.class.getSimpleName();
     private static final boolean DBG = false;
 
-    public static boolean addDescription(long movieId, MovieTags tag, MoviesService moviesService) {
+    public static boolean addDescription(long collectionId, MovieTags tag, CollectionsService collectionsService) {
         if (tag == null)
             return false;
-        Response<Movie> movieResponse = null;
+        Response<Collection> collectionResponse = null;
         try {
-            movieResponse = moviesService.summary((int) movieId, "en").execute();
-            switch (movieResponse.code()) {
+            collectionResponse = collectionsService.summary((int) collectionId, "en").execute();
+            switch (collectionResponse.code()) {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
                     MovieScraper3.reauth();
                     return false;
                 case 404: // not found
-                    if (DBG) Log.d(TAG, "addDescription: movieId " + movieId + " not found");
+                    if (DBG) Log.d(TAG, "addDescription: movieId " + collectionId + " not found");
                     return false;
                 default:
-                    if (movieResponse.isSuccessful()) {
-                        if (movieResponse.body() != null) {
-                            String description = movieResponse.body().overview;
+                    if (collectionResponse.isSuccessful()) {
+                        if (collectionResponse.body() != null) {
+                            String description = collectionResponse.body().overview;
                             if (description != null && !description.isEmpty())
-                                tag.setPlot(description);
+                                tag.setCollectionDescription(description);
                             return true;
                         } else
                             return false;
@@ -58,7 +58,7 @@ public class MovieIdDescription2 {
                         return false;
             }
         } catch (IOException e) {
-            Log.e(TAG, "addDescription: caught IOException getting summary for movieId=" + movieId);
+            Log.e(TAG, "addDescription: caught IOException getting summary for movieId=" + collectionId);
             return false;
         }
     }

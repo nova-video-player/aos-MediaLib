@@ -33,7 +33,11 @@ import com.archos.mediascraper.preprocess.MovieSearchInfo;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.settings.ScraperSetting;
 import com.archos.mediascraper.settings.ScraperSettings;
+import com.archos.mediascraper.themoviedb3.CollectionInfo;
+import com.archos.mediascraper.themoviedb3.CollectionResult;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
+import com.archos.mediascraper.themoviedb3.MovieCollection;
+import com.archos.mediascraper.themoviedb3.MovieCollectionImages;
 import com.archos.mediascraper.themoviedb3.MovieId2;
 import com.archos.mediascraper.themoviedb3.MovieIdDescription2;
 import com.archos.mediascraper.themoviedb3.MovieIdImages2;
@@ -42,6 +46,7 @@ import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.themoviedb3.SearchMovie2;
 import com.archos.mediascraper.themoviedb3.SearchMovieResult;
 import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
+import com.uwetrottmann.tmdb2.services.CollectionsService;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
 
@@ -50,12 +55,15 @@ import java.util.Locale;
 
 import okhttp3.Cache;
 
+import static com.archos.mediascraper.MovieTags.isCollectionAlreadyKnown;
+import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.downloadCollectionImage;
+
 
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private final static String TAG = "MovieScraper3";
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
 
     private static ScraperSettings sSettings = null;
 
@@ -65,6 +73,7 @@ public class MovieScraper3 extends BaseScraper2 {
     static MyTmdb tmdb = null;
     static SearchService searchService = null;
     static MoviesService moviesService = null;
+    static CollectionsService collectionService = null;
 
     static String apiKey = null;
 
@@ -118,7 +127,7 @@ public class MovieScraper3 extends BaseScraper2 {
         if (moviesService == null) moviesService = tmdb.moviesService();
 
         // get base info
-        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, moviesService);
+        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, moviesService, mContext);
         if (search.status != ScrapeStatus.OKAY) {
             return new ScrapeDetailResult(search.tag, true, null, search.status, search.reason);
         }
@@ -129,9 +138,7 @@ public class MovieScraper3 extends BaseScraper2 {
         SearchMovieTrailer2.addTrailers(movieId, tag, language, moviesService);
 
         // add posters and backdrops
-        // TODO: CHANGE POSTER SIZE HERE?
-        // TODO: scraperimage remove httpcache that is in wrong directory
-        // TODO: use ShowScraper3 way?
+        // TODO: CHANGE POSTER SIZE HERE? i.e. ORIGINAL
         MovieIdImages2.addImages(movieId, tag, language, result.getPosterPath(), result.getBackdropPath(),
                 ImageConfiguration.PosterSize.W342, // large poster
                 ImageConfiguration.PosterSize.W92,  // thumb poster
@@ -141,6 +148,25 @@ public class MovieScraper3 extends BaseScraper2 {
         ScraperImage defaultPoster = tag.getDefaultPoster();
         if (defaultPoster != null) {
             tag.setCover(defaultPoster.getLargeFileF());
+        }
+
+        // MovieCollection poster/backdrops and information are handled in the MovieTag because it is easier
+        if (tag.getCollectionId() != -1 && ! isCollectionAlreadyKnown(tag.getCollectionId(), mContext)) { // in presence of a movie collection/saga
+            if (collectionService == null) collectionService = tmdb.collectionService();
+            CollectionResult collectionResult = MovieCollection.getInfo(tag.getCollectionId(), language, collectionService);
+            if (collectionResult.status == ScrapeStatus.OKAY && collectionResult.collectionInfo != null) {
+                CollectionInfo collectionInfo = collectionResult.collectionInfo;
+                if (collectionInfo.name != null) tag.setCollectionName(collectionInfo.name);
+                if (collectionInfo.description != null) tag.setCollectionDescription(collectionInfo.description);
+                if (collectionInfo.poster != null) tag.setCollectionPosterPath(collectionInfo.poster);
+                if (collectionInfo.backdrop != null) tag.setCollectionBackdropPath(collectionInfo.backdrop);
+            }
+            downloadCollectionImage(tag,
+                    ImageConfiguration.PosterSize.W342,    // large poster
+                    ImageConfiguration.PosterSize.W92,     // thumb poster
+                    ImageConfiguration.BackdropSize.W1280, // large bd
+                    ImageConfiguration.BackdropSize.W300,  // thumb bd
+                    searchFile.toString(), mContext);
         }
 
         // if there was no movie description in the native language get it from default

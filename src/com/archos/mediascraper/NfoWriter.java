@@ -19,6 +19,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import androidx.preference.PreferenceManager;
+
+import android.util.Log;
 import android.util.LruCache;
 import android.util.Xml;
 
@@ -42,6 +44,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 public class NfoWriter {
+
+    private final static String TAG = "NfoWriter";
+    private final static boolean DBG = false;
 
     public static class ExportContext {
         private final LruCache<String, String> exportedFiles = new LruCache<String, String>(64);
@@ -130,6 +135,17 @@ public class NfoWriter {
                 }
                 serializer.endTag("", "actor");
             }
+            serializer.startTag("", "set");
+            {
+                textTag(serializer, "id", tag.getCollectionId());
+                textTag(serializer, "name", tag.getCollectionName());
+                textTag(serializer, "overview", tag.getCollectionDescription());
+                textTag(serializer, "posterLarge", tag.getCollectionPosterLargeUrl());
+                textTag(serializer, "posterThumb", tag.getCollectionPosterThumbUrl());
+                textTag(serializer, "backdropLarge", tag.getCollectionBackdropLargeUrl());
+                textTag(serializer, "backdropThumb", tag.getCollectionBackdropThumbUrl());
+            }
+            serializer.endTag("", "set");
             List<ScraperImage> posters = tag.getPosters();
             if (posters != null) {
                 for (ScraperImage image : posters) {
@@ -400,8 +416,6 @@ public class NfoWriter {
                 }
             }
         }
-
-
     }
 
     public static boolean isNfoAutoExportEnabled(Context context) {

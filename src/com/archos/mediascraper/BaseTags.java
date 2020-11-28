@@ -66,6 +66,7 @@ public abstract class BaseTags implements Parcelable {
     protected float mRating;
     protected String mPlot;
     protected Map<String, String> mActors;
+    protected Map<String, String> mSet; // for collection
     protected String mActorsFormatted;
     protected SpannableString mSpannableActorsFormatted;
     protected List<String> mDirectors;
@@ -100,6 +101,7 @@ public abstract class BaseTags implements Parcelable {
     }
 
     public Map<String, String> getActors() { return java.util.Collections.unmodifiableMap(mActors); }
+    public Map<String, String> getSet() { return mSet; }
     public List<String> getDirectors() { return mDirectors; }
     public Uri getFile() { return mFile; }
     public long getId() { return mId; }

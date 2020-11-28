@@ -16,7 +16,6 @@ package com.archos.mediaprovider.video;
 
 import android.database.sqlite.SQLiteDatabase;
 
-
 public final class ScraperTables {
     private ScraperTables() { /* empty */ }
 
@@ -590,7 +589,6 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
-            "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             // set scraper type / id to -1 if something is refering this episode
             "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
@@ -1052,6 +1050,22 @@ public final class ScraperTables {
     private static final String DROP_SHOW_BACKDROPS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_BACKDROPS_TABLE_NAME + "_delete";
 
+    public static final String MOVIE_COLLECTION_TABLE_NAME = "movie_collection";
+    private static final String CREATE_MOVIE_COLLECTION_TABLE =
+            "CREATE TABLE " + MOVIE_COLLECTION_TABLE_NAME + " ( \n" +
+                    ScraperStore.MovieCollections.COLLECTION_ID + " INTEGER PRIMARY KEY NOT NULL,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_NAME + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_DESCRIPTION + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE\n" +
+                    ")";
+
     public static void create(SQLiteDatabase db) {
         db.execSQL(MOVIE_TABLE_CREATE);
         db.execSQL(ACTORS_TABLE_CREATE);
@@ -1136,10 +1150,14 @@ public final class ScraperTables {
         db.execSQL(CREATE_MOVIE_TRAILERS_TABLE);
     }
 
-    public static void upgradeTo (SQLiteDatabase db, int toVersion) {
+    public static void upgradeTo(SQLiteDatabase db, int toVersion) {
         if (toVersion == 37) {
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
+        }
+        if (toVersion == 38) {
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_C_ID + " INTEGER DEFAULT (-1)");
+            db.execSQL(CREATE_MOVIE_COLLECTION_TABLE);
         }
     }
 }

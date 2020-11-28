@@ -41,6 +41,8 @@ import java.util.List;
 
 public class MovieTags extends VideoTags {
     private static final String TAG = "MovieTags";
+    private static final boolean DBG = false;
+
     protected int mYear;
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
@@ -66,6 +68,54 @@ public class MovieTags extends VideoTags {
 
     public int getYear() { return mYear; }
 
+    protected int mCollectionId = -1;
+    public void setCollectionId(int collectionId) { mCollectionId = collectionId; }
+    public int getCollectionId() { return mCollectionId; }
+
+    protected String mCollectionName = null;
+    public void setCollectionName(String collectionName) { mCollectionName = collectionName; }
+    public String getCollectionName() { return mCollectionName; }
+
+    protected String mCollectionDescription = null;
+    public void setCollectionDescription(String collectionDescription) { mCollectionDescription = collectionDescription; }
+    public String getCollectionDescription() { return mCollectionDescription; }
+
+    protected String mCollectionPosterPath = null;
+    public void setCollectionPosterPath(String collectionPosterUrl) { mCollectionPosterPath = collectionPosterUrl; }
+    public String getCollectionPosterPath() { return mCollectionPosterPath; }
+
+    protected String mCollectionPosterLargeUrl = null;
+    public void setCollectionPosterLargeUrl(String collectionPosterLargeUrl) { mCollectionPosterLargeUrl = collectionPosterLargeUrl; }
+    public String getCollectionPosterLargeUrl() { return mCollectionPosterLargeUrl; }
+    protected String mCollectionPosterLargeFile = null;
+    public void setCollectionPosterLargeFile(String collectionPosterLargeFile) { mCollectionPosterLargeFile = collectionPosterLargeFile; }
+    public String getCollectionPosterLargeFile() { return mCollectionPosterLargeFile; }
+
+    protected String mCollectionPosterThumbUrl = null;
+    public void setCollectionPosterThumbUrl(String collectionPosterThumbUrl) { mCollectionPosterThumbUrl = collectionPosterThumbUrl; }
+    public String getCollectionPosterThumbUrl() { return mCollectionPosterThumbUrl; }
+    protected String mCollectionPosterThumbFile = null;
+    public void setCollectionPosterThumbFile(String collectionPosterThumbFile) { mCollectionPosterThumbFile = collectionPosterThumbFile; }
+    public String getCollectionPosterThumbFile() { return mCollectionPosterThumbFile; }
+
+    protected String mCollectionBackdropPath = null;
+    public void setCollectionBackdropPath(String collectionBackdropPath) { mCollectionBackdropPath = collectionBackdropPath; }
+    public String getCollectionBackdropPath() { return mCollectionBackdropPath; }
+
+    protected String mCollectionBackdropLargeUrl = null;
+    public void setCollectionBackdropLargeUrl(String collectionBackdropLargeUrl) { mCollectionBackdropLargeUrl = collectionBackdropLargeUrl; }
+    public String getCollectionBackdropLargeUrl() { return mCollectionBackdropLargeUrl; }
+    protected String mCollectionBackdropLargeFile = null;
+    public void setCollectionBackdropLargeFile(String collectionBackdropLargeFile) { mCollectionBackdropLargeFile = collectionBackdropLargeFile; }
+    public String getCollectionBackdropLargeFile() { return mCollectionBackdropLargeFile; }
+
+    protected String mCollectionBackdropThumbUrl = null;
+    public void setCollectionBackdropThumbUrl(String collectionBackdropThumbUrl) { mCollectionBackdropThumbUrl = collectionBackdropThumbUrl; }
+    public String getCollectionBackdropThumbUrl() { return mCollectionBackdropThumbUrl; }
+    protected String mCollectionBackdropThumbFile = null;
+    public void setCollectionBackdropThumbFile(String collectionBackdropThumbFile) { mCollectionBackdropThumbFile = collectionBackdropThumbFile; }
+    public String getCollectionBackdropThumbFile() { return mCollectionBackdropThumbFile; }
+
     @Override
     public void setCover(File file) {
         if (file == null) return;
@@ -85,7 +135,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.NAME, mTitle);
         values.put(ScraperStore.Movie.YEAR, Integer.valueOf(mYear));
         values.put(ScraperStore.Movie.RATING, Float.valueOf(mRating));
-
+        values.put(ScraperStore.Movie.COLLECTION_ID, Integer.valueOf(mCollectionId));
 
         /*if(trailer!=null)
             values.put(ScraperStore.Movie.TRAILER_KEY, Float.valueOf(trailer.getKey()));*/
@@ -144,6 +194,28 @@ public class MovieTags extends VideoTags {
             cop.withValue(ScraperStore.Movie.Genre.NAME, genre);
             cop.withValueBackReference(ScraperStore.Movie.Genre.MOVIE, 0);
             allOperations.add(cop.build());
+        }
+
+        if (mCollectionId != -1) {
+            // Check if this Movie Collection is already referenced in the scraperDB
+            if (! isCollectionAlreadyKnown(mCollectionId, context)) {
+                if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " does not exist, saving it");
+                cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_ID, mCollectionId);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_NAME, mCollectionName);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_DESCRIPTION, mCollectionDescription);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE, mCollectionPosterLargeFile);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, mCollectionPosterThumbUrl);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE, mCollectionPosterThumbFile);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, mCollectionBackdropLargeUrl);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE, mCollectionBackdropLargeFile);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, mCollectionBackdropThumbUrl);
+                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
+                allOperations.add(cop.build());
+            } else {
+                if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " already exists, skipping insert");
+            }
         }
 
         // backreferences to first poster / backdrop. Set to the position of
@@ -225,7 +297,6 @@ public class MovieTags extends VideoTags {
         return result;
     }
 
-
     public List<ScraperTrailer> getAllTrailersInDb(Context context) {
         ContentResolver cr = context.getContentResolver();
         Uri uri = ContentUris.withAppendedId(ScraperStore.MovieTrailers.URI.BY_MOVIE_ID, mId);
@@ -240,7 +311,6 @@ public class MovieTags extends VideoTags {
         }
         return result;
     }
-
 
     @Override
     public List<ScraperImage> getAllBackdropsInDb(Context context) {
@@ -293,6 +363,21 @@ public class MovieTags extends VideoTags {
         image.setThumbUrl(imageUrl);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
+    }
+
+    // TODO MARC: make it alreadyDownloaded boolean even in image fetching
+    // TODO MARC: do that also for all tvshows --> huge boost since no image rescaling!
+    public static boolean isCollectionAlreadyKnown(Integer collectionId, Context context) {
+        ContentResolver contentResolver = context.getContentResolver();
+        String[] selectionArgs = {String.valueOf(collectionId)};
+        String[] baseProjection = {ScraperStore.MovieCollections.COLLECTION_ID};
+        String nameSelection = ScraperStore.MovieCollections.COLLECTION_ID + "=?";
+        Cursor cursor = contentResolver.query(ScraperStore.MovieCollections.URI.BASE, baseProjection,
+                nameSelection, selectionArgs, null);
+        Boolean isKnown = false;
+        if (cursor != null) isKnown = cursor.moveToFirst();
+        cursor.close();
+        return isKnown;
     }
 
     public void setTrailers(List<ScraperTrailer> trailers) {

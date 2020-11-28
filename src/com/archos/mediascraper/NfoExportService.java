@@ -43,6 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NfoExportService extends IntentService {
     private static final String TAG = "NfoExportService";
+    private final static boolean DBG = false;
+
     private static final String INTENT_EXPORT_FILE = "archos.mediascraper.intent.action.EXPORT_FILE";
     private static final String INTENT_EXPORT_ALL = "archos.mediascraper.intent.action.EXPORT_ALL";
 
@@ -108,12 +110,14 @@ public class NfoExportService extends IntentService {
 
     public NfoExportService() {
         super(TAG);
+        if (DBG) Log.d(TAG, "NfoExportService");
         setIntentRedelivery(true);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        if (DBG) Log.d(TAG, "onCreate");
 
         // need to do that early to avoid ANR on Android 26+
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -167,6 +171,7 @@ public class NfoExportService extends IntentService {
     }
 
     private void exportAll() {
+        if (DBG) Log.d(TAG, "exportAll");
         nb.setContentText(getString(R.string.nfo_export_exporting_all));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
@@ -175,6 +180,7 @@ public class NfoExportService extends IntentService {
     }
 
     private void exportFile(Uri data) {
+        if (DBG) Log.d(TAG, "exportFile: " + data.getPath());
         MetaFile2 file = null;
         try {
             file = MetaFile2Factory.getMetaFileForUrl(data);

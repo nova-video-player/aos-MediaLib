@@ -1553,6 +1553,62 @@ public final class VideoStore {
              * <P>TYPE: INTEGER<P>
              */
             public static final String NOVA_PINNED = "Nova_pinned";
+
+            /**
+             * MediaScraper: Movie Collection ID
+             * <P>TYPE: <code>int</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_ID = "m_coll_id";
+            /**
+             * MediaScraper: Movie Collection name
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_NAME = "m_coll_name";
+            /**
+             * MediaScraper: Movie Collection description
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_DESCRIPTION = "m_coll_description";
+            /**
+             * MediaScraper: Movie Collection Poster (full resolution) - url to download from
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_POSTER_LARGE_URL = "m_coll_po_large_url";
+            /**
+             * MediaScraper: Movie Collection Poster (full resolution) - file on storage
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_POSTER_LARGE_FILE = "m_coll_po_large_file";
+            /**
+             * MediaScraper: Movie Collection Poster (thumb resolution) - url to download from
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_POSTER_THUMB_URL = "m_coll_po_thumb_url";
+            /**
+             * MediaScraper: Movie Collection Poster (thumb resolution) - file on storage
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_POSTER_THUMB_FILE = "m_coll_bd_thumb_file";
+            /**
+             * MediaScraper: Movie Collection Backdrop (full resolution) - url to download from
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_BACKDROP_LARGE_URL = "m_coll_bd_large_url";
+            /**
+             * MediaScraper: Movie Collection Backdrop (full resolution) - file on storage
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_BACKDROP_LARGE_FILE = "m_coll_bd_large_file";
+            /**
+             * MediaScraper: Movie Collection Backdrop (thumb resolution) - url to download from
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_BACKDROP_THUMB_URL = "m_coll_bd_thumb_url";
+            /**
+             * MediaScraper: Movie Collection Backdrop (thumb resolution) - file on storage
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_BACKDROP_THUMB_FILE = "m_coll_bd_thumb_file";
         }
 
         public static final class Media implements VideoColumns {
