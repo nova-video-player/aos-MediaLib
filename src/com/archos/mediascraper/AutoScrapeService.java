@@ -58,11 +58,13 @@ import java.io.IOException;
 public class AutoScrapeService extends Service {
     public static final String EXPORT_EVERYTHING = "export_everything";
     public static final String RESCAN_EVERYTHING = "rescan_everything";
+    public static final String RESCAN_MOVIES = "rescan_movies";
     public static final String RESCAN_ONLY_DESC_NOT_FOUND = "rescan_only_desc_not_found";
     private static final int PARAM_NOT_SCRAPED = 0;
     private static final int PARAM_SCRAPED = 1;
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
+    private static final int PARAM_MOVIES = 4;
     private static String TAG = "AutoScrapeService";
     private static boolean DBG = false;
 
@@ -98,12 +100,13 @@ public class AutoScrapeService extends Service {
     private static final String notifChannelName = "AutoScrapeService";
     private static final String notifChannelDescr = "AutoScrapeService";
 
+    private static Boolean scrapeOnlyMovies = false;
+
     /**
      * Ugly implementation based on a static variable, guessing that there is only one instance at a time (seems to be true...)
      * @return true if AutoScrape service is running
      */
     public static boolean isScraping() {
-
         return sIsScraping;
     }
 
@@ -161,17 +164,26 @@ public class AutoScrapeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
-        if(DBG) Log.d(TAG, "onStartCommand() " + this);
         if(DBG) Log.d(TAG, "onStartCommand: startForeground");
         startForeground(NOTIFICATION_ID, nb.build());
-        if(intent!=null){
-            if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING))
+        if (DBG && intent.getAction()==null) Log.d(TAG, "onStartCommand: action is nul!!!");
+        if (DBG && intent.getAction()!=null) Log.d(TAG, "onStartCommand: action " + intent.getAction());
+        if(intent!=null) {
+            if(intent.getAction()!=null&&intent.getAction().equals(EXPORT_EVERYTHING)) {
+                if (DBG) Log.d(TAG, "onStartCommand: EXPORT_EVERYTHING");
                 startExporting();
-            else
-                startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false),intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
+            } else if (intent.getAction()!=null&&intent.getAction().equals(RESCAN_MOVIES)) {
+                scrapeOnlyMovies = true;
+                if (DBG) Log.d(TAG, "onStartCommand: RESCAN_MOVIES, scrapeOnlyMovies=" + scrapeOnlyMovies);
+                startScraping(true, intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
+            } else {
+                if (DBG) Log.d(TAG, "onStartCommand: RESCAN_EVERYTHING");
+                startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false), intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
+            }
+        } else {
+            if (DBG) Log.d(TAG, "onStartCommand: rescan incremental");
+            startScraping(false, false);
         }
-        else
-            startScraping(false,false);
         return START_NOT_STICKY;
     }
 
@@ -317,7 +329,9 @@ public class AutoScrapeService extends Service {
                     boolean shouldRescrapAll = rescrapAlreadySearched;
                     if(DBG) Log.d(TAG, "startScraping: startThread " + String.valueOf(mThread==null || !mThread.isAlive()) );
                     if (DBG) {
-                        if (shouldRescrapAll && onlyNotFound)
+                        if (shouldRescrapAll && scrapeOnlyMovies)
+                            Log.d(TAG, "startScraping: go for all movies");
+                        else if (shouldRescrapAll && onlyNotFound)
                             Log.d(TAG, "startScraping: go for scraped not found");
                         else if (shouldRescrapAll)
                             Log.d(TAG, "startScraping: go for scrape all");
@@ -354,7 +368,11 @@ public class AutoScrapeService extends Service {
                             if (window > numberOfRowsRemaining)
                                 window = numberOfRowsRemaining;
                             if (DBG) Log.d(TAG, "startScraping: new batch fetching cursor from index 0, window " + window + " entries <=" + numberOfRowsRemaining);
-                            cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, BaseColumns._ID + " ASC LIMIT " + window);
+                            cursor = getFileListCursor( shouldRescrapAll && onlyNotFound ? PARAM_SCRAPED_NOT_FOUND :
+                                            scrapeOnlyMovies ? PARAM_MOVIES :
+                                                shouldRescrapAll ? PARAM_ALL :
+                                                        PARAM_NOT_SCRAPED,
+                                    BaseColumns._ID + " ASC LIMIT " + window);
                             if (DBG) Log.d(TAG, "startScraping: new batch cursor has size " + cursor.getCount());
 
                             sNumberOfFilesRemainingToProcess = window;
@@ -532,7 +550,7 @@ public class AutoScrapeService extends Service {
                                 sTotalNumberOfFilesRemainingToProcess--;
                                 if (DBG) Log.d(TAG,"startScraping: #filesProcessed=" + sNumberOfFilesScraped + "/" + numberOfRows + "(" +
                                         + sTotalNumberOfFilesRemainingToProcess + ")" + ", #scrapOrNetworkErrors=" + mNetworkOrScrapErrors +
-                                        ", #notScraped=" + sNumberOfFilesNotScraped + ", current batch #filesToProcessed=" + sNumberOfFilesRemainingToProcess + "/" + window);
+                                        ", #notScraped=" + sNumberOfFilesNotScraped + ", current batch #filesToProcess=" + sNumberOfFilesRemainingToProcess + "/" + window);
                             }
                             cursor.close();
                             numberOfRowsRemaining -= window;
@@ -586,6 +604,10 @@ public class AutoScrapeService extends Service {
     private static final String WHERE_SCRAPED_ALL =
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + ">=0 AND " + WHERE_BASE;
 
+    private static final String WHERE_MOVIES =
+            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + ">=0 AND " +
+            VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + " IS NOT NULL AND " + WHERE_BASE;
+
     private Cursor getFileListCursor(int scrapStatusParam, String sortOrder) {
         // Look for all the videos not yet processed and not located in the Camera folder
         final String cameraPath =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera";
@@ -603,6 +625,9 @@ public class AutoScrapeService extends Service {
                 break;
             case PARAM_SCRAPED_NOT_FOUND:
                 where = WHERE_SCRAPED_NOT_FOUND;
+                break;
+            case PARAM_MOVIES:
+                where = WHERE_MOVIES;
                 break;
             default:
                 where = WHERE_BASE;

@@ -63,7 +63,7 @@ public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private final static String TAG = "MovieScraper3";
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
 
     private static ScraperSettings sSettings = null;
 
