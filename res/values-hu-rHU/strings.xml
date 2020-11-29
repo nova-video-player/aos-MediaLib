@@ -57,6 +57,34 @@
         <item>enable_fanart:Rajongói alkotások bekapcsolása</item>
         <item>info_language:Nyelv</item>
     </string-array>
+    <string name="tv_show_genre_action">Akció</string>
+    <string name="tv_show_genre_adventure">Kaland</string>
+    <string name="tv_show_genre_animation">Animáció</string>
+    <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_children">Gyerekek</string>
+    <string name="tv_show_genre_comedy">Vígjáték</string>
+    <string name="tv_show_genre_crime">Krimi</string>
+    <string name="tv_show_genre_documentary">Dokumentumfilm</string>
+    <string name="tv_show_genre_drama">Dráma</string>
+    <string name="tv_show_genre_family">Családi</string>
+    <string name="tv_show_genre_fantasy">Fantasy</string>
+    <string name="tv_show_genre_food">Gasztro</string>
+    <string name="tv_show_genre_game_show">Vetélkedő</string>
+    <string name="tv_show_genre_home_garden">Otthon és kert</string>
+    <string name="tv_show_genre_horror">Horror</string>
+    <string name="tv_show_genre_mini_series">Minisorozat</string>
+    <string name="tv_show_genre_news">Hírek</string>
+    <string name="tv_show_genre_reality">Valóságshow</string>
+    <string name="tv_show_genre_romance">Romantikus</string>
+    <string name="tv_show_genre_science_fiction">Sci-fi</string>
+    <string name="tv_show_genre_soap">Szappanopera</string>
+    <string name="tv_show_genre_special_interest">Különleges</string>
+    <string name="tv_show_genre_sport">Sport</string>
+    <string name="tv_show_genre_suspense">Feszültség</string>
+    <string name="tv_show_genre_talk_show">Talk-Show</string>
+    <string name="tv_show_genre_thriller">Thriller</string>
+    <string name="tv_show_genre_travel">Utazás</string>
+    <string name="tv_show_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
@@ -64,4 +92,7 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Előadó</string>
+    <string name="scraping_in_progress">Keresés folyamatban</string>
+    <string name="remaining_videos_to_process">A még feldolgozandó médiafájlok:</string>
+    <string name="video_store_import">Helyi médiafájlok importálása</string>
 </resources>
