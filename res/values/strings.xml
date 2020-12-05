@@ -37,7 +37,7 @@
     <string name="nfo_export_in_progress">NFO export in progress</string>
     <string name="rescrap_in_progress">Rescraping whole library</string>
 
-    <string name="rescrap_all_title">Rescrap all</string>
+    <string name="rescrap_all_title">Rescrape all</string>
 
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Impossible to sync with trakt</string>
