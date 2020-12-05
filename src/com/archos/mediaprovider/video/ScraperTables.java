@@ -1053,17 +1053,17 @@ public final class ScraperTables {
     public static final String MOVIE_COLLECTION_TABLE_NAME = "movie_collection";
     private static final String CREATE_MOVIE_COLLECTION_TABLE =
             "CREATE TABLE " + MOVIE_COLLECTION_TABLE_NAME + " ( \n" +
-                    ScraperStore.MovieCollections.COLLECTION_ID + " INTEGER PRIMARY KEY NOT NULL,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_NAME + " TEXT,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_DESCRIPTION + " TEXT,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL + " TEXT,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL + " TEXT,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL + " TEXT,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL + " TEXT,\n" +
-                    ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE\n" +
+                    ScraperStore.MovieCollections.ID + " INTEGER PRIMARY KEY NOT NULL,\n" +
+                    ScraperStore.MovieCollections.NAME + " TEXT,\n" +
+                    ScraperStore.MovieCollections.DESCRIPTION + " TEXT,\n" +
+                    ScraperStore.MovieCollections.POSTER_LARGE_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.POSTER_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    ScraperStore.MovieCollections.BACKDROP_LARGE_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.BACKDROP_LARGE_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    ScraperStore.MovieCollections.POSTER_THUMB_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.POSTER_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    ScraperStore.MovieCollections.BACKDROP_THUMB_URL + " TEXT,\n" +
+                    ScraperStore.MovieCollections.BACKDROP_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE\n" +
                     ")";
 
     public static void create(SQLiteDatabase db) {

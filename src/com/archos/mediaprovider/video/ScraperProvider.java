@@ -641,10 +641,10 @@ public class ScraperProvider extends ContentProvider {
             case MOVIE_COLLECTION:
                 // see MOVIE_POSTERS
                 rowId = db.insert(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
-                        ScraperStore.MovieCollections.COLLECTION_ID, values);
+                        ScraperStore.MovieCollections.ID, values);
                 if (rowId < 0) {
                     rowId = findScraperImage(db, ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
-                            ScraperImage.Type.SHOW_BACKDROP, values);
+                            ScraperImage.Type.COLLECTION_BACKDROP, values);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.MovieCollections.URI.BASE, cr);
                 break;

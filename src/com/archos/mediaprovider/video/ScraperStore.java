@@ -376,17 +376,17 @@ public final class ScraperStore {
     }
 
     public static class MovieCollections {
-        public static final String COLLECTION_ID = "m_coll_id";
-        public static final String COLLECTION_NAME = "m_coll_name";
-        public static final String COLLECTION_DESCRIPTION = "m_coll_description";
-        public static final String COLLECTION_POSTER_LARGE_URL = "m_coll_po_large_url";
-        public static final String COLLECTION_POSTER_LARGE_FILE = "m_coll_po_large_file";
-        public static final String COLLECTION_BACKDROP_LARGE_URL = "m_coll_bd_large_url";
-        public static final String COLLECTION_BACKDROP_LARGE_FILE = "m_coll_bd_large_file";
-        public static final String COLLECTION_POSTER_THUMB_URL = "m_coll_po_thumb_url";
-        public static final String COLLECTION_POSTER_THUMB_FILE = "m_coll_po_thumb_file";
-        public static final String COLLECTION_BACKDROP_THUMB_URL = "m_coll_bd_thumb_url";
-        public static final String COLLECTION_BACKDROP_THUMB_FILE = "m_coll_bd_thumb_file";
+        public static final String ID = "m_coll_id";
+        public static final String NAME = "m_coll_name";
+        public static final String DESCRIPTION = "m_coll_description";
+        public static final String POSTER_LARGE_URL = "m_coll_po_large_url";
+        public static final String POSTER_LARGE_FILE = "m_coll_po_large_file";
+        public static final String BACKDROP_LARGE_URL = "m_coll_bd_large_url";
+        public static final String BACKDROP_LARGE_FILE = "m_coll_bd_large_file";
+        public static final String POSTER_THUMB_URL = "m_coll_po_thumb_url";
+        public static final String POSTER_THUMB_FILE = "m_coll_po_thumb_file";
+        public static final String BACKDROP_THUMB_URL = "m_coll_bd_thumb_url";
+        public static final String BACKDROP_THUMB_FILE = "m_coll_bd_thumb_file";
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections");
             public static final Uri BY_COLLECTION_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections/byremote");

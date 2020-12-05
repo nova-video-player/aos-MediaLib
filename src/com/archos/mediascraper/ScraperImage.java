@@ -86,15 +86,15 @@ public class ScraperImage {
                 ImageScaler.Type.SCALE_INSIDE
         ),
         COLLECTION_POSTER(
-                ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE,
-                ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE,
-                null, ScraperStore.MovieCollections.URI.BASE, ScraperStore.MovieCollections.COLLECTION_ID,
+                ScraperStore.MovieCollections.POSTER_THUMB_URL, ScraperStore.MovieCollections.POSTER_THUMB_FILE,
+                ScraperStore.MovieCollections.POSTER_LARGE_URL, ScraperStore.MovieCollections.POSTER_LARGE_FILE,
+                null, ScraperStore.MovieCollections.URI.BASE, ScraperStore.MovieCollections.ID,
                 ImageScaler.Type.SCALE_OUTSIDE
         ),
         COLLECTION_BACKDROP(
-                ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE,
-                ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE,
-                null, ScraperStore.MovieCollections.URI.BASE, ScraperStore.MovieCollections.COLLECTION_ID,
+                ScraperStore.MovieCollections.BACKDROP_THUMB_URL, ScraperStore.MovieCollections.BACKDROP_THUMB_FILE,
+                ScraperStore.MovieCollections.BACKDROP_LARGE_URL, ScraperStore.MovieCollections.BACKDROP_LARGE_FILE,
+                null, ScraperStore.MovieCollections.URI.BASE, ScraperStore.MovieCollections.ID,
                 ImageScaler.Type.SCALE_OUTSIDE
         );
 

@@ -201,17 +201,17 @@ public class MovieTags extends VideoTags {
             if (! isCollectionAlreadyKnown(mCollectionId, context)) {
                 if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " does not exist, saving it");
                 cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_ID, mCollectionId);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_NAME, mCollectionName);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_DESCRIPTION, mCollectionDescription);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_URL, mCollectionPosterLargeUrl);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_LARGE_FILE, mCollectionPosterLargeFile);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_URL, mCollectionPosterThumbUrl);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_POSTER_THUMB_FILE, mCollectionPosterThumbFile);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_URL, mCollectionBackdropLargeUrl);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_LARGE_FILE, mCollectionBackdropLargeFile);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_URL, mCollectionBackdropThumbUrl);
-                cop.withValue(ScraperStore.MovieCollections.COLLECTION_BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
+                cop.withValue(ScraperStore.MovieCollections.ID, mCollectionId);
+                cop.withValue(ScraperStore.MovieCollections.NAME, mCollectionName);
+                cop.withValue(ScraperStore.MovieCollections.DESCRIPTION, mCollectionDescription);
+                cop.withValue(ScraperStore.MovieCollections.POSTER_LARGE_URL, mCollectionPosterLargeUrl);
+                cop.withValue(ScraperStore.MovieCollections.POSTER_LARGE_FILE, mCollectionPosterLargeFile);
+                cop.withValue(ScraperStore.MovieCollections.POSTER_THUMB_URL, mCollectionPosterThumbUrl);
+                cop.withValue(ScraperStore.MovieCollections.POSTER_THUMB_FILE, mCollectionPosterThumbFile);
+                cop.withValue(ScraperStore.MovieCollections.BACKDROP_LARGE_URL, mCollectionBackdropLargeUrl);
+                cop.withValue(ScraperStore.MovieCollections.BACKDROP_LARGE_FILE, mCollectionBackdropLargeFile);
+                cop.withValue(ScraperStore.MovieCollections.BACKDROP_THUMB_URL, mCollectionBackdropThumbUrl);
+                cop.withValue(ScraperStore.MovieCollections.BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
                 allOperations.add(cop.build());
             } else {
                 if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " already exists, skipping insert");
@@ -370,8 +370,8 @@ public class MovieTags extends VideoTags {
     public static boolean isCollectionAlreadyKnown(Integer collectionId, Context context) {
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(collectionId)};
-        String[] baseProjection = {ScraperStore.MovieCollections.COLLECTION_ID};
-        String nameSelection = ScraperStore.MovieCollections.COLLECTION_ID + "=?";
+        String[] baseProjection = {ScraperStore.MovieCollections.ID};
+        String nameSelection = ScraperStore.MovieCollections.ID + "=?";
         Cursor cursor = contentResolver.query(ScraperStore.MovieCollections.URI.BASE, baseProjection,
                 nameSelection, selectionArgs, null);
         Boolean isKnown = false;
