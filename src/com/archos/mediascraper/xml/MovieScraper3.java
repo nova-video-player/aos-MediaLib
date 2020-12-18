@@ -19,7 +19,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.archos.medialib.R;
 import com.archos.mediascraper.MovieTags;
@@ -45,6 +44,9 @@ import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -54,8 +56,7 @@ import okhttp3.Cache;
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
-    private final static String TAG = "MovieScraper3";
-    private final static boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(MovieScraper3);
 
     private static ScraperSettings sSettings = null;
 
@@ -85,16 +86,16 @@ public class MovieScraper3 extends BaseScraper2 {
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
         // check input
         if (info == null || !(info instanceof MovieSearchInfo)) {
-            Log.e(TAG, "bad search info: " + info == null ? "null" : "tvshow in movie scraper");
+            log.error("bad search info: " + info == null ? "null" : "tvshow in movie scraper");
             return new ScrapeSearchResult(null, true, ScrapeStatus.ERROR, null);
         }
         MovieSearchInfo searchInfo = (MovieSearchInfo) info;
-        if (DBG) Log.d(TAG, "getMatches2: movie search:" + searchInfo.getName());
+        log.debug("getMatches2: movie search:" + searchInfo.getName());
         if (tmdb == null) reauth();
         if (searchService == null) searchService = tmdb.searchService();
         // get configured language
         String language = getLanguage(mContext);
-        if (DBG) Log.d(TAG, "movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
+        log.debug("movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
         SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService);
         // TODO: this triggers scrape for all search results, is this intended?
         if (searchResult.status == ScrapeStatus.OKAY) {
@@ -145,7 +146,7 @@ public class MovieScraper3 extends BaseScraper2 {
 
         // if there was no movie description in the native language get it from default
         if (tag.getPlot().length() == 0) {
-            if (DBG) Log.d(TAG, "ScrapeDetailResult: getting description in en because plot non existent in " + language);
+            log.debug("ScrapeDetailResult: getting description in en because plot non existent in " + language);
             MovieIdDescription2.addDescription(movieId, tag, moviesService);
         }
         tag.downloadPoster(mContext);
@@ -168,7 +169,7 @@ public class MovieScraper3 extends BaseScraper2 {
             // <settings><setting label="info_language" type="labelenum" id="language" values="$$8" sort="yes" default="en"></setting></settings>
             ScraperSetting setting = new ScraperSetting("language", ScraperSetting.STR_LABELENUM);
             String defaultLang = Locale.getDefault().getLanguage();
-            if (DBG) Log.d(TAG, "generatePreferences: defaultLang=" + defaultLang);
+            log.debug("generatePreferences: defaultLang=" + defaultLang);
             if (!TextUtils.isEmpty(defaultLang) && LANGUAGES.contains(defaultLang))
                 setting.setDefault(defaultLang);
             else
