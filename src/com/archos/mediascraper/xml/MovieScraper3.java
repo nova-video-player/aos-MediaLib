@@ -56,7 +56,7 @@ import okhttp3.Cache;
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
-    private static final Logger log = LoggerFactory.getLogger(MovieScraper3);
+    private static final Logger log = LoggerFactory.getLogger(MovieScraper3.class);
 
     private static ScraperSettings sSettings = null;
 

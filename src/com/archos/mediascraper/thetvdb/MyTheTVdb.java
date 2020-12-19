@@ -16,6 +16,10 @@ package com.archos.mediascraper.thetvdb;
 
 import com.archos.mediascraper.MediaScraper;
 import com.uwetrottmann.thetvdb.TheTvdb;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
@@ -25,8 +29,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 
 public class MyTheTVdb extends TheTvdb {
 
-    private final static String TAG = "MyTheTVdb";
-    private final static boolean DBG_RETROFIT = false;
+    private static final Logger log = LoggerFactory.getLogger(MyTheTVdb.class);
     private final static boolean CACHE = true;
     private static Cache mCache;
 
@@ -53,7 +56,7 @@ public class MyTheTVdb extends TheTvdb {
     @Override
     protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
         super.setOkHttpClientDefaults(builder);
-        if (DBG_RETROFIT) {
+        if (log.isTraceEnabled()) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
             builder.addNetworkInterceptor(logging).addInterceptor(logging);

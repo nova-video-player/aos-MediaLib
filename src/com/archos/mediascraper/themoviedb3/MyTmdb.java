@@ -17,6 +17,9 @@ package com.archos.mediascraper.themoviedb3;
 import com.archos.mediascraper.MediaScraper;
 import com.uwetrottmann.tmdb2.Tmdb;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
@@ -26,8 +29,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 
 public class MyTmdb extends Tmdb {
 
-    private final static String TAG = "MyTmdb";
-    private final static boolean DBG_RETROFIT = false;
+    private static final Logger log = LoggerFactory.getLogger(MyTmdb.class);
     private final static boolean CACHE = true;
     private static Cache mCache;
 
@@ -54,7 +56,7 @@ public class MyTmdb extends Tmdb {
     @Override
     protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
         super.setOkHttpClientDefaults(builder);
-        if (DBG_RETROFIT) {
+        if (log.isTraceEnabled()) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
             builder.addNetworkInterceptor(logging).addInterceptor(logging);
