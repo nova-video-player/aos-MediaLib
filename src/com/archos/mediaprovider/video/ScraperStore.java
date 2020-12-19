@@ -390,6 +390,8 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections");
             public static final Uri BY_COLLECTION_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections/byremote");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections/");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviecollections/m_coll_id/");
         }
     }
 

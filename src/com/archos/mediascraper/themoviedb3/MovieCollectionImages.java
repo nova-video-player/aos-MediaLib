@@ -18,6 +18,8 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 import android.util.Log;
 
+import com.archos.mediascraper.BaseTags;
+import com.archos.mediascraper.CollectionTags;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScraperImage;
 
@@ -34,7 +36,7 @@ public class MovieCollectionImages {
                                          String nameSeed, Context context) {
         if (tag.getCollectionId() != -1) {
             String path = tag.getCollectionPosterPath();
-            if (DBG) Log.d(TAG, "getResult: treating collection poster  " + path);
+            if (DBG) Log.d(TAG, "downloadCollectionImage: treating collection poster " + path);
             String fullUrl, thumbUrl;
             ScraperImage image;
             if (path != null) {
@@ -52,7 +54,7 @@ public class MovieCollectionImages {
             }
 
             path = tag.getCollectionBackdropPath();
-            if (DBG) Log.d(TAG, "getResult: treating collection backdrop " + path);
+            if (DBG) Log.d(TAG, "downloadCollectionImage: treating collection backdrop " + path);
             if (path != null) {
                 fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
                 thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
@@ -68,4 +70,52 @@ public class MovieCollectionImages {
             }
         }
     }
+
+    // TODO MARC: remove
+    /*
+    public static void downloadCollectionImage(CollectionTags tag,
+                                               ImageConfiguration.PosterSize posterFullSize,
+                                               ImageConfiguration.PosterSize posterThumbSize,
+                                               ImageConfiguration.BackdropSize backdropFullSize,
+                                               ImageConfiguration.BackdropSize backdropThumbSize,
+                                               String nameSeed, Context context) {
+        if (tag.getId() != -1) {
+            String path = tag.getPosterPath();
+            if (DBG) Log.d(TAG, "downloadCollectionImage: treating collection poster " + path);
+            String fullUrl, thumbUrl;
+            ScraperImage image;
+            if (path != null) {
+                fullUrl = ImageConfiguration.getUrl(path, posterFullSize);
+                thumbUrl = ImageConfiguration.getUrl(path, posterThumbSize);
+                image = new ScraperImage(ScraperImage.Type.COLLECTION_POSTER, nameSeed);
+                image.setLargeUrl(fullUrl);
+                image.setThumbUrl(thumbUrl);
+                image.generateFileNames(context);
+                image.download(context);
+                tag.setPosterLargeFile(image.getLargeFile());
+                tag.setPosterLargeUrl(fullUrl);
+                tag.setPosterThumbFile(image.getThumbFile());
+                tag.setPosterThumbUrl(thumbUrl);
+            }
+
+            path = tag.getBackdropPath();
+            if (DBG) Log.d(TAG, "downloadCollectionImage: treating collection backdrop " + path);
+            if (path != null) {
+                fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
+                thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);
+                image = new ScraperImage(ScraperImage.Type.COLLECTION_BACKDROP, nameSeed);
+                image.setLargeUrl(fullUrl);
+                image.setThumbUrl(thumbUrl);
+                image.generateFileNames(context);
+                image.download(context);
+                tag.setBackdropLargeFile(image.getLargeFile());
+                tag.setBackdropLargeUrl(fullUrl);
+                tag.setBackdropThumbFile(image.getThumbFile());
+                tag.setBackdropThumbUrl(thumbUrl);
+            }
+        }
+    }
+     */
+
+
 }

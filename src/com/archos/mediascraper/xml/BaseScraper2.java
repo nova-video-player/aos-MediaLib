@@ -41,7 +41,7 @@ import javax.xml.parsers.SAXParserFactory;
 public abstract class BaseScraper2 {
     private static final String TAG = "BaseScraper2";
 
-    protected final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|cs|sl|hr|ko|en|sv|no|vi|lt";
+    public final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|cs|sl|hr|ko|en|sv|no|vi|lt";
 
     protected final SAXParser mParser;
 
@@ -143,6 +143,10 @@ public abstract class BaseScraper2 {
             ret = result.getScraper().getDetailsInternal(result, options);
         }
         return ret;
+    }
+
+    public String getLanguages() {
+        return LANGUAGES;
     }
 
     protected abstract ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options);

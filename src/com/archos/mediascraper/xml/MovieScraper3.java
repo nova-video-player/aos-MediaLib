@@ -150,6 +150,7 @@ public class MovieScraper3 extends BaseScraper2 {
             tag.setCover(defaultPoster.getLargeFileF());
         }
 
+        // TODO MARC if poster is null, perhaps need to reload it
         // MovieCollection poster/backdrops and information are handled in the MovieTag because it is easier
         if (tag.getCollectionId() != -1 && ! isCollectionAlreadyKnown(tag.getCollectionId(), mContext)) { // in presence of a movie collection/saga
             if (collectionService == null) collectionService = tmdb.collectionService();

@@ -43,6 +43,7 @@ import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.environment.NetworkState;
+import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
@@ -59,6 +60,7 @@ public class AutoScrapeService extends Service {
     public static final String EXPORT_EVERYTHING = "export_everything";
     public static final String RESCAN_EVERYTHING = "rescan_everything";
     public static final String RESCAN_MOVIES = "rescan_movies";
+    public static final String RESCAN_COLLECTIONS = "rescan_collections";
     public static final String RESCAN_ONLY_DESC_NOT_FOUND = "rescan_only_desc_not_found";
     private static final int PARAM_NOT_SCRAPED = 0;
     private static final int PARAM_SCRAPED = 1;
