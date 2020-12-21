@@ -21,7 +21,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
-import android.os.AsyncTask;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
@@ -35,7 +34,7 @@ import java.util.ArrayList;
 
 public class CollectionTags implements Parcelable {
     private static final String TAG = "CollectionTags";
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
 
     protected long mId;
     protected String mTitle;

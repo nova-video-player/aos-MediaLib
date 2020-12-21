@@ -18,7 +18,6 @@ package com.archos.mediascraper;
 import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.Service;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -57,10 +56,10 @@ public class AllCollectionScrapeService extends IntentService {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private static final String TAG = AllCollectionScrapeService.class.getSimpleName();
-    private final static boolean DBG = false;
+    private final static boolean DBG = true;
 
-    private static final String INTENT_RESCRAPE_COLLECTION = "archos.mediascraper.intent.action.RESCRAPE_COLLECTION";
-    private static final String INTENT_RESCRAPE_ALL_COLLECTIONS = "archos.mediascraper.intent.action.RESCRAPE_ALL_COLLECTIONS";
+    public static final String INTENT_RESCRAPE_COLLECTION = "archos.mediascraper.intent.action.RESCRAPE_COLLECTION";
+    public static final String INTENT_RESCRAPE_ALL_COLLECTIONS = "archos.mediascraper.intent.action.RESCRAPE_ALL_COLLECTIONS";
     private static final String EXPORT_ALL_KEY = "all://";
     private static final Intent VOID_INTENT = new Intent("void");
     private static final ConcurrentHashMap<String, String> sScheduledTasks = new ConcurrentHashMap<String, String>();
@@ -246,6 +245,8 @@ public class AllCollectionScrapeService extends IntentService {
                     CollectionInfo collectionInfo = collectionResult.collectionInfo;
                     CollectionTags collectionTag = new CollectionTags();
 
+                    if (DBG) Log.d(TAG, "handleCursor: scraping " + collectionTag.mTitle);
+
                     // TODO MARC: verify mContext or getApplicationContext()
                     // generates the various posters/backdrops based on URL
                     collectionTag.downloadImage(mContext);
@@ -260,6 +261,10 @@ public class AllCollectionScrapeService extends IntentService {
 
                     // TODO MARC replace if exists?
                     // build list of operations
+
+                    // TODO MARC do not do this do it with tags!!!
+
+                    /*
                     ContentProviderOperation.Builder cop = null;
                     ArrayList<ContentProviderOperation> allOperations = new ArrayList<ContentProviderOperation>();
                     if (DBG) Log.d(TAG, "save: collection " + collectionId);
@@ -282,6 +287,8 @@ public class AllCollectionScrapeService extends IntentService {
                     cop.withValue(ScraperStore.MovieCollections.BACKDROP_THUMB_FILE, collectionTag.getBackdropThumbFile());
 
                     allOperations.add(cop.build());
+                     */
+
                 }
             }
             cursor.close();
