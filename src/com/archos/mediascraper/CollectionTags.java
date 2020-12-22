@@ -83,10 +83,10 @@ public class CollectionTags implements Parcelable {
     public void setId(long id) { mId = id; }
     public void setPlot(String plot) { mPlot = plot; }
     public void setTitle(String title) { mTitle = title; }
-    public void setPoster(ScraperImage scraperImage) { mPoster = scraperImage; }
+    public void setPoster(ScraperImage scraperImage) { mPoster = scraperImage; };
     public void setBackdrop(ScraperImage scraperImage) { mBackdrop = scraperImage; }
     public void setPosterLargeUrl(String posterLargeUrl) { mPosterLargeUrl = posterLargeUrl; }
-    public void setPoster(String posterPath) { mPosterPath = posterPath; }
+    public void setPosterPath(String posterPath) { mPosterPath = posterPath; }
     public String getPosterPath() { return mPosterPath; }
     public String getPosterLargeUrl() { return mPosterLargeUrl; }
     public void setPosterLargeFile(String posterLargeFile) { mPosterLargeFile = posterLargeFile; }

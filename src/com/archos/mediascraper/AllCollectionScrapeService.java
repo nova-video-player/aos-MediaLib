@@ -23,6 +23,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
@@ -228,6 +229,9 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     private void handleCursor(Cursor cursor) {
+
+        if (DBG) Log.d(TAG, "bind: " + DatabaseUtils.dumpCursorToString(cursor));
+
         if (tmdb == null) reauth();
         if (collectionService == null) collectionService = tmdb.collectionService();
         // get configured language
@@ -245,7 +249,14 @@ public class AllCollectionScrapeService extends IntentService {
                     CollectionInfo collectionInfo = collectionResult.collectionInfo;
                     CollectionTags collectionTag = new CollectionTags();
 
+                    collectionTag.setId(collectionInfo.id);
+                    collectionTag.setTitle(collectionInfo.name);
+                    collectionTag.setPlot(collectionInfo.description);
+                    collectionTag.setPosterPath(collectionInfo.poster);
+                    collectionTag.setBackdropPath(collectionInfo.backdrop);
                     if (DBG) Log.d(TAG, "handleCursor: scraping " + collectionTag.mTitle);
+                    if (DBG) Log.d(TAG, "handleCursor: posterPath=" + collectionInfo.poster + ", backdropPath=" + collectionInfo.backdrop);
+                    if (DBG) Log.d(TAG, "handleCursor: posterPath=" + collectionTag.getPosterPath() + ", backdropPath=" + collectionTag.getBackdropPath());
 
                     // TODO MARC: verify mContext or getApplicationContext()
                     // generates the various posters/backdrops based on URL
@@ -300,7 +311,7 @@ public class AllCollectionScrapeService extends IntentService {
     private static final String[] PROJECTION = {
             ScraperStore.MovieCollections.ID    // 0
     };
-    private static final String SELECTION_ALL = "*";
+    private static final String SELECTION_ALL = ScraperStore.MovieCollections.ID + " > 0";
     private static final String SELECTION_COLLECTION = ScraperStore.MovieCollections.ID + " = ?";
 
     private Cursor getAllCursor() {

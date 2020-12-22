@@ -28,7 +28,7 @@ import retrofit2.Response;
 // Get the movie collection information for a specific collection id and language (ISO 639-1 code)
 public class MovieCollection {
     private static final String TAG = MovieCollection.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
 
     public static CollectionResult getInfo(long collectionId, String language, CollectionsService collectionsService) {
         CollectionResult myResult = new CollectionResult();
