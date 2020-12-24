@@ -127,7 +127,6 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     public static void rescrapeCollection(Context context, Long collectionId) {
-        mContext = context;
         Intent serviceIntent = new Intent(context, AllCollectionScrapeService.class);
         serviceIntent.setAction(INTENT_RESCRAPE_COLLECTION);
         serviceIntent.putExtra("collectionId", collectionId);
@@ -135,7 +134,6 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     public static void rescrapeAllCollections(Context context) {
-        mContext = context;
         Intent serviceIntent = new Intent(context, AllCollectionScrapeService.class);
         serviceIntent.setAction(INTENT_RESCRAPE_ALL_COLLECTIONS);
         if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
@@ -248,65 +246,21 @@ public class AllCollectionScrapeService extends IntentService {
                 if (collectionResult.status == ScrapeStatus.OKAY && collectionResult.collectionInfo != null) {
                     CollectionInfo collectionInfo = collectionResult.collectionInfo;
                     CollectionTags collectionTag = new CollectionTags();
-
                     collectionTag.setId(collectionInfo.id);
                     collectionTag.setTitle(collectionInfo.name);
                     collectionTag.setPlot(collectionInfo.description);
                     collectionTag.setPosterPath(collectionInfo.poster);
                     collectionTag.setBackdropPath(collectionInfo.backdrop);
                     if (DBG) Log.d(TAG, "handleCursor: scraping " + collectionTag.mTitle);
-                    if (DBG) Log.d(TAG, "handleCursor: posterPath=" + collectionInfo.poster + ", backdropPath=" + collectionInfo.backdrop);
-                    if (DBG) Log.d(TAG, "handleCursor: posterPath=" + collectionTag.getPosterPath() + ", backdropPath=" + collectionTag.getBackdropPath());
-
-                    // TODO MARC: verify mContext or getApplicationContext()
                     // generates the various posters/backdrops based on URL
-                    collectionTag.downloadImage(mContext);
-                    /*
-                    downloadCollectionImage(collectionTag,
-                            ImageConfiguration.PosterSize.W342,    // large poster
-                            ImageConfiguration.PosterSize.W92,     // thumb poster
-                            ImageConfiguration.BackdropSize.W1280, // large bd
-                            ImageConfiguration.BackdropSize.W300,  // thumb bd
-                            collectionInfo.name, mContext);
-                     */
-
-                    // TODO MARC replace if exists?
-                    // build list of operations
-
-                    // TODO MARC do not do this do it with tags!!!
-
-                    /*
-                    ContentProviderOperation.Builder cop = null;
-                    ArrayList<ContentProviderOperation> allOperations = new ArrayList<ContentProviderOperation>();
-                    if (DBG) Log.d(TAG, "save: collection " + collectionId);
-                    cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
-                    cop.withValue(ScraperStore.MovieCollections.ID, collectionId);
-                    cop.withValue(ScraperStore.MovieCollections.NAME, collectionInfo.name);
-                    cop.withValue(ScraperStore.MovieCollections.DESCRIPTION, collectionInfo.description);
-                    cop.withValue(ScraperStore.MovieCollections.POSTER_LARGE_URL, collectionInfo.poster);
-
-                    cop.withValue(ScraperStore.MovieCollections.POSTER_LARGE_FILE, collectionTag.getPosterLargeFile());
-
-                    cop.withValue(ScraperStore.MovieCollections.POSTER_THUMB_URL, collectionTag.getPosterThumbUrl());
-                    cop.withValue(ScraperStore.MovieCollections.POSTER_THUMB_FILE, collectionTag.getPosterThumbFile());
-
-                    cop.withValue(ScraperStore.MovieCollections.BACKDROP_LARGE_URL, collectionInfo.backdrop);
-
-                    cop.withValue(ScraperStore.MovieCollections.BACKDROP_LARGE_FILE, collectionTag.getBackdropLargeFile());
-
-                    cop.withValue(ScraperStore.MovieCollections.BACKDROP_THUMB_URL, collectionTag.getBackdropThumbUrl());
-                    cop.withValue(ScraperStore.MovieCollections.BACKDROP_THUMB_FILE, collectionTag.getBackdropThumbFile());
-
-                    allOperations.add(cop.build());
-                     */
-
+                    collectionTag.downloadImage(getApplicationContext());
+                    collectionTag.save(getApplicationContext(), true);
                 }
             }
             cursor.close();
         }
     }
 
-    // TODO MARC to check uri
     private static final Uri URI = ScraperStore.MovieCollections.URI.BASE;
     private static final String[] PROJECTION = {
             ScraperStore.MovieCollections.ID    // 0

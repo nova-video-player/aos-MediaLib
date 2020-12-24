@@ -156,14 +156,20 @@ public class CollectionTags implements Parcelable {
 
         ContentResolver cr = context.getContentResolver();
         ContentProviderOperation.Builder cop = null;
-        // TODO MARC : do not do this test because you already know if scraping the whole stuff
-        Cursor c = cr.query(ScraperStore.MovieCollections.URI.BASE, PROJECTION_ID, WHERE_ID,
-                new String[] { String.valueOf(mId) }, null);
-        if (c != null) { // entry exists this is an update
+
+        // TODO MARC java.lang.IllegalArgumentException: URI not supported in update(): content://com.archos.media.scrapercommunity/tags/moviecollections
+
+        if (forceUpdate) { // we know that the entry exists, this is an update
             cop = ContentProviderOperation.newUpdate(ScraperStore.MovieCollections.URI.BASE);
-            c.close();
-        } else { // entry does not exist this is an insert
-            cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
+        } else { // let's see if this is an update or new entry
+            Cursor c = cr.query(ScraperStore.MovieCollections.URI.BASE, PROJECTION_ID, WHERE_ID,
+                    new String[]{String.valueOf(mId)}, null);
+            if (c != null) { // entry exists this is an update
+                cop = ContentProviderOperation.newUpdate(ScraperStore.MovieCollections.URI.BASE);
+                c.close();
+            } else { // entry does not exist this is an insert
+                cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
+            }
         }
 
         cop.withValue(ScraperStore.MovieCollections.ID, mId);
