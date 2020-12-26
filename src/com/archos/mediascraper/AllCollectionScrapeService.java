@@ -18,7 +18,6 @@ package com.archos.mediascraper;
 import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -43,10 +42,7 @@ import com.archos.mediascraper.themoviedb3.MovieCollection;
 import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.xml.BaseScraper2;
 import com.uwetrottmann.tmdb2.services.CollectionsService;
-import com.uwetrottmann.tmdb2.services.MoviesService;
-import com.uwetrottmann.tmdb2.services.SearchService;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,8 +56,10 @@ public class AllCollectionScrapeService extends IntentService {
     private final static boolean DBG = true;
 
     public static final String INTENT_RESCRAPE_COLLECTION = "archos.mediascraper.intent.action.RESCRAPE_COLLECTION";
+    public static final String INTENT_RESCRAPE_NOIMAGE_COLLECTIONS = "archos.mediascraper.intent.action.RESCRAPE_NOIMAGE_COLLECTIONS";
     public static final String INTENT_RESCRAPE_ALL_COLLECTIONS = "archos.mediascraper.intent.action.RESCRAPE_ALL_COLLECTIONS";
     private static final String EXPORT_ALL_KEY = "all://";
+    private static final String EXPORT_NOIMAGE_KEY = "noimage://";
     private static final Intent VOID_INTENT = new Intent("void");
     private static final ConcurrentHashMap<String, String> sScheduledTasks = new ConcurrentHashMap<String, String>();
 
@@ -71,9 +69,6 @@ public class AllCollectionScrapeService extends IntentService {
     private static final String notifChannelId = "AllCollectionScrapeService_id";
     private static final String notifChannelName = "AllCollectionScrapeService";
     private static final String notifChannelDescr = "AllCollectionScrapeService";
-
-    // TODO MARC: rescrape only null images, rescrape all, only one
-
     private static ScraperSettings sSettings = null;
 
     private static Context mContext;
@@ -82,8 +77,6 @@ public class AllCollectionScrapeService extends IntentService {
     static Cache cache;
 
     static MyTmdb tmdb = null;
-    static SearchService searchService = null;
-    static MoviesService moviesService = null;
     static CollectionsService collectionService = null;
 
     static String apiKey = null;
@@ -126,6 +119,13 @@ public class AllCollectionScrapeService extends IntentService {
         sScheduledTasks.remove(EXPORT_ALL_KEY);
     }
 
+    private static boolean addNoImageTask() {
+        return sScheduledTasks.putIfAbsent(EXPORT_NOIMAGE_KEY, "") == null;
+    }
+    private static void removeNoImageTask() {
+        sScheduledTasks.remove(EXPORT_NOIMAGE_KEY);
+    }
+
     public static void rescrapeCollection(Context context, Long collectionId) {
         Intent serviceIntent = new Intent(context, AllCollectionScrapeService.class);
         serviceIntent.setAction(INTENT_RESCRAPE_COLLECTION);
@@ -136,6 +136,12 @@ public class AllCollectionScrapeService extends IntentService {
     public static void rescrapeAllCollections(Context context) {
         Intent serviceIntent = new Intent(context, AllCollectionScrapeService.class);
         serviceIntent.setAction(INTENT_RESCRAPE_ALL_COLLECTIONS);
+        if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
+    }
+
+    public static void rescrapeNoImageCollections(Context context) {
+        Intent serviceIntent = new Intent(context, AllCollectionScrapeService.class);
+        serviceIntent.setAction(INTENT_RESCRAPE_NOIMAGE_COLLECTIONS);
         if (AppState.isForeGround()) ContextCompat.startForegroundService(context, serviceIntent);
     }
 
@@ -184,6 +190,9 @@ public class AllCollectionScrapeService extends IntentService {
         } else if (INTENT_RESCRAPE_ALL_COLLECTIONS.equals(action)) {
             if (addAllTask())
                 processIntent = true;
+        } else if (INTENT_RESCRAPE_NOIMAGE_COLLECTIONS.equals(action)) {
+            if (addNoImageTask() && addAllTask()) // if already AllTask, no need for NoImageTask
+                processIntent = true;
         }
         if (processIntent) {
             return super.onStartCommand(intent, flags, startId);
@@ -202,14 +211,25 @@ public class AllCollectionScrapeService extends IntentService {
             rescrapeCollection(collectionId);
         } else if (INTENT_RESCRAPE_ALL_COLLECTIONS.equals(action)) {
             rescrapeAllCollections();
+        } else if (INTENT_RESCRAPE_NOIMAGE_COLLECTIONS.equals(action)) {
+            rescrapeNoImageCollections();
         }
     }
 
     private void rescrapeAllCollections() {
         if (DBG) Log.d(TAG, "rescrapeAllCollections");
-        nb.setContentText(getString(R.string.nfo_export_exporting_all));
+        nb.setContentText(getString(R.string.rescraping_collections));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
+        removeAllTask();
+        stopForeground(true);
+    }
+
+    private void rescrapeNoImageCollections() {
+        if (DBG) Log.d(TAG, "rescrapeNoImageCollections");
+        nb.setContentText(getString(R.string.rescraping_noimage_collections));
+        nm.notify(NOTIFICATION_ID, nb.build());
+        handleCursor(getNoImageCursor());
         removeAllTask();
         stopForeground(true);
     }
@@ -218,7 +238,7 @@ public class AllCollectionScrapeService extends IntentService {
         if (DBG) Log.d(TAG, "rescrapeCollection: " + collectionId);
         if (collectionId != null && collectionId > 0) {
             // update notification
-            nb.setContentText(collectionId.toString());
+            nb.setContentText(getString(R.string.rescraping_collection) + " " + collectionId.toString());
             nm.notify(NOTIFICATION_ID, nb.build());
             handleCursor(getCollectionCursor(collectionId));
         }
@@ -268,9 +288,18 @@ public class AllCollectionScrapeService extends IntentService {
     private static final String SELECTION_ALL = ScraperStore.MovieCollections.ID + " > 0";
     private static final String SELECTION_COLLECTION = ScraperStore.MovieCollections.ID + " = ?";
 
+    private static final String SELECTION_NOIMAGE = ScraperStore.MovieCollections.ID + " > 0 AND ( "
+            + ScraperStore.MovieCollections.POSTER_LARGE_FILE + " IS NULL OR "
+            + ScraperStore.MovieCollections.POSTER_LARGE_FILE + " IS NULL )";
+
     private Cursor getAllCursor() {
         ContentResolver cr = getContentResolver();
         return cr.query(URI, PROJECTION, SELECTION_ALL, null, null);
+    }
+
+    private Cursor getNoImageCursor() {
+        ContentResolver cr = getContentResolver();
+        return cr.query(URI, PROJECTION, SELECTION_NOIMAGE, null, null);
     }
 
     private Cursor getCollectionCursor(Long collectionId) {
@@ -307,9 +336,4 @@ public class AllCollectionScrapeService extends IntentService {
         }
         return sSettings;
     }
-
-    protected String internalGetPreferenceName() {
-        return PREFERENCE_NAME;
-    }
-
 }

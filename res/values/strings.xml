@@ -36,7 +36,10 @@
 
     <string name="nfo_export_in_progress">NFO export in progress</string>
     <string name="rescrap_in_progress">Rescraping whole library</string>
+    <string name="rescraping_collection">Rescraping collection</string>
     <string name="rescraping_collections">Rescraping collections</string>
+    <string name="rescraping_noimage_collections">Rescraping collections with no image</string>
+
 
     <string name="rescrap_all_title">Rescrape all</string>
 
