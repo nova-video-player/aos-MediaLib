@@ -17,12 +17,9 @@ package com.archos.mediascraper;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
@@ -154,12 +151,14 @@ public class CollectionTags implements Parcelable {
      */
     public final long save(Context context, boolean forceUpdate) {
 
-        if (DBG) Log.d(TAG, "save: collection " + mId);
+        if (DBG) Log.d(TAG, "save: collection " + mId +
+                ", title " + mTitle +
+                ", forceUpdate " + forceUpdate);
 
         ContentResolver cr = context.getContentResolver();
         ContentProviderOperation.Builder cop = null;
         if (forceUpdate) { // we know that the entry exists, this is an update
-            cop = ContentProviderOperation.newUpdate(ScraperStore.MovieCollections.URI.BASE);
+            cop = ContentProviderOperation.newUpdate(ScraperStore.MovieCollections.URI.BASE).withSelection(WHERE_ID, new String[]{String.valueOf(mId)});
         } else { // let's see if this is an update or new entry
             Cursor c = cr.query(ScraperStore.MovieCollections.URI.BASE, PROJECTION_ID, WHERE_ID,
                     new String[]{String.valueOf(mId)}, null);
