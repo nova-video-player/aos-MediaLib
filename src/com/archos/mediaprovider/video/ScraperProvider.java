@@ -1133,6 +1133,13 @@ public class ScraperProvider extends ContentProvider {
             case SHOW_POSTERS:
                 table = ScraperTables.SHOW_POSTERS_TABLE_NAME;
                 break;
+            case MOVIE_COLLECTION_ID:
+                selection = "_id=?";
+                selectionArgs = new String[] { uri.getLastPathSegment() };
+                //$FALL-THROUGH$
+            case MOVIE_COLLECTION:
+                table = ScraperTables.MOVIE_COLLECTION_TABLE_NAME;
+                break;
 
             default:
                 throw new IllegalArgumentException("URI not supported in update(): " + uri);
