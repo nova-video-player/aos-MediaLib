@@ -230,7 +230,7 @@ public class AllCollectionScrapeService extends IntentService {
         nb.setContentText(getString(R.string.rescraping_noimage_collections));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getNoImageCursor());
-        removeAllTask();
+        removeNoImageTask();
         stopForeground(true);
     }
 
