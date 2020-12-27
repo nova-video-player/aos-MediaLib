@@ -18,7 +18,6 @@ package com.archos.mediascraper.xml;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.LruCache;
 import android.util.SparseArray;
 
@@ -54,6 +53,9 @@ import com.archos.mediascraper.thetvdb.ShowIdResult;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -65,8 +67,7 @@ import okhttp3.Cache;
 public class ShowScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "TheTVDB.com";
 
-    private final static String TAG = "ShowScraper3";
-    private final static boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowScraper3.class);
 
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
 
@@ -97,14 +98,14 @@ public class ShowScraper3 extends BaseScraper2 {
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
-            Log.e(TAG, "getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
-            if (DBG) Log.d(TAG, "getMatches2: ScrapeSearchResult ScrapeStatus.ERROR");
+            log.error("getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
+            log.debug("getMatches2: ScrapeSearchResult ScrapeStatus.ERROR");
             return new ScrapeSearchResult(null, false, ScrapeStatus.ERROR, null);
         }
         TvShowSearchInfo searchInfo = (TvShowSearchInfo) info;
         // get configured language
         String language = getLanguage(mContext);
-        if (DBG) Log.d(TAG, "getMatches2: tvshow search:" + searchInfo.getShowName()
+        log.debug("getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
                 + " e:" + searchInfo.getEpisode());
         if (theTvdb == null) reauth();
@@ -114,10 +115,10 @@ public class ShowScraper3 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
-        if (DBG) Log.d(TAG, "getDetailsInternal: treating result show " + result.getTitle());
+        log.debug("getDetailsInternal: treating result show " + result.getTitle());
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
-        if (DBG) Log.d(TAG, "getDetailsInternal: basicShow=" + basicShow + ", basicEpisode=" + basicEpisode);
+        log.debug("getDetailsInternal: basicShow=" + basicShow + ", basicEpisode=" + basicEpisode);
         String resultLanguage = result.getLanguage();
         if (TextUtils.isEmpty(resultLanguage))
             resultLanguage = "en";
@@ -175,14 +176,14 @@ public class ShowScraper3 extends BaseScraper2 {
             if (!allEpisodes.isEmpty() && !searchPosters.posters.isEmpty())
                 mapPostersEpisodes(allEpisodes, searchPosters, resultLanguage);
         } else {
-            if (DBG) Log.d(TAG, "using cached Episode List");
+            log.debug("using cached Episode List");
             // no need to parse, we have a cached result
             // get the showTags out of one random element, they all contain the same
             Iterator<EpisodeTags> iter = allEpisodes.values().iterator();
             if (iter.hasNext()) showTags = iter.next().getShowTags();
         }
         if (showTags == null) { // if there is no info about the show there is nothing we can do
-            if (DBG) Log.w(TAG, "ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
+            log.debug("ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
         showTags.downloadPoster(mContext);
@@ -191,7 +192,7 @@ public class ShowScraper3 extends BaseScraper2 {
                 Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")),
                 showTags);
         Bundle extraOut = buildBundle(allEpisodes, options);
-        if (DBG) Log.d(TAG, "ScrapeDetailResult ScrapeStatus.OKAY");
+        log.debug("ScrapeDetailResult ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 

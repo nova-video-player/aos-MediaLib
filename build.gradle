@@ -114,7 +114,7 @@ dependencies {
     //implementation 'com.android.support:support-v4:28.0.0'
     implementation 'androidx.core:core:1.3.2'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
-    implementation 'androidx.media:media:1.2.0'
+    implementation 'androidx.media:media:1.2.1'
     implementation 'androidx.fragment:fragment:1.2.5'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.preference:preference:1.1.1'
@@ -128,12 +128,12 @@ dependencies {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
     implementation 'com.jakewharton.threetenabp:threetenabp:1.2.3'
-    api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.client', version: '1.0.0'
-    api group: 'org.apache.oltu.oauth2', name: 'org.apache.oltu.oauth2.common', version: '1.0.0'
+    api 'org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.0'
+    api 'org.apache.oltu.oauth2:org.apache.oltu.oauth2.common:1.0.0'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.13'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'
     // version aligned with external dependencies trakt-java thetvdb-java (check pom.xml)
-    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.1'
     implementation 'com.uwetrottmann.thetvdb-java:thetvdb-java:2.4.0'
     //api files('libs/thetvdb-java-2.2.1-SNAPSHOT.jar')
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.2.0'
@@ -150,5 +150,4 @@ dependencies {
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
-    implementation group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.25'
 }
