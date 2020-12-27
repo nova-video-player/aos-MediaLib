@@ -28,23 +28,19 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.video.ScraperStore;
-import com.archos.mediascraper.settings.ScraperSetting;
 import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.CollectionInfo;
 import com.archos.mediascraper.themoviedb3.CollectionResult;
 import com.archos.mediascraper.themoviedb3.MovieCollection;
 import com.archos.mediascraper.themoviedb3.MyTmdb;
-import com.archos.mediascraper.xml.BaseScraper2;
+import com.archos.mediascraper.xml.MovieScraper3;
 import com.uwetrottmann.tmdb2.services.CollectionsService;
 
-import java.util.HashMap;
-import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
 import okhttp3.Cache;
@@ -253,7 +249,7 @@ public class AllCollectionScrapeService extends IntentService {
         if (tmdb == null) reauth();
         if (collectionService == null) collectionService = tmdb.collectionService();
         // get configured language
-        String language = getLanguage(getApplicationContext());
+        String language = MovieScraper3.getLanguage(getApplicationContext());
 
         if (cursor != null) {
             // do the processing
@@ -306,34 +302,5 @@ public class AllCollectionScrapeService extends IntentService {
         ContentResolver cr = getContentResolver();
         String[] selectionArgs = { collectionId.toString() };
         return cr.query(URI, PROJECTION, SELECTION_COLLECTION, selectionArgs, null);
-    }
-
-    // TODO MARC no need to generate preference there we have one already no?
-    public static String getLanguage(Context context) {
-        return generatePreferences(context).getString("language");
-    }
-
-    protected static synchronized ScraperSettings generatePreferences(Context context) {
-        if (sSettings == null) {
-            sSettings = new ScraperSettings(context, PREFERENCE_NAME);
-            HashMap<String, String> labelList = new HashMap<String, String>();
-            String[] labels = context.getResources().getStringArray(R.array.scraper_labels_array);
-            for (String label : labels) {
-                String[] splitted = label.split(":");
-                labelList.put(splitted[0], splitted[1]);
-            }
-            // <settings><setting label="info_language" type="labelenum" id="language" values="$$8" sort="yes" default="en"></setting></settings>
-            ScraperSetting setting = new ScraperSetting("language", ScraperSetting.STR_LABELENUM);
-            String defaultLang = Locale.getDefault().getLanguage();
-            if (DBG) Log.d(TAG, "generatePreferences: defaultLang=" + defaultLang);
-            if (!TextUtils.isEmpty(defaultLang) && BaseScraper2.LANGUAGES.contains(defaultLang))
-                setting.setDefault(defaultLang);
-            else
-                setting.setDefault("en");
-            setting.setLabel(labelList.get("info_language"));
-            setting.setValues(BaseScraper2.LANGUAGES);
-            sSettings.addSetting("language", setting);
-        }
-        return sSettings;
     }
 }
