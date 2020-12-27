@@ -49,7 +49,7 @@ public class AllCollectionScrapeService extends IntentService {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private static final String TAG = AllCollectionScrapeService.class.getSimpleName();
-    private final static boolean DBG = true;
+    private final static boolean DBG = false;
 
     public static final String INTENT_RESCRAPE_COLLECTION = "archos.mediascraper.intent.action.RESCRAPE_COLLECTION";
     public static final String INTENT_RESCRAPE_NOIMAGE_COLLECTIONS = "archos.mediascraper.intent.action.RESCRAPE_NOIMAGE_COLLECTIONS";

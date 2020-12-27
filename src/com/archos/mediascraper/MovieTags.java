@@ -365,8 +365,6 @@ public class MovieTags extends VideoTags {
         addDefaultBackdrop(image);
     }
 
-    // TODO MARC: make it alreadyDownloaded boolean even in image fetching
-    // TODO MARC: do that also for all tvshows --> huge boost since no image rescaling!
     public static boolean isCollectionAlreadyKnown(Integer collectionId, Context context) {
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(collectionId)};

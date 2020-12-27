@@ -33,7 +33,7 @@ import java.util.ArrayList;
 
 public class CollectionTags implements Parcelable {
     private static final String TAG = "CollectionTags";
-    private final static boolean DBG = true;
+    private final static boolean DBG = false;
 
     protected long mId;
     protected String mTitle;

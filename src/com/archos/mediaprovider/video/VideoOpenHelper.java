@@ -40,10 +40,8 @@ import java.io.File;
  */
 public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     private static final String TAG = ArchosMediaCommon.TAG_PREFIX + "VideoOpenHelper";
-    private static final boolean LOCAL_DBG = true;
-    private static final boolean DBG = true;
-    //private static final boolean LOCAL_DBG = false;
-    //private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final boolean LOCAL_DBG = false;
+    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
 
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)

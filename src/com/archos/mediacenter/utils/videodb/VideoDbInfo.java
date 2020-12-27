@@ -114,7 +114,6 @@ public class VideoDbInfo implements Parcelable {
             VideoStore.Video.VideoColumns.SCRAPER_S_ONLINE_ID,          // 23
             VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 24
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 25
-            // TODO MARC there should be a migration not for scraperTables for video table (not movie...) to add this column
             VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 26
     };
 
