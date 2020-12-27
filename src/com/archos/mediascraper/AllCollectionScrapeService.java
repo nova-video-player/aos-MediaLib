@@ -28,8 +28,6 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
-import android.util.Log;
-
 import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.video.ScraperStore;
@@ -41,6 +39,9 @@ import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.xml.MovieScraper3;
 import com.uwetrottmann.tmdb2.services.CollectionsService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 import okhttp3.Cache;
@@ -48,8 +49,7 @@ import okhttp3.Cache;
 public class AllCollectionScrapeService extends IntentService {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
-    private static final String TAG = AllCollectionScrapeService.class.getSimpleName();
-    private final static boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(AllCollectionScrapeService.class);
 
     public static final String INTENT_RESCRAPE_COLLECTION = "archos.mediascraper.intent.action.RESCRAPE_COLLECTION";
     public static final String INTENT_RESCRAPE_NOIMAGE_COLLECTIONS = "archos.mediascraper.intent.action.RESCRAPE_NOIMAGE_COLLECTIONS";
@@ -142,15 +142,15 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     public AllCollectionScrapeService() {
-        super(TAG);
-        if (DBG) Log.d(TAG, "AllCollectionScrapeService");
+        super(AllCollectionScrapeService.class.getSimpleName());
+        log.debug("AllCollectionScrapeService");
         setIntentRedelivery(true);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        if (DBG) Log.d(TAG, "onCreate");
+        log.debug("onCreate");
 
         // ensure cache is initialized
         synchronized (AllCollectionScrapeService.class) {
@@ -213,7 +213,7 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     private void rescrapeAllCollections() {
-        if (DBG) Log.d(TAG, "rescrapeAllCollections");
+        log.debug("rescrapeAllCollections");
         nb.setContentText(getString(R.string.rescraping_collections));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
@@ -222,7 +222,7 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     private void rescrapeNoImageCollections() {
-        if (DBG) Log.d(TAG, "rescrapeNoImageCollections");
+        log.debug("rescrapeNoImageCollections");
         nb.setContentText(getString(R.string.rescraping_noimage_collections));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getNoImageCursor());
@@ -231,7 +231,7 @@ public class AllCollectionScrapeService extends IntentService {
     }
 
     private void rescrapeCollection(Long collectionId) {
-        if (DBG) Log.d(TAG, "rescrapeCollection: " + collectionId);
+        log.debug("rescrapeCollection: " + collectionId);
         if (collectionId != null && collectionId > 0) {
             // update notification
             nb.setContentText(getString(R.string.rescraping_collection) + " " + collectionId.toString());
@@ -244,7 +244,7 @@ public class AllCollectionScrapeService extends IntentService {
 
     private void handleCursor(Cursor cursor) {
 
-        if (DBG) Log.d(TAG, "bind: " + DatabaseUtils.dumpCursorToString(cursor));
+        log.debug("bind: " + DatabaseUtils.dumpCursorToString(cursor));
 
         if (tmdb == null) reauth();
         if (collectionService == null) collectionService = tmdb.collectionService();
@@ -255,7 +255,7 @@ public class AllCollectionScrapeService extends IntentService {
             // do the processing
             while (cursor.moveToNext()) {
                 long collectionId = cursor.getLong(0);
-                if (DBG) Log.d(TAG, "handleCursor: scraping " + collectionId);
+                log.debug("handleCursor: scraping " + collectionId);
                 // scrape collectionId
                 CollectionResult collectionResult = MovieCollection.getInfo(collectionId, language, collectionService);
 
@@ -267,7 +267,7 @@ public class AllCollectionScrapeService extends IntentService {
                     collectionTag.setPlot(collectionInfo.description);
                     collectionTag.setPosterPath(collectionInfo.poster);
                     collectionTag.setBackdropPath(collectionInfo.backdrop);
-                    if (DBG) Log.d(TAG, "handleCursor: scraping " + collectionTag.mTitle);
+                    log.debug("handleCursor: scraping " + collectionTag.mTitle);
                     // generates the various posters/backdrops based on URL
                     collectionTag.downloadImage(getApplicationContext());
                     collectionTag.save(getApplicationContext(), true);
