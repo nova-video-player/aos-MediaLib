@@ -27,10 +27,12 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediascraper.ScraperImage.Type;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.text.ParseException;
@@ -40,8 +42,7 @@ import java.util.Date;
 import java.util.List;
 
 public class ShowTags extends VideoTags {
-    private static final String TAG = "ShowTags";
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowTags.class);
     private static final SimpleDateFormat sDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     protected Date mPremiered;
 
@@ -109,7 +110,7 @@ public class ShowTags extends VideoTags {
         ContentResolver cr = context.getContentResolver();
 
         // Check if this TV show is already referenced in the scraperDB
-        if (DBG) Log.d(TAG, "Save called for show " + mTitle);
+        log.debug("Save called for show " + mTitle);
         String[] selectionArgs = { mTitle };
         Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
                 NAME_SELECTION, selectionArgs, null);
@@ -176,21 +177,21 @@ public class ShowTags extends VideoTags {
             }
             if (showFound) {
                 // update if it is already there
-                if (DBG) Log.d(TAG, "Updating show base info");
+                log.debug("Updating show base info");
                 Uri uri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, showId);
                 int update = cr.update(uri, values, null, null);
                 if (update != 1) {
-                    Log.e(TAG, "update Show id " + showId + " failed");
+                    log.error("update Show id " + showId + " failed");
                     return -1;
                 }
             } else {
                 // insert if not in db
-                if (DBG) Log.d(TAG, "Inserting new show");
+                log.debug("Inserting new show");
                 Uri uri = ScraperStore.Show.URI.BASE;
                 Uri inserted = cr.insert(uri, values);
                 long result = inserted == null ? -1 : ContentUris.parseId(inserted);
                 if (result == -1) {
-                    Log.e(TAG, "insert Show failed");
+                    log.error("insert Show failed");
                     return -1;
                 }
                 showId = result;
@@ -204,7 +205,7 @@ public class ShowTags extends VideoTags {
         // if show did not exist insert all the actors etc, updates here are not done.
         if (!showFound) {
             // We know our ID now so we can put everything into a single transaction
-            if (DBG) Log.d(TAG, "Inserting studios, directors, actors, genres.");
+            log.debug("Inserting studios, directors, actors, genres.");
 
             for (String studio : mStudios) {
                 cop = ContentProviderOperation.newInsert(ScraperStore.Studio.URI.SHOW);
@@ -241,7 +242,7 @@ public class ShowTags extends VideoTags {
 
         // if new show or posters changed
         if (!showFound || postersChanged) {
-            if (DBG) Log.d(TAG, "Inserting posters.");
+            log.debug("Inserting posters.");
             for (ScraperImage image : safeList(mPosters)) {
                 if (posterId == -1)
                     posterId = allOperations.size();
@@ -251,7 +252,7 @@ public class ShowTags extends VideoTags {
         }
         // if new show or backdrops changed
         if (!showFound || backdropsChanged) {
-            if (DBG) Log.d(TAG, "Inserting backdrops.");
+            log.debug("Inserting backdrops.");
             for (ScraperImage image : safeList(mBackdrops)) {
                 if (backdropId == -1)
                     backdropId = allOperations.size();
@@ -272,7 +273,7 @@ public class ShowTags extends VideoTags {
 
         // set a default poster id if there was none
         if (!showFound && backRef != null) {
-            if (DBG) Log.d(TAG, "Updating poster/backdrop id.");
+            log.debug("Updating poster/backdrop id.");
             allOperations.add(
                     ContentProviderOperation.newUpdate(ScraperStore.Show.URI.BASE)
                     .withValueBackReferences(backRef)
@@ -283,17 +284,16 @@ public class ShowTags extends VideoTags {
 
         // finally push stuff to database.
         if (!allOperations.isEmpty()) {
-            if (DBG) Log.d(TAG, "Performing " + allOperations.size() + " db operations.");
+            log.debug("Performing " + allOperations.size() + " db operations.");
             try {
                 cr.applyBatch(ScraperStore.AUTHORITY, allOperations);
             } catch (RemoteException e) {
-                Log.d(TAG, "Exception :" + e, e);
+                log.error("Exception :" + e, e);
             } catch (OperationApplicationException e) {
-                Log.d(TAG, "Exception :" + e, e);
+                log.error("Exception :" + e, e);
             }
-        } else if (DBG) {
-            if (DBG) Log.d(TAG, "Nothing to be done for this show.");
-        }
+        } else
+            log.debug("Nothing to be done for this show.");
 
         return showId;
     }
@@ -355,7 +355,7 @@ public class ShowTags extends VideoTags {
         try {
             mPremiered = sDateFormatter.parse(string);
         } catch (ParseException e) {
-            Log.d(TAG, "Illegal Date format [" + string + "]");
+            log.error("Illegal Date format [" + string + "]");
             mPremiered = new Date(0);
         }
     }

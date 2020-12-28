@@ -23,17 +23,18 @@ import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
 
 public class CollectionTags implements Parcelable {
-    private static final String TAG = "CollectionTags";
-    private final static boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(CollectionTags.class);
 
     protected long mId;
     protected String mTitle;
@@ -124,7 +125,7 @@ public class CollectionTags implements Parcelable {
         if (image != null)
             image.download(context);
         else
-            if (DBG) Log.d(TAG, "downloadPoster: image is null for " + mTitle + ", url " + image.getLargeUrl());
+            log.debug("downloadPoster: image is null for " + mTitle + ", url " + image.getLargeUrl());
     }
 
     public void downloadBackdrop(Context context) {
@@ -132,7 +133,7 @@ public class CollectionTags implements Parcelable {
         if (image != null)
             image.download(context);
         else
-            if (DBG) Log.d(TAG, "downloadBackdrop: image is null for " + mTitle + ", url " + image.getLargeUrl());
+            log.debug("downloadBackdrop: image is null for " + mTitle + ", url " + image.getLargeUrl());
     }
 
     public final void downloadAllImages(Context context) {
@@ -151,7 +152,7 @@ public class CollectionTags implements Parcelable {
      */
     public final long save(Context context, boolean forceUpdate) {
 
-        if (DBG) Log.d(TAG, "save: collection " + mId +
+        log.debug("save: collection " + mId +
                 ", title " + mTitle +
                 ", forceUpdate " + forceUpdate);
 
@@ -189,9 +190,9 @@ public class CollectionTags implements Parcelable {
             ContentProviderResult[] results = cr.applyBatch(ScraperStore.AUTHORITY, allOperations);
             result = (results != null && results.length > 0) ? mId : -1;
         } catch (RemoteException e) {
-            Log.d(TAG, "Exception :" + e, e);
+            log.error("Exception :" + e, e);
         } catch (OperationApplicationException e) {
-            Log.d(TAG, "Exception :" + e, e);
+            log.error("Exception :" + e, e);
         }
         return result;
     }
@@ -233,7 +234,7 @@ public class CollectionTags implements Parcelable {
                                                String nameSeed, Context context) {
         if (getId() != -1) {
             String path = getPosterPath();
-            if (DBG) Log.d(TAG, "downloadCollectionImage: treating collection poster " + path);
+            log.debug("downloadCollectionImage: treating collection poster " + path);
             String fullUrl, thumbUrl;
             ScraperImage image;
             if (path != null) {
@@ -251,7 +252,7 @@ public class CollectionTags implements Parcelable {
             }
 
             path = getBackdropPath();
-            if (DBG) Log.d(TAG, "downloadCollectionImage: treating collection backdrop " + path);
+            log.debug("downloadCollectionImage: treating collection backdrop " + path);
             if (path != null) {
                 fullUrl = ImageConfiguration.getUrl(path, backdropFullSize);
                 thumbUrl = ImageConfiguration.getUrl(path, backdropThumbSize);

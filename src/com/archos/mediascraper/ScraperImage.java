@@ -344,13 +344,13 @@ public class ScraperImage {
             case SHOW_POSTER:
             case COLLECTION_POSTER:
                 ret =  MediaScraper.getPosterDirectory(context);
-                if (DBG) Log.d(TAG, "getDir for collection poster: " + ret.getPath());
+                if (DBG) Log.d(TAG, "getDir for poster: " + ret.getPath());
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
-                if (DBG) Log.d(TAG, "getDir for collection backdrop: " + ret.getPath());
+                if (DBG) Log.d(TAG, "getDir for backdrop: " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though
@@ -376,13 +376,13 @@ public class ScraperImage {
             case SHOW_POSTER:
             case COLLECTION_POSTER:
                 ret = MediaScraper.getImageCacheDirectory(context);
-                if (DBG) Log.d(TAG, "getCacheDir for collection poster: " + ret.getPath());
+                if (DBG) Log.d(TAG, "getCacheDir for poster: " + ret.getPath());
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
-                if (DBG) Log.d(TAG, "getCacheDir for collection backdrop: " + ret.getPath());
+                if (DBG) Log.d(TAG, "getCacheDir for backdrop: " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though

@@ -28,20 +28,21 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.ScraperImage.Type;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MovieTags extends VideoTags {
-    private static final String TAG = "MovieTags";
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(MovieTags.class);
 
     protected int mYear;
 
@@ -199,7 +200,7 @@ public class MovieTags extends VideoTags {
         if (mCollectionId != -1) {
             // Check if this Movie Collection is already referenced in the scraperDB
             if (! isCollectionAlreadyKnown(mCollectionId, context)) {
-                if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " does not exist, saving it");
+                log.debug("save: collection " + mCollectionId + " does not exist, saving it");
                 cop = ContentProviderOperation.newInsert(ScraperStore.MovieCollections.URI.BASE);
                 cop.withValue(ScraperStore.MovieCollections.ID, mCollectionId);
                 cop.withValue(ScraperStore.MovieCollections.NAME, mCollectionName);
@@ -214,7 +215,7 @@ public class MovieTags extends VideoTags {
                 cop.withValue(ScraperStore.MovieCollections.BACKDROP_THUMB_FILE, mCollectionBackdropThumbFile);
                 allOperations.add(cop.build());
             } else {
-                if (DBG) Log.d(TAG, "save: collection " + mCollectionId + " already exists, skipping insert");
+                log.debug("save: collection " + mCollectionId + " already exists, skipping insert");
             }
         }
 
@@ -274,9 +275,9 @@ public class MovieTags extends VideoTags {
                 result = ContentUris.parseId(results[0].uri);
             }
         } catch (RemoteException e) {
-            Log.d(TAG, "Exception :" + e, e);
+            log.error("Exception :" + e, e);
         } catch (OperationApplicationException e) {
-            Log.d(TAG, "Exception :" + e, e);
+            log.error("Exception :" + e, e);
         }
         return result;
     }
