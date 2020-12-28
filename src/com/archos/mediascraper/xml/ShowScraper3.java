@@ -77,7 +77,6 @@ public class ShowScraper3 extends BaseScraper2 {
     static Cache cache;
 
     static MyTheTVdb theTvdb = null;
-    static MoviesService moviesService = null;
 
     static String apiKey = null;
 

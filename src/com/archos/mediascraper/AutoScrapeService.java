@@ -229,7 +229,6 @@ public class AutoScrapeService extends Service {
                             log.debug("startExporting: " + movieID + " fileUri " + fileUri);
                             if (scraperType == BaseTags.TV_SHOW) {
                                 baseTags = TagsFactory.buildEpisodeTags(AutoScrapeService.this, episodeID);
-
                             } else if (scraperType == BaseTags.MOVIE) {
                                 baseTags = TagsFactory.buildMovieTags(AutoScrapeService.this, movieID);
                             }
