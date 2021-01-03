@@ -25,6 +25,8 @@
     <string name="nfo_export_all">Экспорт библиотеки в .nfo</string>
     <string name="nfo_export_exporting">Экспорт .nfo</string>
     <string name="nfo_export_exporting_all">все</string>
+    <string name="nfo_export_in_progress">Выполняется экспорт NFO</string>
+    <string name="rescrap_in_progress">Распознавание всей библиотеки</string>
     <string name="rescrap_all_title">Загрузить обложки</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Невозможно синхронизировать с trakt</string>

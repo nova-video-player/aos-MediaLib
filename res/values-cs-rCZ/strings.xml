@@ -25,6 +25,8 @@
     <string name="nfo_export_all">Exportovat celou knihovnu do .nfo</string>
     <string name="nfo_export_exporting">Exportování .nfo</string>
     <string name="nfo_export_exporting_all">vše</string>
+    <string name="nfo_export_in_progress">Probíhá export NFO</string>
+    <string name="rescrap_in_progress">Probíhá opětovné získání informací pro celou knihovnu</string>
     <string name="rescrap_all_title">Opětovné získání informací pro všechny položky</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Chyba synchronizace s Trakt</string>

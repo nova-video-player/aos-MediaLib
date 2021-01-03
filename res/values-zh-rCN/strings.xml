@@ -25,6 +25,8 @@
     <string name="nfo_export_all">导出整个库到 .nfo</string>
     <string name="nfo_export_exporting">正在导出.nfo</string>
     <string name="nfo_export_exporting_all">所有内容</string>
+    <string name="nfo_export_in_progress">正在导出 NFO</string>
+    <string name="rescrap_in_progress">重新扫描整个媒体库</string>
     <string name="rescrap_all_title">重新扫描所有</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">无法与 trakt 同步</string>

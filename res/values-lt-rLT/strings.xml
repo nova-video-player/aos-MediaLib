@@ -25,6 +25,8 @@
     <string name="nfo_export_all">Eksportuoti visą mediateką į .nfo</string>
     <string name="nfo_export_exporting">Eksportuojamas .nfo</string>
     <string name="nfo_export_exporting_all">viską</string>
+    <string name="nfo_export_in_progress">Vykdomas NFO eksportas</string>
+    <string name="rescrap_in_progress">Visos mediatekos atpažinimas</string>
     <string name="rescrap_all_title">Atpažinti visus</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Nepavyksta sinchronizuoti su Trakt</string>

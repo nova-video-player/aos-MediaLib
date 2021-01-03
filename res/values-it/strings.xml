@@ -25,6 +25,8 @@
     <string name="nfo_export_all">Esporta l\'intera libraria in .nfo</string>
     <string name="nfo_export_exporting">Esportazione .nfo in corso</string>
     <string name="nfo_export_exporting_all">tutto</string>
+    <string name="nfo_export_in_progress">Esportazione file NFO in corso</string>
+    <string name="rescrap_in_progress">Controllo dell\'intera libreria in corso</string>
     <string name="rescrap_all_title">Ri-analizza tutto</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Impossibile sincronizzarsi con Trakt</string>

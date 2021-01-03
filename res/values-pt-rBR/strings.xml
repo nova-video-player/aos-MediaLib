@@ -25,7 +25,9 @@
     <string name="nfo_export_all">Exportar toda a biblioteca para .nfo</string>
     <string name="nfo_export_exporting">Exportando .nfo</string>
     <string name="nfo_export_exporting_all">tudo</string>
-    <string name="rescrap_all_title">Pesquisar tudo novamente</string>
+    <string name="nfo_export_in_progress">Exportação de INFO em andamento</string>
+    <string name="rescrap_in_progress">Refazendo scan de toda biblioteca</string>
+    <string name="rescrap_all_title">Refazer scrape de tudo</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Impossível sincronizar com o trakt</string>
     <!-- Title of screen when no sd card is present -->

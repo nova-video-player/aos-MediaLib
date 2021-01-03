@@ -25,6 +25,8 @@
     <string name="nfo_export_all">Die komplette Bibliothek als .nfo-Datei exportieren</string>
     <string name="nfo_export_exporting">Exportiere .nfo</string>
     <string name="nfo_export_exporting_all">alles</string>
+    <string name="nfo_export_in_progress">NFO-Export wird durchgeführt</string>
+    <string name="rescrap_in_progress">Rescraping der ganzen Bibliothek</string>
     <string name="rescrap_all_title">Alle neu scrapen</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Synchronisation mit Trakt nicht möglich</string>

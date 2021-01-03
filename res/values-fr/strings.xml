@@ -25,6 +25,11 @@
     <string name="nfo_export_all">Exporter toute la bibliothèque au format .nfo</string>
     <string name="nfo_export_exporting">Export en \'.nfo\' en cours</string>
     <string name="nfo_export_exporting_all">tout</string>
+    <string name="nfo_export_in_progress">Export de NFO en cours</string>
+    <string name="rescrap_in_progress">Actualisation des descriptions</string>
+    <string name="rescraping_collection">Actualisation de la description de la saga</string>
+    <string name="rescraping_collections">Actualisation des descriptions des saga</string>
+    <string name="rescraping_noimage_collections">Actualisation de la description des sagas sans images</string>
     <string name="rescrap_all_title">Actualiser les descriptions</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">La synchronisation avec trakt est impossible</string>
