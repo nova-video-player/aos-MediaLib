@@ -27,6 +27,9 @@
     <string name="nfo_export_exporting_all">viską</string>
     <string name="nfo_export_in_progress">Vykdomas NFO eksportas</string>
     <string name="rescrap_in_progress">Visos mediatekos atpažinimas</string>
+    <string name="rescraping_collection">Nuskaitoma kolekcija</string>
+    <string name="rescraping_collections">Nuskaitomos kolekcijos</string>
+    <string name="rescraping_noimage_collections">Nuskaitomos kolekcijos be viršelių</string>
     <string name="rescrap_all_title">Atpažinti visus</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Nepavyksta sinchronizuoti su Trakt</string>

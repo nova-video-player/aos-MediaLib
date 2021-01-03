@@ -27,6 +27,9 @@
     <string name="nfo_export_exporting_all">tutto</string>
     <string name="nfo_export_in_progress">Esportazione file NFO in corso</string>
     <string name="rescrap_in_progress">Controllo dell\'intera libreria in corso</string>
+    <string name="rescraping_collection">Sto ricontrollando tutte le collezioni</string>
+    <string name="rescraping_collections">Sto ricontrollando le collezioni</string>
+    <string name="rescraping_noimage_collections">Sto ricontrollando tutte collezioni senza immagine</string>
     <string name="rescrap_all_title">Ri-analizza tutto</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Impossibile sincronizzarsi con Trakt</string>

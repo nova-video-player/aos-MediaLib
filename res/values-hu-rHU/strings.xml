@@ -27,6 +27,9 @@
     <string name="nfo_export_exporting_all">mindent</string>
     <string name="nfo_export_in_progress">NFO exportálás folyamatban</string>
     <string name="rescrap_in_progress">Teljes könyvtár feldolgozása...</string>
+    <string name="rescraping_collection">Gyűjtemény újrafeldolgozása folyamatban</string>
+    <string name="rescraping_collections">Gyűjtemények újrafeldolgozása folyamatban</string>
+    <string name="rescraping_noimage_collections">Gyűjtemények újrafeldolgozása folyamatban, fényképek nélkül</string>
     <string name="rescrap_all_title">Teljes újrafeldolgozás</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">trakt szinkronizálás nem lehetséges</string>
