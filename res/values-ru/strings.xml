@@ -27,6 +27,9 @@
     <string name="nfo_export_exporting_all">все</string>
     <string name="nfo_export_in_progress">Выполняется экспорт NFO</string>
     <string name="rescrap_in_progress">Распознавание всей библиотеки</string>
+    <string name="rescraping_collection">Распознавание коллекции</string>
+    <string name="rescraping_collections">Распознавание коллекций</string>
+    <string name="rescraping_noimage_collections">Распознавание коллекций без изображения</string>
     <string name="rescrap_all_title">Загрузить обложки</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Невозможно синхронизировать с trakt</string>

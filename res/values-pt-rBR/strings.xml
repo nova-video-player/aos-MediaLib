@@ -26,8 +26,11 @@
     <string name="nfo_export_exporting">Exportando .nfo</string>
     <string name="nfo_export_exporting_all">tudo</string>
     <string name="nfo_export_in_progress">Exportação de INFO em andamento</string>
-    <string name="rescrap_in_progress">Refazendo scan de toda biblioteca</string>
-    <string name="rescrap_all_title">Refazer scrape de tudo</string>
+    <string name="rescrap_in_progress">Obtendo informações para toda biblioteca</string>
+    <string name="rescraping_collection">Obtendo informações para coleção</string>
+    <string name="rescraping_collections">Obtendo informações para coleções</string>
+    <string name="rescraping_noimage_collections">Obtendo informações para coleções sem imagem</string>
+    <string name="rescrap_all_title">Re-obter todas informações</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Impossível sincronizar com o trakt</string>
     <!-- Title of screen when no sd card is present -->
