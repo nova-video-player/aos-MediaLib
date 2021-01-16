@@ -151,9 +151,14 @@ public class MediaFactory {
     }
 
     public static IMediaPlayer createPlayer(Context ctx, boolean forceSoftwareDecoding) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String str = prefs.getString(KEY_DEC_CHOICE, null);
         if (preInit(ctx, true, forceSoftwareDecoding)) {
             if (DBG) Log.d(TAG, "new AvosMediaPlayer");
-            return new ExoMediaPlayer(ctx.getApplicationContext());
+            if (Integer.parseInt(str) ==  5)
+                return new ExoMediaPlayer(ctx.getApplicationContext());
+            else
+                return new AvosMediaPlayer();
         } else {
             if (DBG) Log.d(TAG, "new AndroidMediaPlayer");
             return new AndroidMediaPlayer(ctx);
