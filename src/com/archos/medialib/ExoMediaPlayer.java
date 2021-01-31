@@ -139,6 +139,14 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
 
     @Override
     public void seekTo(int msec) throws IllegalStateException {
+        long currentPos = exoPlayer.getCurrentPosition();
+        int nextPos = msec + startTime;
+        //Log.d(TAG, "seekTo current Pos: " + currentPos + " nextPos: " + nextPos);
+        if (nextPos > currentPos) {
+            exoPlayer.setSeekParameters(SeekParameters.NEXT_SYNC);
+        } else {
+            exoPlayer.setSeekParameters(SeekParameters.PREVIOUS_SYNC);
+        }
         exoPlayer.seekTo(msec + startTime);
     }
 
