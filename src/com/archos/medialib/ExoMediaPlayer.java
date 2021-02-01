@@ -1,11 +1,14 @@
 package com.archos.medialib;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+
+import androidx.preference.PreferenceManager;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
@@ -46,6 +49,8 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
     private DefaultTrackSelector trackSelector;
     private MediaMetadata mediaMetadata;
 
+    private SharedPreferences sharedPreferences;
+
     ExoMediaPlayer(Context context) {
         Looper looper;
         if ((looper = Looper.myLooper()) != null) {
@@ -56,7 +61,12 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
             mEventHandler = null;
         }
         trackSelector = new DefaultTrackSelector(context);
-        DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        DefaultRenderersFactory renderersFactory;
+        if (Integer.parseInt(sharedPreferences.getString("force_audio_passthrough_multiple","0")) > 0)
+            renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
+        else
+            renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
         exoPlayer = new SimpleExoPlayer
                 .Builder(context, renderersFactory)
                 .setTrackSelector(trackSelector)
