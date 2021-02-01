@@ -208,11 +208,17 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
             return false;
         for (int i = 0; i < mappedTrackInfo.getRendererCount(); i++) {
             if (mappedTrackInfo.getRendererType(i) == type) {
-                if (mappedTrackInfo.getTrackSupport(i, stream, 0) == RendererCapabilities.FORMAT_HANDLED) {
-                    TrackGroupArray trackGroupArray = mappedTrackInfo.getTrackGroups(i);
-                    trackSelector.setParameters(trackSelector
-                            .buildUponParameters().setSelectionOverride(i,
-                                    trackGroupArray, new DefaultTrackSelector.SelectionOverride(stream, 0)));
+                try {
+                    if (mappedTrackInfo.getTrackSupport(i, stream, 0) == RendererCapabilities.FORMAT_HANDLED) {
+                        TrackGroupArray trackGroupArray = mappedTrackInfo.getTrackGroups(i);
+                        trackSelector.setParameters(trackSelector
+                                .buildUponParameters().setRendererDisabled(type, false).setSelectionOverride(i,
+                                        trackGroupArray, new DefaultTrackSelector.SelectionOverride(stream, 0)));
+                        return true;
+                    }
+                }
+                catch (java.lang.ArrayIndexOutOfBoundsException e) {
+                    trackSelector.setParameters(trackSelector.buildUponParameters().setRendererDisabled(type, true));
                     return true;
                 }
             }
