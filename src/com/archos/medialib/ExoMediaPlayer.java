@@ -64,9 +64,9 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         DefaultRenderersFactory renderersFactory;
         if (Integer.parseInt(sharedPreferences.getString("force_audio_passthrough_multiple","0")) > 0)
-            renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
-        else
             renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
+        else
+            renderersFactory = new DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER);
         exoPlayer = new SimpleExoPlayer
                 .Builder(context, renderersFactory)
                 .setTrackSelector(trackSelector)
