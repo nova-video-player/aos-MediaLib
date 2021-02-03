@@ -50,6 +50,8 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
     private MediaMetadata mediaMetadata;
 
     private SharedPreferences sharedPreferences;
+    private int currentWidth;
+    private int currentHeight;
 
     ExoMediaPlayer(Context context) {
         Looper looper;
@@ -60,6 +62,7 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
         } else {
             mEventHandler = null;
         }
+        currentWidth = currentHeight = 0;
         trackSelector = new DefaultTrackSelector(context);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         DefaultRenderersFactory renderersFactory;
@@ -264,6 +267,8 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
             else for (Cue cue: cues) {
                 if (cue.text != null)
                     mOnSubtitleListener.onSubtitle(this, new Subtitle.TextSubtitle(cue.text.toString()));
+                else if (cue.bitmap != null)
+                    mOnSubtitleListener.onSubtitle(this, new Subtitle.TimedBitmapSubtitle(0, 1000, currentWidth, currentHeight, cue.bitmap));
             }
         });
     }
@@ -307,6 +312,8 @@ public class ExoMediaPlayer extends GenericMediaPlayer implements Player.EventLi
 
     @Override
     public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+        currentWidth = width;
+        currentHeight = height;
         mEventHandler.post(() -> mOnVideoSizeChangedListener.onVideoSizeChanged(this, width, height));
     }
 
