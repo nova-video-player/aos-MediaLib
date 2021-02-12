@@ -22,25 +22,27 @@ import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 import retrofit2.Response;
 
 // Get the basic show information for a specific movie id and language (ISO 639-1 code)
 public class ShowId {
-    private static final String TAG = ShowId.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowId.class);
 
     public static ShowIdResult getBaseInfo(int showId, String language, boolean basicShow, boolean basicEpisode, MyTheTVdb theTvdb, Context context) {
         ShowIdResult myResult = new ShowIdResult();
         ShowTags parserResult = null;
 
-        if (DBG) Log.d(TAG, "getBaseInfo: quering thetvdb for showId " + showId + " in " + language);
+        log.debug("getBaseInfo: quering thetvdb for showId " + showId + " in " + language);
         try {
             Response<SeriesResponse> seriesResponse = theTvdb.series().series(showId, language).execute();
             switch (seriesResponse.code()) {
                 case 401: // auth issue
-                    if (DBG) Log.d(TAG, "search: auth error");
+                    log.debug("search: auth error");
                     myResult.status = ScrapeStatus.AUTH_ERROR;
                     ShowScraper3.reauth();
                     return myResult;
@@ -48,10 +50,10 @@ public class ShowId {
                     myResult.status = ScrapeStatus.NOT_FOUND;
                     // fallback to english if no result
                     if (!language.equals("en")) {
-                        if (DBG) Log.d(TAG, "getBaseInfo: retrying search for showId " + showId + " in en");
+                        log.debug("getBaseInfo: retrying search for showId " + showId + " in en");
                         return getBaseInfo(showId, "en", basicShow, basicEpisode, theTvdb, context);
                     }
-                    if (DBG) Log.d(TAG, "getBaseInfo: movieId " + showId + " not found");
+                    log.debug("getBaseInfo: movieId " + showId + " not found");
                     break;
                 default:
                     if (seriesResponse.isSuccessful()) {
@@ -63,13 +65,13 @@ public class ShowId {
                             myResult.status = ScrapeStatus.NOT_FOUND;
                         }
                     } else { // an error at this point is PARSER related
-                        if (DBG) Log.d(TAG, "getBaseInfo: error " + seriesResponse.code());
+                        log.debug("getBaseInfo: error " + seriesResponse.code());
                         myResult.status = ScrapeStatus.ERROR_PARSER;
                     }
                     break;
             }
         } catch (IOException e) {
-            Log.e(TAG, "getBaseInfo: caught IOException getting summary for showId=" + showId);
+            log.error("getBaseInfo: caught IOException getting summary for showId=" + showId);
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
         }

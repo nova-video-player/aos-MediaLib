@@ -16,9 +16,11 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
-import android.util.Log;
 
 import com.archos.mediascraper.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,9 +33,7 @@ import java.util.regex.Pattern;
  * Name may only contain Alphanumerics separated by spaces
  */
 class TvShowPathMatcher implements InputMatcher {
-
-    private static final String TAG = TvShowPathMatcher.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(TvShowPathMatcher.class);
 
     // pattern that allows
     // "stuff / [words/numbers] / Season XX / random stuff Episode XX random stuff"
@@ -77,7 +77,7 @@ class TvShowPathMatcher implements InputMatcher {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
             int season = StringUtils.parseInt(matcher.group(2), 0);
             int episode = StringUtils.parseInt(matcher.group(3), 0);
-            if (DBG) Log.d(TAG, "getFileInputMatch: " + showName + " season " + season + " episode " + episode);
+            log.debug("getFileInputMatch: " + showName + " season " + season + " episode " + episode);
             return new TvShowSearchInfo(file, showName, season, episode);
         }
         return null;

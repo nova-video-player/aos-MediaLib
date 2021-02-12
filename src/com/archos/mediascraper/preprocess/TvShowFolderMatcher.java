@@ -2,11 +2,13 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
-import android.util.Log;
 
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -17,9 +19,7 @@ import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
  * Matches all sorts of "Tv Show title S01E01/randomgarbage.mkv" and similar things
  */
 class TvShowFolderMatcher extends TvShowMatcher {
-
-    private static final String TAG = TvShowFolderMatcher.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(TvShowFolderMatcher.class);
 
     public static TvShowFolderMatcher instance() {
         return INSTANCE;
@@ -43,7 +43,7 @@ class TvShowFolderMatcher extends TvShowMatcher {
     }
 
     private static SearchInfo getMatch(String matchString, Uri file) {
-        if (DBG) Log.d(TAG, "getMatch: matchString " + matchString + " file " + file.getPath());
+        log.debug("getMatch: matchString " + matchString + " file " + file.getPath());
         // clean trailing "/" if exists
         matchString = removeTrailingSlash(matchString);
         // clean leading "/"
@@ -55,7 +55,7 @@ class TvShowFolderMatcher extends TvShowMatcher {
             String episode = showName.get(ShowUtils.EPNUM);
             int seasonInt = StringUtils.parseInt(season, 0);
             int episodeInt = StringUtils.parseInt(episode, 0);
-            if (DBG) Log.d(TAG, "getMatch: " + showTitle + " season " + season + " episode " + episode);
+            log.debug("getMatch: " + showTitle + " season " + season + " episode " + episode);
             return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt);
         }
         return null;

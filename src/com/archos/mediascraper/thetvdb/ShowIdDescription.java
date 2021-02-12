@@ -14,12 +14,13 @@
 
 package com.archos.mediascraper.thetvdb;
 
-import android.util.Log;
-
 import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -28,8 +29,7 @@ import retrofit2.Response;
 // set overview for showId in english
 // return boolean for success
 public class ShowIdDescription {
-    private static final String TAG = ShowIdDescription.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdDescription.class);
 
     public static boolean addDescription(int showId, ShowTags tag, MyTheTVdb theTvdb) {
         if (tag == null) return false;
@@ -38,11 +38,11 @@ public class ShowIdDescription {
             seriesResponse = theTvdb.series().series(showId, "en").execute();
             switch (seriesResponse.code()) {
                 case 401: // auth issue
-                    if (DBG) Log.d(TAG, "search: auth error");
+                    log.debug("search: auth error");
                     ShowScraper3.reauth();
                     return false;
                 case 404: // not found
-                    if (DBG) Log.d(TAG, "getBaseInfo: movieId " + showId + " not found");
+                    log.debug("getBaseInfo: movieId " + showId + " not found");
                     return false;
                 default:
                     if (seriesResponse.isSuccessful()) {
@@ -50,12 +50,12 @@ public class ShowIdDescription {
                             Series series = seriesResponse.body().data;
                             if (series.overview != null) tag.setPlot(series.overview);
                             else {
-                                if (DBG) Log.d(TAG,"addDescription: overview is null for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
+                                log.debug("addDescription: overview is null for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
                                 tag.setPlot("");
                             }
                             if (series.seriesName != null) tag.setTitle(series.seriesName);
                             else {
-                                if (DBG) Log.d(TAG,"addDescription: seriesName is null for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
+                                log.debug("addDescription: seriesName is null for showId=" + showId + ", series.id=" + series.id + ", serie.imdbId=" + series.imdbId);
                                 tag.setTitle("");
                             }
                             return true;
@@ -65,7 +65,7 @@ public class ShowIdDescription {
                         return false;
             }
         } catch (IOException e) {
-            Log.e(TAG, "addImages: caught IOException getting summary for showId=" + showId);
+            log.error("addImages: caught IOException getting summary for showId=" + showId);
             return false;
         }
     }

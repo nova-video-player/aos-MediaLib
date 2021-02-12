@@ -14,11 +14,12 @@
 
 package com.archos.mediascraper.thetvdb;
 
-import android.util.Log;
-
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.ActorsResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,19 +28,18 @@ import retrofit2.Response;
 
 // Get the actors for specific show id
 public class ShowIdActors {
-    private static final String TAG = ShowIdActors.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdActors.class);
 
     public static ShowIdActorsResult getActors(int showId, MyTheTVdb theTvdb) {
         ShowIdActorsResult myResult = new ShowIdActorsResult();
         Map<String, String> parserResult;
 
-        if (DBG) Log.d(TAG, "getActors: quering thetvdb for showId " + showId);
+        log.debug("getActors: quering thetvdb for showId " + showId);
         try {
             Response<ActorsResponse> actorsResponse = theTvdb.series().actors(showId).execute();
             switch (actorsResponse.code()) {
                 case 401: // auth issue
-                    if (DBG) Log.d(TAG, "search: auth error");
+                    log.debug("search: auth error");
                     myResult.status = ScrapeStatus.AUTH_ERROR;
                     myResult.actors = ShowIdActorsResult.EMPTY_MAP;
                     ShowScraper3.reauth();
@@ -59,14 +59,14 @@ public class ShowIdActors {
                             myResult.status = ScrapeStatus.NOT_FOUND;
                         }
                     } else { // an error at this point is PARSER related
-                        if (DBG) Log.d(TAG, "getActors: error " + actorsResponse.code());
+                        log.debug("getActors: error " + actorsResponse.code());
                         myResult.actors = ShowIdActorsResult.EMPTY_MAP;
                         myResult.status = ScrapeStatus.ERROR_PARSER;
                     }
                     break;
             }
         } catch (IOException e) {
-            Log.e(TAG, "getActors: caught IOException getting actors for showId=" + showId);
+            log.debug("getActors: caught IOException getting actors for showId=" + showId);
             myResult.actors = ShowIdActorsResult.EMPTY_MAP;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;

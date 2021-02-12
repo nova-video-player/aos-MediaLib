@@ -15,21 +15,22 @@
 package com.archos.mediascraper.thetvdb;
 
 import android.content.Context;
-import android.util.Log;
 import android.util.Pair;
 import com.archos.mediascraper.ScraperImage;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 
 public class ShowIdPostersParser {
 
-    private static final String TAG = ShowIdPostersParser.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdPostersParser.class);
 
     final static String BANNERS_URL = "https://www.thetvdb.com/banners/";
 
@@ -43,7 +44,7 @@ public class ShowIdPostersParser {
 
         ShowIdPostersResult result = new ShowIdPostersResult();
 
-        if (DBG) Log.d(TAG, "getResults: basicShow=" + basicShow + ", basicEpisode=" + basicEpisode);
+        log.debug("getResults: basicShow=" + basicShow + ", basicEpisode=" + basicEpisode);
 
         // posters
         List<ScraperImage> posters = new ArrayList<>();
@@ -78,7 +79,7 @@ public class ShowIdPostersParser {
             }
         });
         for(Pair<SeriesImageQueryResult, String> poster : tempPosters) {
-            if (DBG) Log.d(TAG,"ScrapeDetailResult: generating ScraperImage for poster for " + showTitle + ", large=" + BANNERS_URL + poster.first.fileName + ", thumb=" + BANNERS_URL + poster.first.fileName);
+            log.debug("ScrapeDetailResult: generating ScraperImage for poster for " + showTitle + ", large=" + BANNERS_URL + poster.first.fileName + ", thumb=" + BANNERS_URL + poster.first.fileName);
             ScraperImage image = new ScraperImage(poster.first.keyType.equals("season") ? ScraperImage.Type.EPISODE_POSTER : ScraperImage.Type.SHOW_POSTER, showTitle);
             image.setLanguage(poster.second);
             image.setThumbUrl(BANNERS_URL + poster.first.thumbnail);
@@ -88,7 +89,7 @@ public class ShowIdPostersParser {
                 image.setSeason(poster.first.keyType.equals("season") ? Integer.parseInt(poster.first.subKey) : -1);
             } catch (Throwable t) {
                 image.setSeason(-1);
-                Log.w(TAG, "getResult: parseInt(" + poster.first.subKey + ") error on season for " + showTitle);
+                log.warn("getResult: parseInt(" + poster.first.subKey + ") error on season for " + showTitle);
             }
             posters.add(image);
         }

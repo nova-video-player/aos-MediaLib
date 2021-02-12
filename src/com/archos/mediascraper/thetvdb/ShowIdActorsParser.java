@@ -14,10 +14,11 @@
 
 package com.archos.mediascraper.thetvdb;
 
-import android.util.Log;
-
 import com.uwetrottmann.thetvdb.entities.Actor;
 import com.uwetrottmann.thetvdb.entities.ActorsResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,15 +29,14 @@ import java.util.Map;
 
 public class ShowIdActorsParser {
 
-    private static final String TAG = ShowIdActorsParser.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdActorsParser.class);
 
     public static Map<String, String> getResult(ActorsResponse actorsResponse) {
         Map<String, String> actors = new LinkedHashMap<>();
 
-        if (DBG)
+        if (log.isDebugEnabled())
             for (Actor actor : actorsResponse.data)
-                Log.d(TAG, "getActors: " + actor.name + " (" + actor.role + ")");
+                log.debug("getActors: " + actor.name + " (" + actor.role + ")");
 
         List<Actor> tempActors = new ArrayList<>(actorsResponse.data);
         Collections.sort(tempActors, new Comparator<Actor>() {

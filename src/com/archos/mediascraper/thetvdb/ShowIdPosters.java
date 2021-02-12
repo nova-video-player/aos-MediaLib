@@ -15,25 +15,26 @@
 package com.archos.mediascraper.thetvdb;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import retrofit2.Response;
 
 // Get the posters for specific show id
 public class ShowIdPosters {
-    private static final String TAG = ShowIdPosters.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdPosters.class);
 
     public static ShowIdPostersResult getPosters(int showId, String showTitle,
                                                boolean basicShow, boolean basicEpisode,
                                                String language, MyTheTVdb theTvdb, Context context) {
         ShowIdPostersResult myResult = new ShowIdPostersResult();
-        if (DBG) Log.d(TAG, "getPosters: for showTitle=" + showTitle + ", showId=" + showId);
+        log.debug("getPosters: for showTitle=" + showTitle + ", showId=" + showId);
 
         boolean authIssue = false;
         boolean notFoundIssue = true;
@@ -47,12 +48,12 @@ public class ShowIdPosters {
         boolean isGlobalSeasonsResponseOk = false;
         boolean isGlobalSeasonsResponseEmpty = false;
 
-        if (DBG) Log.d(TAG, "getPosters: quering thetvdb for showId " + showId);
+        log.debug("getPosters: quering thetvdb for showId " + showId);
         try {
             Response<SeriesImageQueryResultResponse> postersResponse = null;
             Response<SeriesImageQueryResultResponse> seasonsResponse = null;
             if (!basicEpisode) {
-                if (DBG) Log.d(TAG, "getPosters: quering thetvdb for poster");
+                log.debug("getPosters: quering thetvdb for poster");
                 postersResponse = theTvdb.series()
                         .imagesQuery(showId, "poster", null, null, language).execute();
                 if (postersResponse.code() == 401) authIssue = true; // this is an OR
@@ -61,7 +62,7 @@ public class ShowIdPosters {
                 if (postersResponse.body() == null) isPostersResponseEmpty = true;
             }
             if (!basicShow) {
-                if (DBG) Log.d(TAG, "getPosters: quering thetvdb for season");
+                log.debug("getPosters: quering thetvdb for season");
                 seasonsResponse = theTvdb.series()
                         .imagesQuery(showId, "season", null, null, language)
                         .execute();
@@ -75,7 +76,7 @@ public class ShowIdPosters {
             Response<SeriesImageQueryResultResponse> globalSeasonsResponse = null;
             if (!language.equals("en")) {
                 if (!basicEpisode) {
-                    if (DBG) Log.d(TAG, "getPosters: quering thetvdb for poster in en");
+                    log.debug("getPosters: quering thetvdb for poster in en");
                     globalPostersResponse = theTvdb.series()
                             .imagesQuery(showId, "poster", null, null, "en").execute();
                     if (globalPostersResponse.code() == 401) authIssue = true; // this is an OR
@@ -84,7 +85,7 @@ public class ShowIdPosters {
                     if (globalPostersResponse.body() == null) isGlobalPostersResponseEmpty = true;
                 }
                 if (!basicShow) {
-                    if (DBG) Log.d(TAG, "getPosters: quering thetvdb for season in en");
+                    log.debug("getPosters: quering thetvdb for season in en");
                     globalSeasonsResponse = theTvdb.series()
                             .imagesQuery(showId, "season", null, null, "en").execute();
                     if (globalSeasonsResponse.code() == 401) authIssue = true; // this is an OR
@@ -95,7 +96,7 @@ public class ShowIdPosters {
             }
 
             if (authIssue) {
-                if (DBG) Log.d(TAG, "getPosters: auth error");
+                log.debug("getPosters: auth error");
                 myResult.status = ScrapeStatus.AUTH_ERROR;
                 myResult.posters = ShowIdPostersResult.EMPTY_LIST;
                 ShowScraper3.reauth();
@@ -103,17 +104,17 @@ public class ShowIdPosters {
             }
 
             if (notFoundIssue) {
-                if (DBG) Log.d(TAG, "getPosters: not found");
+                log.debug("getPosters: not found");
                 myResult.posters = ShowIdPostersResult.EMPTY_LIST;
                 myResult.status = ScrapeStatus.NOT_FOUND;
             } else {
                 if (isPostersResponseEmpty && isSeasonsResponseEmpty
                         && isGlobalPostersResponseEmpty && isGlobalSeasonsResponseEmpty) {
-                    if (DBG) Log.d(TAG, "getPosters: error");
+                    log.debug("getPosters: error");
                     myResult.posters = ShowIdPostersResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.ERROR_PARSER;
                 } else {
-                    if (DBG) Log.d(TAG, "getPosters: found something going to parse result, isPostersResponseOk=" +
+                    log.debug("getPosters: found something going to parse result, isPostersResponseOk=" +
                             isPostersResponseOk +
                             ", isSeasonsResponseOk=" + isSeasonsResponseOk +
                             ", isGlobalPostersResponseOk=" + isGlobalPostersResponseOk +
@@ -128,7 +129,7 @@ public class ShowIdPosters {
                 }
             }
         } catch (IOException e) {
-            Log.e(TAG, "getActors: caught IOException getting actors for showId=" + showId);
+            log.error("getActors: caught IOException getting actors for showId=" + showId);
             myResult.posters = ShowIdPostersResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;

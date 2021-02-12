@@ -15,18 +15,17 @@
 
 package com.archos.mediascraper.preprocess;
 
-import android.util.Log;
-import android.util.Pair;
-
 import com.archos.mediascraper.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ParseUtils {
 
-    private static final String TAG = ParseUtils.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ParseUtils.class);
 
     /* ( whitespace | punctuation)+, matches dots, spaces, brackets etc */
     private static final Pattern MULTI_NON_CHARACTER_PATTERN = Pattern.compile("[\\s\\p{Punct}&&[^']]+");
@@ -77,7 +76,7 @@ public class ParseUtils {
     // remove all what is after empty parenthesis
     // only apply to movieName (1928) junk -> movieName () junk -> movieName
     public static String removeAfterEmptyParenthesis(String input) {
-        if (DBG) Log.d(TAG,"removeAfterEmptyParenthesis input: " + input);
+        log.debug("removeAfterEmptyParenthesis input: " + input);
         Matcher matcher = EMPTY_PARENTHESIS_PATTERN.matcher(input);
         int start = 0;
         int stop = 0;
@@ -89,7 +88,7 @@ public class ParseUtils {
         // get the first match and extract it from the string
         if (found)
             input = input.substring(0, start);
-        if (DBG) Log.d(TAG, "removeAfterEmptyParenthesis remove junk after (): " + input);
+        log.debug("removeAfterEmptyParenthesis remove junk after (): " + input);
         return input;
     }
 

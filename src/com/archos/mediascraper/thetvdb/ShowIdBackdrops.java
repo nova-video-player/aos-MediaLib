@@ -21,19 +21,21 @@ import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import retrofit2.Response;
 
 // Get the backdrops for specific show id
 public class ShowIdBackdrops {
-    private static final String TAG = ShowIdBackdrops.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdBackdrops.class);
 
     public static ShowIdBackdropsResult getBackdrops(int showId, String showTitle,
                                                boolean basicShow, boolean basicEpisode,
                                                String language, MyTheTVdb theTvdb, Context context) {
         ShowIdBackdropsResult myResult = new ShowIdBackdropsResult();
-        if (DBG) Log.d(TAG, "getBackdrops: for showTitle=" + showTitle + ", showId=" + showId);
+        log.debug("getBackdrops: for showTitle=" + showTitle + ", showId=" + showId);
 
         boolean authIssue = false;
         boolean notFoundIssue = true;
@@ -43,7 +45,7 @@ public class ShowIdBackdrops {
         boolean isGlobalFanartsResponseOk = false;
         boolean isGlobalFanartsResponseEmpty = false;
 
-        if (DBG) Log.d(TAG, "getBackdrops: quering thetvdb for showId " + showId);
+        log.debug("getBackdrops: quering thetvdb for showId " + showId);
         try {
             Response<SeriesImageQueryResultResponse> fanartsResponse = null;
             fanartsResponse = theTvdb.series()
@@ -64,7 +66,7 @@ public class ShowIdBackdrops {
             }
 
             if (authIssue) {
-                if (DBG) Log.d(TAG, "getBackdrops: auth error");
+                log.debug("getBackdrops: auth error");
                 myResult.status = ScrapeStatus.AUTH_ERROR;
                 myResult.backdrops = ShowIdBackdropsResult.EMPTY_LIST;
                 ShowScraper3.reauth();
@@ -72,12 +74,12 @@ public class ShowIdBackdrops {
             }
 
             if (notFoundIssue) {
-                if (DBG) Log.d(TAG, "getBackdrops: not found");
+                log.debug("getBackdrops: not found");
                 myResult.backdrops = ShowIdBackdropsResult.EMPTY_LIST;
                 myResult.status = ScrapeStatus.NOT_FOUND;
             } else {
                 if (isFanartsResponseEmpty && isGlobalFanartsResponseEmpty) {
-                    if (DBG) Log.d(TAG, "getBackdrops: error ");
+                    log.debug("getBackdrops: error ");
                     myResult.backdrops = ShowIdBackdropsResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.ERROR_PARSER;
                 } else {
@@ -89,7 +91,7 @@ public class ShowIdBackdrops {
                 }
             }
         } catch (IOException e) {
-            Log.e(TAG, "getBackdrops: caught IOException getting actors for showId=" + showId);
+            log.error("getBackdrops: caught IOException getting actors for showId=" + showId);
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
         }

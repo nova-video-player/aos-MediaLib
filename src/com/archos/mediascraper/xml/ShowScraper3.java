@@ -50,8 +50,6 @@ import com.archos.mediascraper.thetvdb.ShowIdEpisodesResult;
 import com.archos.mediascraper.thetvdb.ShowIdPosters;
 import com.archos.mediascraper.thetvdb.ShowIdPostersResult;
 import com.archos.mediascraper.thetvdb.ShowIdResult;
-import com.uwetrottmann.tmdb2.services.MoviesService;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

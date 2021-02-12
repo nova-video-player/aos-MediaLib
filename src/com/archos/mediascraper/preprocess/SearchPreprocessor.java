@@ -16,17 +16,18 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
-import android.util.Log;
 
 import com.archos.filecorelibrary.FileUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SearchPreprocessor {
-    private static final String TAG = "SearchPreP";
-    private static final boolean DBG = false;
-    
+    private static final Logger log = LoggerFactory.getLogger(SearchPreprocessor.class);
+
     private SearchPreprocessor() {
         // simple singleton
     }
@@ -65,12 +66,12 @@ public class SearchPreprocessor {
                 if (result == null) {
                     throw new AssertionError("Matcher:" + matcher.getMatcherName() + " returned null file:" + uri.toString());
                 }
-                if (DBG) Log.d(TAG, "result from" + matcher.getMatcherName());
+                log.debug("result from" + matcher.getMatcherName());
                 return reParseInfo(result);
             }
         }
         // default to something - should not happen
-        Log.e(TAG, "parse error, no matcher");
+        log.error("parse error, no matcher");
         return new MovieSearchInfo(uri, FileUtils.getFileNameWithoutExtension(uri), null);
     }
 
@@ -95,16 +96,16 @@ public class SearchPreprocessor {
                     if (result == null) {
                         throw new AssertionError("Matcher:" + matcher + " returned null userinput:" + userInput);
                     }
-                    if (DBG) Log.d(TAG, "re-parse result from" + matcher.getMatcherName());
+                    log.debug("re-parse result from" + matcher.getMatcherName());
                     return reParseInfo(result);
                 }
             }
             // default to something - should not happen
-            Log.e(TAG, "re-parse error, no matcher");
+            log.error("re-parse error, no matcher");
             return new MovieSearchInfo(file, userInput, null);
         }
         // if not modified return original input
-        if (DBG) Log.d(TAG, "re-parse no-op");
+        log.debug("re-parse no-op");
         return info;
     }
 }

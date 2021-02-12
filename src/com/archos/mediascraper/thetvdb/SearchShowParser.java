@@ -15,7 +15,6 @@
 package com.archos.mediascraper.thetvdb;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Pair;
 
 import com.archos.mediascraper.SearchResult;
@@ -26,6 +25,8 @@ import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesResultsResponse;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,9 +35,7 @@ import java.util.List;
 
 public class SearchShowParser {
 
-    private static final String TAG = SearchShowParser.class.getSimpleName();
-    private static final boolean DBG = false;
-
+    private static final Logger log = LoggerFactory.getLogger(SearchShowParser.class);
     private final static int SERIES_NOT_PERMITTED_ID = 313081;
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
@@ -97,39 +96,39 @@ public class SearchShowParser {
             searchShowParserResult = getSearchShowParserResult(response, searchInfo, language, showScraper);
         }
         if (!language.equals("en")) { // language != en
-            if (DBG) Log.d(TAG, "getResult: language is not en");
+            log.debug("getResult: language is not en");
             if (globalResponse != null) {
-                if (DBG) Log.d(TAG, "getResult: globalResponse is not null");
+                log.debug("getResult: globalResponse is not null");
                 globalSearchShowParserResult = getSearchShowParserResult(globalResponse, searchInfo, "en", showScraper);
                 if (searchShowParserResult.resultsProbable.size()>0
                         && globalSearchShowParserResult.resultsProbable.size()>0) {
-                    if (DBG) Log.d(TAG, "getResult: both searchShowParserResult.resultsProbable and globalSearchShowParserResult.resultsProbable available");
+                    log.debug("getResult: both searchShowParserResult.resultsProbable and globalSearchShowParserResult.resultsProbable available");
                     // if en has a lower Levenshtein distance than language, en has the right order: re-sort language list accordingly
                     if (globalSearchShowParserResult.resultsProbable.get(0).second <
                             searchShowParserResult.resultsProbable.get(0).second) {
-                        if (DBG) Log.d(TAG, "en has lower Levenshtein distance than " + language + ", re-sort fr based on en");
+                        log.debug("en has lower Levenshtein distance than " + language + ", re-sort fr based on en");
                         results = reSortAdd(searchShowParserResult, globalSearchShowParserResult, maxItems);
                     } else {
-                        if (DBG) Log.d(TAG, "getResult: en does not have better Levenshtein distance: use searchShowParserResult");
+                        log.debug("getResult: en does not have better Levenshtein distance: use searchShowParserResult");
                         results = normalAdd(searchShowParserResult, maxItems);
                     }
                 } else { // one of the two has size 0
-                    if (DBG) Log.d(TAG, "getResult: either searchShowParserResult.resultsProbable or globalSearchShowParserResult.resultsProbable is of size null");
+                    log.debug("getResult: either searchShowParserResult.resultsProbable or globalSearchShowParserResult.resultsProbable is of size null");
                     if (response != null) { // use searchShowParserResult
-                        if (DBG) Log.d(TAG, "getResult: use searchShowParserResult");
+                        log.debug("getResult: use searchShowParserResult");
                         results = normalAdd(searchShowParserResult, maxItems);
                     }
                     else { // revert to globalSearchShowParserResult
-                        if (DBG) Log.d(TAG, "getResult: use globalSearchShowParserResult");
+                        log.debug("getResult: use globalSearchShowParserResult");
                         results = normalAdd(globalSearchShowParserResult, maxItems);
                     }
                 }
             } else { // globalResponse is null
-                if (DBG) Log.d(TAG, "getResult: globalResponse is null use searchShowParserResult");
+                log.debug("getResult: globalResponse is null use searchShowParserResult");
                 results = normalAdd(searchShowParserResult, maxItems);
             }
         } else { // language == en
-            if (DBG) Log.d(TAG, "getResult: language is en use searchShowParserResult");
+            log.debug("getResult: language is en use searchShowParserResult");
             results = normalAdd(searchShowParserResult, maxItems);
         }
         return results;
@@ -155,37 +154,37 @@ public class SearchShowParser {
                 isDecisionTaken = false;
                 if (series.banner != null) {
                     if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
-                        if (DBG) Log.d(TAG, "getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
+                        log.debug("getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
                         searchShowParserResult.resultsNoBanner.add(result);
                         isDecisionTaken = true;
                     }
                 } else if (series.image != null) {
                     if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg")) {
-                        if (DBG) Log.d(TAG, "getResult: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
+                        log.debug("getResult: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
                         searchShowParserResult.resultsNoBanner.add(result);
                         isDecisionTaken = true;
                     }
                 }
                 if (! isDecisionTaken) {
-                    if (DBG) Log.d(TAG, "getResult: taking into account " + series.seriesName + " because banner/image exists");
+                    log.debug("getResult: taking into account " + series.seriesName + " because banner/image exists");
                     if (series.slug.matches("^[0-9]+$")) {
                         // Put in lower priority any entry that has numeric slug
-                        if (DBG) Log.d(TAG, "getResult: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                        log.debug("getResult: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
                         isDecisionTaken = true;
                         searchShowParserResult.resultsNumericSlug.add(result);
                     } else {
-                        if (DBG) Log.d(TAG, "getResult: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                        log.debug("getResult: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
                         isDecisionTaken = true;
                         searchShowParserResult.resultsProbable.add(new Pair<>(result,
                                 levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
                                         result.getTitle().toLowerCase())));
                     }
                     if (! isDecisionTaken)
-                        Log.w(TAG, "getResult: ignore serie since banner/image is null for " + series.seriesName);
+                        log.warn("getResult: ignore serie since banner/image is null for " + series.seriesName);
                 }
             }
         }
-        if (DBG) Log.d(TAG, "getResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
+        log.debug("getResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
         Collections.sort(searchShowParserResult.resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
             @Override
             public int compare(final Pair<SearchResult, Integer> sr1, final Pair<SearchResult, Integer> sr2) {
@@ -198,7 +197,7 @@ public class SearchShowParser {
                 }
             }
         });
-        if (DBG) Log.d(TAG, "getResult: applying Levenshtein distance resultsProbableSorted=" + searchShowParserResult.resultsProbable.toString());
+        log.debug("getResult: applying Levenshtein distance resultsProbableSorted=" + searchShowParserResult.resultsProbable.toString());
         return searchShowParserResult;
     }
 }

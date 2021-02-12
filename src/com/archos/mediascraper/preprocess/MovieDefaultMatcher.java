@@ -16,11 +16,13 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
-import android.util.Log;
 import android.util.Pair;
 
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -44,9 +46,7 @@ import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyPare
  * </ul>
  */
 class MovieDefaultMatcher implements InputMatcher {
-
-    private static final String TAG = MovieDefaultMatcher.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(MovieDefaultMatcher.class);
 
     public static MovieDefaultMatcher instance() {
         return INSTANCE;
@@ -214,7 +214,7 @@ class MovieDefaultMatcher implements InputMatcher {
     }
 
     private static Pair<String, String> yearExtractor(String input) {
-        if (DBG) Log.d(TAG, "yearExtractor input: " + input);
+        log.debug("yearExtractor input: " + input);
         String year = null;
         Matcher matcher = YEAR_PATTERN.matcher(input);
         int start = 0;
@@ -230,7 +230,7 @@ class MovieDefaultMatcher implements InputMatcher {
             year = input.substring(start, stop);
             input = input.substring(0, start) + input.substring(stop);
         }
-        if (DBG) Log.d(TAG, "yearExtractor release year: " + input + " year: " + year);
+        log.debug("yearExtractor release year: " + input + " year: " + year);
         return new Pair<>(input, year);
     }
 

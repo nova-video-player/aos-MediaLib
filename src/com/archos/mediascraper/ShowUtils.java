@@ -20,6 +20,9 @@ import android.util.Log;
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.preprocess.ParseUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -34,8 +37,7 @@ import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
  */
 public final class ShowUtils {
 
-    private static final String TAG = ShowUtils.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowUtils.class);
 
     // disable for now the SxxEyy-showName does not exist and makes ./serie/The Flash/S02/S02E01 lahlah.mkv not identified
     private static final boolean ENABLE_PATTERNS_EPISODE_FIRST = false;
@@ -94,13 +96,13 @@ public final class ShowUtils {
      *  If the filename doesn't match a tv show pattern, returns null.
      */
     public static Map<String, String> parseShowName(String filename) {
-        if (DBG) Log.d(TAG, "parseShowName: " + filename);
+        log.debug("parseShowName: " + filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
         for(Pattern regexp: patternsShowFirst) {
             Matcher matcher = regexp.matcher(filename);
             try {
                 if(matcher.find()) {
-                    if (DBG) Log.d(TAG, "getMatch: patternsShowFirst " + cleanUpName(matcher.group(1)) + " season " + matcher.group(2) + " episode " + matcher.group(3));
+                    log.debug("getMatch: patternsShowFirst " + cleanUpName(matcher.group(1)) + " season " + matcher.group(2) + " episode " + matcher.group(3));
                     buffer.put(SHOW, cleanUpName(matcher.group(1)));
                     buffer.put(SEASON, matcher.group(2));
                     buffer.put(EPNUM, matcher.group(3));
@@ -113,7 +115,7 @@ public final class ShowUtils {
                 Matcher matcher = regexp.matcher(filename);
                 try {
                     if(matcher.find()) {
-                        if (DBG) Log.d(TAG, "getMatch: patternsEpisodeFirst " + cleanUpName(matcher.group(3)) + " season " + matcher.group(1) + " episode " + matcher.group(2));
+                        log.debug("getMatch: patternsEpisodeFirst " + cleanUpName(matcher.group(3)) + " season " + matcher.group(1) + " episode " + matcher.group(2));
                         buffer.put(SHOW, cleanUpName(matcher.group(3)));
                         buffer.put(SEASON, matcher.group(1));
                         buffer.put(EPNUM, matcher.group(2));
@@ -167,7 +169,7 @@ public final class ShowUtils {
         try {
             encode = URLEncoder.encode(input, "UTF-8");
         } catch (UnsupportedEncodingException e1) {
-            Log.d(ShowUtils.class.getSimpleName(), "Error: " + e1, e1);
+            log.error(ShowUtils.class.getSimpleName(), "Error: " + e1, e1);
         }
         return encode;
     }

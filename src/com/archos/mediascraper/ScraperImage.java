@@ -24,9 +24,11 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import com.archos.mediaprovider.video.ScraperStore;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,9 +37,7 @@ import java.util.Locale;
 
 public class ScraperImage {
 
-    private static final String TAG = "ScraperImage";
-    private static final boolean DBG = false;
-    private static final boolean DBG2 = false;
+    private static final Logger log = LoggerFactory.getLogger(ScraperImage.class);
 
     // TODO change poster resolution here?
     public static int POSTER_WIDTH = 240;
@@ -162,7 +162,7 @@ public class ScraperImage {
         String lUrl = cur.getString(cur.getColumnIndexOrThrow(type.largeUrlColumn));
         String tFile = cur.getString(cur.getColumnIndexOrThrow(type.thumbFileColumn));
         String tUrl = cur.getString(cur.getColumnIndexOrThrow(type.thumbUrlColumn));
-        if (DBG) Log.d(TAG, "fromCursor lFile=" + lFile + ", lUrl=" + lUrl + ", tFile=" + tFile + ", tUrl=" + tUrl);
+        log.debug("fromCursor lFile=" + lFile + ", lUrl=" + lUrl + ", tFile=" + tFile + ", tUrl=" + tUrl);
         int season = -1;
         if (type.seasonColumn != null)
             season = cur.getInt(cur.getColumnIndexOrThrow(type.seasonColumn));
@@ -261,11 +261,11 @@ public class ScraperImage {
     public void generateFileNames(Context context) {
         if (mThumbFile == null && mThumbUrl != null) {
             mThumbFile = getFilePath(mThumbUrl, true, context);
-            if (DBG2) Log.d(TAG, "mThumbFile = " + mThumbFile);
+            log.debug("mThumbFile = " + mThumbFile);
         }
         if (mLargeFile == null && mLargeUrl != null) {
             mLargeFile = getFilePath(mLargeUrl, false, context);
-            if (DBG2) Log.d(TAG, "mLargeFile = " + mLargeFile);
+            log.debug("mLargeFile = " + mLargeFile);
         }
     }
     public String getLargeUrl() {
@@ -320,14 +320,14 @@ public class ScraperImage {
         if (url != null) {
             urlHash = url.hashCode();
         } else {
-            Log.w(TAG, "getFileName: url is null!");
+            log.warn("getFileName: url is null!");
             urlHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
 
         if (nameSeed != null) {
             seedHash = nameSeed.hashCode();
         } else {
-            Log.w(TAG, "getFileName: nameSeed is null! for url " +  url);
+            log.warn("getFileName: nameSeed is null! for url " +  url);
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
 
@@ -344,19 +344,19 @@ public class ScraperImage {
             case SHOW_POSTER:
             case COLLECTION_POSTER:
                 ret =  MediaScraper.getPosterDirectory(context);
-                if (DBG) Log.d(TAG, "getDir for poster: " + ret.getPath());
+                log.debug("getDir for poster: " + ret.getPath());
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
-                if (DBG) Log.d(TAG, "getDir for backdrop: " + ret.getPath());
+                log.debug("getDir for backdrop: " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though
-                Log.e(TAG, "could not determine Directory, fallback to public dir");
+                log.error("could not determine Directory, fallback to public dir");
                 ret = Environment.getExternalStorageDirectory();
-                if (DBG) Log.d(TAG, "getDir default: " + ret.getPath());
+                log.debug("getDir default: " + ret.getPath());
                 break;
         }
         // if dir does not exists, create it.
@@ -376,17 +376,17 @@ public class ScraperImage {
             case SHOW_POSTER:
             case COLLECTION_POSTER:
                 ret = MediaScraper.getImageCacheDirectory(context);
-                if (DBG) Log.d(TAG, "getCacheDir for poster: " + ret.getPath());
+                log.debug("getCacheDir for poster: " + ret.getPath());
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
-                if (DBG) Log.d(TAG, "getCacheDir for backdrop: " + ret.getPath());
+                log.debug("getCacheDir for backdrop: " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though
-                Log.e(TAG, "could not determine Directory, fallback to public dir");
+                log.warn("could not determine Directory, fallback to public dir");
                 ret = Environment.getExternalStorageDirectory();
                 break;
         }
@@ -423,8 +423,8 @@ public class ScraperImage {
     public final boolean download(Context context) {
         // fallback to thumbnail if there is no full poster/backdrop e.g. when thetvdb is fubar
        if(!download(context, false, 0, 0, false, false)) {
-           Log.w(TAG, "Failed downloading large image " + mLargeUrl + ", downloading thumb instead " + mThumbUrl);
-           Log.w(TAG, "\t" + mLargeFile + "/" + mThumbFile);
+           log.warn("Failed downloading large image " + mLargeUrl + ", downloading thumb instead " + mThumbUrl);
+           log.warn("\t" + mLargeFile + "/" + mThumbFile);
            return download(context, true, 0, 0, false, true);
        }
        return true;
@@ -445,34 +445,34 @@ public class ScraperImage {
     private boolean download(Context context, boolean thumb, int maxWidth, int maxHeight, boolean fake, boolean thumbAsMain) {
         String file = mLargeFile;
         String url = mLargeUrl;
-        if (DBG) Log.d(TAG, "download: file=" + file + ", url=" + url);
+        log.debug("download: file=" + file + ", url=" + url);
         boolean success = false ;
         if (thumb) {
             file = mThumbFile;
             url = mThumbUrl == null ? mLargeUrl : mThumbUrl;
         }
         if(thumb && thumbAsMain) {
-            Log.d(TAG, "Downloading thumb as main");
+            log.debug("Downloading thumb as main");
             file = mLargeFile;
         }
 
         String lockString = file == null ? "null" : file;
         sLock.lock(lockString);
         try {
-            if (DBG) Log.d(TAG, "download " + mType.name());
+            log.debug("ownload " + mType.name());
             // maybe large file exists already
             if (fileIfExists(file) != null) {
-                if (DBG) Log.d(TAG, "using existing file.");
+                log.debug("using existing file.");
                 success = true;
             }
 
             else if (url == null) {
-                Log.d(TAG, "There is no URL to download. Aborting.");
+                log.warn("There is no URL to download. Aborting.");
                 success = false;
             }
 
             else if (file == null) {
-                Log.d(TAG, "No Filename set. Aborting.");
+                log.warn("No Filename set. Aborting.");
                 success = false;
             }
             else {
@@ -501,7 +501,7 @@ public class ScraperImage {
     private static boolean saveSizedImage(Context context, String url, String targetName, Type type,
             boolean thumb, int thumbWidth, int thumbHeight, boolean fake) {
         DebugTimer dbgTimer = null;
-        if (DBG) dbgTimer  = new DebugTimer();
+        if (log.isDebugEnabled()) dbgTimer  = new DebugTimer();
 
         // determine dir to cache, backdrops on external storage
         File cacheDir = getCacheDir(type, context);
@@ -518,7 +518,7 @@ public class ScraperImage {
                 // and ArchosWidget and we have no common resouces :/
                 maxWidth = POSTER_WIDTH;
                 maxHeight = POSTER_HEIGHT;
-                if (DBG) Log.d(TAG, "Target: Poster(" + maxWidth + "," + maxHeight + ")");
+                log.debug("Target: Poster(" + maxWidth + "," + maxHeight + ")");
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
@@ -533,12 +533,12 @@ public class ScraperImage {
                     maxHeight = displayMetrics.heightPixels;
                     maxWidth = displayMetrics.widthPixels;
                 }
-                if (DBG) Log.d(TAG, "Target: Backdrop(" + maxWidth + "," + maxHeight + ")");
+                log.debug("Target: Backdrop(" + maxWidth + "," + maxHeight + ")");
                 break;
             default:
                 maxWidth = POSTER_WIDTH;
                 maxHeight = POSTER_HEIGHT;
-                Log.e(TAG, "Target: Unknown, fallback to (" + maxWidth + "," + maxHeight + ")");
+                log.error("Target: Unknown, fallback to (" + maxWidth + "," + maxHeight + ")");
                 break;
         }
 
@@ -559,13 +559,13 @@ public class ScraperImage {
             File cached = HttpCache.getStaticFile(url, null, null);
             imageSource = (cached==null) ? null : Uri.fromFile(cached);
         }
-        if (DBG) Log.d(TAG, "Downloading took " + dbgTimer.step());
+        log.debug("Downloading took " + dbgTimer.step());
         if (imageSource == null) {
-            if (DBG) Log.d(TAG,  "Downloading failed for " + url);
+            log.debug("Downloading failed for " + url);
             return false;
         }
         boolean saveOk = ImageScaler.scale(imageSource, targetName, maxWidth, maxHeight, type.scaleType);
-        if (DBG) Log.d(TAG, dbgTimer.total() + "download() in total");
+        log.debug(dbgTimer.total() + "download() in total");
         return saveOk;
     }
 
@@ -575,11 +575,11 @@ public class ScraperImage {
 
     public boolean setAsDefault(Context context, int season) {
         if (mRemoteId <= 0) {
-            Log.e(TAG, "setAsDefault - don't have remoteId, aborting.");
+            log.error("setAsDefault - don't have remoteId, aborting.");
             return false;
         }
         if (mId <= 0) {
-            Log.e(TAG, "setAsDefault - don't have id, aborting.");
+            log.error("setAsDefault - don't have id, aborting.");
             return false;
         }
         boolean success = false;
@@ -639,7 +639,7 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Movie.BACKDROP, mLargeFile);
                 break;
             default:
-                Log.e(TAG, "unknown type:" + mType);
+                log.warn("unknown type:" + mType);
                 break;
         }
         if (updateUri != null) {

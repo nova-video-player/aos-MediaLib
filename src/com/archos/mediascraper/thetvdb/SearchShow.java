@@ -14,23 +14,21 @@
 
 package com.archos.mediascraper.thetvdb;
 
-import android.util.Log;
-
 import com.archos.mediascraper.ScrapeStatus;
-import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.SeriesResultsResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.util.List;
 
 import retrofit2.Response;
 
 // Search Show for name query for year in language (ISO 639-1 code) and en
 public class SearchShow {
-    private static final String TAG = SearchShow.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
 
     public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper3 showScraper, MyTheTVdb theTvdb) {
         SearchShowResult myResult = new SearchShowResult();
@@ -45,7 +43,7 @@ public class SearchShow {
         boolean isGlobalResponseOk = false;
         boolean isGlobalResponseEmpty = false;
 
-        if (DBG) Log.d(TAG, "search: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
+        log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
         try {
             response = theTvdb.search().series(searchInfo.getShowName(), null, null, null, language).execute();
             if (response.code() == 401) authIssue = true; // this is an OR
@@ -60,19 +58,19 @@ public class SearchShow {
                 if (globalResponse.body() == null) isGlobalResponseEmpty = true;
             }
             if (authIssue) {
-                if (DBG) Log.d(TAG, "search: auth error");
+                log.debug("search: auth error");
                 myResult.status = ScrapeStatus.AUTH_ERROR;
                 myResult.result = SearchShowResult.EMPTY_LIST;
                 ShowScraper3.reauth();
                 return myResult;
             }
             if (notFoundIssue) {
-                if (DBG) Log.d(TAG, "search: not found");
+                log.debug("search: not found");
                 myResult.result = SearchShowResult.EMPTY_LIST;
                 myResult.status = ScrapeStatus.NOT_FOUND;
             } else {
                 if (isResponseEmpty && isGlobalResponseEmpty) {
-                    if (DBG) Log.d(TAG, "search: error");
+                    log.debug("search: error");
                     myResult.result = SearchShowResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.ERROR_PARSER;
                 } else {
@@ -84,8 +82,8 @@ public class SearchShow {
                 }
             }
         } catch (IOException e) {
-            Log.e(TAG, "search: caught IOException");
-            if (DBG) Log.e(TAG, e.getMessage(), e);
+            log.error("search: caught IOException");
+            log.debug(e.getMessage(), e);
             myResult.result = SearchShowResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;

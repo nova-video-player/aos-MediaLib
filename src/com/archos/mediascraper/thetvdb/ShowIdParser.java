@@ -15,20 +15,20 @@
 package com.archos.mediascraper.thetvdb;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.archos.medialib.R;
 import com.archos.mediascraper.ShowTags;
 import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class ShowIdParser {
-
-    private static final String TAG = ShowIdParser.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdParser.class);
 
     private static Context mContext;
 
@@ -47,7 +47,7 @@ public class ShowIdParser {
         result.addStudioIfAbsent(series.network, '|', ',');
         result.setPremiered(series.firstAired);
 
-        if (DBG) Log.d(TAG, "getResult: found title=" + series.seriesName + ", genre " + series.genre);
+        log.debug("getResult: found title=" + series.seriesName + ", genre " + series.genre);
 
         return result;
     }

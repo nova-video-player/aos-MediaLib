@@ -15,7 +15,6 @@
 package com.archos.mediascraper.thetvdb;
 
 import android.content.Context;
-import android.util.Log;
 import android.util.SparseArray;
 
 import com.archos.mediascraper.EpisodeTags;
@@ -25,22 +24,23 @@ import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.Episode;
 import com.uwetrottmann.thetvdb.entities.EpisodesResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 import retrofit2.Response;
 
 // Get the episodes for specific show id
 public class ShowIdEpisodes {
-    private static final String TAG = ShowIdEpisodes.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ShowIdEpisodes.class);
 
     public static ShowIdEpisodesResult getEpisodes(int showId, ShowTags showTags, String language,
                                                      MyTheTVdb theTvdb, Context context) {
         ShowIdEpisodesResult myResult = new ShowIdEpisodesResult();
         myResult.episodes = new HashMap<>();
-        if (DBG) Log.d(TAG, "getEpisodes: quering thetvdb for showId " + showId);
+        log.debug("getEpisodes: quering thetvdb for showId " + showId);
         try {
             // fill in once for all episodes in "en" in case there is something missing in specific language
             SparseArray<Episode> globalEpisodes = null;
@@ -53,7 +53,7 @@ public class ShowIdEpisodes {
                         .execute();
                 switch (episodesResponse.code()) {
                     case 401: // auth issue
-                        if (DBG) Log.d(TAG, "getEpisodes: auth error");
+                        log.debug("getEpisodes: auth error");
                         myResult.status = ScrapeStatus.AUTH_ERROR;
                         myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
                         ShowScraper3.reauth();
@@ -97,7 +97,7 @@ public class ShowIdEpisodes {
                                                         .execute();
                                                 switch (globalEpisodesResponse.code()) {
                                                     case 401: // auth issue
-                                                        if (DBG) Log.d(TAG, "getEpisodes: auth error");
+                                                        log.debug("getEpisodes: auth error");
                                                         myResult.status = ScrapeStatus.AUTH_ERROR;
                                                         myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
                                                         ShowScraper3.reauth();
@@ -112,7 +112,7 @@ public class ShowIdEpisodes {
                                                             globalPage = globalEpisodesResponse.body().links.next;
 
                                                         } else { // an error at this point is PARSER related
-                                                            if (DBG) Log.d(TAG, "getEpisodes: error " + globalEpisodesResponse.code());
+                                                            log.debug("getEpisodes: error " + globalEpisodesResponse.code());
                                                             globalPage = null;
                                                         }
                                                         break;
@@ -137,7 +137,7 @@ public class ShowIdEpisodes {
                                 page = null;
                             }
                         } else { // an error at this point is PARSER related
-                            if (DBG) Log.d(TAG, "getEpisodes: error " + episodesResponse.code());
+                            log.debug("getEpisodes: error " + episodesResponse.code());
                             myResult.status = ScrapeStatus.ERROR_PARSER;
                             myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
                             page = null;
@@ -146,7 +146,7 @@ public class ShowIdEpisodes {
                 }
             }
         } catch (IOException e) {
-            Log.e(TAG, "getEpisodes: caught IOException getting episodes for showId=" + showId);
+            log.error("getEpisodes: caught IOException getting episodes for showId=" + showId);
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
             myResult.reason = e;

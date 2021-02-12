@@ -15,11 +15,14 @@
 package com.archos.mediascraper.thetvdb;
 
 import android.content.Context;
-import android.util.Log;
 import android.util.Pair;
 import com.archos.mediascraper.ScraperImage;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
 import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,9 +31,7 @@ import java.util.List;
 
 public class ShowIdBackdropsParser {
 
-    private static final String TAG = ShowIdBackdropsParser.class.getSimpleName();
-    private static final boolean DBG = false;
-
+    private static final Logger log = LoggerFactory.getLogger(ShowIdBackdropsParser.class);
     final static String BANNERS_URL = "https://www.thetvdb.com/banners/";
 
     public static ShowIdBackdropsResult getResult(String showTitle,
@@ -62,7 +63,7 @@ public class ShowIdBackdropsParser {
             }
         });
         for(Pair<SeriesImageQueryResult, String> backdrop : tempBackdrops) {
-            if (DBG) Log.d(TAG,"getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + BANNERS_URL + backdrop.first.fileName + ", thumb=" + BANNERS_URL + backdrop.first.fileName);
+            log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + BANNERS_URL + backdrop.first.fileName + ", thumb=" + BANNERS_URL + backdrop.first.fileName);
             ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
             image.setLanguage(backdrop.second);
             image.setThumbUrl(BANNERS_URL + backdrop.first.thumbnail);
