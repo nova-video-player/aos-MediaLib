@@ -14,16 +14,15 @@
 
 package com.archos.mediascraper.thetvdb;
 
-import com.archos.mediascraper.MediaScraper;
+import com.archos.mediascraper.ScraperCache;
 import com.uwetrottmann.thetvdb.TheTvdb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.Cache;
-import okhttp3.CacheControl;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 
@@ -38,31 +37,21 @@ public class MyTheTVdb extends TheTvdb {
         mCache = cache;
     }
 
-    public class CacheInterceptor implements Interceptor {
-        @Override
-        public okhttp3.Response intercept(Chain chain) throws IOException {
-            okhttp3.Response response = chain.proceed(chain.request());
-            CacheControl cacheControl = new CacheControl.Builder()
-                    .maxAge(MediaScraper.SCRAPER_CACHE_TIMEOUT_COUNT, MediaScraper.SCRAPER_CACHE_TIMEOUT_UNIT)
-                    .build();
-            return response.newBuilder()
-                    .removeHeader("Pragma")
-                    .removeHeader("Cache-Control")
-                    .header("Cache-Control", cacheControl.toString())
-                    .build();
-        }
-    }
-
     @Override
     protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
         super.setOkHttpClientDefaults(builder);
+        if (CACHE) {
+            builder.cache(mCache).addNetworkInterceptor(new ScraperCache.CacheInterceptor());
+            if (log.isTraceEnabled()) {
+                builder.addInterceptor(new ScraperCache.isCacheResponding());
+            }
+        }
         if (log.isTraceEnabled()) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-            builder.addNetworkInterceptor(logging).addInterceptor(logging);
+            builder.addNetworkInterceptor(logging);
         }
-        if (CACHE) {
-            builder.cache(mCache).addNetworkInterceptor(new MyTheTVdb.CacheInterceptor());
-        }
+        builder.connectTimeout(ScraperCache.CONNECT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        builder.readTimeout(ScraperCache.READ_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 }

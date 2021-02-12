@@ -16,52 +16,86 @@
 package com.archos.mediascraper;
 
 import android.content.Context;
-import android.util.Log;
 
-import java.io.Closeable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Cache;
 import okhttp3.CacheControl;
+import okhttp3.Interceptor;
+import okhttp3.Response;
 
 /*
  * Shared cache for scraper
  */
 
 public class ScraperCache {
-    private static final String TAG = "ScraperCache";
-    private static final boolean DBG = false;
 
-    static protected final int cacheSize = 100 * 1024 * 1024; // 100 MB (it is a directory...)
+    private static final Logger log = LoggerFactory.getLogger(ScraperCache.class);
+
+    static final String SCRAPER_CACHE = "scraper-cache";
+    static protected final long cacheSize = 100L * 1024L * 1024L; // 100 MB (it is a directory...)
+    public static final int CONNECT_TIMEOUT_MILLIS = 15 * 1000; // 15s
+    public static final int READ_TIMEOUT_MILLIS = 20 * 1000; // 20s
     static Cache cache;
 
-    public void dumpCacheInfo() {
+    public static void dumpCacheInfo() {
         if (cache == null) {
-            Log.d(TAG, "Cache not initialized");
+            log.debug("dumpCacheInfo: cache not initialized");
             return;
         }
         try {
-            double fillRatio = (cache.maxSize() / (double) cache.size());
-            double hitRatio = cache.hitCount() / (double) cache.requestCount();
-            Log.d(TAG, "Cache filled " + fillRatio + "%");
-            Log.d(TAG, "Cache hit " + hitRatio + "%");
+            double fillRatio = cache.size() / (double) cache.maxSize() * 100;
+            double hitRatio = cache.hitCount() / (double) cache.requestCount() * 100;
+            log.trace("Cache filled " + fillRatio + "% (size=" + cache.size() + "/maxsize=" + cache.maxSize() + ")" );
+            log.trace("Cache hit " + hitRatio + "% (hit="+ cache.hitCount() + "/requests=" + cache.requestCount() + ")");
+            log.trace("Cache request count " + cache.requestCount() + ", network count " + cache.networkCount());
         } catch (IOException e) {
-            Log.e(TAG, "caght IOException", e);
+            log.error("caught IOException", e);
         }
     }
 
     public static Cache getCache(Context context) {
-        if (cache == null)
-            cache = new Cache(context.getCacheDir(), cacheSize);
+        if (cache == null) {
+            File cacheDir = new File(context.getCacheDir(), SCRAPER_CACHE);
+            if (!cacheDir.exists()) cacheDir.mkdirs();
+            cache = new Cache(cacheDir, cacheSize);
+        }
         return cache;
+    }
+
+    public static class CacheInterceptor implements Interceptor {
+        @Override
+        public okhttp3.Response intercept(Chain chain) throws IOException {
+            okhttp3.Response response = chain.proceed(chain.request());
+            CacheControl cacheControl = new CacheControl.Builder()
+                    .maxAge(MediaScraper.SCRAPER_CACHE_TIMEOUT_COUNT, MediaScraper.SCRAPER_CACHE_TIMEOUT_UNIT)
+                    .build();
+            return response.newBuilder()
+                    .removeHeader("Pragma")
+                    .removeHeader("Vary")
+                    .removeHeader("Age")
+                    .removeHeader("X-Cache")
+                    .removeHeader("X-Cache-Hit")
+                    .header("Cache-Control", cacheControl.toString())
+                    .build();
+        }
+    }
+
+    public static class isCacheResponding implements Interceptor {
+        @Override
+        public okhttp3.Response intercept(Chain chain) throws IOException {
+            Response response = chain.proceed(chain.request());
+            if (response.cacheResponse() != null) {
+                log.trace("okhttp response from cache");
+            } else if (response.networkResponse() != null) {
+                log.trace("okhttp response from network");
+            }
+            dumpCacheInfo();
+            return response;
+        }
     }
 }
