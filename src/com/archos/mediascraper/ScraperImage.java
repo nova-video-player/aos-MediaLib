@@ -459,7 +459,7 @@ public class ScraperImage {
         String lockString = file == null ? "null" : file;
         sLock.lock(lockString);
         try {
-            log.debug("ownload " + mType.name());
+            log.debug("download " + mType.name());
             // maybe large file exists already
             if (fileIfExists(file) != null) {
                 log.debug("using existing file.");
@@ -559,13 +559,13 @@ public class ScraperImage {
             File cached = HttpCache.getStaticFile(url, null, null);
             imageSource = (cached==null) ? null : Uri.fromFile(cached);
         }
-        log.debug("Downloading took " + dbgTimer.step());
+        if (dbgTimer != null) log.debug("Downloading took " + dbgTimer.step());
         if (imageSource == null) {
             log.debug("Downloading failed for " + url);
             return false;
         }
         boolean saveOk = ImageScaler.scale(imageSource, targetName, maxWidth, maxHeight, type.scaleType);
-        log.debug(dbgTimer.total() + "download() in total");
+        if (dbgTimer != null) log.debug(dbgTimer.total() + "download() in total");
         return saveOk;
     }
 
