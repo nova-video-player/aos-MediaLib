@@ -82,8 +82,11 @@ public class SearchShow {
                 }
             }
         } catch (IOException e) {
-            log.error("search: caught IOException");
-            log.debug(e.getMessage(), e);
+            if (log.isDebugEnabled())
+                log.error("search: caught IOException " + e.getMessage(), e);
+            else
+                log.error("search: caught IOException");
+
             myResult.result = SearchShowResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
