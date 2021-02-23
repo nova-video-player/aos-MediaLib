@@ -82,6 +82,7 @@
     <string name="tv_show_genre_adventure">Adventure</string>
     <string name="tv_show_genre_animation">Animation</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_awards_show">Awards Show</string>
     <string name="tv_show_genre_children">Children</string>
     <string name="tv_show_genre_comedy">Comedy</string>
     <string name="tv_show_genre_crime">Crime</string>
@@ -93,8 +94,13 @@
     <string name="tv_show_genre_game_show">Game Show</string>
     <string name="tv_show_genre_home_garden">Home and Garden</string>
     <string name="tv_show_genre_horror">Horror</string>
+    <string name="tv_show_genre_indie">Indie</string>
+    <string name="tv_show_genre_martial_arts">Martial Arts</string>
     <string name="tv_show_genre_mini_series">Mini-Series</string>
+    <string name="tv_show_genre_musical">Musical</string>
+    <string name="tv_show_genre_mystery">Mystery</string>
     <string name="tv_show_genre_news">News</string>
+    <string name="tv_show_genre_podcast">Podcast</string>
     <string name="tv_show_genre_reality">Reality</string>
     <string name="tv_show_genre_romance">Romance</string>
     <string name="tv_show_genre_science_fiction">Science Fiction</string>
@@ -105,6 +111,7 @@
     <string name="tv_show_genre_talk_show">Talk Show</string>
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Travel</string>
+    <string name="tv_show_genre_war">War</string>
     <string name="tv_show_genre_western">Western</string>
 
     <!--
