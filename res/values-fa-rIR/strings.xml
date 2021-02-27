@@ -28,6 +28,7 @@
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="tv_show_genre_news">اخبار</string>
     <string name="tv_show_genre_sport">ورزش</string>
+    <!-- There are official translations for the tmdb genres -->
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

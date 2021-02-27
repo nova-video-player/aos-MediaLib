@@ -38,7 +38,6 @@
     <string name="storage_error_title">خطأ فى وحدة التخزين</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">يوجد خطأ فى وحدة التخزين الداخلية.</string>
-
     <!-- There are official translations for the tmdb genres -->
     <string name="movie_genre_action">حركة</string>
     <string name="movie_genre_adventure">مغامرة</string>

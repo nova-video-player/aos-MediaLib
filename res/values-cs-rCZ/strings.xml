@@ -66,6 +66,7 @@
     <string name="tv_show_genre_adventure">Dobrodružný</string>
     <string name="tv_show_genre_animation">Animovaný</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_awards_show">Slavnostní ceremoniál</string>
     <string name="tv_show_genre_children">Dětské</string>
     <string name="tv_show_genre_comedy">Komedie</string>
     <string name="tv_show_genre_crime">Krimi</string>
@@ -77,8 +78,13 @@
     <string name="tv_show_genre_game_show">Herní show</string>
     <string name="tv_show_genre_home_garden">Dům a zahrada</string>
     <string name="tv_show_genre_horror">Horor</string>
+    <string name="tv_show_genre_indie">Nezávislý</string>
+    <string name="tv_show_genre_martial_arts">Bojová umění</string>
     <string name="tv_show_genre_mini_series">Mini-série</string>
+    <string name="tv_show_genre_musical">Hudební</string>
+    <string name="tv_show_genre_mystery">Mysteriózní</string>
     <string name="tv_show_genre_news">Zpravodajství</string>
+    <string name="tv_show_genre_podcast">Podcast</string>
     <string name="tv_show_genre_reality">Reality-TV</string>
     <string name="tv_show_genre_romance">Romantika</string>
     <string name="tv_show_genre_science_fiction">Sci-Fi</string>
@@ -89,6 +95,7 @@
     <string name="tv_show_genre_talk_show">Talkshow</string>
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Cestování</string>
+    <string name="tv_show_genre_war">Válečný</string>
     <string name="tv_show_genre_western">Western</string>
     <!-- There are official translations for the tmdb genres -->
     <string name="movie_genre_action">Akční</string>

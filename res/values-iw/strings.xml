@@ -40,6 +40,7 @@
     <string name="storage_error_title">שגיאת אחסון פנימי</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">אירעה שגיאה באחסון הפנימי שלך.</string>
+    <!-- There are official translations for the tmdb genres -->
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
