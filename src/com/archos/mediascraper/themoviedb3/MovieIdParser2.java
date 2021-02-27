@@ -17,6 +17,7 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 import android.util.Log;
 
+import com.archos.medialib.R;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScraperImage;
 import com.uwetrottmann.tmdb2.entities.BaseCompany;
@@ -28,7 +29,9 @@ import com.uwetrottmann.tmdb2.entities.Image;
 import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.entities.Movie;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MovieIdParser2 {
@@ -38,13 +41,17 @@ public class MovieIdParser2 {
 
     private static final String DIRECTOR = "Director";
 
-    public static MovieTags getResult(Movie movie, Credits credits, Context context) {
+    private static Context mContext;
 
+    public static MovieTags getResult(Movie movie, Credits credits, Context context) {
+        mContext = context;
         MovieTags result = new MovieTags();
         if (movie.id != null) result.setOnlineId(movie.id);
-        if (movie.genres != null)
-            for (Genre genre: movie.genres)
-                result.addGenreIfAbsent(genre.name);
+        if (movie.genres != null) {
+            List<String> localizedGenres = getLocalizedGenres(movie.genres);
+            for (String genre : localizedGenres)
+                result.addGenreIfAbsent(genre);
+        }
         if (movie.imdb_id != null) result.setImdbId(movie.imdb_id);
         if (movie.overview != null) result.setPlot(movie.overview);
         if (movie.production_companies != null)
@@ -83,5 +90,77 @@ public class MovieIdParser2 {
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
         return result;
+    }
+
+    // many genres are not translated on tmdb and localized request is returned in the local language making one to
+    // one mapping difficult without changing all db structure --> revert to show trick which is the only way to cope
+    // with fallback search in en is perfomed when localized search returns nothing
+    private static List<String> getLocalizedGenres(List<Genre> genres) {
+        ArrayList<String> localizedGenres = new ArrayList<>();
+        for (Genre genre : genres) {
+            switch (genre.id) {
+                case 28:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_action));
+                    break;
+                case 12:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_adventure));
+                    break;
+                case 16:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_animation));
+                    break;
+                case 35:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_comedy));
+                    break;
+                case 80:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_crime));
+                    break;
+                case 99:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_documentary));
+                    break;
+                case 18:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_drama));
+                    break;
+                case 10751:
+                    localizedGenres.add(mContext.getString(R.string.movie_family));
+                    break;
+                case 14:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_fantasy));
+                    break;
+                case 36:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_history));
+                    break;
+                case 27:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_horror));
+                    break;
+                case 10402:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_music));
+                    break;
+                case 9648:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_mystery));
+                    break;
+                case 10749:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_romance));
+                    break;
+                case 878:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_science_fiction));
+                    break;
+                case 10770:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_tv_movie));
+                    break;
+                case 53:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_thriller));
+                    break;
+                case 10752:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_war));
+                    break;
+                case 37:
+                    localizedGenres.add(mContext.getString(R.string.movie_genre_western));
+                    break;
+                default:
+                    Log.w(TAG, "unknown genre: id=" + genre.id + ", name=" + genre.name);
+                    localizedGenres.add(genre.name);
+            }
+        }
+        return localizedGenres;
     }
 }
