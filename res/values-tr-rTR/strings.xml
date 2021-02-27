@@ -85,6 +85,26 @@
     <string name="tv_show_genre_thriller">Gerilim</string>
     <string name="tv_show_genre_travel">Seyahat</string>
     <string name="tv_show_genre_western">Batı</string>
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">Aksiyon</string>
+    <string name="movie_genre_adventure">Macera</string>
+    <string name="movie_genre_animation">Animasyon</string>
+    <string name="movie_genre_comedy">Komedi</string>
+    <string name="movie_genre_crime">Suç</string>
+    <string name="movie_genre_documentary">Belgesel</string>
+    <string name="movie_genre_drama">Dram</string>
+    <string name="movie_family">Aile</string>
+    <string name="movie_genre_fantasy">Fantastik</string>
+    <string name="movie_genre_history">Tarih</string>
+    <string name="movie_genre_horror">Korku</string>
+    <string name="movie_genre_music">Müzik</string>
+    <string name="movie_genre_mystery">Gizem</string>
+    <string name="movie_genre_romance">Romantik</string>
+    <string name="movie_genre_science_fiction">Bilim-Kurgu</string>
+    <string name="movie_genre_tv_movie">TV film</string>
+    <string name="movie_genre_thriller">Gerilim</string>
+    <string name="movie_genre_war">Savaş</string>
+    <string name="movie_genre_western">Vahşi Batı</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

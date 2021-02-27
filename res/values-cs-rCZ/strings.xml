@@ -90,6 +90,26 @@
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Cestování</string>
     <string name="tv_show_genre_western">Western</string>
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">Akční</string>
+    <string name="movie_genre_adventure">Dobrodružný</string>
+    <string name="movie_genre_animation">Animovaný</string>
+    <string name="movie_genre_comedy">Komedie</string>
+    <string name="movie_genre_crime">Krimi</string>
+    <string name="movie_genre_documentary">Dokumentární</string>
+    <string name="movie_genre_drama">Drama</string>
+    <string name="movie_family">Rodinný</string>
+    <string name="movie_genre_fantasy">Fantasy</string>
+    <string name="movie_genre_history">Historický</string>
+    <string name="movie_genre_horror">Horor</string>
+    <string name="movie_genre_music">Hudební</string>
+    <string name="movie_genre_mystery">Mysteriózní</string>
+    <string name="movie_genre_romance">Romantický</string>
+    <string name="movie_genre_science_fiction">Vědeckofantastický</string>
+    <string name="movie_genre_tv_movie">Televizní film</string>
+    <string name="movie_genre_thriller">Thriller</string>
+    <string name="movie_genre_war">Válečný</string>
+    <string name="movie_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

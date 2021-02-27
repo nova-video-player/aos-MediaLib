@@ -90,6 +90,26 @@
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Utazás</string>
     <string name="tv_show_genre_western">Western</string>
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">Akció</string>
+    <string name="movie_genre_adventure">Kaland</string>
+    <string name="movie_genre_animation">Animációs</string>
+    <string name="movie_genre_comedy">Vígjáték</string>
+    <string name="movie_genre_crime">Bűnügyi</string>
+    <string name="movie_genre_documentary">Dokumentum</string>
+    <string name="movie_genre_drama">Dráma</string>
+    <string name="movie_family">Családi</string>
+    <string name="movie_genre_fantasy">Fantasy</string>
+    <string name="movie_genre_history">Történelmi</string>
+    <string name="movie_genre_horror">Horror</string>
+    <string name="movie_genre_music">Zenei</string>
+    <string name="movie_genre_mystery">Rejtély</string>
+    <string name="movie_genre_romance">Romantikus</string>
+    <string name="movie_genre_science_fiction">Sci-Fi</string>
+    <string name="movie_genre_tv_movie">TV film</string>
+    <string name="movie_genre_thriller">Thriller</string>
+    <string name="movie_genre_war">Háborús</string>
+    <string name="movie_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

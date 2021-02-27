@@ -114,7 +114,7 @@
     <string name="tv_show_genre_war">War</string>
     <string name="tv_show_genre_western">Western</string>
 
-    <!-- There are official translations for the tmdb genres cf. https://gist.github.com/courville/548469b86ae9294f9e98cbb52273a1db -->
+    <!-- There are official translations for the tmdb genres -->
     <string name="movie_genre_action">Action</string>
     <string name="movie_genre_adventure">Adventure</string>
     <string name="movie_genre_animation">Animation</string>

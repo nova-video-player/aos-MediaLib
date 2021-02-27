@@ -90,6 +90,26 @@
     <string name="tv_show_genre_thriller">Триллер</string>
     <string name="tv_show_genre_travel">Путешествия</string>
     <string name="tv_show_genre_western">Западный</string>
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">боевик</string>
+    <string name="movie_genre_adventure">приключения</string>
+    <string name="movie_genre_animation">мультфильм</string>
+    <string name="movie_genre_comedy">комедия</string>
+    <string name="movie_genre_crime">криминал</string>
+    <string name="movie_genre_documentary">документальный</string>
+    <string name="movie_genre_drama">драма</string>
+    <string name="movie_family">семейный</string>
+    <string name="movie_genre_fantasy">фэнтези</string>
+    <string name="movie_genre_history">история</string>
+    <string name="movie_genre_horror">ужасы</string>
+    <string name="movie_genre_music">музыка</string>
+    <string name="movie_genre_mystery">детектив</string>
+    <string name="movie_genre_romance">мелодрама</string>
+    <string name="movie_genre_science_fiction">фантастика</string>
+    <string name="movie_genre_tv_movie">телевизионный фильм</string>
+    <string name="movie_genre_thriller">триллер</string>
+    <string name="movie_genre_war">военный</string>
+    <string name="movie_genre_western">вестерн</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

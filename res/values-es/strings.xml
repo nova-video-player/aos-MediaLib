@@ -87,6 +87,26 @@
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Viajes</string>
     <string name="tv_show_genre_western">Viejo Oeste</string>
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">Acción</string>
+    <string name="movie_genre_adventure">Aventura</string>
+    <string name="movie_genre_animation">Animación</string>
+    <string name="movie_genre_comedy">Comedia</string>
+    <string name="movie_genre_crime">Crimen</string>
+    <string name="movie_genre_documentary">Documental</string>
+    <string name="movie_genre_drama">Drama</string>
+    <string name="movie_family">Familia</string>
+    <string name="movie_genre_fantasy">Fantasía</string>
+    <string name="movie_genre_history">Historia</string>
+    <string name="movie_genre_horror">Terror</string>
+    <string name="movie_genre_music">Música</string>
+    <string name="movie_genre_mystery">Misterio</string>
+    <string name="movie_genre_romance">Romance</string>
+    <string name="movie_genre_science_fiction">Ciencia ficción</string>
+    <string name="movie_genre_tv_movie">Película de TV</string>
+    <string name="movie_genre_thriller">Suspense</string>
+    <string name="movie_genre_war">Bélica</string>
+    <string name="movie_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

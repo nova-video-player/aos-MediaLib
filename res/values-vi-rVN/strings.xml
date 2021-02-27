@@ -26,6 +26,26 @@
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
     <!-- Title of screen when there was an error accessing the internal storage -->
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">Phim Hành Động</string>
+    <string name="movie_genre_adventure">Phim Phiêu Lưu</string>
+    <string name="movie_genre_animation">Phim Hoạt Hình</string>
+    <string name="movie_genre_comedy">Phim Hài</string>
+    <string name="movie_genre_crime">Phim Hình Sự</string>
+    <string name="movie_genre_documentary">Phim Tài Liệu</string>
+    <string name="movie_genre_drama">Phim Chính Kịch</string>
+    <string name="movie_family">Phim Gia Đình</string>
+    <string name="movie_genre_fantasy">Phim Giả Tượng</string>
+    <string name="movie_genre_history">Phim Lịch Sử</string>
+    <string name="movie_genre_horror">Phim Kinh Dị</string>
+    <string name="movie_genre_music">Phim Nhạc</string>
+    <string name="movie_genre_mystery">Phim Bí Ẩn</string>
+    <string name="movie_genre_romance">Phim Lãng Mạn</string>
+    <string name="movie_genre_science_fiction">Phim Khoa Học Viễn Tưởng</string>
+    <string name="movie_genre_tv_movie">Chương Trình Truyền Hình</string>
+    <string name="movie_genre_thriller">Phim Gây Cấn</string>
+    <string name="movie_genre_war">Phim Chiến Tranh</string>
+    <string name="movie_genre_western">Phim Miền Tây</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

@@ -38,6 +38,26 @@
     <string name="storage_error_title">내부 저장공간 오류</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">내부 저장공간에서 오류가 발행하였습니다.</string>
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">액션</string>
+    <string name="movie_genre_adventure">모험</string>
+    <string name="movie_genre_animation">애니메이션</string>
+    <string name="movie_genre_comedy">코미디</string>
+    <string name="movie_genre_crime">범죄</string>
+    <string name="movie_genre_documentary">다큐멘터리</string>
+    <string name="movie_genre_drama">드라마</string>
+    <string name="movie_family">가족</string>
+    <string name="movie_genre_fantasy">판타지</string>
+    <string name="movie_genre_history">역사</string>
+    <string name="movie_genre_horror">공포</string>
+    <string name="movie_genre_music">음악</string>
+    <string name="movie_genre_mystery">미스터리</string>
+    <string name="movie_genre_romance">로맨스</string>
+    <string name="movie_genre_science_fiction">SF</string>
+    <string name="movie_genre_tv_movie">TV 영화</string>
+    <string name="movie_genre_thriller">스릴러</string>
+    <string name="movie_genre_war">전쟁</string>
+    <string name="movie_genre_western">서부</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

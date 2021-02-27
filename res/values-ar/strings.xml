@@ -38,6 +38,27 @@
     <string name="storage_error_title">خطأ فى وحدة التخزين</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">يوجد خطأ فى وحدة التخزين الداخلية.</string>
+
+    <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">حركة</string>
+    <string name="movie_genre_adventure">مغامرة</string>
+    <string name="movie_genre_animation">رسوم متحركة</string>
+    <string name="movie_genre_comedy">كوميديا</string>
+    <string name="movie_genre_crime">جريمة</string>
+    <string name="movie_genre_documentary">وثائقي</string>
+    <string name="movie_genre_drama">دراما</string>
+    <string name="movie_family">عائلي</string>
+    <string name="movie_genre_fantasy">فانتازيا</string>
+    <string name="movie_genre_history">تاريخ</string>
+    <string name="movie_genre_horror">رعب</string>
+    <string name="movie_genre_music">موسيقى</string>
+    <string name="movie_genre_mystery">غموض</string>
+    <string name="movie_genre_romance">رومنسية</string>
+    <string name="movie_genre_science_fiction">خيال علمي</string>
+    <string name="movie_genre_tv_movie">فيلم تلفازي</string>
+    <string name="movie_genre_thriller">إثارة</string>
+    <string name="movie_genre_war">حرب</string>
+    <string name="movie_genre_western">غربي</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
