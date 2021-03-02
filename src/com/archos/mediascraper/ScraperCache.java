@@ -76,7 +76,7 @@ public class ScraperCache {
                     .build();
             return response.newBuilder()
                     .removeHeader("Pragma")
-                    .removeHeader("Vary")
+                    //.removeHeader("Vary") // this creates regression for poster download with 404 on json sometimes
                     .removeHeader("Age")
                     .removeHeader("X-Cache")
                     .removeHeader("X-Cache-Hit")
