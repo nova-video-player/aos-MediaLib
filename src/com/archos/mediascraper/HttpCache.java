@@ -15,7 +15,8 @@
 
 package com.archos.mediascraper;
 
-import android.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
@@ -35,9 +36,10 @@ import java.util.Map;
  * @hide
  */
 public class HttpCache {
-    private static final String TAG = "ScraperHttpCache";
-    private static final boolean DBG = false;
-    private static final boolean DBG_SPEED = false;
+
+    private static final Logger log = LoggerFactory.getLogger(HttpCache.class);
+
+    // TRACE is for speed
 
     public static final long UNLIMITED = -1;
     public static final long ONE_SECOND = 1000L;
@@ -116,7 +118,7 @@ public class HttpCache {
         mCacheDirectory = directory;
         mCacheTimeOut = maxAge;
 
-        if (DBG) Log.d(TAG, "HttpCache: creating cache dir " + directory.getPath());
+        log.debug("HttpCache: creating cache dir " + directory.getPath());
 
         if (mCacheDirectory == null)
             throw new RuntimeException("You must specify a Directory");
@@ -138,7 +140,7 @@ public class HttpCache {
             for (File f : list) {
                 if (fileNeedsRefresh(f)) {
                     if (!f.delete()) {
-                        if (DBG) Log.d(TAG, "could not delete old file: " + f);
+                        log.debug("could not delete old file: " + f);
                     }
                 } else if (f.isFile()) {
                     mFileMap.put(f.getName(), f);
@@ -150,7 +152,7 @@ public class HttpCache {
             if (fallbackDirectory.exists() && fallbackDirectory.isDirectory()) {
                 mFallbackDirectory = fallbackDirectory;
             } else {
-                if (DBG) Log.d(TAG, "FallbackDirectory must exist already");
+                log.debug("FallbackDirectory must exist already");
                 mFallbackDirectory = null;
             }
         } else {
@@ -161,7 +163,7 @@ public class HttpCache {
             if (preferredDirectory.exists() && preferredDirectory.isDirectory()) {
                 mPreferredDirectory = preferredDirectory;
             } else {
-                if (DBG) Log.d(TAG, "PreferredDirectory must exist already");
+                log.debug("PreferredDirectory must exist already");
                 mPreferredDirectory = null;
             }
         } else {
@@ -190,7 +192,7 @@ public class HttpCache {
         String timeString = String.format("%.2f s", timeSec);
         String speedString = String.format("%.2f kB/s", speedKbs);
         String sizeString = String.format("%.2f kB", sizeKb);
-        if (DBG) Log.d("XXSPEED", "[" + url + "] " + sizeString + " in " + timeString + " (~" + speedString + ")");
+        log.debug("XXSPEED", "[" + url + "] " + sizeString + " in " + timeString + " (~" + speedString + ")");
     }
 
     /**
@@ -201,9 +203,9 @@ public class HttpCache {
      * @return a File or null if the download failed
      */
     public File getFile(String url, boolean useGzip, Map<String, String> extraHeaders) {
-        if(DBG) Log.d(TAG, "request [" + url + "]");
+        log.debug("request [" + url + "]");
         if (url == null) {
-            Log.w(TAG, "getFile(null)");
+            log.warn("getFile(null)");
             return null;
         }
         // first check if we have that file already in the preferred directory
@@ -220,7 +222,7 @@ public class HttpCache {
         try {
             ret = mFileMap.get(url2Filename(url));
             if (ret == null || !ret.exists() || fileNeedsRefresh(ret)) {
-                if (DBG) Log.d(TAG, "downloading " + ThreadInfo());
+                log.debug("downloading " + ThreadInfo());
                 // someone may have cleared the cache and we need to recreate the directory.
                 if (!mCacheDirectory.exists()) {
                     if (!mCacheDirectory.mkdirs()) {
@@ -236,8 +238,8 @@ public class HttpCache {
                 OutputStream output = null;
                 InputStream input = null;
                 try {
-                    long start;
-                    if (DBG_SPEED) start = System.currentTimeMillis();
+                    long start = 0;
+                    if (log.isTraceEnabled()) start = System.currentTimeMillis();
 
                     output = new FileOutputStream(inProgressFile);
                     input = downloader.getInputStream(extraHeaders);
@@ -250,7 +252,7 @@ public class HttpCache {
                     output.close();
                     output = null;
 
-                    if (DBG_SPEED) {
+                    if (log.isTraceEnabled()) {
                         long end = System.currentTimeMillis();
                         long time = end - start;
                         long size = inProgressFile.exists() ? inProgressFile.length() : 0;
@@ -262,12 +264,12 @@ public class HttpCache {
                         ret = generatedFile;
                         downloadSuccess = true;
                     } else {
-                        Log.w(TAG, "failed to rename " + inProgressFile + " to " +  generatedFile);
+                        log.warn("failed to rename " + inProgressFile + " to " +  generatedFile);
                         inProgressFile.delete();
                         generatedFile.delete();
                     }
                 } catch (IOException e) {
-                    Log.w(TAG, "Exception: " + e);
+                    log.warn("Exception: " + e);
                 } finally {
                     closeSilently(downloader);
                     // if stream are != null close them
@@ -278,19 +280,19 @@ public class HttpCache {
                         generatedFile.delete();
                 }
                 if (!downloadSuccess && mFallbackDirectory != null) {
-                    if (DBG) Log.d(TAG, "checking for fallback file");
+                    log.debug("checking for fallback file");
                     File fallbackFile = getResultingFallbackCacheFile(url);
                     if (fallbackFile != null && fallbackFile.exists()) {
                         ret = fallbackFile;
                         downloadSuccess = true;
-                        if (DBG) Log.d(TAG, "using " + ret.getAbsolutePath() + " as fallback");
+                        log.debug("using " + ret.getAbsolutePath() + " as fallback");
                     }
                 }
             }
         } finally {
             mUrlLock.unlock(url);
             // ... and threads waiting so they can check the list again
-            if (DBG) Log.d(TAG, "Exiting getFile() " + ThreadInfo());
+            log.debug("Exiting getFile() " + ThreadInfo());
         }
 
         return ret;
@@ -300,9 +302,9 @@ public class HttpCache {
         if (f.length() < 1) return true;
         if (mCacheTimeOut > 0) {
             if ((f.lastModified() + mCacheTimeOut) < System.currentTimeMillis()) {
-                if (DBG) {
+                if (log.isDebugEnabled()) {
                     DateFormat fmt = DateFormat.getInstance();
-                    Log.d(TAG, "File " + f.getPath() + " too old f:" + fmt.format(new Date(f.lastModified())) + " now:" + fmt.format(new Date()));
+                    log.debug("File " + f.getPath() + " too old f:" + fmt.format(new Date(f.lastModified())) + " now:" + fmt.format(new Date()));
                 }
                 return true;
             }

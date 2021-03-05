@@ -28,11 +28,13 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.ScraperImage.Type;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.text.ParseException;
@@ -43,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 public class EpisodeTags extends BaseTags {
-    private final static String TAG = "EpisodeTags";
+    private static final Logger log = LoggerFactory.getLogger(EpisodeTags.class);
     private ShowTags mShowTags;
     private String mShowTitle;
     private long mShowId;
@@ -204,9 +206,9 @@ public class EpisodeTags extends BaseTags {
                 returnValue = ContentUris.parseId(results[0].uri);
             }
         } catch (RemoteException e) {
-            Log.d(TAG, "Exception :" + e, e);
+            log.error("Exception :" + e, e);
         } catch (OperationApplicationException e) {
-            Log.d(TAG, "Exception :" + e, e);
+            log.error("Exception :" + e, e);
         }
         return returnValue;
     }
@@ -316,7 +318,7 @@ public class EpisodeTags extends BaseTags {
         try {
             mAired = sDateFormatter.parse(string);
         } catch (ParseException e) {
-            Log.d(TAG, "Illegal Date format [" + string + "]");
+            log.error("Illegal Date format [" + string + "]");
             mAired = DEFAULT_DATE;
         }
     }
