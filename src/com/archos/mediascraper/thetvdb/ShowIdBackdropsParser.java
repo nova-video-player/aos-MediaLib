@@ -32,7 +32,7 @@ import java.util.List;
 public class ShowIdBackdropsParser {
 
     private static final Logger log = LoggerFactory.getLogger(ShowIdBackdropsParser.class);
-    final static String BANNERS_URL = "https://www.thetvdb.com/banners/";
+    final static String BANNERS_URL = "https://artworks.thetvdb.com/banners/";
 
     public static ShowIdBackdropsResult getResult(String showTitle,
                                                 SeriesImageQueryResultResponse fanartsResponse,

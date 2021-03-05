@@ -1154,9 +1154,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + " > 0";
     private static final String SELECTION_ID = BaseColumns._ID + "=?";
     private static final String SHOW_LARGE =
-            "https://www.thetvdb.com/banners/fanart/original/";
+            "https://artworks.thetvdb.com/banners/fanart/original/";
     private static final String SHOW_THUMB =
-            "https://www.thetvdb.com/banners/_cache/fanart/original/";
+            "https://artworks.thetvdb.com/banners/_cache/fanart/original/";
     private static final String MOVIE_LARGE =
             "https://cf2.imgobject.com/t/p/w1280/";
     private static final String MOVIE_THUMB =
