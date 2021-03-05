@@ -37,7 +37,7 @@ public class ScraperCache {
     private static final Logger log = LoggerFactory.getLogger(ScraperCache.class);
 
     static final String SCRAPER_CACHE = "scraper-cache";
-    static protected final long cacheSize = 100L * 1024L * 1024L; // 100 MB (it is a directory...)
+    static protected final long cacheSize = 10L * 1024L * 1024L; // 10 MB (it is a directory...)
     public static final int CONNECT_TIMEOUT_MILLIS = 15 * 1000; // 15s
     public static final int READ_TIMEOUT_MILLIS = 20 * 1000; // 20s
     static Cache cache;
@@ -61,6 +61,7 @@ public class ScraperCache {
     public static Cache getCache(Context context) {
         if (cache == null) {
             File cacheDir = new File(context.getCacheDir(), SCRAPER_CACHE);
+            log.debug("getCache: directory " + context.getCacheDir() + "/" + SCRAPER_CACHE);
             if (!cacheDir.exists()) cacheDir.mkdirs();
             cache = new Cache(cacheDir, cacheSize);
         }
@@ -70,16 +71,18 @@ public class ScraperCache {
     public static class CacheInterceptor implements Interceptor {
         @Override
         public okhttp3.Response intercept(Chain chain) throws IOException {
-            okhttp3.Response response = chain.proceed(chain.request());
+            Response response = chain.proceed(chain.request());
             CacheControl cacheControl = new CacheControl.Builder()
                     .maxAge(MediaScraper.SCRAPER_CACHE_TIMEOUT_COUNT, MediaScraper.SCRAPER_CACHE_TIMEOUT_UNIT)
                     .build();
+            if (response.code() == 404 || response.code() == 401) { // do not cache errors
+                log.warn("CacheInterceptor: 404!");
+                return response.newBuilder()
+                        .header("Cache-Control", "no-store")
+                        .build();
+            }
             return response.newBuilder()
-                    .removeHeader("Pragma")
-                    //.removeHeader("Vary") // this creates regression for poster download with 404 on json sometimes
-                    .removeHeader("Age")
-                    .removeHeader("X-Cache")
-                    .removeHeader("X-Cache-Hit")
+                    .removeHeader("Vary") // makes cache hit work
                     .header("Cache-Control", cacheControl.toString())
                     .build();
         }
