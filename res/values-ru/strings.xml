@@ -66,6 +66,7 @@
     <string name="tv_show_genre_adventure">Приключения</string>
     <string name="tv_show_genre_animation">Мультфильм</string>
     <string name="tv_show_genre_anime">Анимэ</string>
+    <string name="tv_show_genre_awards_show">Награды</string>
     <string name="tv_show_genre_children">Дети</string>
     <string name="tv_show_genre_comedy">Комедия</string>
     <string name="tv_show_genre_crime">Детектив</string>
@@ -77,8 +78,13 @@
     <string name="tv_show_genre_game_show">Игровое шоу</string>
     <string name="tv_show_genre_home_garden">Дом и сад</string>
     <string name="tv_show_genre_horror">Ужасы</string>
+    <string name="tv_show_genre_indie">Инди</string>
+    <string name="tv_show_genre_martial_arts">Боевые искусства</string>
     <string name="tv_show_genre_mini_series">Мини-Сериал</string>
+    <string name="tv_show_genre_musical">Мюзикл</string>
+    <string name="tv_show_genre_mystery">Мистика</string>
     <string name="tv_show_genre_news">Новости</string>
+    <string name="tv_show_genre_podcast">Подкаст</string>
     <string name="tv_show_genre_reality">Реалити Шоу</string>
     <string name="tv_show_genre_romance">Мелодрама</string>
     <string name="tv_show_genre_science_fiction">Научная фантастика</string>
@@ -89,6 +95,7 @@
     <string name="tv_show_genre_talk_show">Ток Шоу</string>
     <string name="tv_show_genre_thriller">Триллер</string>
     <string name="tv_show_genre_travel">Путешествия</string>
+    <string name="tv_show_genre_war">Военный</string>
     <string name="tv_show_genre_western">Западный</string>
     <!-- There are official translations for the tmdb genres -->
     <string name="movie_genre_action">боевик</string>

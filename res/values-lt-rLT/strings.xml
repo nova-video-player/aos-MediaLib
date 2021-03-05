@@ -66,6 +66,7 @@
     <string name="tv_show_genre_adventure">Nuotykiai</string>
     <string name="tv_show_genre_animation">Animaciniai</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_awards_show">Apdovanojimai</string>
     <string name="tv_show_genre_children">Vaikams</string>
     <string name="tv_show_genre_comedy">Komedijos</string>
     <string name="tv_show_genre_crime">Kriminaliniai</string>
@@ -77,8 +78,13 @@
     <string name="tv_show_genre_game_show">Žaidimų šou</string>
     <string name="tv_show_genre_home_garden">Namai ir sodas</string>
     <string name="tv_show_genre_horror">Siaubo</string>
+    <string name="tv_show_genre_indie">Indie</string>
+    <string name="tv_show_genre_martial_arts">Kovos menai</string>
     <string name="tv_show_genre_mini_series">Mini serialai</string>
+    <string name="tv_show_genre_musical">Muzikiniai</string>
+    <string name="tv_show_genre_mystery">Mistiniai</string>
     <string name="tv_show_genre_news">Naujienos</string>
+    <string name="tv_show_genre_podcast">Tinklalaidė</string>
     <string name="tv_show_genre_reality">Realybės šou</string>
     <string name="tv_show_genre_romance">Romantiniai</string>
     <string name="tv_show_genre_science_fiction">Mokslinė fantastika</string>
@@ -89,6 +95,7 @@
     <string name="tv_show_genre_talk_show">Pokalbių šou</string>
     <string name="tv_show_genre_thriller">Trileriai</string>
     <string name="tv_show_genre_travel">Kelionės</string>
+    <string name="tv_show_genre_war">Kariniai</string>
     <string name="tv_show_genre_western">Vesternai</string>
     <!-- There are official translations for the tmdb genres -->
     <string name="movie_genre_action">Veiksmo</string>
