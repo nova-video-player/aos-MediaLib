@@ -29,7 +29,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 public class MyTmdb extends Tmdb {
 
     private static final Logger log = LoggerFactory.getLogger(MyTmdb.class);
-    private final static boolean CACHE = true;
+    private final static boolean CACHE = false;
     private static Cache mCache;
 
     public MyTmdb(String apiKey, Cache cache) {
