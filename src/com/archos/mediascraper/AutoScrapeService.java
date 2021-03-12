@@ -181,7 +181,7 @@ public class AutoScrapeService extends Service {
                 startScraping(true, intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
             } else {
                 log.debug("onStartCommand: RESCAN_EVERYTHING");
-                startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false), intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
+                startScraping(true, intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
             }
         } else {
             log.debug("onStartCommand: rescan incremental");
