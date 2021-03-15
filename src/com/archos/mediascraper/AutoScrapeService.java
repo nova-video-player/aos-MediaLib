@@ -356,7 +356,7 @@ public class AutoScrapeService extends Service {
                         // and get the final count (it could change while scrape is in progress)
                         Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null);
                         int numberOfRows = cursor.getCount(); // total number of files to be processed
-                        int sTotalNumberOfFilesRemainingToProcess = numberOfRows;
+                        sTotalNumberOfFilesRemainingToProcess = numberOfRows;
                         cursor.close();
 
                         NfoWriter.ExportContext exportContext = null;
