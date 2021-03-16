@@ -82,7 +82,7 @@ public class ScraperCache {
                         .build();
             }
             return response.newBuilder()
-                    .removeHeader("Vary") // makes cache hit work
+                    //.removeHeader("Vary") // makes cache hit work --> TODO MAKES FR + EN REQUESTS PROVIDE FR ANSWERS!!!
                     .header("Cache-Control", cacheControl.toString())
                     .build();
         }
