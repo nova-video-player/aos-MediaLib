@@ -68,7 +68,6 @@ public class ShowScraper3 extends BaseScraper2 {
     private static final Logger log = LoggerFactory.getLogger(ShowScraper3.class);
 
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(100);
-    private final static LruCache<String, SearchShowResult> getMatchCache = new LruCache<>(100);
 
     private static ScraperSettings sSettings = null;
 
@@ -107,15 +106,7 @@ public class ShowScraper3 extends BaseScraper2 {
                 + " s:" + searchInfo.getSeason()
                 + " e:" + searchInfo.getEpisode() + ", maxItems=" +maxItems);
         if (theTvdb == null) reauth();
-        String showKey = searchInfo.getShowName() + "|" + language;
-        SearchShowResult searchResult = null;
-        searchResult = getMatchCache.get(showKey);
-        if (searchResult == null) {
-            searchResult = SearchShow.search(searchInfo, language, maxItems, this, theTvdb);
-            getMatchCache.put(showKey, searchResult);
-        } else {
-            log.debug("getMatches2: boost using cached searched show");
-        }
+        SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, this, theTvdb);
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
     }
 
