@@ -43,7 +43,7 @@ public class SearchShow {
         boolean isGlobalResponseOk = false;
         boolean isGlobalResponseEmpty = false;
 
-        log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
+        log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
         try {
             response = theTvdb.search().series(searchInfo.getShowName(), null, null, null, language).execute();
             if (response.code() == 401) authIssue = true; // this is an OR
