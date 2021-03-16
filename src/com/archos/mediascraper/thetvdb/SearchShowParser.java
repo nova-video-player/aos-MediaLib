@@ -169,7 +169,7 @@ public class SearchShowParser {
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
                 if (series.banner != null) {
-                    if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
+                    if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg") || series.banner.length() == 0) {
                         log.debug("getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
                         searchShowParserResult.resultsNoBanner.add(result);
                         isDecisionTaken = true;
@@ -179,7 +179,7 @@ public class SearchShowParser {
                     }
                 }
                 if (series.image != null) {
-                    if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg")) {
+                    if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg") || series.image.length() == 0) {
                         log.debug("getSearchShowParserResult: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
                         searchShowParserResult.resultsNoPoster.add(result);
                         isDecisionTaken = true;
