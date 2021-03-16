@@ -29,7 +29,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 public class MyTheTVdb extends TheTvdb {
 
     private static final Logger log = LoggerFactory.getLogger(MyTheTVdb.class);
-    private final static boolean CACHE = true;
+    private final static boolean CACHE = false;
     private static Cache mCache;
 
     public MyTheTVdb(String apiKey, Cache cache) {
