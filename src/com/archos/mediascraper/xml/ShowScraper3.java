@@ -67,7 +67,8 @@ public class ShowScraper3 extends BaseScraper2 {
 
     private static final Logger log = LoggerFactory.getLogger(ShowScraper3.class);
 
-    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
+    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(100);
+    private final static LruCache<String, SearchShowResult> getMatchCache = new LruCache<>(100);
 
     private static ScraperSettings sSettings = null;
 
@@ -104,9 +105,17 @@ public class ShowScraper3 extends BaseScraper2 {
         String language = getLanguage(mContext);
         log.debug("getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
-                + " e:" + searchInfo.getEpisode());
+                + " e:" + searchInfo.getEpisode() + ", maxItems=" +maxItems);
         if (theTvdb == null) reauth();
-        SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, this, theTvdb);
+        String showKey = searchInfo.getShowName() + "|" + language;
+        SearchShowResult searchResult = null;
+        searchResult = getMatchCache.get(showKey);
+        if (searchResult == null) {
+            searchResult = SearchShow.search(searchInfo, language, maxItems, this, theTvdb);
+            getMatchCache.put(showKey, searchResult);
+        } else {
+            log.debug("getMatches2: boost using cached searched show");
+        }
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
     }
 
@@ -173,14 +182,14 @@ public class ShowScraper3 extends BaseScraper2 {
             if (!allEpisodes.isEmpty() && !searchPosters.posters.isEmpty())
                 mapPostersEpisodes(allEpisodes, searchPosters, resultLanguage);
         } else {
-            log.debug("using cached Episode List");
+            log.debug("getDetailsInternal: boost using cached Episode List");
             // no need to parse, we have a cached result
             // get the showTags out of one random element, they all contain the same
             Iterator<EpisodeTags> iter = allEpisodes.values().iterator();
             if (iter.hasNext()) showTags = iter.next().getShowTags();
         }
         if (showTags == null) { // if there is no info about the show there is nothing we can do
-            log.debug("ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
+            log.debug("getDetailsInternal: ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
         showTags.downloadPoster(mContext);
@@ -189,7 +198,7 @@ public class ShowScraper3 extends BaseScraper2 {
                 Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")),
                 showTags);
         Bundle extraOut = buildBundle(allEpisodes, options);
-        log.debug("ScrapeDetailResult ScrapeStatus.OKAY");
+        log.debug("getDetailsInternal ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 
