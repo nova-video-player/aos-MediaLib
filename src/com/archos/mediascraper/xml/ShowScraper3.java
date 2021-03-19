@@ -67,7 +67,8 @@ public class ShowScraper3 extends BaseScraper2 {
 
     private static final Logger log = LoggerFactory.getLogger(ShowScraper3.class);
 
-    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(100);
+    // Benchmarks tells that with tv shows sorted in folders, size of 100 or 10 or even provides the same cacheHits on fake collection of 30k episodes, 250 shows
+    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(10);
 
     private static ScraperSettings sSettings = null;
 

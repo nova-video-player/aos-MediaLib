@@ -32,7 +32,8 @@ import retrofit2.Response;
 public class SearchShow {
     private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
 
-    private final static LruCache<String, Response<SeriesResultsResponse>> showCache = new LruCache<>(200);
+    // Benchmarks tells that with tv shows sorted in folders, size of 200 or 20 or even 10 provides the same cacheHits on fake collection of 30k episodes, 250 shows
+    private final static LruCache<String, Response<SeriesResultsResponse>> showCache = new LruCache<>(20);
 
     public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper3 showScraper, MyTheTVdb theTvdb) {
         SearchShowResult myResult = new SearchShowResult();
