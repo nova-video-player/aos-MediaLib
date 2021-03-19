@@ -88,6 +88,14 @@ public class ShowScraper3 extends BaseScraper2 {
         }
     }
 
+    public static void debugLruCache(LruCache<String, Map<String, EpisodeTags>> lruCache) {
+        log.debug("debugLruCache: size=" + lruCache.size());
+        log.debug("debugLruCache: putCount=" + lruCache.putCount());
+        log.debug("debugLruCache: hitCount=" + lruCache.hitCount());
+        log.debug("debugLruCache: missCount=" + lruCache.missCount());
+        log.debug("debugLruCache: evictionCount=" + lruCache.evictionCount());
+    }
+
     public static void reauth() {
         theTvdb = new MyTheTVdb(apiKey, cache);
     }
@@ -129,6 +137,7 @@ public class ShowScraper3 extends BaseScraper2 {
         ShowIdBackdropsResult searchBackdrops = null;
 
         allEpisodes = sEpisodeCache.get(showKey);
+        if (log.isTraceEnabled()) debugLruCache(sEpisodeCache);
         if (allEpisodes == null) {
             if (theTvdb == null) reauth();
             allEpisodes = new HashMap<>();
@@ -174,7 +183,7 @@ public class ShowScraper3 extends BaseScraper2 {
             if (!allEpisodes.isEmpty() && !searchPosters.posters.isEmpty())
                 mapPostersEpisodes(allEpisodes, searchPosters, resultLanguage);
         } else {
-            log.debug("getDetailsInternal: boost using cached Episode List");
+            log.debug("getDetailsInternal: cache boost for showId (all episodes)");
             // no need to parse, we have a cached result
             // get the showTags out of one random element, they all contain the same
             Iterator<EpisodeTags> iter = allEpisodes.values().iterator();

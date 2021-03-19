@@ -47,6 +47,7 @@ public class ShowIdBackdrops {
 
         log.debug("getBackdrops: quering thetvdb for showId " + showId);
         try {
+            log.debug("ShowIdBackdropsResult: no boost for " + showId);
             Response<SeriesImageQueryResultResponse> fanartsResponse = null;
             fanartsResponse = theTvdb.series()
                     .imagesQuery(showId, "fanart", null, null, language).execute();

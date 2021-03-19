@@ -55,7 +55,9 @@ public class SearchShow {
 
             showKey = searchInfo.getShowName() + "|" + language;
             response = showCache.get(showKey);
+            if (log.isTraceEnabled()) debugLruCache(showCache);
             if (response == null) {
+                log.debug("SearchShowResult: no boost for " + searchInfo.getShowName());
                 response = theTvdb.search().series(searchInfo.getShowName(), null, null, null, language).execute();
                 if (response.code() == 401) authIssue = true; // this is an OR
                 if (response.code() != 404) notFoundIssue = false; // this is an AND
@@ -63,7 +65,7 @@ public class SearchShow {
                 if (response.body() == null) isResponseEmpty = true;
                 if (isResponseOk || isResponseEmpty) showCache.put(showKey, response);
             } else {
-                log.debug("search: boost using cached searched show");
+                log.debug("search: boost using cached searched show for " + searchInfo.getShowName());
                 isResponseOk = true;
                 notFoundIssue = false;
                 if (response.body() == null) isResponseEmpty = true;
@@ -122,4 +124,13 @@ public class SearchShow {
         }
         return myResult;
     }
+
+    public static void debugLruCache(LruCache<String, Response<SeriesResultsResponse>> lruCache) {
+        log.debug("debugLruCache: size=" + lruCache.size());
+        log.debug("debugLruCache: putCount=" + lruCache.putCount());
+        log.debug("debugLruCache: hitCount=" + lruCache.hitCount());
+        log.debug("debugLruCache: missCount=" + lruCache.missCount());
+        log.debug("debugLruCache: evictionCount=" + lruCache.evictionCount());
+    }
+
 }

@@ -36,6 +36,7 @@ public class ShowIdActors {
 
         log.debug("getActors: quering thetvdb for showId " + showId);
         try {
+            log.debug("ShowIdActorsResult: no boost for " + showId);
             Response<ActorsResponse> actorsResponse = theTvdb.series().actors(showId).execute();
             switch (actorsResponse.code()) {
                 case 401: // auth issue

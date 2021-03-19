@@ -35,6 +35,7 @@ public class ShowIdDescription {
         if (tag == null) return false;
         Response<SeriesResponse> seriesResponse = null;
         try {
+            log.debug("addDescription: no boost for " + showId);
             seriesResponse = theTvdb.series().series(showId, "en").execute();
             switch (seriesResponse.code()) {
                 case 401: // auth issue

@@ -480,6 +480,7 @@ public class ScraperImage {
                 getCacheDir(mType, context);
                 getDir(mType, context);
                 // does not exist - so download it and update the database.
+                log.debug("file does not exist: download it!");
                 success = saveSizedImage(context, url, file, mType, thumb, maxWidth, maxHeight, fake);
             }
         } finally {
