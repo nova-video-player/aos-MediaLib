@@ -66,6 +66,7 @@
     <string name="tv_show_genre_adventure">Aventura</string>
     <string name="tv_show_genre_animation">Animação</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_awards_show">Show de Prêmios</string>
     <string name="tv_show_genre_children">Infantil</string>
     <string name="tv_show_genre_comedy">Comédia</string>
     <string name="tv_show_genre_crime">Policial</string>
@@ -77,8 +78,13 @@
     <string name="tv_show_genre_game_show">Game Show</string>
     <string name="tv_show_genre_home_garden">Casa e Jardim</string>
     <string name="tv_show_genre_horror">Terror</string>
+    <string name="tv_show_genre_indie">Indie</string>
+    <string name="tv_show_genre_martial_arts">Artes Marciais</string>
     <string name="tv_show_genre_mini_series">Minisséries</string>
+    <string name="tv_show_genre_musical">Musical</string>
+    <string name="tv_show_genre_mystery">Mistério</string>
     <string name="tv_show_genre_news">Notícias</string>
+    <string name="tv_show_genre_podcast">Podcast</string>
     <string name="tv_show_genre_reality">Reality Show</string>
     <string name="tv_show_genre_romance">Romance</string>
     <string name="tv_show_genre_science_fiction">Ficção científica</string>
@@ -89,6 +95,7 @@
     <string name="tv_show_genre_talk_show">Talk Show</string>
     <string name="tv_show_genre_thriller">Suspense</string>
     <string name="tv_show_genre_travel">Viagem</string>
+    <string name="tv_show_genre_war">Guerra</string>
     <string name="tv_show_genre_western">Faroeste</string>
     <!-- There are official translations for the tmdb genres -->
     <string name="movie_genre_action">Ação</string>
