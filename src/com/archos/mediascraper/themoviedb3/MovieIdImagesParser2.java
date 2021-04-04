@@ -16,6 +16,7 @@ package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
 
+import com.uwetrottmann.tmdb2.entities.Image;
 import com.uwetrottmann.tmdb2.entities.Images;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,43 +27,10 @@ public class MovieIdImagesParser2 {
     private static final String TAG = MovieIdImagesParser2.class.getSimpleName();
     private static final boolean DBG = false;
 
-    private static class Image implements Comparable<Image>{
-        // 2 bit << 29 = 31 bit
-        private static final int PRIO_PREFERRED = 0 << 29;
-        private static final int PRIO_ENGLISH = 1 << 29;
-        private static final int PRIO_NOLANG = 2 << 29;
-        private static final int PRIO_OTHER = 3 << 29;
-        public Image(String path, String language, String preferredLanguage, int imageNumber) {
-            int priorityClass;
-            if (language == null || language.isEmpty()) {
-                priorityClass = PRIO_NOLANG;
-            } else if (language.equals(preferredLanguage)) {
-                priorityClass = PRIO_PREFERRED;
-            } else if (language.equals("en")) {
-                priorityClass = PRIO_ENGLISH;
-            } else {
-                priorityClass = PRIO_OTHER;
-            }
-            this.priority = priorityClass + imageNumber;
-            this.imagePath = path;
-        }
-        public final String imagePath;
-        public final int priority;
-
-        @Override
-        public int compareTo(Image another) {
-            // a negative integer if this instance is less than another;
-            // a positive integer if this instance is greater than another;
-            // 0 if this instance has the same order as another.
-            int other = another != null ? another.priority : 0;
-            return priority - other;
-        }
-    }
-
     public static MovieIdImagesResult getResult(Images images, String preferredLanguage) {
         MovieIdImagesResult myResult = new MovieIdImagesResult();
-        LinkedList<Image> posters = new LinkedList<Image>();
-        LinkedList<Image> backdrops = new LinkedList<Image>();
+        LinkedList<ImageUtils.Image> posters = new LinkedList<ImageUtils.Image>();
+        LinkedList<ImageUtils.Image> backdrops = new LinkedList<ImageUtils.Image>();
         if (images != null) {
             if (images.posters != null) {
                 int imageNumber = 0;
@@ -72,7 +40,7 @@ public class MovieIdImagesParser2 {
                     if (DBG) Log.d(TAG, "getResult: poster " + poster.file_path);
                     if (poster.file_path != null) filePath = poster.file_path;
                     if (poster.iso_639_1 != null) language = poster.iso_639_1;
-                    Image image = new Image(filePath, language, preferredLanguage, imageNumber);
+                    ImageUtils.Image image = new ImageUtils.Image(filePath, language, preferredLanguage, imageNumber);
                     posters.add(image);
                     imageNumber++;
                 }
@@ -85,23 +53,14 @@ public class MovieIdImagesParser2 {
                     if (DBG) Log.d(TAG, "getResult: backdrop " + backdrop.file_path);
                     if (backdrop.file_path != null) filePath = backdrop.file_path;
                     if (backdrop.iso_639_1 != null) language = backdrop.iso_639_1;
-                    Image image = new Image(filePath, language, preferredLanguage, imageNumber);
+                    ImageUtils.Image image = new ImageUtils.Image(filePath, language, preferredLanguage, imageNumber);
                     backdrops.add(image);
                     imageNumber++;
                 }
             }
         }
-        myResult.posterPaths = getSortedPaths(posters);
-        myResult.backdropPaths = getSortedPaths(backdrops);
+        myResult.posterPaths = ImageUtils.getSortedPaths(posters);
+        myResult.backdropPaths = ImageUtils.getSortedPaths(backdrops);
         return myResult;
-    }
-
-    private static List<String> getSortedPaths(List<Image> images) {
-        Collections.sort(images);
-        ArrayList<String> ret = new ArrayList<String>(images.size());
-        for (Image image : images) {
-            ret.add(image.imagePath);
-        }
-        return ret;
     }
 }
