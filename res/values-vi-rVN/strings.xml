@@ -26,7 +26,7 @@
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
     <!-- Title of screen when there was an error accessing the internal storage -->
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
-    <!-- There are official translations for the tmdb genres -->
+    <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">Phim Hành Động</string>
     <string name="movie_genre_adventure">Phim Phiêu Lưu</string>
     <string name="movie_genre_animation">Phim Hoạt Hình</string>
@@ -46,6 +46,23 @@
     <string name="movie_genre_thriller">Phim Gây Cấn</string>
     <string name="movie_genre_war">Phim Chiến Tranh</string>
     <string name="movie_genre_western">Phim Miền Tây</string>
+    <!-- There are official translations for the tmdb tv genres -->
+    <string name="tvshow_genre_action_adventure">Action &amp; Adventure</string>
+    <string name="tvshow_genre_animation">Phim Hoạt Hình</string>
+    <string name="tvshow_genre_comedy">Phim Hài</string>
+    <string name="tvshow_genre_crime">Phim Hình Sự</string>
+    <string name="tvshow_genre_documentary">Phim Tài Liệu</string>
+    <string name="tvshow_genre_drama">Phim Chính Kịch</string>
+    <string name="tvshow_genre_family">Phim Gia Đình</string>
+    <string name="tvshow_genre_kids">Kids</string>
+    <string name="tvshow_genre_mystery">Phim Bí Ẩn</string>
+    <string name="tvshow_genre_news">News</string>
+    <string name="tvshow_genre_reality">Reality</string>
+    <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
+    <string name="tvshow_genre_soap">Soap</string>
+    <string name="tvshow_genre_talk">Talk</string>
+    <string name="tvshow_genre_war_politics">War &amp; Politics</string>
+    <string name="tvshow_genre_western">Phim Miền Tây</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
