@@ -67,7 +67,8 @@ public class ShowScraper3 extends BaseScraper2 {
 
     private static final Logger log = LoggerFactory.getLogger(ShowScraper3.class);
 
-    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(5);
+    // Benchmarks tells that with tv shows sorted in folders, size of 100 or 10 or even provides the same cacheHits on fake collection of 30k episodes, 250 shows
+    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(10);
 
     private static ScraperSettings sSettings = null;
 
@@ -87,6 +88,14 @@ public class ShowScraper3 extends BaseScraper2 {
         }
     }
 
+    public static void debugLruCache(LruCache<String, Map<String, EpisodeTags>> lruCache) {
+        log.debug("debugLruCache: size=" + lruCache.size());
+        log.debug("debugLruCache: putCount=" + lruCache.putCount());
+        log.debug("debugLruCache: hitCount=" + lruCache.hitCount());
+        log.debug("debugLruCache: missCount=" + lruCache.missCount());
+        log.debug("debugLruCache: evictionCount=" + lruCache.evictionCount());
+    }
+
     public static void reauth() {
         theTvdb = new MyTheTVdb(apiKey, cache);
     }
@@ -104,7 +113,7 @@ public class ShowScraper3 extends BaseScraper2 {
         String language = getLanguage(mContext);
         log.debug("getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
-                + " e:" + searchInfo.getEpisode());
+                + " e:" + searchInfo.getEpisode() + ", maxItems=" +maxItems);
         if (theTvdb == null) reauth();
         SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, this, theTvdb);
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
@@ -128,6 +137,7 @@ public class ShowScraper3 extends BaseScraper2 {
         ShowIdBackdropsResult searchBackdrops = null;
 
         allEpisodes = sEpisodeCache.get(showKey);
+        if (log.isTraceEnabled()) debugLruCache(sEpisodeCache);
         if (allEpisodes == null) {
             if (theTvdb == null) reauth();
             allEpisodes = new HashMap<>();
@@ -173,14 +183,14 @@ public class ShowScraper3 extends BaseScraper2 {
             if (!allEpisodes.isEmpty() && !searchPosters.posters.isEmpty())
                 mapPostersEpisodes(allEpisodes, searchPosters, resultLanguage);
         } else {
-            log.debug("using cached Episode List");
+            log.debug("getDetailsInternal: cache boost for showId (all episodes)");
             // no need to parse, we have a cached result
             // get the showTags out of one random element, they all contain the same
             Iterator<EpisodeTags> iter = allEpisodes.values().iterator();
             if (iter.hasNext()) showTags = iter.next().getShowTags();
         }
         if (showTags == null) { // if there is no info about the show there is nothing we can do
-            log.debug("ScrapeDetailResult ScrapeStatus.ERROR_PARSER");
+            log.debug("getDetailsInternal: ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
         showTags.downloadPoster(mContext);
@@ -189,7 +199,7 @@ public class ShowScraper3 extends BaseScraper2 {
                 Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")),
                 showTags);
         Bundle extraOut = buildBundle(allEpisodes, options);
-        log.debug("ScrapeDetailResult ScrapeStatus.OKAY");
+        log.debug("getDetailsInternal ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 

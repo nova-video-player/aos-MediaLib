@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper.thetvdb;
 
+import android.util.LruCache;
+
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.xml.ShowScraper3;
@@ -30,6 +32,9 @@ import retrofit2.Response;
 public class SearchShow {
     private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
 
+    // Benchmarks tells that with tv shows sorted in folders, size of 200 or 20 or even 10 provides the same cacheHits on fake collection of 30k episodes, 250 shows
+    private final static LruCache<String, Response<SeriesResultsResponse>> showCache = new LruCache<>(20);
+
     public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper3 showScraper, MyTheTVdb theTvdb) {
         SearchShowResult myResult = new SearchShowResult();
         Response<SeriesResultsResponse> response = null;
@@ -43,19 +48,45 @@ public class SearchShow {
         boolean isGlobalResponseOk = false;
         boolean isGlobalResponseEmpty = false;
 
-        log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language);
+        String showKey = null;
+
+        log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
         try {
-            response = theTvdb.search().series(searchInfo.getShowName(), null, null, null, language).execute();
-            if (response.code() == 401) authIssue = true; // this is an OR
-            if (response.code() != 404) notFoundIssue = false; // this is an AND
-            if (response.isSuccessful()) isResponseOk = true;
-            if (response.body() == null) isResponseEmpty = true;
+
+            showKey = searchInfo.getShowName() + "|" + language;
+            response = showCache.get(showKey);
+            if (log.isTraceEnabled()) debugLruCache(showCache);
+            if (response == null) {
+                log.debug("SearchShowResult: no boost for " + searchInfo.getShowName());
+                response = theTvdb.search().series(searchInfo.getShowName(), null, null, null, language).execute();
+                if (response.code() == 401) authIssue = true; // this is an OR
+                if (response.code() != 404) notFoundIssue = false; // this is an AND
+                if (response.isSuccessful()) isResponseOk = true;
+                if (response.body() == null) isResponseEmpty = true;
+                if (isResponseOk || isResponseEmpty) showCache.put(showKey, response);
+            } else {
+                log.debug("search: boost using cached searched show for " + searchInfo.getShowName());
+                isResponseOk = true;
+                notFoundIssue = false;
+                if (response.body() == null) isResponseEmpty = true;
+            }
+
             if (!language.equals("en")) {
-                globalResponse = theTvdb.search().series(searchInfo.getShowName(), null, null, null, "en").execute();
-                if (globalResponse.code() == 401) authIssue = true; // this is an OR
-                if (globalResponse.code() != 404) notFoundIssue = false; // this is an AND
-                if (globalResponse.isSuccessful()) isGlobalResponseOk = true;
-                if (globalResponse.body() == null) isGlobalResponseEmpty = true;
+                showKey = searchInfo.getShowName() + "|" + "en";
+                globalResponse = showCache.get(showKey);
+                if (globalResponse == null) {
+                    globalResponse = theTvdb.search().series(searchInfo.getShowName(), null, null, null, "en").execute();
+                    if (globalResponse.code() == 401) authIssue = true; // this is an OR
+                    if (globalResponse.code() != 404) notFoundIssue = false; // this is an AND
+                    if (globalResponse.isSuccessful()) isGlobalResponseOk = true;
+                    if (globalResponse.body() == null) isGlobalResponseEmpty = true;
+                    if (isGlobalResponseOk || isGlobalResponseEmpty) showCache.put(showKey, globalResponse);
+                } else {
+                    log.debug("search: boost using cached searched show");
+                    isGlobalResponseOk = true;
+                    notFoundIssue = false;
+                    if (globalResponse.body() == null) isGlobalResponseEmpty = true;
+                }
             }
             if (authIssue) {
                 log.debug("search: auth error");
@@ -93,4 +124,13 @@ public class SearchShow {
         }
         return myResult;
     }
+
+    public static void debugLruCache(LruCache<String, Response<SeriesResultsResponse>> lruCache) {
+        log.debug("debugLruCache: size=" + lruCache.size());
+        log.debug("debugLruCache: putCount=" + lruCache.putCount());
+        log.debug("debugLruCache: hitCount=" + lruCache.hitCount());
+        log.debug("debugLruCache: missCount=" + lruCache.missCount());
+        log.debug("debugLruCache: evictionCount=" + lruCache.evictionCount());
+    }
+
 }

@@ -16,16 +16,20 @@ package com.archos.mediascraper.thetvdb;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.LruCache;
 
+import com.archos.mediascraper.EpisodeTags;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.xml.ShowScraper3;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
+import com.uwetrottmann.thetvdb.entities.SeriesResultsResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
 import retrofit2.Response;
 
@@ -33,12 +37,19 @@ import retrofit2.Response;
 public class ShowId {
     private static final Logger log = LoggerFactory.getLogger(ShowId.class);
 
+    // TODO MARC CHECK SIZE
+    private final static LruCache<String, Response<SeriesResultsResponse>> showCache = new LruCache<>(200);
+
     public static ShowIdResult getBaseInfo(int showId, String language, boolean basicShow, boolean basicEpisode, MyTheTVdb theTvdb, Context context) {
         ShowIdResult myResult = new ShowIdResult();
         ShowTags parserResult = null;
 
+        //showKey = searchInfo.getShowName() + "|" + language;
+        //response = showCache.get(showKey);
+
         log.debug("getBaseInfo: quering thetvdb for showId " + showId + " in " + language);
         try {
+            log.debug("getBaseInfo: no cache boost for " + showId);
             Response<SeriesResponse> seriesResponse = theTvdb.series().series(showId, language).execute();
             switch (seriesResponse.code()) {
                 case 401: // auth issue

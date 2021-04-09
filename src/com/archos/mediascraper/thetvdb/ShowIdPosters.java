@@ -50,6 +50,7 @@ public class ShowIdPosters {
 
         log.debug("getPosters: quering thetvdb for showId " + showId);
         try {
+            log.debug("getPosters: no boost for " + showId);
             Response<SeriesImageQueryResultResponse> postersResponse = null;
             Response<SeriesImageQueryResultResponse> seasonsResponse = null;
             if (!basicEpisode) {

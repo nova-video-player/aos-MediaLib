@@ -97,7 +97,7 @@
     <string name="tv_show_genre_travel">Kelionės</string>
     <string name="tv_show_genre_war">Kariniai</string>
     <string name="tv_show_genre_western">Vesternai</string>
-    <!-- There are official translations for the tmdb genres -->
+    <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">Veiksmo</string>
     <string name="movie_genre_adventure">Nuotykių</string>
     <string name="movie_genre_animation">Animaciniai</string>
@@ -117,6 +117,7 @@
     <string name="movie_genre_thriller">Trileriai</string>
     <string name="movie_genre_war">Kariniai</string>
     <string name="movie_genre_western">Vesternai</string>
+    <!-- There are official translations for the tmdb tv genres -->
     <string name="tvshow_genre_action_adventure">Veiksmo ir Nuotykių</string>
     <string name="tvshow_genre_animation">Animaciniai</string>
     <string name="tvshow_genre_comedy">Komedijos</string>

@@ -97,7 +97,7 @@
     <string name="tv_show_genre_travel">Путешествия</string>
     <string name="tv_show_genre_war">Военный</string>
     <string name="tv_show_genre_western">Западный</string>
-    <!-- There are official translations for the tmdb genres -->
+    <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">боевик</string>
     <string name="movie_genre_adventure">приключения</string>
     <string name="movie_genre_animation">мультфильм</string>
@@ -117,6 +117,7 @@
     <string name="movie_genre_thriller">триллер</string>
     <string name="movie_genre_war">военный</string>
     <string name="movie_genre_western">вестерн</string>
+    <!-- There are official translations for the tmdb tv genres -->
     <string name="tvshow_genre_action_adventure">Боевик и Приключения</string>
     <string name="tvshow_genre_animation">мультфильм</string>
     <string name="tvshow_genre_comedy">комедия</string>

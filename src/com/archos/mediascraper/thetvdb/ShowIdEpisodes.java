@@ -42,6 +42,7 @@ public class ShowIdEpisodes {
         myResult.episodes = new HashMap<>();
         log.debug("getEpisodes: quering thetvdb for showId " + showId);
         try {
+            log.debug("ShowIdEpisodesResult: no boost for " + showId);
             // fill in once for all episodes in "en" in case there is something missing in specific language
             SparseArray<Episode> globalEpisodes = null;
             Response<EpisodesResponse> globalEpisodesResponse = null;

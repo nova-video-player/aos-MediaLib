@@ -76,6 +76,7 @@ public class AutoScrapeService extends Service {
 
     static boolean sIsScraping = false;
     static int sNumberOfFilesRemainingToProcess = 0;
+    static int sTotalNumberOfFilesRemainingToProcess = 0;
     static int sNumberOfFilesScraped = 0;
     static int sNumberOfFilesNotScraped = 0;
     public static String KEY_ENABLE_AUTO_SCRAP ="enable_auto_scrap_key";
@@ -118,7 +119,7 @@ public class AutoScrapeService extends Service {
      * @return the number of files that are currently in the queue for scraping
      */
     public static int getNumberOfFilesRemainingToProcess() {
-        return sNumberOfFilesRemainingToProcess;
+        return sTotalNumberOfFilesRemainingToProcess;
     }
 
     public static void startService(Context context) {
@@ -181,7 +182,7 @@ public class AutoScrapeService extends Service {
                 startScraping(true, intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
             } else {
                 log.debug("onStartCommand: RESCAN_EVERYTHING");
-                startScraping(true, intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
+                startScraping(intent.getBooleanExtra(RESCAN_EVERYTHING, false), intent.getBooleanExtra(RESCAN_ONLY_DESC_NOT_FOUND, false));
             }
         } else {
             log.debug("onStartCommand: rescan incremental");
@@ -199,7 +200,7 @@ public class AutoScrapeService extends Service {
                 public void run() {
                     Cursor cursor = getFileListCursor(PARAM_SCRAPED, null);
                     final int numberOfRows = cursor.getCount();
-                    int sTotalNumberOfFilesRemainingToProcess = numberOfRows;
+                    sTotalNumberOfFilesRemainingToProcess = numberOfRows;
                     cursor.close();
                     log.debug("starting thread " + numberOfRows);
 
@@ -355,7 +356,7 @@ public class AutoScrapeService extends Service {
                         // and get the final count (it could change while scrape is in progress)
                         Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null);
                         int numberOfRows = cursor.getCount(); // total number of files to be processed
-                        int sTotalNumberOfFilesRemainingToProcess = numberOfRows;
+                        sTotalNumberOfFilesRemainingToProcess = numberOfRows;
                         cursor.close();
 
                         NfoWriter.ExportContext exportContext = null;

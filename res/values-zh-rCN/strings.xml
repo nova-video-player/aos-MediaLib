@@ -97,7 +97,7 @@
     <string name="tv_show_genre_travel">旅游</string>
     <string name="tv_show_genre_war">战争</string>
     <string name="tv_show_genre_western">西部片</string>
-    <!-- There are official translations for the tmdb genres -->
+    <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">动作</string>
     <string name="movie_genre_adventure">冒险</string>
     <string name="movie_genre_animation">动画</string>
@@ -117,6 +117,7 @@
     <string name="movie_genre_thriller">惊悚</string>
     <string name="movie_genre_war">战争</string>
     <string name="movie_genre_western">西部</string>
+    <!-- There are official translations for the tmdb tv genres -->
     <string name="tvshow_genre_action_adventure">动作冒险</string>
     <string name="tvshow_genre_animation">动画</string>
     <string name="tvshow_genre_comedy">喜剧</string>

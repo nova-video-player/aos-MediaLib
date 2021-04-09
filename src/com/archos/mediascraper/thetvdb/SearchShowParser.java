@@ -50,10 +50,17 @@ public class SearchShowParser {
             for (SearchResult result : searchShowParserResult.resultsNumericSlug)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(result);
-        // skip shows without a banner/poster
+        // skip shows without a poster
         /*
-        if (resultsNoBanner.size()>0)
-            for (SearchResult result : resultsNoBanner)
+        if (searchShowParserResult.resultsNoPoster.size()>0)
+            for (SearchResult result : searchShowParserResult.resultsNoPoster)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(result);
+         */
+        // skip shows without a banner
+        /*
+        if (searchShowParserResult.resultsNoBanner.size()>0)
+            for (SearchResult result : searchShowParserResult.resultsNoBanner)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(result);
          */
@@ -75,10 +82,17 @@ public class SearchShowParser {
             for (SearchResult result : searchShowParserResult.resultsNumericSlug)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(result);
-        // skip shows without a banner/poster
+        // skip shows without a poster
         /*
-        if (resultsNoBanner.size()>0)
-            for (SearchResult result : resultsNoBanner)
+        if (searchShowParserResult.resultsNoPoster.size()>0)
+            for (SearchResult result : searchShowParserResult.resultsNoPoster)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(result);
+         */
+        // skip shows without a banner
+        /*
+        if (searchShowParserResult.resultsNoBanner.size()>0)
+            for (SearchResult result : searchShowParserResult.resultsNoBanner)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(result);
          */
@@ -138,6 +152,7 @@ public class SearchShowParser {
                                                TvShowSearchInfo searchInfo, String language, ShowScraper3 showScraper) {
         SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
         Boolean isDecisionTaken = false;
+        log.debug("SearchShowParserResult: examining response of " + response.data.size() + " entries in " + language + ", for " + searchInfo.getShowName());
         for (Series series : response.data) {
             if (series.id != SERIES_NOT_PERMITTED_ID) {
                 Bundle extra = new Bundle();
@@ -147,44 +162,52 @@ public class SearchShowParser {
                 result.setId(series.id);
                 result.setLanguage(language);
                 result.setTitle(series.seriesName);
+                log.debug("SearchShowParserResult: examining " + series.seriesName + ", in " + language);
                 result.setScraper(showScraper);
                 result.setFile(searchInfo.getFile());
                 result.setExtra(extra);
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
                 if (series.banner != null) {
-                    if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg")) {
+                    if (series.banner.endsWith("missing/series.jpg") || series.banner.endsWith("missing/movie.jpg") || series.banner.length() == 0) {
                         log.debug("getMatches2: set aside " + series.seriesName + " because banner missing i.e. banner=" + series.banner);
                         searchShowParserResult.resultsNoBanner.add(result);
                         isDecisionTaken = true;
+                    } else {
+                        log.debug("getSearchShowParserResult: " + series.seriesName + " has banner " + series.banner);
+                        result.setBackdropPath(series.banner);
                     }
-                } else if (series.image != null) {
-                    if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg")) {
-                        log.debug("getResult: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
-                        searchShowParserResult.resultsNoBanner.add(result);
+                }
+                if (series.image != null) {
+                    if (series.image.endsWith("missing/series.jpg") || series.image.endsWith("missing/movie.jpg") || series.image.length() == 0) {
+                        log.debug("getSearchShowParserResult: set aside " + series.seriesName + " because image missing i.e. image=" + series.image);
+                        searchShowParserResult.resultsNoPoster.add(result);
                         isDecisionTaken = true;
+                    } else {
+                        log.debug("getSearchShowParserResult: " + series.seriesName + " has poster " + series.image);
+                        result.setBackdropPath(series.image);
                     }
                 }
                 if (! isDecisionTaken) {
-                    log.debug("getResult: taking into account " + series.seriesName + " because banner/image exists");
+                    log.debug("getSearchShowParserResult: taking into account " + series.seriesName + " because banner/image exists");
                     if (series.slug.matches("^[0-9]+$")) {
                         // Put in lower priority any entry that has numeric slug
-                        log.debug("getResult: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
+                        log.debug("getSearchShowParserResult: set aside " + series.seriesName + " because slug is only numeric slug=" + series.slug);
                         isDecisionTaken = true;
                         searchShowParserResult.resultsNumericSlug.add(result);
                     } else {
-                        log.debug("getResult: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
+                        log.debug("getSearchShowParserResult: take into account " + series.seriesName + " because slug is not only numeric slug=" + series.slug);
                         isDecisionTaken = true;
                         searchShowParserResult.resultsProbable.add(new Pair<>(result,
                                 levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
                                         result.getTitle().toLowerCase())));
                     }
                     if (! isDecisionTaken)
-                        log.warn("getResult: ignore serie since banner/image is null for " + series.seriesName);
+                        log.warn("getSearchShowParserResult: ignore serie since banner/image is null for " + series.seriesName);
                 }
             }
         }
-        log.debug("getResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
+        log.debug("getSearchShowParserResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
         Collections.sort(searchShowParserResult.resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
             @Override
             public int compare(final Pair<SearchResult, Integer> sr1, final Pair<SearchResult, Integer> sr2) {
