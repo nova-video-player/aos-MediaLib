@@ -58,6 +58,22 @@
     <string name="movie_genre_thriller">إثارة</string>
     <string name="movie_genre_war">حرب</string>
     <string name="movie_genre_western">غربي</string>
+    <string name="tvshow_genre_action_adventure">حركة ومغامرة</string>
+    <string name="tvshow_genre_animation">رسوم متحركة</string>
+    <string name="tvshow_genre_comedy">كوميديا</string>
+    <string name="tvshow_genre_crime">جريمة</string>
+    <string name="tvshow_genre_documentary">وثائقي</string>
+    <string name="tvshow_genre_drama">دراما</string>
+    <string name="tvshow_genre_family">عائلي</string>
+    <string name="tvshow_genre_kids">أطفال</string>
+    <string name="tvshow_genre_mystery">غموض</string>
+    <string name="tvshow_genre_news">أخبار</string>
+    <string name="tvshow_genre_reality">واقع</string>
+    <string name="tvshow_genre_scifi_fantasy">خيال علمي وفانتازيا</string>
+    <string name="tvshow_genre_soap">أوبرا صابونية</string>
+    <string name="tvshow_genre_talk">حوار</string>
+    <string name="tvshow_genre_war_politics">حرب وسياسة</string>
+    <string name="tvshow_genre_western">غربي</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

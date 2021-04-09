@@ -117,6 +117,22 @@
     <string name="movie_genre_thriller">Trileriai</string>
     <string name="movie_genre_war">Kariniai</string>
     <string name="movie_genre_western">Vesternai</string>
+    <string name="tvshow_genre_action_adventure">Veiksmo ir Nuotykių</string>
+    <string name="tvshow_genre_animation">Animaciniai</string>
+    <string name="tvshow_genre_comedy">Komedijos</string>
+    <string name="tvshow_genre_crime">Kriminaliniai</string>
+    <string name="tvshow_genre_documentary">Dokumentiniai</string>
+    <string name="tvshow_genre_drama">Dramos</string>
+    <string name="tvshow_genre_family">Visai šeimai</string>
+    <string name="tvshow_genre_kids">Filmai vaikams</string>
+    <string name="tvshow_genre_mystery">Mistiniai</string>
+    <string name="tvshow_genre_news">Žinios</string>
+    <string name="tvshow_genre_reality">Realybės šou</string>
+    <string name="tvshow_genre_scifi_fantasy">Mokslinė ir maginė fantastika</string>
+    <string name="tvshow_genre_soap">Melodramos</string>
+    <string name="tvshow_genre_talk">Pokalbių šou</string>
+    <string name="tvshow_genre_war_politics">Kariniai ir politiniai</string>
+    <string name="tvshow_genre_western">Vesternai</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

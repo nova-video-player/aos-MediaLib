@@ -58,6 +58,22 @@
     <string name="movie_genre_thriller">스릴러</string>
     <string name="movie_genre_war">전쟁</string>
     <string name="movie_genre_western">서부</string>
+    <string name="tvshow_genre_action_adventure">Action &amp; Adventure</string>
+    <string name="tvshow_genre_animation">애니메이션</string>
+    <string name="tvshow_genre_comedy">코미디</string>
+    <string name="tvshow_genre_crime">범죄</string>
+    <string name="tvshow_genre_documentary">다큐멘터리</string>
+    <string name="tvshow_genre_drama">드라마</string>
+    <string name="tvshow_genre_family">가족</string>
+    <string name="tvshow_genre_kids">Kids</string>
+    <string name="tvshow_genre_mystery">미스터리</string>
+    <string name="tvshow_genre_news">News</string>
+    <string name="tvshow_genre_reality">Reality</string>
+    <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
+    <string name="tvshow_genre_soap">Soap</string>
+    <string name="tvshow_genre_talk">Talk</string>
+    <string name="tvshow_genre_war_politics">War &amp; Politics</string>
+    <string name="tvshow_genre_western">서부</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

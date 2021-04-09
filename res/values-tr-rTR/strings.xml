@@ -105,6 +105,22 @@
     <string name="movie_genre_thriller">Gerilim</string>
     <string name="movie_genre_war">Savaş</string>
     <string name="movie_genre_western">Vahşi Batı</string>
+    <string name="tvshow_genre_action_adventure">Aksiyon &amp; Macera</string>
+    <string name="tvshow_genre_animation">Animasyon</string>
+    <string name="tvshow_genre_comedy">Komedi</string>
+    <string name="tvshow_genre_crime">Suç</string>
+    <string name="tvshow_genre_documentary">Belgesel</string>
+    <string name="tvshow_genre_drama">Dram</string>
+    <string name="tvshow_genre_family">Aile</string>
+    <string name="tvshow_genre_kids">Çocuklar</string>
+    <string name="tvshow_genre_mystery">Gizem</string>
+    <string name="tvshow_genre_news">Haber</string>
+    <string name="tvshow_genre_reality">Gerçeklik</string>
+    <string name="tvshow_genre_scifi_fantasy">Bilim Kurgu &amp; Fantazi</string>
+    <string name="tvshow_genre_soap">Pembe Dizi</string>
+    <string name="tvshow_genre_talk">Talk</string>
+    <string name="tvshow_genre_war_politics">Savaş &amp; Politik</string>
+    <string name="tvshow_genre_western">Vahşi Batı</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

@@ -103,6 +103,22 @@
     <string name="movie_genre_thriller">Thriller</string>
     <string name="movie_genre_war">Wojenny</string>
     <string name="movie_genre_western">Western</string>
+    <string name="tvshow_genre_action_adventure">Akcja i Przygoda</string>
+    <string name="tvshow_genre_animation">Animacja</string>
+    <string name="tvshow_genre_comedy">Komedia</string>
+    <string name="tvshow_genre_crime">Kryminał</string>
+    <string name="tvshow_genre_documentary">Dokumentalny</string>
+    <string name="tvshow_genre_drama">Dramat</string>
+    <string name="tvshow_genre_family">Familijny</string>
+    <string name="tvshow_genre_kids">Kids</string>
+    <string name="tvshow_genre_mystery">Tajemnica</string>
+    <string name="tvshow_genre_news">News</string>
+    <string name="tvshow_genre_reality">Reality</string>
+    <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
+    <string name="tvshow_genre_soap">Soap</string>
+    <string name="tvshow_genre_talk">Talk</string>
+    <string name="tvshow_genre_war_politics">War &amp; Politics</string>
+    <string name="tvshow_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

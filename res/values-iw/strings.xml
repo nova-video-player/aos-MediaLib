@@ -41,6 +41,41 @@
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">אירעה שגיאה באחסון הפנימי שלך.</string>
     <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">אקשן</string>
+    <string name="movie_genre_adventure">הרפתקאות</string>
+    <string name="movie_genre_animation">אנימציה</string>
+    <string name="movie_genre_comedy">קומדיה</string>
+    <string name="movie_genre_crime">פשע</string>
+    <string name="movie_genre_documentary">דוקומנטרי</string>
+    <string name="movie_genre_drama">דרמה</string>
+    <string name="movie_family">משפחה</string>
+    <string name="movie_genre_fantasy">פנטזיה</string>
+    <string name="movie_genre_history">הסטוריה</string>
+    <string name="movie_genre_horror">אימה</string>
+    <string name="movie_genre_music">מוסיקה</string>
+    <string name="movie_genre_mystery">מסתורין</string>
+    <string name="movie_genre_romance">רומנטי</string>
+    <string name="movie_genre_science_fiction">מדע בדיוני</string>
+    <string name="movie_genre_tv_movie">סרט טלויזיה</string>
+    <string name="movie_genre_thriller">מותחן</string>
+    <string name="movie_genre_war">מלחמה</string>
+    <string name="movie_genre_western">מערבון</string>
+    <string name="tvshow_genre_action_adventure">אקשן והרפתקאות</string>
+    <string name="tvshow_genre_animation">אנימציה</string>
+    <string name="tvshow_genre_comedy">קומדיה</string>
+    <string name="tvshow_genre_crime">פשע</string>
+    <string name="tvshow_genre_documentary">דוקומנטרי</string>
+    <string name="tvshow_genre_drama">דרמה</string>
+    <string name="tvshow_genre_family">משפחה</string>
+    <string name="tvshow_genre_kids">ילדים</string>
+    <string name="tvshow_genre_mystery">מסתורין</string>
+    <string name="tvshow_genre_news">חדשות</string>
+    <string name="tvshow_genre_reality">ריאליטי</string>
+    <string name="tvshow_genre_scifi_fantasy">מדע בדיוני ופנטזיה</string>
+    <string name="tvshow_genre_soap">סבון</string>
+    <string name="tvshow_genre_talk">דיבורים</string>
+    <string name="tvshow_genre_war_politics">מלחמה ופוליטיקה</string>
+    <string name="tvshow_genre_western">מערבון</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

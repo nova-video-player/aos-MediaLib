@@ -117,6 +117,22 @@
     <string name="movie_genre_thriller">триллер</string>
     <string name="movie_genre_war">военный</string>
     <string name="movie_genre_western">вестерн</string>
+    <string name="tvshow_genre_action_adventure">Боевик и Приключения</string>
+    <string name="tvshow_genre_animation">мультфильм</string>
+    <string name="tvshow_genre_comedy">комедия</string>
+    <string name="tvshow_genre_crime">криминал</string>
+    <string name="tvshow_genre_documentary">документальный</string>
+    <string name="tvshow_genre_drama">драма</string>
+    <string name="tvshow_genre_family">семейный</string>
+    <string name="tvshow_genre_kids">Детский</string>
+    <string name="tvshow_genre_mystery">детектив</string>
+    <string name="tvshow_genre_news">Новости</string>
+    <string name="tvshow_genre_reality">Реалити-шоу</string>
+    <string name="tvshow_genre_scifi_fantasy">НФ и Фэнтези</string>
+    <string name="tvshow_genre_soap">Мыльная опера</string>
+    <string name="tvshow_genre_talk">Ток-шоу</string>
+    <string name="tvshow_genre_war_politics">Война и Политика</string>
+    <string name="tvshow_genre_western">вестерн</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW

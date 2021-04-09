@@ -27,6 +27,41 @@
     <!-- Title of screen when there was an error accessing the internal storage -->
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <!-- There are official translations for the tmdb genres -->
+    <string name="movie_genre_action">Akčný</string>
+    <string name="movie_genre_adventure">Dobrodružný</string>
+    <string name="movie_genre_animation">Animovaný</string>
+    <string name="movie_genre_comedy">Komédia</string>
+    <string name="movie_genre_crime">Kriminálny</string>
+    <string name="movie_genre_documentary">Dokumentárny</string>
+    <string name="movie_genre_drama">Dráma</string>
+    <string name="movie_family">Rodinný</string>
+    <string name="movie_genre_fantasy">Fantasy</string>
+    <string name="movie_genre_history">Historický</string>
+    <string name="movie_genre_horror">Horror</string>
+    <string name="movie_genre_music">Hudobný</string>
+    <string name="movie_genre_mystery">Mysteriózny</string>
+    <string name="movie_genre_romance">Romantický</string>
+    <string name="movie_genre_science_fiction">Science Fiction</string>
+    <string name="movie_genre_tv_movie">TV Film</string>
+    <string name="movie_genre_thriller">Thriller</string>
+    <string name="movie_genre_war">Vojnový</string>
+    <string name="movie_genre_western">Western</string>
+    <string name="tvshow_genre_action_adventure">Akčný a Dobrodružný</string>
+    <string name="tvshow_genre_animation">Animovaný</string>
+    <string name="tvshow_genre_comedy">Komédia</string>
+    <string name="tvshow_genre_crime">Kriminálny</string>
+    <string name="tvshow_genre_documentary">Dokumentárny</string>
+    <string name="tvshow_genre_drama">Dráma</string>
+    <string name="tvshow_genre_family">Rodinný</string>
+    <string name="tvshow_genre_kids">Detský</string>
+    <string name="tvshow_genre_mystery">Mysteriózny</string>
+    <string name="tvshow_genre_news">Noviny</string>
+    <string name="tvshow_genre_reality">Reality Show</string>
+    <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
+    <string name="tvshow_genre_soap">Telenovela</string>
+    <string name="tvshow_genre_talk">Rozhovor</string>
+    <string name="tvshow_genre_war_politics">Vojnový a Politický</string>
+    <string name="tvshow_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
