@@ -21,6 +21,8 @@ import com.archos.medialib.R;
 import com.archos.mediascraper.ShowTags;
 import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
+import com.uwetrottmann.tmdb2.entities.CastMember;
+import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.Network;
 import com.uwetrottmann.tmdb2.entities.TvShow;
@@ -34,6 +36,8 @@ import java.util.List;
 public class ShowIdParser {
     private static final Logger log = LoggerFactory.getLogger(ShowIdParser.class);
 
+    private static final String DIRECTOR = "Director";
+
     private static Context mContext;
 
     public static ShowTags getResult(TvShow serie, Context context) {
@@ -43,6 +47,9 @@ public class ShowIdParser {
         result.setPlot(serie.overview);
         result.setRating(serie.vote_average.floatValue());
         result.setTitle(serie.name);
+
+        log.debug("getResult: found title=" + serie.name + ", genre " + serie.genres);
+
         result.setContentRating(serie.rating.toString());
         result.setImdbId(serie.external_ids.imdb_id);
         result.setOnlineId(serie.id);
@@ -53,7 +60,18 @@ public class ShowIdParser {
 
         result.setPremiered(serie.first_air_date);
 
-        log.debug("getResult: found title=" + serie.name + ", genre " + serie.genres);
+        if (serie.credits != null) {
+            if (serie.credits.guest_stars != null)
+                for (CastMember guestStar : serie.credits.guest_stars)
+                    result.addActorIfAbsent(guestStar.name, guestStar.character);
+            if (serie.credits.cast != null)
+                for (CastMember actor : serie.credits.cast)
+                    result.addActorIfAbsent(actor.name, actor.character);
+            if (serie.credits.crew != null)
+                for (CrewMember crew : serie.credits.crew)
+                    if (crew.job == DIRECTOR)
+                        result.addDirectorIfAbsent(crew.name);
+        }
 
         return result;
     }

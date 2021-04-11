@@ -36,7 +36,7 @@ public class SearchShow {
     // Benchmarks tells that with tv shows sorted in folders, size of 200 or 20 or even 10 provides the same cacheHits on fake collection of 30k episodes, 250 shows
     private final static LruCache<String, Response<TvShowResultsPage>> showCache = new LruCache<>(20);
 
-    public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper4 showScraper, MyTmdb tmdb, SearchService searchService) {
+    public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper4 showScraper, MyTmdb tmdb) {
         SearchShowResult myResult = new SearchShowResult();
         Response<TvShowResultsPage> response = null;
         Response<TvShowResultsPage> globalResponse = null;
@@ -59,7 +59,7 @@ public class SearchShow {
             if (log.isTraceEnabled()) debugLruCache(showCache);
             if (response == null) {
                 log.debug("SearchShowResult: no boost for " + searchInfo.getShowName());
-                response = searchService.tv(searchInfo.getShowName(), null, language,null).execute();
+                response = tmdb.searchService().tv(searchInfo.getShowName(), null, language,null).execute();
                 if (response.code() == 401) authIssue = true; // this is an OR
                 if (response.code() != 404) notFoundIssue = false; // this is an AND
                 if (response.isSuccessful()) isResponseOk = true;
@@ -76,7 +76,7 @@ public class SearchShow {
                 showKey = searchInfo.getShowName() + "|" + "en";
                 globalResponse = showCache.get(showKey);
                 if (globalResponse == null) {
-                    globalResponse = searchService.tv(searchInfo.getShowName(), null, "en",null).execute();
+                    globalResponse = tmdb.searchService().tv(searchInfo.getShowName(), null, "en",null).execute();
                     if (globalResponse.code() == 401) authIssue = true; // this is an OR
                     if (globalResponse.code() != 404) notFoundIssue = false; // this is an AND
                     if (globalResponse.isSuccessful()) isGlobalResponseOk = true;

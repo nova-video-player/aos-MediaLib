@@ -17,6 +17,8 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 import android.util.Pair;
 import com.archos.mediascraper.ScraperImage;
+import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
+import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
 import com.uwetrottmann.tmdb2.entities.Image;
 import com.uwetrottmann.tmdb2.entities.Images;
 
@@ -26,55 +28,41 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 
 public class ShowIdImagesParser {
 
-    private static final Logger log = LoggerFactory.getLogger(ShowIdBackdropsParser.class);
+    private static final Logger log = LoggerFactory.getLogger(ShowIdImagesParser.class);
+
+    // TODO MARC wrong url
     final static String BANNERS_URL = "https://artworks.thetvdb.com/banners/";
 
-    public static ShowIdImagesResult getResult(String showTitle,
-                                                  Images fanartsResponse,
-                                                  Images globalFanartsResponse,
-                                                  String language, Context context) {
+    public static ShowIdImagesResult getResult(String showTitle, Images images, Context context) {
 
         ShowIdImagesResult result = new ShowIdImagesResult();
-        // banners
-        List<ScraperImage> backdrops = new LinkedList<>();
-        List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
+
         // posters
-        List<ScraperImage> posters = new LinkedList<>();
+        List<ScraperImage> posters = new ArrayList<>();
         List<Pair<Image, String>> tempPosters = new ArrayList<>();
 
-        if (fanartsResponse != null) {
-            if (!fanartsResponse.backdrops.isEmpty())
-                for (Image fanart : fanartsResponse.backdrops)
-                    tempBackdrops.add(Pair.create(fanart, language));
+        // backdrops
+        List<ScraperImage> backdrops = new ArrayList<>();
+        List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
 
-            if (!fanartsResponse.posters.isEmpty())
-                for (Image fanart : fanartsResponse.posters)
-                    tempPosters.add(Pair.create(fanart, language));
-        }
+        if (images.posters != null)
+            for (Image poster : images.posters)
+                tempPosters.add(Pair.create(poster, poster.iso_639_1));
 
-        // TODO MARC remove half of images only en? or only en? --> divide by 2 storage need and dupplicates...
-        // TODO MARC check if the en and fr images are the same and eliminate --> do it in movies too!
-        //Image test;
-        //if test.iso_639_1 == "en"
+        if (images.backdrops != null)
+            for (Image backdrop : images.backdrops)
+                tempBackdrops.add(Pair.create(backdrop, backdrop.iso_639_1));
 
-        // TODO MARC MovieIdImagesParser2 far better!!!
-
-        if (!language.equals("en")) {
-            if (globalFanartsResponse != null)
-                if (!globalFanartsResponse.backdrops.isEmpty())
-                    for (Image fanart : globalFanartsResponse.backdrops)
-                        tempBackdrops.add(Pair.create(fanart, "en"));
-
-            if (globalFanartsResponse != null)
-                if (!globalFanartsResponse.posters.isEmpty())
-                    for (Image fanart : globalFanartsResponse.posters)
-                        tempBackdrops.add(Pair.create(fanart, "en"));
-        }
+        Collections.sort(tempPosters, new Comparator<Pair<Image, String>>() {
+            @Override
+            public int compare(Pair<Image, String> b1, Pair<Image, String> b2) {
+                return - Double.compare(b1.first.vote_average, b2.first.vote_average);
+            }
+        });
 
         Collections.sort(tempBackdrops, new Comparator<Pair<Image, String>>() {
             @Override
@@ -83,21 +71,27 @@ public class ShowIdImagesParser {
             }
         });
 
-        for(Pair<Image, String> backdrop : tempBackdrops) {
-            log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + BANNERS_URL + backdrop.first.fileName + ", thumb=" + BANNERS_URL + backdrop.first.fileName);
+        for(Pair<Image, String> poster : tempPosters) {
+            log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + poster.first.file_path);
             ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
-            image.setLanguage(backdrop.second);
-            image.setThumbUrl(BANNERS_URL + backdrop.first.thumbnail);
-            image.setLargeUrl(BANNERS_URL + backdrop.first.fileName);
+            image.setLanguage(poster.second);
+            // TODO MARC no thumbnail in tmdb, should it be generated? --> skipping for now TOCHECK
+            image.setLargeUrl(poster.first.file_path);
             image.generateFileNames(context);
             backdrops.add(image);
         }
 
-        /*
-        ScraperImage genericImage = null;
-        if(!posters.isEmpty())
-            genericImage = posters.get(0);
-         */
+        for(Pair<Image, String> backdrop : tempBackdrops) {
+            log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + backdrop.first.file_path);
+            ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
+            image.setLanguage(backdrop.second);
+            // TODO MARC no thumbnail in tmdb, should it be generated? --> skipping for now TOCHECK
+            image.setLargeUrl(BANNERS_URL + backdrop.first.file_path);
+            image.generateFileNames(context);
+            backdrops.add(image);
+        }
+
+        result.posters = posters;
         result.backdrops = backdrops;
         return result;
     }

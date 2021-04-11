@@ -20,136 +20,102 @@ import android.util.SparseArray;
 import com.archos.mediascraper.EpisodeTags;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ShowTags;
-import com.archos.mediascraper.xml.ShowScraper3;
-import com.uwetrottmann.thetvdb.entities.Episode;
-import com.uwetrottmann.thetvdb.entities.EpisodesResponse;
+import com.uwetrottmann.tmdb2.entities.CastMember;
+import com.uwetrottmann.tmdb2.entities.CrewMember;
+import com.uwetrottmann.tmdb2.entities.TvEpisode;
+import com.uwetrottmann.tmdb2.entities.TvSeason;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
-
-import retrofit2.Response;
 
 // Get the episodes for specific show id
 public class ShowIdEpisodes {
     private static final Logger log = LoggerFactory.getLogger(ShowIdEpisodes.class);
 
+    private static final String DIRECTOR = "Director";
+
     public static ShowIdEpisodesResult getEpisodes(int showId, ShowTags showTags, String language,
                                                      MyTmdb tmdb, Context context) {
         ShowIdEpisodesResult myResult = new ShowIdEpisodesResult();
         myResult.episodes = new HashMap<>();
+        // TODO MARC Map<String, EpisodeTags> episodes = Collections.<String, EpisodeTags>emptyMap();
         log.debug("getEpisodes: quering thetvdb for showId " + showId);
-        try {
-            // fill in once for all episodes in "en" in case there is something missing in specific language
-            SparseArray<Episode> globalEpisodes = null;
-            Response<EpisodesResponse> globalEpisodesResponse = null;
-            Integer page = 1;
-            Response<EpisodesResponse> episodesResponse = null;
-            while (page != null) {
-                episodesResponse = tmdb.series()
-                        .episodes(showId, page, language)
-                        .execute();
-                switch (episodesResponse.code()) {
-                    case 401: // auth issue
-                        log.debug("getEpisodes: auth error");
-                        myResult.status = ScrapeStatus.AUTH_ERROR;
-                        myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
-                        ShowScraper3.reauth();
-                        return myResult;
-                    case 404: // not found
-                        myResult.status = ScrapeStatus.NOT_FOUND;
-                        myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
-                        page = null;
-                        break;
-                    default:
-                        if (episodesResponse.isSuccessful()) {
-                            if (episodesResponse.body() != null) {
-                                //parserResult = ShowIdEpisodesParser.getResult(episodesResponse.body(), showTags);
-                                //myResult.actors = parserResult;
-                                for(Episode episode : episodesResponse.body().data) {
-                                    EpisodeTags episodeTags = new EpisodeTags();
-                                    episodeTags.setActors(episode.guestStars);
-                                    episodeTags.setDirectors(episode.directors);
-                                    episodeTags.setPlot(episode.overview);
-                                    episodeTags.setRating(episode.siteRating.floatValue());
-                                    episodeTags.setTitle(episode.episodeName);
-                                    episodeTags.setImdbId(episode.imdbId);
-                                    episodeTags.setOnlineId(episode.id);
-                                    episodeTags.setAired(episode.firstAired);
-                                    episodeTags.setEpisode(episode.airedEpisodeNumber);
-                                    episodeTags.setSeason(episode.airedSeason);
-                                    episodeTags.setShowTags(showTags);
-                                    episodeTags.setEpisodePicture(episode.filename, context);
-                                    /*
-                                    if (genericImage != null)
-                                        episodeTags.setPosters(genericImage.asList());
-                                     */
-                                    if ((episode.overview == null || episode.episodeName == null)
-                                            && !language.equals("en")) { // missing overview in native language
-                                        if (globalEpisodes == null) { // do it only once
-                                            globalEpisodes = new SparseArray<>();
-                                            Integer globalPage = 1;
-                                            while (globalPage != null) {
-                                                globalEpisodesResponse = tmdb.series()
-                                                        .episodes(showId, globalPage, "en")
-                                                        .execute();
-                                                switch (globalEpisodesResponse.code()) {
-                                                    case 401: // auth issue
-                                                        log.debug("getEpisodes: auth error");
-                                                        myResult.status = ScrapeStatus.AUTH_ERROR;
-                                                        myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
-                                                        ShowScraper3.reauth();
-                                                        return myResult;
-                                                    case 404: // not found
-                                                        globalPage = null;
-                                                        break;
-                                                    default:
-                                                        if (globalEpisodesResponse.isSuccessful() && globalEpisodesResponse.body() != null) {
-                                                            for (Episode globalEpisode : globalEpisodesResponse.body().data)
-                                                                globalEpisodes.put(globalEpisode.id, globalEpisode);
-                                                            globalPage = globalEpisodesResponse.body().links.next;
+        // fill in once for all episodes in "en" in case there is something missing in specific language
+        SparseArray<TvEpisode> globalEpisodes = null;
 
-                                                        } else { // an error at this point is PARSER related
-                                                            log.debug("getEpisodes: error " + globalEpisodesResponse.code());
-                                                            globalPage = null;
-                                                        }
-                                                        break;
-                                                }
-                                            }
-                                        }
-                                        Episode globalEpisode = globalEpisodes.get(episode.id);
-                                        if (globalEpisode != null) {
-                                            if (episode.overview == null)
-                                                episodeTags.setPlot(globalEpisode.overview);
-                                            if (episode.episodeName == null)
-                                                episodeTags.setTitle(globalEpisode.episodeName);
+        ShowIdSearchResult showIdSearchResult = ShowIdSearch.getTvShowResponse(showId, language, tmdb);
+        ShowIdSearchResult globalShowIdSearchResult = new ShowIdSearchResult();
+
+        if (showIdSearchResult.status == ScrapeStatus.OKAY) {
+            if (showIdSearchResult.tvShow != null) {
+                for(TvSeason tvSeason : showIdSearchResult.tvShow.seasons) {
+                    for (TvEpisode tvEpisode : tvSeason.episodes) {
+                        EpisodeTags episodeTags = new EpisodeTags();
+                        // TODO MARC check if not tvEpisode.guest_stars and tvEpisode.crew instead
+                        if (tvEpisode.credits != null) {
+                            if (tvEpisode.credits.guest_stars != null)
+                                for (CastMember guestStar : tvEpisode.credits.guest_stars)
+                                    episodeTags.addActorIfAbsent(guestStar.name, guestStar.character);
+                            if (tvEpisode.credits.cast != null)
+                                for (CastMember actor : tvEpisode.credits.cast)
+                                    episodeTags.addActorIfAbsent(actor.name, actor.character);
+                            if (tvEpisode.credits.crew != null)
+                                for (CrewMember crew : tvEpisode.credits.crew)
+                                    if (crew.job == DIRECTOR)
+                                        episodeTags.addDirectorIfAbsent(crew.name);
+                        }
+                        episodeTags.setPlot(tvEpisode.overview);
+                        episodeTags.setRating(tvEpisode.vote_average.floatValue());
+                        episodeTags.setTitle(tvEpisode.name);
+                        episodeTags.setImdbId(tvEpisode.external_ids.imdb_id);
+                        episodeTags.setOnlineId(tvEpisode.id);
+                        episodeTags.setAired(tvEpisode.air_date);
+                        episodeTags.setEpisode(tvEpisode.episode_number);
+                        episodeTags.setSeason(tvEpisode.season_number);
+                        episodeTags.setShowTags(showTags);
+                        // TODO MARC check it is the still here
+                        episodeTags.setEpisodePicture(tvEpisode.still_path, context);
+                        if ((tvEpisode.overview == null || tvEpisode.name == null)
+                                && !language.equals("en")) { // missing overview in native language
+                            if (globalEpisodes == null) { // do it only once
+                                globalEpisodes = new SparseArray<>();
+                                if (globalShowIdSearchResult.tvShow == null) {
+                                    globalShowIdSearchResult = ShowIdSearch.getTvShowResponse(showId, "en", tmdb);
+                                    // stack all episodes in en to find later the overview and name
+                                    if (globalShowIdSearchResult.status == ScrapeStatus.OKAY) {
+                                        if (globalShowIdSearchResult.tvShow != null) {
+                                            for (TvSeason globalTvSeason : globalShowIdSearchResult.tvShow.seasons)
+                                                for (TvEpisode globalTvEpisode : globalTvSeason.episodes)
+                                                    globalEpisodes.put(globalTvEpisode.id, globalTvEpisode);
+                                        } else { // an error at this point is PARSER related
+                                            log.debug("getEpisodes: error " + globalShowIdSearchResult.status);
                                         }
                                     }
-                                    myResult.episodes.put(episode.airedSeason + "|" + episode.airedEpisodeNumber, episodeTags);
                                 }
-                                page = episodesResponse.body().links.next;
-                                myResult.status = ScrapeStatus.OKAY;
-                            } else {
-                                myResult.status = ScrapeStatus.NOT_FOUND;
-                                myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
-                                page = null;
                             }
-                        } else { // an error at this point is PARSER related
-                            log.debug("getEpisodes: error " + episodesResponse.code());
-                            myResult.status = ScrapeStatus.ERROR_PARSER;
-                            myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
-                            page = null;
+                            // only use globalEpisode if an overview if not found
+                            TvEpisode globalEpisode = globalEpisodes.get(tvEpisode.id);
+                            if (globalEpisode != null) {
+                                if (tvEpisode.overview == null)
+                                    episodeTags.setPlot(globalEpisode.overview);
+                                if (tvEpisode.name == null)
+                                    episodeTags.setTitle(globalEpisode.name);
+                            }
                         }
-                        break;
+                        myResult.episodes.put(tvEpisode.season_number + "|" + tvEpisode.episode_number, episodeTags);
+                    }
                 }
+                myResult.status = ScrapeStatus.OKAY;
+            } else {
+                myResult.status = ScrapeStatus.NOT_FOUND;
+                myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
             }
-        } catch (IOException e) {
-            log.error("getEpisodes: caught IOException getting episodes for showId=" + showId);
+        } else { // an error at this point is PARSER related
+            log.debug("getEpisodes: error " + showIdSearchResult.status);
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
-            myResult.reason = e;
         }
         return myResult;
     }

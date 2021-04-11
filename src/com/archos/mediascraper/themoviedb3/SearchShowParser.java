@@ -199,10 +199,11 @@ public class SearchShowParser {
                             levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
                                     result.getTitle().toLowerCase())));
                 }
-                    if (! isDecisionTaken)
-                        log.warn("getSearchShowParserResult: ignore serie since banner/image is null for " + series.name);
+                if (! isDecisionTaken)
+                    log.warn("getSearchShowParserResult: ignore serie since banner/image is null for " + series.name);
             }
         }
+        // TODO MARC levenstein metric on original title, no need to search in two languages... with tmdb perhaps
         log.debug("getResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
         Collections.sort(searchShowParserResult.resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
             @Override

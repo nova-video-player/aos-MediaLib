@@ -74,17 +74,18 @@ public class MovieIdParser2 {
         if (movie.title != null) result.setTitle(movie.title);
         if (movie.vote_average != null)
             result.setRating(movie.vote_average.floatValue());
-        if (credits != null)
+        if (credits != null) {
             if (credits.guest_stars != null)
-                for (CastMember guestStar: credits.guest_stars)
+                for (CastMember guestStar : credits.guest_stars)
                     result.addActorIfAbsent(guestStar.name, guestStar.character);
             if (credits.cast != null)
-                for (CastMember actor: credits.cast)
+                for (CastMember actor : credits.cast)
                     result.addActorIfAbsent(actor.name, actor.character);
             if (credits.crew != null)
-                for (CrewMember crew: credits.crew)
+                for (CrewMember crew : credits.crew)
                     if (crew.job == DIRECTOR)
                         result.addDirectorIfAbsent(crew.name);
+        }
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         result.setContentRating(movie.rating.toString());
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);

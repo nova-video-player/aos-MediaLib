@@ -34,7 +34,7 @@ import retrofit2.Response;
 public class ShowId {
     private static final Logger log = LoggerFactory.getLogger(ShowId.class);
 
-    public static ShowIdResult getBaseInfo(int showId, String language, boolean basicShow, boolean basicEpisode, MyTmdb tmdb, Context context) {
+    public static ShowIdResult getBaseInfo(int showId, String language, MyTmdb tmdb, Context context) {
         ShowIdResult myResult = new ShowIdResult();
         ShowTags parserResult = null;
 
@@ -53,7 +53,7 @@ public class ShowId {
                     // fallback to english if no result
                     if (!language.equals("en")) {
                         log.debug("getBaseInfo: retrying search for showId " + showId + " in en");
-                        return getBaseInfo(showId, "en", basicShow, basicEpisode, tmdb, context);
+                        return getBaseInfo(showId, "en", tmdb, context);
                     }
                     log.debug("getBaseInfo: movieId " + showId + " not found");
                     break;

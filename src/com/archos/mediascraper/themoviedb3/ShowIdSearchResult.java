@@ -1,4 +1,4 @@
-// Copyright 2020 Courville Software
+// Copyright 2021 Courville Software
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,10 @@
 package com.archos.mediascraper.themoviedb3;
 
 import com.archos.mediascraper.ScrapeStatus;
+import com.uwetrottmann.tmdb2.entities.TvShow;
 
-import java.util.Collections;
-import java.util.Map;
-
-public class ShowIdActorsResult {
-    public static final Map<String, String> EMPTY_MAP = Collections.<String, String>emptyMap();
-    public Map<String, String> actors;
+public class ShowIdSearchResult {
+    public TvShow tvShow;
     public ScrapeStatus status;
     public Throwable reason;
-    public ShowIdActorsResult() {
-        this.actors = EMPTY_MAP;
-    }
 }
