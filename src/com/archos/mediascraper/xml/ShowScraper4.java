@@ -47,8 +47,8 @@ import com.archos.mediascraper.themoviedb3.ShowIdEpisodesResult;
 import com.archos.mediascraper.themoviedb3.ShowIdImagesParser;
 import com.archos.mediascraper.themoviedb3.ShowIdImagesResult;
 import com.archos.mediascraper.themoviedb3.ShowIdParser;
-import com.archos.mediascraper.themoviedb3.ShowIdSearch;
-import com.archos.mediascraper.themoviedb3.ShowIdSearchResult;
+import com.archos.mediascraper.themoviedb3.ShowIdTvSearch;
+import com.archos.mediascraper.themoviedb3.ShowIdTvSearchResult;
 import com.uwetrottmann.tmdb2.services.TvEpisodesService;
 import com.uwetrottmann.tmdb2.services.TvSeasonsService;
 import com.uwetrottmann.tmdb2.services.TvService;
@@ -127,10 +127,20 @@ public class ShowScraper4 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
-        // TODO MARC understand basicShow or basicEpisode booleans
-        // TODO MARC two options used only with Manual{Show|Video}ScrappingSearchFragment.java
+        // TODO MARC understand basicShow or basicEpisode booleans --> always false & false except for Manual{Show|Video}ScrappingSearchFragment.java
+        // TODO MARC this gets all episodes, a bit too much, could only focus on one season but no information on season when called
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
+
+        // TODO
+        boolean getAllEpisodes = options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES);
+        int season = -1;
+        int episode = -1;
+        if (options != null) {
+            season = options.getInt(Scraper.ITEM_REQUEST_SEASON, -1);
+            episode = options.getInt(Scraper.ITEM_REQUEST_EPISODE, -1);
+        }
+
         String resultLanguage = result.getLanguage();
         if (TextUtils.isEmpty(resultLanguage))
             resultLanguage = "en";
@@ -156,24 +166,26 @@ public class ShowScraper4 extends BaseScraper2 {
                 // start with global show information before retrieving all episodes
                 // if show not known get its info
                 if (! isShowAlreadyKnown(showId, mContext)) {
+                    log.debug("getDetailsInternal: show " + showId + " not known");
                     // query first tmdb
-                    ShowIdSearchResult showIdSearchResult = ShowIdSearch.getTvShowResponse(showId, resultLanguage, tmdb);
+                    ShowIdTvSearchResult showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, resultLanguage, tmdb);
                     // parse result to get global show basic info
-                    if (showIdSearchResult.status != ScrapeStatus.OKAY)
-                        return new ScrapeDetailResult(showTags, true, null, showIdSearchResult.status, showIdSearchResult.reason);
+                    if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
+                        return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
                     else
-                        showTags = ShowIdParser.getResult(showIdSearchResult.tvShow, mContext);
+                        showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
 
                     // if there is no title or description research in en
                     if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().length() == 0 || showTags.getTitle().length() == 0)
-                        showIdSearchResult = ShowIdSearch.getTvShowResponse(showId, "en", tmdb);
-                    if (showIdSearchResult.status != ScrapeStatus.OKAY)
-                        return new ScrapeDetailResult(showTags, true, null, showIdSearchResult.status, showIdSearchResult.reason);
+                        showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
+                    if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
+                        return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
                     else
-                        showTags = ShowIdParser.getResult(showIdSearchResult.tvShow, mContext);
+                        showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
 
                     // get show posters and backdrops
-                    searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdSearchResult.tvShow.images, mContext);
+                    searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdTvSearchResult.tvShow.images, mContext);
+
                     if (!searchImages.backdrops.isEmpty())
                         showTags.setBackdrops(searchImages.backdrops);
                     if (!searchImages.posters.isEmpty())
@@ -187,13 +199,15 @@ public class ShowScraper4 extends BaseScraper2 {
                         // put that result in cache.
                         sEpisodeCache.put(showKey, allEpisodes);
                     }
+                } else {
+                    log.debug("getDetailsInternal: show " + showId + " already known");
                 }
             }
             // TODO MARC for posters season poster is different and needs to be retrieved i.e. case !basicShow for specific season???
             ///if (!basicShow) query for poster of the season --> meaning that we know the season
             // get show posters and backdrops
             //if (!basicShow)
-            //    searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdSearchResult.tvShow.SEASONS.images, mContext);
+            //    searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdTvSearchResult.tvShow.SEASONS.images, mContext);
 
             //if (!searchImages.posters.isEmpty())
             //    showTags.setPosters(searchImages.posters);
@@ -322,6 +336,7 @@ public class ShowScraper4 extends BaseScraper2 {
     }
 
     public static boolean isShowAlreadyKnown(Integer showId, Context context) {
+        log.debug("isShowAlreadyKnown: " + showId);
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(showId)};
         String[] baseProjection = {ScraperStore.Show.ID};

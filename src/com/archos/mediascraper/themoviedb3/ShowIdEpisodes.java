@@ -45,8 +45,8 @@ public class ShowIdEpisodes {
         // fill in once for all episodes in "en" in case there is something missing in specific language
         SparseArray<TvEpisode> globalEpisodes = null;
 
-        ShowIdSearchResult showIdSearchResult = ShowIdSearch.getTvShowResponse(showId, language, tmdb);
-        ShowIdSearchResult globalShowIdSearchResult = new ShowIdSearchResult();
+        ShowIdTvSearchResult showIdSearchResult = ShowIdTvSearch.getTvShowResponse(showId, language, tmdb);
+        ShowIdTvSearchResult globalShowIdSearchResult = new ShowIdTvSearchResult();
 
         if (showIdSearchResult.status == ScrapeStatus.OKAY) {
             if (showIdSearchResult.tvShow != null) {
@@ -82,7 +82,7 @@ public class ShowIdEpisodes {
                             if (globalEpisodes == null) { // do it only once
                                 globalEpisodes = new SparseArray<>();
                                 if (globalShowIdSearchResult.tvShow == null) {
-                                    globalShowIdSearchResult = ShowIdSearch.getTvShowResponse(showId, "en", tmdb);
+                                    globalShowIdSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
                                     // stack all episodes in en to find later the overview and name
                                     if (globalShowIdSearchResult.status == ScrapeStatus.OKAY) {
                                         if (globalShowIdSearchResult.tvShow != null) {

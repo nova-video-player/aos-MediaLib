@@ -15,10 +15,13 @@
 package com.archos.mediascraper.themoviedb3;
 
 import com.archos.mediascraper.ScrapeStatus;
+import com.uwetrottmann.tmdb2.entities.TvSeason;
 import com.uwetrottmann.tmdb2.entities.TvShow;
 
-public class ShowIdSearchResult {
-    public TvShow tvShow;
+import java.util.List;
+
+public class ShowIdSeasonSearchResult {
+    public TvSeason tvSeason;
     public ScrapeStatus status;
     public Throwable reason;
 }

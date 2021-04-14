@@ -48,9 +48,11 @@ public class ShowIdParser {
         result.setRating(serie.vote_average.floatValue());
         result.setTitle(serie.name);
 
-        log.debug("getResult: found title=" + serie.name + ", genre " + serie.genres);
+        log.debug("getResult: found title=" + serie.name);
 
-        result.setContentRating(serie.rating.toString());
+        // TODO MARC RATING NULL should parse content.rating
+        if (serie.rating != null) result.setContentRating(serie.rating.toString());
+        else log.debug("getResult: rating null for " + serie.name);
         result.setImdbId(serie.external_ids.imdb_id);
         result.setOnlineId(serie.id);
         result.setGenres(getLocalizedGenres(serie.genres));

@@ -14,14 +14,12 @@
 
 package com.archos.mediascraper.themoviedb3;
 
-import android.content.Context;
 import android.util.LruCache;
 
-import com.archos.mediascraper.EpisodeTags;
 import com.archos.mediascraper.ScrapeStatus;
-import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.xml.ShowScraper4;
 import com.uwetrottmann.tmdb2.entities.AppendToResponse;
+import com.uwetrottmann.tmdb2.entities.TvEpisode;
 import com.uwetrottmann.tmdb2.entities.TvShow;
 import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem;
 
@@ -29,29 +27,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import retrofit2.Response;
 
 // Perform show search for specific showId and language (ISO 639-1 code)
-public class ShowIdSearch {
-    private static final Logger log = LoggerFactory.getLogger(ShowIdSearch.class);
+public class ShowIdEpisodeSearch {
+    private static final Logger log = LoggerFactory.getLogger(ShowIdEpisodeSearch.class);
 
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
-    private final static LruCache<String, ShowIdSearchResult> sShowCache = new LruCache<>(10);
+    private final static LruCache<String, ShowIdEpisodeSearchResult> sShowCache = new LruCache<>(10);
 
-    public static ShowIdSearchResult getTvShowResponse(int showId, String language, MyTmdb tmdb) {
-        log.debug("getTvShowResponse: quering thetvdb for showId " + showId + " in " + language);
+    public static ShowIdEpisodeSearchResult getEpisodeShowResponse(int showId, int season, int episode, String language, MyTmdb tmdb) {
+        log.debug("getEpisodeShowResponse: quering thetvdb for showId " + showId + " season " + season + " episode " + episode + " in " + language);
 
         String showKey = showId + "|" + language;
-        ShowIdSearchResult myResult = sShowCache.get(showKey);
+        ShowIdEpisodeSearchResult myResult = sShowCache.get(showKey);
         if (log.isTraceEnabled()) debugLruCache(sShowCache);
 
         if (myResult == null) {
-            myResult = new ShowIdSearchResult();
+            myResult = new ShowIdEpisodeSearchResult();
             try {
                 // use appendToResponse to get imdbId
-                Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS)).execute();
+                // specify image language include_image_language=en,null
+                Map<String, String> options  = new HashMap<String, String>() {{
+                    put("include_image_language", "en,null");
+                }};
+                Response<TvEpisode> seriesResponse = tmdb.tvEpisodesService().episode(showId, season, episode, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES), options).execute();
                 switch (seriesResponse.code()) {
                     case 401: // auth issue
                         log.debug("search: auth error");
@@ -62,17 +65,17 @@ public class ShowIdSearch {
                         myResult.status = ScrapeStatus.NOT_FOUND;
                         // fallback to english if no result
                         if (!language.equals("en")) {
-                            log.debug("getTvShowResponse: retrying search for showId " + showId + " in en");
-                            return getTvShowResponse(showId, "en", tmdb);
+                            log.debug("getEpisodeShowResponse: retrying search for showId " + showId + " in en");
+                            return getEpisodeShowResponse(showId, season, episode,"en", tmdb);
                         }
-                        log.debug("getTvShowResponse: movieId " + showId + " not found");
+                        log.debug("getEpisodeShowResponse: showId " + showId + " not found");
                         // record valid answer
                         sShowCache.put(showKey, myResult);
                         break;
                     default:
                         if (seriesResponse.isSuccessful()) {
                             if (seriesResponse.body() != null) {
-                                myResult.tvShow = seriesResponse.body();
+                                myResult.tvEpisode = seriesResponse.body();
                                 myResult.status = ScrapeStatus.OKAY;
                             } else {
                                 myResult.status = ScrapeStatus.NOT_FOUND;
@@ -80,13 +83,13 @@ public class ShowIdSearch {
                             // record valid answer
                             sShowCache.put(showKey, myResult);
                         } else { // an error at this point is PARSER related
-                            log.debug("getTvShowResponse: error " + seriesResponse.code());
+                            log.debug("getEpisodeShowResponse: error " + seriesResponse.code());
                             myResult.status = ScrapeStatus.ERROR_PARSER;
                         }
                         break;
                 }
             } catch (IOException e) {
-                log.error("getTvShowResponse: caught IOException getting result for showId=" + showId);
+                log.error("getEpisodeShowResponse: caught IOException getting result for showId=" + showId);
                 myResult.status = ScrapeStatus.ERROR_PARSER;
                 myResult.reason = e;
             }
@@ -94,7 +97,7 @@ public class ShowIdSearch {
         return myResult;
     }
 
-    public static void debugLruCache(LruCache<String, ShowIdSearchResult> lruCache) {
+    public static void debugLruCache(LruCache<String, ShowIdEpisodeSearchResult> lruCache) {
         log.debug("debugLruCache: size=" + lruCache.size());
         log.debug("debugLruCache: putCount=" + lruCache.putCount());
         log.debug("debugLruCache: hitCount=" + lruCache.hitCount());
