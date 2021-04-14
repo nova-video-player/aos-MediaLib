@@ -27,6 +27,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -459,7 +460,12 @@ public class AutoScrapeService extends Service {
                                         final int scraperType = cursor.getInt(cursor.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
 
                                         if (scraperType == BaseTags.TV_SHOW) {
-                                            log.debug("startScraping: rescraping episode "+videoID);
+                                            // get the whole season
+                                            long season = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_E_SEASON));
+                                            Bundle b = new Bundle();
+                                            b.putInt(Scraper.ITEM_REQUEST_SEASON, (int) season);
+
+                                            log.debug("startScraping: rescraping episode for tvId " + videoID + ", season " + season);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new ShowScraper4(AutoScrapeService.this));
