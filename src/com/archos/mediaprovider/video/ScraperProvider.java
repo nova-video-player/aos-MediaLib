@@ -688,8 +688,8 @@ public class ScraperProvider extends ContentProvider {
                 extras.putInt("type", BaseTags.MOVIE);
                 break;
 
-
             case SHOW_ID:
+            case SHOW:
                 qb.setTables(ScraperTables.SHOW_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Show.ID + " = ");
                 qb.appendWhereEscapeString(data);
