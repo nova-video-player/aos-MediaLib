@@ -39,6 +39,9 @@ public class Scraper {
     public static final String ITEM_REQUEST_BASIC_SHOW = "basicShow";
     public static final String ITEM_REQUEST_BASIC_VIDEO = "basicVideo";
 
+    public static final String ITEM_REQUEST_SEASON = "WantSeason";
+    public static final String ITEM_REQUEST_EPISODE = "WantEpisode";
+
     private final Context mContext;
     public Scraper(Context context) {
         if (DBG) Log.d(TAG, "CTOR");
