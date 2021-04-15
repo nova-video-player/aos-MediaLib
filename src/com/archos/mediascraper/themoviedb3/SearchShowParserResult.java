@@ -22,13 +22,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class SearchShowParserResult {
-    List<SearchResult> resultsNumericSlug;
     List<SearchResult> resultsNoBanner;
     List<SearchResult> resultsNoPoster;
     List<Pair<SearchResult,Integer>> resultsProbable;
     public SearchShowParserResult() {
-        // contains list of results with numeric slug
-        this.resultsNumericSlug = new LinkedList<>();
         // contains list of results without banner
         this.resultsNoBanner = new LinkedList<>();
         // contains list of results without poster

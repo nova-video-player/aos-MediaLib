@@ -42,13 +42,19 @@ import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.themoviedb3.SearchShow;
 import com.archos.mediascraper.themoviedb3.SearchShowResult;
+import com.archos.mediascraper.themoviedb3.ShowIdEpisodeSearch;
+import com.archos.mediascraper.themoviedb3.ShowIdEpisodeSearchResult;
 import com.archos.mediascraper.themoviedb3.ShowIdEpisodes;
 import com.archos.mediascraper.themoviedb3.ShowIdEpisodesResult;
 import com.archos.mediascraper.themoviedb3.ShowIdImagesParser;
 import com.archos.mediascraper.themoviedb3.ShowIdImagesResult;
 import com.archos.mediascraper.themoviedb3.ShowIdParser;
+import com.archos.mediascraper.themoviedb3.ShowIdSeasonSearch;
+import com.archos.mediascraper.themoviedb3.ShowIdSeasonSearchResult;
 import com.archos.mediascraper.themoviedb3.ShowIdTvSearch;
 import com.archos.mediascraper.themoviedb3.ShowIdTvSearchResult;
+import com.uwetrottmann.tmdb2.entities.TvEpisode;
+import com.uwetrottmann.tmdb2.entities.TvSeason;
 import com.uwetrottmann.tmdb2.services.TvEpisodesService;
 import com.uwetrottmann.tmdb2.services.TvSeasonsService;
 import com.uwetrottmann.tmdb2.services.TvService;
@@ -56,6 +62,7 @@ import com.uwetrottmann.tmdb2.services.TvService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -131,8 +138,6 @@ public class ShowScraper4 extends BaseScraper2 {
         // TODO MARC this gets all episodes, a bit too much, could only focus on one season but no information on season when called
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
-
-        // TODO
         boolean getAllEpisodes = options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES);
         int season = -1;
         int episode = -1;
@@ -145,8 +150,15 @@ public class ShowScraper4 extends BaseScraper2 {
         if (TextUtils.isEmpty(resultLanguage))
             resultLanguage = "en";
         int showId = result.getId();
-        log.debug("getDetailsInternal: basicShow=" + basicShow + ", basicEpisode=" + basicEpisode + " for " + result.getTitle() + "(" + showId + ") in " + resultLanguage);
-        String showKey = showId + "|" + resultLanguage;
+        log.debug("getDetailsInternal: " + result.getTitle() + "(" + showId + ") " +
+                (season != -1 ? " s" + season : "") +
+                (episode != -1 ? "e" + episode : "") +
+                        " in " + resultLanguage +
+                " (basicShow=" + basicShow + "/basicEpisode=" + basicEpisode + ")");
+
+        String showKey = showId + "|" +
+                (getAllEpisodes ? "all" : (season != -1 ? "s" + season : "") + (episode != -1 ? "e" + episode : "")) +
+                "|" + resultLanguage;
 
         Map<String, EpisodeTags> allEpisodes = null;
         ShowTags showTags = null;
@@ -191,16 +203,54 @@ public class ShowScraper4 extends BaseScraper2 {
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
 
+                    ////
+                    // retreive now the desired episodes
+                    // TODO MARC DO NOT REDO IF season cached
+                    List<TvEpisode> tvEpisodes = new ArrayList<>();
+                    if (getAllEpisodes) {
+                        // get all episodes: loop over seasons and concatenate
+                        for (int s = 1; s <= showIdTvSearchResult.tvShow.number_of_seasons; s++) {
+                            ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, s, resultLanguage, tmdb);
+                            if (showIdSeason.status == ScrapeStatus.OKAY) tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
+                            else log.warn("getDetailsInternal: scrapeStatus for season " + s + " is NOK!");
+                            // TODO MARC MARK STATUS
+                        }
+                    } else {
+                        if (season != -1) {
+                            if (episode != -1) {
+                                // get a single episode
+                                ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(showId, season, episode, resultLanguage, tmdb);
+                                if (showIdEpisode.status == ScrapeStatus.OKAY) tvEpisodes.add(showIdEpisode.tvEpisode);
+                                else log.warn("getDetailsInternal: scrapeStatus for s" + season + "e" + episode + " is NOK!");
+                                // TODO MARC MARK STATUS
+                            } else {
+                                // get whole season
+                                ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, season, resultLanguage, tmdb);
+                                if (showIdSeason.status == ScrapeStatus.OKAY) tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
+                                else log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
+                                // TODO MARC MARK STATUS
+                            }
+                        }
+                    }
+
+                    // TODO MARC after processing put result in lruCache
+                    // pass result to getEpisodes
+                    ////
+
                     // get also all episodes
                     // since query has been done just before we are sure that there is no error since scrape error has been handled before
-                    ShowIdEpisodesResult searchEpisodes = ShowIdEpisodes.getEpisodes(showId, showTags, resultLanguage, tmdb, mContext);
-                    if (!searchEpisodes.episodes.isEmpty()) {
-                        allEpisodes = searchEpisodes.episodes;
+                    // TODO MARC rework below to take already a result of tmdb request
+                    Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(showId, tvEpisodes, showTags, resultLanguage, tmdb, mContext);
+                    if (!searchEpisodes.isEmpty()) {
+                        allEpisodes = searchEpisodes;
                         // put that result in cache.
                         sEpisodeCache.put(showKey, allEpisodes);
                     }
                 } else {
-                    log.debug("getDetailsInternal: show " + showId + " already known");
+                    log.debug("getDetailsInternal: show " + showId  +
+                            (season != -1 ? " s" + season : "") +
+                            (episode != -1 ? "e" + episode : "") +
+                            " in " + resultLanguage  + " already known");
                 }
             }
             // TODO MARC for posters season poster is different and needs to be retrieved i.e. case !basicShow for specific season???
@@ -336,16 +386,16 @@ public class ShowScraper4 extends BaseScraper2 {
     }
 
     public static boolean isShowAlreadyKnown(Integer showId, Context context) {
-        log.debug("isShowAlreadyKnown: " + showId);
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(showId)};
-        String[] baseProjection = {ScraperStore.Show.ID};
-        String nameSelection = ScraperStore.Show.ID + "=?";
-        Cursor cursor = contentResolver.query(ScraperStore.Show.URI.BASE, baseProjection,
+        String[] baseProjection = {ScraperStore.Show.ONLINE_ID};
+        String nameSelection = ScraperStore.Show.ONLINE_ID + "=?";
+        Cursor cursor = contentResolver.query(ScraperStore.Show.URI.ALL, baseProjection,
                 nameSelection, selectionArgs, null);
         Boolean isKnown = false;
         if (cursor != null) isKnown = cursor.moveToFirst();
         cursor.close();
+        log.debug("isShowAlreadyKnown: " + showId + " " + isKnown);
         return isKnown;
     }
 }

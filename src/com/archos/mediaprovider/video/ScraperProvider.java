@@ -51,7 +51,7 @@ import java.util.Arrays;
  */
 public class ScraperProvider extends ContentProvider {
     private static final String TAG = "ScraperProvider";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
 
     // using offset to avoid collision with mediaprovider's matcher
     public static final int SCRAPER_PROVIDER_OFFSET = 10000;
@@ -689,7 +689,6 @@ public class ScraperProvider extends ContentProvider {
                 break;
 
             case SHOW_ID:
-            case SHOW:
                 qb.setTables(ScraperTables.SHOW_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Show.ID + " = ");
                 qb.appendWhereEscapeString(data);

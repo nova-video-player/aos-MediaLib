@@ -34,6 +34,7 @@ public class ShowIdImagesParser {
 
     private static final Logger log = LoggerFactory.getLogger(ShowIdImagesParser.class);
 
+    // TODO MARC refactor like movie
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String IMAGE_URL = "https://image.tmdb.org/t/p/";
     final static String POSTER_THUMB = "w92";
@@ -89,8 +90,9 @@ public class ShowIdImagesParser {
             log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + IMAGE_URL + BACKDROP_LARGE + backdrop.first.file_path);
             ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
             image.setLanguage(backdrop.second);
+            // TODO MARC there is no point in thumb backdrops!
             image.setLargeUrl(IMAGE_URL + BACKDROP_LARGE + backdrop.first.file_path);
-            image.setThumbUrl(IMAGE_URL + BACKDROP_THUMB + backdrop.first.file_path);
+            //image.setThumbUrl(IMAGE_URL + BACKDROP_THUMB + backdrop.first.file_path);
             image.generateFileNames(context);
             backdrops.add(image);
         }

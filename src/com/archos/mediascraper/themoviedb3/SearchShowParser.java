@@ -40,6 +40,14 @@ public class SearchShowParser {
     private static final Logger log = LoggerFactory.getLogger(SearchShowParser.class);
     private final static int SERIES_NOT_PERMITTED_ID = 313081;
 
+    // TODO MARC refactor like movie
+    // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
+    final static String IMAGE_URL = "https://image.tmdb.org/t/p/";
+    final static String POSTER_THUMB = "w92";
+    final static String POSTER_LARGE = "w342";
+    final static String BACKDROP_THUMB = "w300";
+    final static String BACKDROP_LARGE = "w1280";
+
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
     private static List<SearchResult> normalAdd(SearchShowParserResult searchShowParserResult, int maxItems) {
@@ -48,10 +56,6 @@ public class SearchShowParser {
             for (Pair<SearchResult,Integer> pair : searchShowParserResult.resultsProbable)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(pair.first);
-        if (searchShowParserResult.resultsNumericSlug.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNumericSlug)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
         // skip shows without a poster
         /*
         if (searchShowParserResult.resultsNoPoster.size()>0)
@@ -80,10 +84,6 @@ public class SearchShowParser {
                     if (pair.first.getId() == globalPair.first.getId())
                         if (maxItems < 0 || results.size() < maxItems)
                             results.add(pair.first);
-        if (searchShowParserResult.resultsNumericSlug.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNumericSlug)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
         // skip shows without a poster
         /*
         if (searchShowParserResult.resultsNoPoster.size()>0)
@@ -177,8 +177,9 @@ public class SearchShowParser {
                         searchShowParserResult.resultsNoBanner.add(result);
                         isDecisionTaken = true;
                     } else {
-                        log.debug("getResult: " + series.name + " has backdrop_path " + series.backdrop_path);
-                        result.setBackdropPath(series.backdrop_path);
+                        log.debug("getResult: " + series.name + " has backdrop_path " + IMAGE_URL + BACKDROP_LARGE + series.backdrop_path);
+                        // TODO MARC missing unified thumb
+                        result.setBackdropPath(IMAGE_URL + BACKDROP_LARGE + series.backdrop_path);
                     }
                 }
                 if (series.poster_path != null) {
@@ -188,8 +189,9 @@ public class SearchShowParser {
                         searchShowParserResult.resultsNoPoster.add(result);
                         isDecisionTaken = true;
                     } else {
-                        log.debug("getResult: " + series.name + " has poster_path " + series.poster_path);
-                        result.setBackdropPath(series.poster_path);
+                        // TODO MARC missing unified thumb
+                        log.debug("getResult: " + series.name + " has poster_path " + IMAGE_URL + POSTER_LARGE +series.poster_path);
+                        result.setPosterPath(IMAGE_URL + POSTER_LARGE + series.poster_path);
                     }
                 }
                 if (! isDecisionTaken) {

@@ -127,7 +127,6 @@ public class ShowTags extends VideoTags {
                 String storedImdb = cursor.getString(5);
                 long storedOnlineId = cursor.getLong(6);
 
-
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
 

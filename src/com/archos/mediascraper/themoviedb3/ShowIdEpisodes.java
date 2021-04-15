@@ -28,95 +28,80 @@ import com.uwetrottmann.tmdb2.entities.TvSeason;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-// Get the episodes for specific show id
+// process List of TvEpisodes
 public class ShowIdEpisodes {
     private static final Logger log = LoggerFactory.getLogger(ShowIdEpisodes.class);
 
     private static final String DIRECTOR = "Director";
 
-    public static ShowIdEpisodesResult getEpisodes(int showId, ShowTags showTags, String language,
-                                                     MyTmdb tmdb, Context context) {
-        ShowIdEpisodesResult myResult = new ShowIdEpisodesResult();
-        myResult.episodes = new HashMap<>();
-        // TODO MARC Map<String, EpisodeTags> episodes = Collections.<String, EpisodeTags>emptyMap();
+    public static Map<String, EpisodeTags> getEpisodes(int showId, List<TvEpisode> tvEpisodes, ShowTags showTags, String language,
+                                                       MyTmdb tmdb, Context context) {
+
+        Map<String, EpisodeTags> episodes = new HashMap<>();
         log.debug("getEpisodes: quering thetvdb for showId " + showId);
         // fill in once for all episodes in "en" in case there is something missing in specific language
         SparseArray<TvEpisode> globalEpisodes = null;
 
-        ShowIdTvSearchResult showIdSearchResult = ShowIdTvSearch.getTvShowResponse(showId, language, tmdb);
-        ShowIdTvSearchResult globalShowIdSearchResult = new ShowIdTvSearchResult();
-
-        if (showIdSearchResult.status == ScrapeStatus.OKAY) {
-            if (showIdSearchResult.tvShow != null) {
-                for(TvSeason tvSeason : showIdSearchResult.tvShow.seasons) {
-                    for (TvEpisode tvEpisode : tvSeason.episodes) {
-                        EpisodeTags episodeTags = new EpisodeTags();
-                        // TODO MARC check if not tvEpisode.guest_stars and tvEpisode.crew instead
-                        if (tvEpisode.credits != null) {
-                            if (tvEpisode.credits.guest_stars != null)
-                                for (CastMember guestStar : tvEpisode.credits.guest_stars)
-                                    episodeTags.addActorIfAbsent(guestStar.name, guestStar.character);
-                            if (tvEpisode.credits.cast != null)
-                                for (CastMember actor : tvEpisode.credits.cast)
-                                    episodeTags.addActorIfAbsent(actor.name, actor.character);
-                            if (tvEpisode.credits.crew != null)
-                                for (CrewMember crew : tvEpisode.credits.crew)
-                                    if (crew.job == DIRECTOR)
-                                        episodeTags.addDirectorIfAbsent(crew.name);
-                        }
-                        episodeTags.setPlot(tvEpisode.overview);
-                        episodeTags.setRating(tvEpisode.vote_average.floatValue());
-                        episodeTags.setTitle(tvEpisode.name);
-                        episodeTags.setImdbId(tvEpisode.external_ids.imdb_id);
-                        episodeTags.setOnlineId(tvEpisode.id);
-                        episodeTags.setAired(tvEpisode.air_date);
-                        episodeTags.setEpisode(tvEpisode.episode_number);
-                        episodeTags.setSeason(tvEpisode.season_number);
-                        episodeTags.setShowTags(showTags);
-                        // TODO MARC check it is the still here
-                        episodeTags.setEpisodePicture(tvEpisode.still_path, context);
-                        if ((tvEpisode.overview == null || tvEpisode.name == null)
-                                && !language.equals("en")) { // missing overview in native language
-                            if (globalEpisodes == null) { // do it only once
-                                globalEpisodes = new SparseArray<>();
-                                if (globalShowIdSearchResult.tvShow == null) {
-                                    globalShowIdSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
-                                    // stack all episodes in en to find later the overview and name
-                                    if (globalShowIdSearchResult.status == ScrapeStatus.OKAY) {
-                                        if (globalShowIdSearchResult.tvShow != null) {
-                                            for (TvSeason globalTvSeason : globalShowIdSearchResult.tvShow.seasons)
-                                                for (TvEpisode globalTvEpisode : globalTvSeason.episodes)
-                                                    globalEpisodes.put(globalTvEpisode.id, globalTvEpisode);
-                                        } else { // an error at this point is PARSER related
-                                            log.debug("getEpisodes: error " + globalShowIdSearchResult.status);
-                                        }
-                                    }
-                                }
-                            }
-                            // only use globalEpisode if an overview if not found
-                            TvEpisode globalEpisode = globalEpisodes.get(tvEpisode.id);
-                            if (globalEpisode != null) {
-                                if (tvEpisode.overview == null)
-                                    episodeTags.setPlot(globalEpisode.overview);
-                                if (tvEpisode.name == null)
-                                    episodeTags.setTitle(globalEpisode.name);
+        if (tvEpisodes != null) {
+            for (TvEpisode tvEpisode : tvEpisodes) {
+                EpisodeTags episodeTags = new EpisodeTags();
+                // TODO MARC check if not tvEpisode.guest_stars and tvEpisode.crew instead
+                if (tvEpisode.credits != null) {
+                    if (tvEpisode.credits.guest_stars != null)
+                        for (CastMember guestStar : tvEpisode.credits.guest_stars)
+                            episodeTags.addActorIfAbsent(guestStar.name, guestStar.character);
+                    if (tvEpisode.credits.cast != null)
+                        for (CastMember actor : tvEpisode.credits.cast)
+                            episodeTags.addActorIfAbsent(actor.name, actor.character);
+                    if (tvEpisode.credits.crew != null)
+                        for (CrewMember crew : tvEpisode.credits.crew)
+                            if (crew.job == DIRECTOR)
+                                episodeTags.addDirectorIfAbsent(crew.name);
+                }
+                episodeTags.setPlot(tvEpisode.overview);
+                episodeTags.setRating(tvEpisode.vote_average.floatValue());
+                episodeTags.setTitle(tvEpisode.name);
+                episodeTags.setImdbId(tvEpisode.external_ids.imdb_id);
+                episodeTags.setOnlineId(tvEpisode.id);
+                episodeTags.setAired(tvEpisode.air_date);
+                episodeTags.setEpisode(tvEpisode.episode_number);
+                episodeTags.setSeason(tvEpisode.season_number);
+                episodeTags.setShowTags(showTags);
+                // TODO MARC check it is the still here
+                episodeTags.setEpisodePicture(tvEpisode.still_path, context);
+                if ((tvEpisode.overview == null || tvEpisode.name == null)
+                        && !language.equals("en")) { // missing overview in native language
+                    // TODO MARC nok check if missing episode and request seasons in this case
+                    if (globalEpisodes.get(tvEpisode.id) == null) { // missing: get whole serie
+                        ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(showId, tvEpisode.season_number, "en", tmdb);
+                        // stack all episodes in en to find later the overview and name
+                        if (globalSeasonIdSearchResult.status == ScrapeStatus.OKAY) {
+                            if (globalSeasonIdSearchResult.tvSeason != null) {
+                                for (TvEpisode globalTvEpisode : globalSeasonIdSearchResult.tvSeason.episodes)
+                                    globalEpisodes.put(globalTvEpisode.id, globalTvEpisode);
+                                // TODO MARC put in cache?
+                            } else { // an error at this point is PARSER related
+                                log.debug("getEpisodes: error " + globalSeasonIdSearchResult.status);
                             }
                         }
-                        myResult.episodes.put(tvEpisode.season_number + "|" + tvEpisode.episode_number, episodeTags);
+                    }
+                    // only use globalEpisode if an overview if not found
+                    TvEpisode globalEpisode = globalEpisodes.get(tvEpisode.id);
+                    if (globalEpisode != null) {
+                        if (tvEpisode.overview == null)
+                            episodeTags.setPlot(globalEpisode.overview);
+                        if (tvEpisode.name == null)
+                            episodeTags.setTitle(globalEpisode.name);
                     }
                 }
-                myResult.status = ScrapeStatus.OKAY;
-            } else {
-                myResult.status = ScrapeStatus.NOT_FOUND;
-                myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
+                episodes.put(tvEpisode.season_number + "|" + tvEpisode.episode_number, episodeTags);
             }
-        } else { // an error at this point is PARSER related
-            log.debug("getEpisodes: error " + showIdSearchResult.status);
-            myResult.status = ScrapeStatus.ERROR_PARSER;
-            myResult.episodes = ShowIdEpisodesResult.EMPTY_MAP;
         }
-        return myResult;
+        return episodes;
     }
 }
