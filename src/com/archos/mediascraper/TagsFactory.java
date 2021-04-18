@@ -790,7 +790,6 @@ public class TagsFactory {
                 result.setCollectionBackdropThumbUrl(c.getString(25));
             }
             c.close();
-            c = null;
         }
         if (result != null) {
             // Actors
@@ -799,10 +798,7 @@ public class TagsFactory {
                     new String[] {
                             ScraperStore.Movie.Actor.NAME,            // 0
                             ScraperStore.Movie.Actor.ROLE,            // 1
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     String actor = c.getString(0);
@@ -810,55 +806,42 @@ public class TagsFactory {
                     result.addActorIfAbsent(actor, role);
                 }
                 c.close();
-                c = null;
             }
             // Directors
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Director.URI.MOVIE, movieId),
                     new String[] {
                             ScraperStore.Movie.Director.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addDirectorIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             // Genres
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Genre.URI.MOVIE, movieId),
                     new String[] {
                             ScraperStore.Movie.Genre.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addGenreIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             // Studios
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Studio.URI.MOVIE, movieId),
                     new String[] {
                             ScraperStore.Movie.Studio.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addStudioIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             // posters
             List<ScraperImage> allPostersInDb = result.getAllPostersInDb(context);
@@ -946,7 +929,6 @@ public class TagsFactory {
                 result.setShowId(c.getLong(17));
             }
             c.close();
-            c = null;
         }
         if (result != null) {
             // Actors
@@ -955,10 +937,7 @@ public class TagsFactory {
                     new String[] {
                             ScraperStore.Episode.Actor.NAME,            // 0
                             ScraperStore.Episode.Actor.ROLE,            // 1
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     String actor = c.getString(0);
@@ -966,23 +945,18 @@ public class TagsFactory {
                     result.addActorIfAbsent(actor, role);
                 }
                 c.close();
-                c = null;
             }
             // Directors
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Director.URI.EPISODE, episodeId),
                     new String[] {
                             ScraperStore.Episode.Director.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addDirectorIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             ShowTags showTags = buildShowTags(context, result.getShowId());
             result.setShowTags(showTags);
@@ -1004,7 +978,6 @@ public class TagsFactory {
     }
 
     public static ShowTags buildShowTags(Context context, long showId) {
-        ShowTags result = null;
         ContentResolver cr = context.getContentResolver();
         Cursor c = cr.query(
                 ContentUris.withAppendedId(ScraperStore.Show.URI.ID, showId),
@@ -1018,99 +991,107 @@ public class TagsFactory {
                         ScraperStore.Show.IMDB_ID,              // 6
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
-                },
-                null,
-                null,
-                null);
+                }, null, null, null);
+        return buildShowTagsFromCursor(context, c, showId);
+    }
+
+    public static ShowTags buildShowTagsOnlineId(Context context, long onlineId) {
+        long showId = -1;
+        ContentResolver cr = context.getContentResolver();
+        Cursor c = cr.query(
+                ContentUris.withAppendedId(ScraperStore.Show.URI.ONLINE_ID, onlineId),
+                new String[] {
+                        ScraperStore.Show.NAME,                 // 0
+                        ScraperStore.Show.PREMIERED,            // 1
+                        ScraperStore.Show.RATING,               // 2
+                        ScraperStore.Show.CONTENT_RATING,       // 3
+                        ScraperStore.Show.PLOT,                 // 4
+                        ScraperStore.Show.ONLINE_ID,            // 5
+                        ScraperStore.Show.IMDB_ID,              // 6
+                        ScraperStore.Show.POSTER_ID,            // 7
+                        ScraperStore.Show.BACKDROP_ID,          // 8
+                        ScraperStore.Show.ID,                   // 9
+                }, null, null, null);
+        if (c != null && c.moveToFirst())
+            showId = c.getLong(9);
+        return buildShowTagsFromCursor(context, c, showId);
+    }
+
+    public static ShowTags buildShowTagsFromCursor(Context context, Cursor c, long showId) {
+        ShowTags showTags = null;
         long posterId = -1;
         long backdropId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
-                result = new ShowTags();
-                result.setId(showId);
-                result.setTitle(c.getString(0));
-                result.setPremiered(c.getLong(1));
-                result.setRating(c.getFloat(2));
-                result.setContentRating(c.getString(3));
-                result.setPlot(c.getString(4));
-                result.setOnlineId(c.getLong(5));
-                result.setImdbId(c.getString(6));
+                showTags = new ShowTags();
+                showTags.setId(showId);
+                showTags.setTitle(c.getString(0));
+                showTags.setPremiered(c.getLong(1));
+                showTags.setRating(c.getFloat(2));
+                showTags.setContentRating(c.getString(3));
+                showTags.setPlot(c.getString(4));
+                showTags.setOnlineId(c.getLong(5));
+                showTags.setImdbId(c.getString(6));
                 posterId = c.getLong(7);
                 backdropId = c.getLong(8);
             }
             c.close();
-            c = null;
         }
-        if (result != null) {
+        ContentResolver cr = context.getContentResolver();
+        if (showTags != null) {
             // Actors
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Actor.URI.SHOW, showId),
                     new String[] {
                             ScraperStore.Show.Actor.NAME,            // 0
                             ScraperStore.Show.Actor.ROLE,            // 1
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
                     String actor = c.getString(0);
                     String role = c.getString(1);
-                    result.addActorIfAbsent(actor, role);
+                    showTags.addActorIfAbsent(actor, role);
                 }
                 c.close();
-                c = null;
             }
             // Directors
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Director.URI.SHOW, showId),
                     new String[] {
                             ScraperStore.Show.Director.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
-                    result.addDirectorIfAbsent(c.getString(0));
+                    showTags.addDirectorIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             // Genres
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Genre.URI.SHOW, showId),
                     new String[] {
                             ScraperStore.Show.Genre.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
-                    result.addGenreIfAbsent(c.getString(0));
+                    showTags.addGenreIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             // Studios
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Studio.URI.SHOW, showId),
                     new String[] {
                             ScraperStore.Show.Studio.NAME,            // 0
-                    },
-                    null,
-                    null,
-                    null);
+                    }, null, null, null);
             if (c != null) {
                 while (c.moveToNext()) {
-                    result.addStudioIfAbsent(c.getString(0));
+                    showTags.addStudioIfAbsent(c.getString(0));
                 }
                 c.close();
-                c = null;
             }
             // this fetches all posters, not just show posters
-            List<ScraperImage> allPostersInDb = result.getAllPostersInDb(context, -1, true);
+            List<ScraperImage> allPostersInDb = showTags.getAllPostersInDb(context, -1, true);
             if (allPostersInDb == null)
                 allPostersInDb = Collections.emptyList();
             LinkedList<ScraperImage> allPostersSorted = new LinkedList<ScraperImage>();
@@ -1121,10 +1102,10 @@ public class TagsFactory {
                 else
                     allPostersSorted.addLast(image);
             }
-            result.setPosters(allPostersSorted);
+            showTags.setPosters(allPostersSorted);
 
             // backdrops
-            List<ScraperImage> allBackdropsInDb = result.getAllBackdropsInDb(context);
+            List<ScraperImage> allBackdropsInDb = showTags.getAllBackdropsInDb(context);
             if (allBackdropsInDb == null)
                 allBackdropsInDb = Collections.emptyList();
             LinkedList<ScraperImage> allBackdropsSorted = new LinkedList<ScraperImage>();
@@ -1135,9 +1116,9 @@ public class TagsFactory {
                 else
                     allBackdropsSorted.addLast(image);
             }
-            result.setBackdrops(allBackdropsSorted);
+            showTags.setBackdrops(allBackdropsSorted);
         }
-        return result;
+        return showTags;
     }
 
 }

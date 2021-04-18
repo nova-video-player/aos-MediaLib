@@ -32,6 +32,9 @@ import android.util.Log;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +48,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 public abstract class BaseTags implements Parcelable {
-    private static final String TAG = "BaseTags";
-    private final static boolean DBG = false;
+
+    private static final Logger log = LoggerFactory.getLogger(BaseTags.class);
 
     public static final int GENERIC = 0;
 
@@ -241,18 +244,20 @@ public abstract class BaseTags implements Parcelable {
 
     public void downloadPoster(Context context) {
         ScraperImage image = getDefaultPoster();
-        if (image != null)
+        if (image != null) {
+            log.debug("downloadPoster: " + mTitle + ", url " + image.getLargeUrl());
             image.download(context);
-        else
-            if (DBG) Log.d(TAG, "downloadPoster: image is null for " + mTitle + ", url " + image.getLargeUrl());
+        } else
+            log.warn("downloadPoster: image is null for " + mTitle);
     }
 
     public void downloadBackdrop(Context context) {
         ScraperImage image = getDefaultBackdrop();
-        if (image != null)
+        if (image != null) {
+            log.debug("downloadBackdrop: " + mTitle + ", url " + image.getLargeUrl());
             image.download(context);
-        else
-            if (DBG) Log.d(TAG, "downloadBackdrop: image is null for " + mTitle + ", url " + image.getLargeUrl());
+        } else
+            log.debug("downloadBackdrop: image is null for " + mTitle);
     }
 
     public final void downloadAllImages(Context context) {
