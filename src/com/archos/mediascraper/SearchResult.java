@@ -32,6 +32,8 @@ public class SearchResult implements Parcelable {
     private String mPosterPath;
     private String mBackdropPath;
 
+    private String mOriginalTitle;
+
     public SearchResult() {
     }
 
@@ -45,6 +47,9 @@ public class SearchResult implements Parcelable {
     public String toString() {
         return "SearchResult title: " + mTitle + " id: " + mId + " language: " + mLanguage;
     }
+
+    public void setOriginalTitle(String originalTitle) { mOriginalTitle =  originalTitle; }
+    public String getOriginalTitle() { return mOriginalTitle; }
 
     public String getTitle() { return mTitle; }
     public int getType() { return mType; }

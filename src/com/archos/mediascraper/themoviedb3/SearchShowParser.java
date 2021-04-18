@@ -56,97 +56,17 @@ public class SearchShowParser {
             for (Pair<SearchResult,Integer> pair : searchShowParserResult.resultsProbable)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(pair.first);
-        // skip shows without a poster
-        /*
-        if (searchShowParserResult.resultsNoPoster.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNoPoster)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
-         */
-        // skip shows without a banner
-        /*
-        if (searchShowParserResult.resultsNoBanner.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNoBanner)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
-         */
-        return results;
-    }
-
-    private static List<SearchResult> reSortAdd(SearchShowParserResult searchShowParserResult,
-                                                 SearchShowParserResult globalSearchShowParserResult, int maxItems) {
-        // if en has a lower Levenshtein distance than language, en has the right order: re-sort language list accordingly
-        List<SearchResult> results = new LinkedList<>();
-        if (searchShowParserResult.resultsProbable.size()>0
-            && globalSearchShowParserResult.resultsProbable.size()>0)
-            for (Pair<SearchResult, Integer> globalPair : globalSearchShowParserResult.resultsProbable)
-                for (Pair<SearchResult, Integer> pair : searchShowParserResult.resultsProbable)
-                    if (pair.first.getId() == globalPair.first.getId())
-                        if (maxItems < 0 || results.size() < maxItems)
-                            results.add(pair.first);
-        // skip shows without a poster
-        /*
-        if (searchShowParserResult.resultsNoPoster.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNoPoster)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
-         */
-        // skip shows without a banner
-        /*
-        if (searchShowParserResult.resultsNoBanner.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNoBanner)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
-         */
         return results;
     }
 
     public static List<SearchResult> getResult(Response<TvShowResultsPage> response,
-                                               Response<TvShowResultsPage> globalResponse,
                                                TvShowSearchInfo searchInfo, String language,
                                                Integer maxItems, ShowScraper4 showScraper) {
-        List<SearchResult> results = new LinkedList<>();
+        List<SearchResult> results;
         SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
-        SearchShowParserResult globalSearchShowParserResult = new SearchShowParserResult();
-        if (response != null) {
+        if (response != null)
             searchShowParserResult = getSearchShowParserResult(response, searchInfo, language, showScraper);
-        }
-        if (!language.equals("en")) { // language != en
-            log.debug("getResult: language is not en");
-            if (globalResponse != null) {
-                log.debug("getResult: globalResponse is not null");
-                globalSearchShowParserResult = getSearchShowParserResult(globalResponse, searchInfo, "en", showScraper);
-                if (searchShowParserResult.resultsProbable.size()>0
-                        && globalSearchShowParserResult.resultsProbable.size()>0) {
-                    log.debug("getResult: both searchShowParserResult.resultsProbable and globalSearchShowParserResult.resultsProbable available");
-                    // if en has a lower Levenshtein distance than language, en has the right order: re-sort language list accordingly
-                    if (globalSearchShowParserResult.resultsProbable.get(0).second <
-                            searchShowParserResult.resultsProbable.get(0).second) {
-                        log.debug("en has lower Levenshtein distance than " + language + ", re-sort fr based on en");
-                        results = reSortAdd(searchShowParserResult, globalSearchShowParserResult, maxItems);
-                    } else {
-                        log.debug("getResult: en does not have better Levenshtein distance: use searchShowParserResult");
-                        results = normalAdd(searchShowParserResult, maxItems);
-                    }
-                } else { // one of the two has size 0
-                    log.debug("getResult: either searchShowParserResult.resultsProbable or globalSearchShowParserResult.resultsProbable is of size null");
-                    if (response != null) { // use searchShowParserResult
-                        log.debug("getResult: use searchShowParserResult");
-                        results = normalAdd(searchShowParserResult, maxItems);
-                    }
-                    else { // revert to globalSearchShowParserResult
-                        log.debug("getResult: use globalSearchShowParserResult");
-                        results = normalAdd(globalSearchShowParserResult, maxItems);
-                    }
-                }
-            } else { // globalResponse is null
-                log.debug("getResult: globalResponse is null use searchShowParserResult");
-                results = normalAdd(searchShowParserResult, maxItems);
-            }
-        } else { // language == en
-            log.debug("getResult: language is en use searchShowParserResult");
-            results = normalAdd(searchShowParserResult, maxItems);
-        }
+        results = normalAdd(searchShowParserResult, maxItems);
         return results;
     }
 
@@ -154,6 +74,7 @@ public class SearchShowParser {
                                                                     TvShowSearchInfo searchInfo, String language, ShowScraper4 showScraper) {
         SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
         Boolean isDecisionTaken = false;
+        int levenshteinDistanceTitle, levenshteinDistanceOriginalTitle;
         log.debug("SearchShowParserResult: examining response of " + response.body().total_results + " entries in " + language + ", for " + searchInfo.getShowName());
         for (BaseTvShow series : response.body().results) {
             if (series.id != SERIES_NOT_PERMITTED_ID) {
@@ -167,6 +88,7 @@ public class SearchShowParser {
                 log.debug("SearchShowParserResult: examining " + series.name + ", in " + language);
                 result.setScraper(showScraper);
                 result.setFile(searchInfo.getFile());
+                result.setOriginalTitle(series.original_name);
                 result.setExtra(extra);
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
@@ -178,7 +100,6 @@ public class SearchShowParser {
                         isDecisionTaken = true;
                     } else {
                         log.debug("getResult: " + series.name + " has backdrop_path " + IMAGE_URL + BACKDROP_LARGE + series.backdrop_path);
-                        // TODO MARC missing unified thumb
                         result.setBackdropPath(IMAGE_URL + BACKDROP_LARGE + series.backdrop_path);
                     }
                 }
@@ -189,7 +110,6 @@ public class SearchShowParser {
                         searchShowParserResult.resultsNoPoster.add(result);
                         isDecisionTaken = true;
                     } else {
-                        // TODO MARC missing unified thumb
                         log.debug("getResult: " + series.name + " has poster_path " + IMAGE_URL + POSTER_LARGE +series.poster_path);
                         result.setPosterPath(IMAGE_URL + POSTER_LARGE + series.poster_path);
                     }
@@ -197,15 +117,18 @@ public class SearchShowParser {
                 if (! isDecisionTaken) {
                     log.debug("getResult: taking into account " + series.name + " because banner/image exists");
                     isDecisionTaken = true;
+                    // get the min of the levenshtein distance between cleaned file based show name and title and original title identified
+                    levenshteinDistanceTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                            result.getTitle().toLowerCase());
+                    levenshteinDistanceOriginalTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
+                            result.getOriginalTitle().toLowerCase());
                     searchShowParserResult.resultsProbable.add(new Pair<>(result,
-                            levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                                    result.getTitle().toLowerCase())));
+                            Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                 }
                 if (! isDecisionTaken)
                     log.warn("getSearchShowParserResult: ignore serie since banner/image is null for " + series.name);
             }
         }
-        // TODO MARC levenstein metric on original title, no need to search in two languages... with tmdb perhaps
         log.debug("getResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
         Collections.sort(searchShowParserResult.resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
             @Override

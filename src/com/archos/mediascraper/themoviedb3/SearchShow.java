@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import retrofit2.Response;
 
-// Search Show for name query for year in language (ISO 639-1 code) and en
+// Search Show for name query for year in language (ISO 639-1 code)
 public class SearchShow {
     private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
 
@@ -39,21 +39,13 @@ public class SearchShow {
     public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper4 showScraper, MyTmdb tmdb) {
         SearchShowResult myResult = new SearchShowResult();
         Response<TvShowResultsPage> response = null;
-        Response<TvShowResultsPage> globalResponse = null;
-
         boolean authIssue = false;
         boolean notFoundIssue = true;
-
         boolean isResponseOk = false;
         boolean isResponseEmpty = false;
-        boolean isGlobalResponseOk = false;
-        boolean isGlobalResponseEmpty = false;
-
         String showKey = null;
-
         log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
         try {
-
             showKey = searchInfo.getShowName() + "|" + language;
             response = showCache.get(showKey);
             if (log.isTraceEnabled()) debugLruCache(showCache);
@@ -71,24 +63,6 @@ public class SearchShow {
                 notFoundIssue = false;
                 if (response.body() == null) isResponseEmpty = true;
             }
-
-            if (!language.equals("en")) {
-                showKey = searchInfo.getShowName() + "|" + "en";
-                globalResponse = showCache.get(showKey);
-                if (globalResponse == null) {
-                    globalResponse = tmdb.searchService().tv(searchInfo.getShowName(), null, "en",null).execute();
-                    if (globalResponse.code() == 401) authIssue = true; // this is an OR
-                    if (globalResponse.code() != 404) notFoundIssue = false; // this is an AND
-                    if (globalResponse.isSuccessful()) isGlobalResponseOk = true;
-                    if (globalResponse.body() == null) isGlobalResponseEmpty = true;
-                    if (isGlobalResponseOk || isGlobalResponseEmpty) showCache.put(showKey, globalResponse);
-                } else {
-                    log.debug("search: boost using cached searched show");
-                    isGlobalResponseOk = true;
-                    notFoundIssue = false;
-                    if (globalResponse.body() == null) isGlobalResponseEmpty = true;
-                }
-            }
             if (authIssue) {
                 log.debug("search: auth error");
                 myResult.status = ScrapeStatus.AUTH_ERROR;
@@ -101,14 +75,13 @@ public class SearchShow {
                 myResult.result = SearchShowResult.EMPTY_LIST;
                 myResult.status = ScrapeStatus.NOT_FOUND;
             } else {
-                if (isResponseEmpty && isGlobalResponseEmpty) {
+                if (isResponseEmpty) {
                     log.debug("search: error");
                     myResult.result = SearchShowResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.ERROR_PARSER;
                 } else {
                     myResult.result = SearchShowParser.getResult(
                             (isResponseOk) ? response : null,
-                            (isGlobalResponseOk) ? globalResponse: null,
                             searchInfo, language, resultLimit, showScraper);
                     myResult.status = ScrapeStatus.OKAY;
                 }
@@ -118,7 +91,6 @@ public class SearchShow {
                 log.error("search: caught IOException " + e.getMessage(), e);
             else
                 log.error("search: caught IOException");
-
             myResult.result = SearchShowResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
