@@ -77,7 +77,7 @@ public class ShowIdImagesParser {
         });
 
         for(Pair<Image, String> poster : tempPosters) {
-            log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + IMAGE_URL + POSTER_LARGE + poster.first.file_path);
+            log.debug("getResult: generating ScraperImage for poster for " + showTitle + ", large=" + IMAGE_URL + POSTER_LARGE + poster.first.file_path);
             ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
             image.setLanguage(poster.second);
             image.setLargeUrl(IMAGE_URL + POSTER_LARGE + poster.first.file_path);
