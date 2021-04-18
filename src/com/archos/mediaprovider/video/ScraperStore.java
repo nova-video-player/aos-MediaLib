@@ -124,6 +124,7 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/show");
             public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/show/id/");
+            public static final Uri ONLINE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/show/online_id/");
             public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/show/name/");
             public static final Uri ALL_INFOS = Uri.parse(CONTENT_AUTHORITY + "/tags/show/full/id/");
             public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/shows/");

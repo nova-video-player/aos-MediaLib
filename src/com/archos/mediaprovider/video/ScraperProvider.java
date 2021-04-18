@@ -66,6 +66,7 @@ public class ScraperProvider extends ContentProvider {
     private static final int SHOW_NAME = SCRAPER_PROVIDER_OFFSET + 42;
     private static final int SHOW_ALL_INFOS = SCRAPER_PROVIDER_OFFSET + 43;
     private static final int SHOW_ALL = SCRAPER_PROVIDER_OFFSET + 44;
+    private static final int SHOW_ONLINE_ID = SCRAPER_PROVIDER_OFFSET + 45;
 
     private static final int EPISODE = SCRAPER_PROVIDER_OFFSET + 50;
     private static final int EPISODE_ID = SCRAPER_PROVIDER_OFFSET + 51;
@@ -166,6 +167,8 @@ public class ScraperProvider extends ContentProvider {
                 SHOW_ALL_INFOS);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Show.URI.NAME) + "*",
                 SHOW_NAME);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Show.URI.ONLINE_ID) + "#",
+                SHOW_ONLINE_ID);
 
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Episode.URI.BASE),
                 EPISODE);
@@ -694,6 +697,12 @@ public class ScraperProvider extends ContentProvider {
                 qb.appendWhereEscapeString(data);
                 break;
 
+            case SHOW_ONLINE_ID:
+                qb.setTables(ScraperTables.SHOW_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Show.ONLINE_ID + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
             case SHOW_NAME:
                 handleShowFull(qb);
                 qb.appendWhere(ScraperStore.Show.NAME + " = ");
@@ -739,7 +748,6 @@ public class ScraperProvider extends ContentProvider {
                 qb.appendWhereEscapeString(data);
                 break;
 
-
             case ACTOR_ID:
                 qb.setTables(ScraperTables.ACTORS_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Actor.ID + " = ");
@@ -774,7 +782,6 @@ public class ScraperProvider extends ContentProvider {
                 qb.appendWhereEscapeString(data);
                 break;
 
-
             case GENRE_ID:
                 qb.setTables(ScraperTables.GENRES_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Genre.ID + " = ");
@@ -802,7 +809,6 @@ public class ScraperProvider extends ContentProvider {
                 qb.appendWhere(ScraperStore.Genre.NAME + " = ");
                 qb.appendWhereEscapeString(data);
                 break;
-
 
             case DIRECTOR_ID:
                 qb.setTables(ScraperTables.DIRECTORS_TABLE_NAME);
@@ -855,7 +861,6 @@ public class ScraperProvider extends ContentProvider {
                 break;
 
             case STUDIO_SHOW:
-                
                 qb.setTables(ScraperTables.PRODUCES_SHOW_VIEW_NAME);
                 qb.appendWhere(ScraperStore.Show.Studio.SHOW + " = ");
                 qb.appendWhereEscapeString(data);
