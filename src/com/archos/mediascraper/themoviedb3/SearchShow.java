@@ -44,7 +44,7 @@ public class SearchShow {
         boolean isResponseOk = false;
         boolean isResponseEmpty = false;
         String showKey = null;
-        log.debug("search: quering thetvdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
+        log.debug("search: quering tmdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
         try {
             showKey = searchInfo.getShowName() + "|" + language;
             response = showCache.get(showKey);
