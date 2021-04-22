@@ -27,6 +27,7 @@ import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
+import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.settings.ScraperSettings;
 
 import org.xml.sax.SAXException;
@@ -103,11 +104,16 @@ public abstract class BaseScraper2 {
             Log.e(TAG, "no SearchInfo given");
             return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR, null);
         }
-        // TODO MARC here get season episode
         ScrapeDetailResult result = null;
         ScrapeSearchResult searchResult = getMatches2(info, 1);
         if (searchResult.isOkay()) {
-            result = getDetails(searchResult.results.get(0), null);
+            // here info is a TvSearchInfo
+            Bundle bundle = new Bundle();
+            TvShowSearchInfo tvSearchInfo = (TvShowSearchInfo) info;
+            bundle.putInt(Scraper.ITEM_REQUEST_SEASON, tvSearchInfo.getSeason());
+            // keeping whole season boosts the perf since there is only one request for tmdb
+            //bundle.putInt(Scraper.ITEM_REQUEST_EPISODE, tvSearchInfo.getEpisode());
+            result = getDetails(searchResult.results.get(0), bundle);
         } else {
             result = new ScrapeDetailResult(null, searchResult.isMovie, null, searchResult.status, searchResult.reason);
         }
