@@ -17,11 +17,13 @@ package com.archos.mediascraper.themoviedb3;
 import android.os.Bundle;
 import android.util.Pair;
 
+import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.xml.ShowScraper4;
 import com.uwetrottmann.tmdb2.entities.BaseTvShow;
+import com.uwetrottmann.tmdb2.entities.TvShow;
 import com.uwetrottmann.tmdb2.entities.TvShowResultsPage;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
@@ -37,25 +39,37 @@ import retrofit2.Response;
 
 public class SearchShowParser {
 
+    // TODO MARC refactor like movie for posters/backdrops gen
+
     private static final Logger log = LoggerFactory.getLogger(SearchShowParser.class);
     private final static int SERIES_NOT_PERMITTED_ID = 313081;
-
-    // TODO MARC refactor like movie
-    // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
-    final static String IMAGE_URL = "https://image.tmdb.org/t/p/";
-    final static String POSTER_THUMB = "w92";
-    final static String POSTER_LARGE = "w342";
-    final static String BACKDROP_THUMB = "w300";
-    final static String BACKDROP_LARGE = "w1280";
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
     private static List<SearchResult> normalAdd(SearchShowParserResult searchShowParserResult, int maxItems) {
         List<SearchResult> results = new LinkedList<>();
+        log.debug("normalAdd: searchShowParserResult.resultsProbable.size()=" + searchShowParserResult.resultsProbable.size());
+        // TODO MARC put with poster&backdrop, without backdrop then without poster order
+        // TODO MARC without backdrop it happens thus do not eliminate
         if (searchShowParserResult.resultsProbable.size()>0)
             for (Pair<SearchResult,Integer> pair : searchShowParserResult.resultsProbable)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(pair.first);
+        // skip shows without a poster
+        /*
+        if (searchShowParserResult.resultsNoPoster.size()>0)
+            for (SearchResult result : searchShowParserResult.resultsNoPoster)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(result);
+         */
+        // skip shows without a banner
+        /*
+        if (searchShowParserResult.resultsNoBanner.size()>0)
+            for (SearchResult result : searchShowParserResult.resultsNoBanner)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(result);
+         */
+        log.debug("normalAdd: results.size()=" + results.size());
         return results;
     }
 
@@ -73,49 +87,52 @@ public class SearchShowParser {
     private static SearchShowParserResult getSearchShowParserResult(Response<TvShowResultsPage> response,
                                                                     TvShowSearchInfo searchInfo, String language, ShowScraper4 showScraper) {
         SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
+        int episode, season;
         Boolean isDecisionTaken = false;
         int levenshteinDistanceTitle, levenshteinDistanceOriginalTitle;
-        log.debug("SearchShowParserResult: examining response of " + response.body().total_results + " entries in " + language + ", for " + searchInfo.getShowName());
+        log.debug("getSearchShowParserResult: examining response of " + response.body().total_results + " entries in " + language + ", for " + searchInfo.getShowName());
         for (BaseTvShow series : response.body().results) {
             if (series.id != SERIES_NOT_PERMITTED_ID) {
                 Bundle extra = new Bundle();
                 extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
                 extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
                 SearchResult result = new SearchResult();
+                result.setEpisode(searchInfo.getEpisode());
+                result.setSeason(searchInfo.getSeason());
                 result.setId(series.id);
                 result.setLanguage(language);
                 result.setTitle(series.name);
-                log.debug("SearchShowParserResult: examining " + series.name + ", in " + language);
+                log.debug("getSearchShowParserResult: examining " + series.name + ", in " + language);
                 result.setScraper(showScraper);
                 result.setFile(searchInfo.getFile());
                 result.setOriginalTitle(series.original_name);
                 result.setExtra(extra);
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
-                if (series.backdrop_path != null) {
+                //if (series.backdrop_path != null) {
                     // TODO adapt to tmdb missing banner/poster
-                    if (series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
-                        log.debug("getMatches2: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
+                    if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
+                        log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
                         searchShowParserResult.resultsNoBanner.add(result);
                         isDecisionTaken = true;
                     } else {
-                        log.debug("getResult: " + series.name + " has backdrop_path " + IMAGE_URL + BACKDROP_LARGE + series.backdrop_path);
-                        result.setBackdropPath(IMAGE_URL + BACKDROP_LARGE + series.backdrop_path);
+                        log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path);
+                        result.setBackdropPath(ScraperImage.TMBL + series.backdrop_path);
                     }
-                }
-                if (series.poster_path != null) {
+                //}
+                //if (series.poster_path != null) {
                     // TODO adapt to tmdb missing banner/poster
-                    if (series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
-                        log.debug("getResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
+                    if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
+                        log.debug("getSearchShowParserResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
                         searchShowParserResult.resultsNoPoster.add(result);
                         isDecisionTaken = true;
                     } else {
-                        log.debug("getResult: " + series.name + " has poster_path " + IMAGE_URL + POSTER_LARGE +series.poster_path);
-                        result.setPosterPath(IMAGE_URL + POSTER_LARGE + series.poster_path);
+                        log.debug("getSearchShowParserResult: " + series.name + " has poster_path " + ScraperImage.TMPL + series.poster_path);
+                        result.setPosterPath(ScraperImage.TMPL + series.poster_path);
                     }
-                }
+                //}
                 if (! isDecisionTaken) {
-                    log.debug("getResult: taking into account " + series.name + " because banner/image exists");
+                    log.debug("getSearchShowParserResult: taking into account " + series.name + " because banner/image exists");
                     isDecisionTaken = true;
                     // get the min of the levenshtein distance between cleaned file based show name and title and original title identified
                     levenshteinDistanceTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
@@ -129,7 +146,7 @@ public class SearchShowParser {
                     log.warn("getSearchShowParserResult: ignore serie since banner/image is null for " + series.name);
             }
         }
-        log.debug("getResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
+        log.debug("getSearchShowParserResult: resultsProbable=" + searchShowParserResult.resultsProbable.toString());
         Collections.sort(searchShowParserResult.resultsProbable, new Comparator<Pair<SearchResult, Integer>>() {
             @Override
             public int compare(final Pair<SearchResult, Integer> sr1, final Pair<SearchResult, Integer> sr2) {
@@ -142,7 +159,7 @@ public class SearchShowParser {
                 }
             }
         });
-        log.debug("getResult: applying Levenshtein distance resultsProbableSorted=" + searchShowParserResult.resultsProbable.toString());
+        log.debug("getSearchShowParserResult: applying Levenshtein distance resultsProbableSorted=" + searchShowParserResult.resultsProbable.toString());
         return searchShowParserResult;
     }
 }
