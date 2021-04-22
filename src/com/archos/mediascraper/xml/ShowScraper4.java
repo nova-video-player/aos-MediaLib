@@ -36,7 +36,6 @@ import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.ShowUtils;
-import com.archos.mediascraper.TagsFactory;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.settings.ScraperSetting;
@@ -47,7 +46,6 @@ import com.archos.mediascraper.themoviedb3.SearchShowResult;
 import com.archos.mediascraper.themoviedb3.ShowIdEpisodeSearch;
 import com.archos.mediascraper.themoviedb3.ShowIdEpisodeSearchResult;
 import com.archos.mediascraper.themoviedb3.ShowIdEpisodes;
-import com.archos.mediascraper.themoviedb3.ShowIdEpisodesResult;
 import com.archos.mediascraper.themoviedb3.ShowIdImagesParser;
 import com.archos.mediascraper.themoviedb3.ShowIdImagesResult;
 import com.archos.mediascraper.themoviedb3.ShowIdParser;
@@ -56,10 +54,6 @@ import com.archos.mediascraper.themoviedb3.ShowIdSeasonSearchResult;
 import com.archos.mediascraper.themoviedb3.ShowIdTvSearch;
 import com.archos.mediascraper.themoviedb3.ShowIdTvSearchResult;
 import com.uwetrottmann.tmdb2.entities.TvEpisode;
-import com.uwetrottmann.tmdb2.entities.TvSeason;
-import com.uwetrottmann.tmdb2.services.TvEpisodesService;
-import com.uwetrottmann.tmdb2.services.TvSeasonsService;
-import com.uwetrottmann.tmdb2.services.TvService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,11 +84,6 @@ public class ShowScraper4 extends BaseScraper2 {
     static Cache cache;
 
     static MyTmdb tmdb = null;
-
-    static TvService tvService = null;
-    static TvSeasonsService tvSeasonsService = null;
-    static TvEpisodesService tvEpisodesService = null;
-
     static String apiKey = null;
 
     public ShowScraper4(Context context) {
@@ -139,9 +128,11 @@ public class ShowScraper4 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
-        // TODO MARC wrong: manual search gets all the backdrops and posters for one episode!!! should only get one episode and no backdrops if
-        // TODO MARC understand basicShow or basicEpisode booleans --> always false & false except for Manual{Show|Video}ScrappingSearchFragment.java
-        // TODO MARC this gets all episodes, a bit too much, could only focus on one season but no information on season when called
+        // TODO MARC ITEM_REQUEST_BASIC_SHOW = true means show (without episodes) is to be scraped manually (ManualShowScrappingSearchFragment)
+        //  --> no need to get full season or else we have already all info in getMatch2
+        // TODO MARC ITEM_REQUEST_BASIC_VIDEO = true means single episode is to be scraped manually (ManualVideoScrappingSearchFragment/VideoInfoScraperSearchFragment)
+        //  --> no need to get full season but in this case we have already ITEM_REQUEST_EPISODE set (TBC)
+
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
         boolean getAllEpisodes = options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES);
@@ -150,6 +141,11 @@ public class ShowScraper4 extends BaseScraper2 {
         if (options != null) {
             season = options.getInt(Scraper.ITEM_REQUEST_SEASON, -1);
             episode = options.getInt(Scraper.ITEM_REQUEST_EPISODE, -1);
+            log.debug("getDetailsInternal: options is not null and " + options.containsKey(Scraper.ITEM_REQUEST_SEASON) +
+                    "/" + options.containsKey(Scraper.ITEM_REQUEST_EPISODE) +
+                    ", season=" + season + ", episode=" + episode);
+        } else {
+            log.debug("getDetailsInternal: options is null");
         }
 
         String resultLanguage = result.getLanguage();
@@ -210,11 +206,12 @@ public class ShowScraper4 extends BaseScraper2 {
 
                         if (!searchImages.backdrops.isEmpty())
                             showTags.setBackdrops(searchImages.backdrops);
+                        else log.debug("getDetailsInternal: backdrops empty!");
                         if (!searchImages.posters.isEmpty())
                             showTags.setPosters(searchImages.posters);
+                        else log.debug("getDetailsInternal: posters empty!");
                     }
                 } else {
-                    // TODO WARNING BUG MARC GET the known show in allEpisodes otherwise null downloadGetDefaultPosterFile
                     // showTags exits we get it from db
                     showTags = buildShowTagsOnlineId(mContext, showId);
                     if (showTags == null) log.warn("getDetailsInternal: show " + showId + " tag is null but known!");
@@ -222,11 +219,11 @@ public class ShowScraper4 extends BaseScraper2 {
                             " in " + resultLanguage  + " already known: " + showTags.getTitle() + ", plot: " + showTags.getPlot());
                 }
 
-                // TODO MARC get only poster main no backdrops no posters if manual search
+                // TODO MARC do not download all backdrops here on single file search?
+                showTags.downloadPoster(mContext);
+                showTags.downloadBackdrop(mContext);
 
-                ////
                 // retreive now the desired episodes
-                // TODO MARC DO NOT REDO IF season cached
                 List<TvEpisode> tvEpisodes = new ArrayList<>();
                 if (getAllEpisodes) {
                     // get all episodes: loop over seasons and concatenate
@@ -237,30 +234,24 @@ public class ShowScraper4 extends BaseScraper2 {
                         // TODO MARC MARK STATUS
                     }
                 } else {
-                    if (season != -1) {
-                        if (episode != -1) {
-                            // get a single episode
-                            ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(showId, season, episode, resultLanguage, tmdb);
-                            if (showIdEpisode.status == ScrapeStatus.OKAY) tvEpisodes.add(showIdEpisode.tvEpisode);
-                            else log.warn("getDetailsInternal: scrapeStatus for s" + season + "e" + episode + " is NOK!");
-                            // TODO MARC MARK STATUS
-                        } else {
-                            // get whole season
-                            ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, season, resultLanguage, tmdb);
-                            if (showIdSeason.status == ScrapeStatus.OKAY) tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
-                            else log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
-                            // TODO MARC MARK STATUS
-                        }
+                    if (episode != -1) {
+                        // get a single episode
+                        ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(showId, season, episode, resultLanguage, tmdb);
+                        if (showIdEpisode.status == ScrapeStatus.OKAY) tvEpisodes.add(showIdEpisode.tvEpisode);
+                        else log.warn("getDetailsInternal: scrapeStatus for s" + season + "e" + episode + " is NOK!");
+                        // TODO MARC MARK STATUS
+                    } else {
+                        // by default we get the whole season on which the show has been identified
+                        if (season == -1) log.error("getDetailsInternal: season cannot be -1!!!");
+                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, season, resultLanguage, tmdb);
+                        if (showIdSeason.status == ScrapeStatus.OKAY)
+                            tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
+                        else
+                            log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
+                        // TODO MARC MARK STATUS
                     }
                 }
-
-                // TODO MARC after processing put result in lruCache
-                // pass result to getEpisodes
-                ////
-
-                // get also all episodes
-                // since query has been done just before we are sure that there is no error since scrape error has been handled before
-                // TODO MARC rework below to take already a result of tmdb request
+                // get now all episodes in tvEpisodes
                 Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(showId, tvEpisodes, showTags, resultLanguage, tmdb, mContext);
                 if (!searchEpisodes.isEmpty()) {
                     allEpisodes = searchEpisodes;
@@ -278,10 +269,9 @@ public class ShowScraper4 extends BaseScraper2 {
             //if (!searchImages.posters.isEmpty())
             //    showTags.setPosters(searchImages.posters);
 
-            // TODO MARC
             // if we have episodes and posters map them to each other
-            if (!allEpisodes.isEmpty() && !searchImages.posters.isEmpty())
-                mapPostersEpisodes(allEpisodes, searchImages.posters, resultLanguage);
+            if (!allEpisodes.isEmpty() && !showTags.getAllPostersInDb(mContext).isEmpty())
+                mapPostersEpisodes(allEpisodes, showTags.getAllPostersInDb(mContext), resultLanguage);
         } else {
             log.debug("getDetailsInternal: cache boost for showId (all episodes)");
             // no need to parse, we have a cached result
@@ -293,7 +283,6 @@ public class ShowScraper4 extends BaseScraper2 {
             log.debug("getDetailsInternal: ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
-        showTags.downloadPoster(mContext);
         EpisodeTags returnValue = buildTag(allEpisodes,
                 Integer.parseInt(result.getExtra().getString(ShowUtils.EPNUM, "0")),
                 Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")),
