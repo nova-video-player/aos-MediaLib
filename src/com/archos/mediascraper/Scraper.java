@@ -18,7 +18,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
-
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
