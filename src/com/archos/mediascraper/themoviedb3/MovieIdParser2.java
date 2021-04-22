@@ -87,7 +87,7 @@ public class MovieIdParser2 {
                         result.addDirectorIfAbsent(crew.name);
         }
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
-        result.setContentRating(movie.rating.toString());
+        if (movie.rating != null) result.setContentRating(movie.rating.toString());
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
         return result;
