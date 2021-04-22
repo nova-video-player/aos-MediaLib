@@ -159,6 +159,7 @@ public class SearchShowParser {
                 extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
                 extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));
                 SearchResult result = new SearchResult();
+                result.setTvShow();
                 result.setId(series.id);
                 result.setLanguage(language);
                 result.setTitle(series.seriesName);

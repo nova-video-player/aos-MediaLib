@@ -467,19 +467,19 @@ public class AutoScrapeService extends Service {
                                             b.putInt(Scraper.ITEM_REQUEST_SEASON, (int) season);
 
                                             log.debug("startScraping: rescraping episode for tvId " + videoID + ", season " + season);
-                                            SearchResult searchResult = new SearchResult(0,title, (int) videoID);
+                                            SearchResult searchResult = new SearchResult(SearchResult.tvshow, title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
                                                 searchResult.setScraper(new ShowScraper3(AutoScrapeService.this));
-                                                result = ShowScraper3.getDetails(new SearchResult(0,title, (int) videoID), b);
+                                                result = ShowScraper3.getDetails(new SearchResult(SearchResult.tvshow, title, (int) videoID), b);
                                             } else { // by default TMDB
                                                 searchResult.setScraper(new ShowScraper4(AutoScrapeService.this));
-                                                result = ShowScraper4.getDetails(new SearchResult(0,title, (int) videoID), b);
+                                                result = ShowScraper4.getDetails(new SearchResult(SearchResult.tvshow,title, (int) videoID), b);
                                             }
 
                                         } else if (scraperType==BaseTags.MOVIE) {
                                             log.debug("startScraping: rescraping movie "+videoID);
-                                            SearchResult searchResult = new SearchResult(0,title, (int) videoID);
+                                            SearchResult searchResult = new SearchResult(SearchResult.movie, title, (int) videoID);
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new MovieScraper3(AutoScrapeService.this));
                                             result = MovieScraper3.getDetails(searchResult, null);
@@ -491,7 +491,6 @@ public class AutoScrapeService extends Service {
                                         SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri,scrapUri);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         result = scraper.getAutoDetails(searchInfo);
-
                                     }
 
                                     if (result!=null&&result.tag != null && ID != -1) {

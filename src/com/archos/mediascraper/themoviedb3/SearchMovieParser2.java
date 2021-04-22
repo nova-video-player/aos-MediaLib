@@ -35,6 +35,7 @@ public class SearchMovieParser2 {
         for (BaseMovie movie : response.body().results) {
             if (i < limit) {
                 SearchResult result = new SearchResult();
+                result.setMovie();
                 if (movie.id != null) result.setId(movie.id);
                 if (movie.original_title != null) result.setTitle(movie.original_title);
                 if (DBG) Log.d(TAG, "getResult: taking into account " + movie.original_title);

@@ -22,7 +22,7 @@ import android.os.Parcelable;
 import com.archos.mediascraper.xml.BaseScraper2;
 
 public class SearchResult implements Parcelable {
-    private int mType;
+    private int mType; // 0 tvshow, 1 movie
     private String mTitle;
     private int mId;
     private String mLanguage;
@@ -32,8 +32,11 @@ public class SearchResult implements Parcelable {
     private String mPosterPath;
     private String mBackdropPath;
 
+    public static final int movie = 1;
+    public static final int tvshow = 0;
+
     // show should not be tainted with season/episode since it is an higher entity but need to know point of request
-    private int mSeason, mEpisode;
+    private int mOriginSearchSeason, mOriginSearchEpisode;
 
     private String mOriginalTitle;
 
@@ -44,8 +47,8 @@ public class SearchResult implements Parcelable {
         mType = type;
         mTitle = title;
         mId = id;
-        mSeason = -1;
-        mEpisode = -1;
+        mOriginSearchSeason = -1;
+        mOriginSearchEpisode = -1;
     }
 
     @Override
@@ -78,10 +81,10 @@ public class SearchResult implements Parcelable {
     public void setPosterPath(String path) { mPosterPath = path; }
     public void setBackdropPath(String path) { mBackdropPath = path;  }
 
-    public int getSeason() { return mSeason; }
-    public void setSeason(int season) { mSeason = season; }
-    public int getEpisode() { return mEpisode; }
-    public void setEpisode(int episode) { mEpisode = episode; }
+    public int getOriginSearchSeason() { return mOriginSearchSeason; }
+    public void setOriginSearchSeason(int season) { mOriginSearchSeason = season; }
+    public int getOriginSearchEpisode() { return mOriginSearchEpisode; }
+    public void setOriginSearchEpisode(int episode) { mOriginSearchEpisode = episode; }
 
     public static final Parcelable.Creator<SearchResult> CREATOR = new Parcelable.Creator<SearchResult>() {
         public SearchResult createFromParcel(Parcel in) {
@@ -110,6 +113,11 @@ public class SearchResult implements Parcelable {
         out.writeInt(mId);
         out.writeString(mLanguage);
     }
+
+    public boolean isTvShow() { return (mType == tvshow); }
+    public boolean isMovie() { return (mType == movie); }
+    public void setTvShow() { mType = tvshow; }
+    public void setMovie() { mType = movie; }
 
     public int describeContents() {
         return 0;
