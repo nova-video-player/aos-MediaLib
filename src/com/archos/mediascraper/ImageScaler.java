@@ -52,6 +52,7 @@ public class ImageScaler {
     }
 
     public static boolean scale(Uri rawFile, String targetName, int maxWidth, int maxHeight, Type scaling) {
+        // note: no rescaling if image larger than max dims
         if (DBG) Log.d(TAG, "scale " + scaling.name() + " to (" + maxWidth + "," + maxHeight + ")");
         DebugTimer dbgTimer = null;
         if (DBG) dbgTimer = new DebugTimer();

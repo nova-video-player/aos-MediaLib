@@ -39,10 +39,9 @@ public class ScraperImage {
 
     private static final Logger log = LoggerFactory.getLogger(ScraperImage.class);
 
-    // TODO MARC do not resize it is already done since we get it scaled
-    // TODO change poster resolution here?
-    public static int POSTER_WIDTH = 240;
-    public static int POSTER_HEIGHT = 360;
+    // ratio is 1.5, match poster width of TMDB: there is no rescaling if image size lower or equal to defined dimension for posters and screen size for backdrops
+    public static int POSTER_WIDTH = 342; //240
+    public static int POSTER_HEIGHT = 513; // 360
 
     public final static String TVDB_IMAGE_URL = "https://artworks.thetvdb.com/banners/";
 
@@ -490,6 +489,7 @@ public class ScraperImage {
                 getDir(mType, context);
                 // does not exist - so download it and update the database.
                 log.debug("file does not exist: download it!");
+                // rescaling happens here only if rescaling type different from NONE and size of the image higher than maxWidth x maxHeight
                 success = saveSizedImage(context, url, file, mType, thumb, maxWidth, maxHeight, fake);
             }
         } finally {
