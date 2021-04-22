@@ -52,8 +52,6 @@ public class ShowIdTvSearch {
                 // specify image language include_image_language=en,null
                 Map<String, String> options  = new HashMap<String, String>() {{
                     put("include_image_language", "en,null");
-                    // TODO MARC CHECK
-                    put("episodes", "en,null");
                 }};
                 Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES), options).execute();
                 switch (seriesResponse.code()) {

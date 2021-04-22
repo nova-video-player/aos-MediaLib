@@ -425,7 +425,6 @@ public class EpisodeTags extends BaseTags {
         String baseLargeUrl, baseThumbUrl;
         if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
             baseLargeUrl = ScraperImage.TVDB_IMAGE_URL;
-            // TODO MARC is this really a thumb in tvdb case
             baseThumbUrl = ScraperImage.TVDB_IMAGE_URL;
         } else { // by default TMDB
             baseLargeUrl = ScraperImage.TMPL;

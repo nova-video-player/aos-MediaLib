@@ -38,9 +38,6 @@ import java.util.List;
 import retrofit2.Response;
 
 public class SearchShowParser {
-
-    // TODO MARC refactor like movie for posters/backdrops gen
-
     private static final Logger log = LoggerFactory.getLogger(SearchShowParser.class);
     private final static int SERIES_NOT_PERMITTED_ID = 313081;
 
@@ -49,8 +46,6 @@ public class SearchShowParser {
     private static List<SearchResult> normalAdd(SearchShowParserResult searchShowParserResult, int maxItems) {
         List<SearchResult> results = new LinkedList<>();
         log.debug("normalAdd: searchShowParserResult.resultsProbable.size()=" + searchShowParserResult.resultsProbable.size());
-        // TODO MARC put with poster&backdrop, without backdrop then without poster order
-        // TODO MARC without backdrop it happens thus do not eliminate
         if (searchShowParserResult.resultsProbable.size()>0)
             for (Pair<SearchResult,Integer> pair : searchShowParserResult.resultsProbable)
                 if (maxItems < 0 || results.size() < maxItems)
@@ -111,28 +106,22 @@ public class SearchShowParser {
                 result.setExtra(extra);
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
-                //if (series.backdrop_path != null) {
-                    // TODO adapt to tmdb missing banner/poster
-                    if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
-                        log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
-                        searchShowParserResult.resultsNoBanner.add(result);
-                        isDecisionTaken = true;
-                    } else {
-                        log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path);
-                        result.setBackdropPath(ScraperImage.TMBL + series.backdrop_path);
-                    }
-                //}
-                //if (series.poster_path != null) {
-                    // TODO adapt to tmdb missing banner/poster
-                    if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
-                        log.debug("getSearchShowParserResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
-                        searchShowParserResult.resultsNoPoster.add(result);
-                        isDecisionTaken = true;
-                    } else {
-                        log.debug("getSearchShowParserResult: " + series.name + " has poster_path " + ScraperImage.TMPL + series.poster_path);
-                        result.setPosterPath(ScraperImage.TMPL + series.poster_path);
-                    }
-                //}
+                if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
+                    log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
+                    searchShowParserResult.resultsNoBanner.add(result);
+                    isDecisionTaken = true;
+                } else {
+                    log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path);
+                    result.setBackdropPath(ScraperImage.TMBL + series.backdrop_path);
+                }
+                if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
+                    log.debug("getSearchShowParserResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
+                    searchShowParserResult.resultsNoPoster.add(result);
+                    isDecisionTaken = true;
+                } else {
+                    log.debug("getSearchShowParserResult: " + series.name + " has poster_path " + ScraperImage.TMPL + series.poster_path);
+                    result.setPosterPath(ScraperImage.TMPL + series.poster_path);
+                }
                 if (! isDecisionTaken) {
                     log.debug("getSearchShowParserResult: taking into account " + series.name + " because banner/image exists");
                     isDecisionTaken = true;

@@ -76,15 +76,14 @@ public class ShowIdEpisodes {
                 episodeTags.setEpisodePicture(tvEpisode.still_path, context);
                 if ((tvEpisode.overview == null || tvEpisode.name == null)
                         && !language.equals("en")) { // missing overview in native language
-                    // TODO MARC nok check if missing episode and request seasons in this case
                     if (globalEpisodes.get(tvEpisode.id) == null) { // missing: get whole serie
+                        log.debug("getEpisodes: description in " + language + " missing for tvEpisode.name s" + tvEpisode.season_number + "e" + tvEpisode.episode_number + "fallback in en");
                         ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(showId, tvEpisode.season_number, "en", tmdb);
                         // stack all episodes in en to find later the overview and name
                         if (globalSeasonIdSearchResult.status == ScrapeStatus.OKAY) {
                             if (globalSeasonIdSearchResult.tvSeason != null) {
                                 for (TvEpisode globalTvEpisode : globalSeasonIdSearchResult.tvSeason.episodes)
                                     globalEpisodes.put(globalTvEpisode.id, globalTvEpisode);
-                                // TODO MARC put in cache?
                             } else { // an error at this point is PARSER related
                                 log.debug("getEpisodes: error " + globalSeasonIdSearchResult.status);
                             }

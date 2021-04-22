@@ -59,8 +59,6 @@ public class ImageUtils {
         }
     }
 
-    // TODO MARC remove dupplicate imagePath on path and not language
-
     public static List<String> getSortedPaths(List<Image> images) {
         Collections.sort(images);
         ArrayList<String> ret = new ArrayList<String>(images.size());
