@@ -32,6 +32,9 @@ public class SearchResult implements Parcelable {
     private String mPosterPath;
     private String mBackdropPath;
 
+    // show should not be tainted with season/episode since it is an higher entity but need to know point of request
+    private int mSeason, mEpisode;
+
     private String mOriginalTitle;
 
     public SearchResult() {
@@ -41,6 +44,8 @@ public class SearchResult implements Parcelable {
         mType = type;
         mTitle = title;
         mId = id;
+        mSeason = -1;
+        mEpisode = -1;
     }
 
     @Override
@@ -72,6 +77,11 @@ public class SearchResult implements Parcelable {
 
     public void setPosterPath(String path) { mPosterPath = path; }
     public void setBackdropPath(String path) { mBackdropPath = path;  }
+
+    public int getSeason() { return mSeason; }
+    public void setSeason(int season) { mSeason = season; }
+    public int getEpisode() { return mEpisode; }
+    public void setEpisode(int episode) { mEpisode = episode; }
 
     public static final Parcelable.Creator<SearchResult> CREATOR = new Parcelable.Creator<SearchResult>() {
         public SearchResult createFromParcel(Parcel in) {
