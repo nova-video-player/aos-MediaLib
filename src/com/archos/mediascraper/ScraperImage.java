@@ -39,9 +39,23 @@ public class ScraperImage {
 
     private static final Logger log = LoggerFactory.getLogger(ScraperImage.class);
 
+    // TODO MARC do not resize it is already done since we get it scaled
     // TODO change poster resolution here?
     public static int POSTER_WIDTH = 240;
     public static int POSTER_HEIGHT = 360;
+
+    public final static String TVDB_IMAGE_URL = "https://artworks.thetvdb.com/banners/";
+
+    // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
+    final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
+    final static String POSTER_THUMB = "w92";
+    final static String POSTER_LARGE = "w342";
+    final static String BACKDROP_THUMB = "w300";
+    final static String BACKDROP_LARGE = "w1280";
+    public final static String TMPT = TMDB_IMAGE_URL + POSTER_THUMB;
+    public final static String TMPL = TMDB_IMAGE_URL + POSTER_LARGE;
+    public final static String TMBT = TMDB_IMAGE_URL + BACKDROP_THUMB;
+    public final static String TMBL = TMDB_IMAGE_URL + BACKDROP_LARGE;
 
     public String getLanguage() {
         return language;
@@ -464,18 +478,13 @@ public class ScraperImage {
             if (fileIfExists(file) != null) {
                 log.debug("using existing file.");
                 success = true;
-            }
-
-            else if (url == null) {
+            } else if (url == null) {
                 log.warn("There is no URL to download. Aborting.");
                 success = false;
-            }
-
-            else if (file == null) {
+            } else if (file == null) {
                 log.warn("No Filename set. Aborting.");
                 success = false;
-            }
-            else {
+            } else {
                 // make sure directories exist.
                 getCacheDir(mType, context);
                 getDir(mType, context);

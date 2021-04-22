@@ -422,8 +422,17 @@ public class EpisodeTags extends BaseTags {
 
     public void setEpisodePicture(String string, Context ct) {
         ScraperImage image = new ScraperImage(Type.EPISODE_POSTER, "");
-        image.setLargeUrl("https://artworks.thetvdb.com/banners/" + string);
-        image.setThumbUrl("https://artworks.thetvdb.com/banners/" + string);
+        String baseLargeUrl, baseThumbUrl;
+        if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
+            baseLargeUrl = ScraperImage.TVDB_IMAGE_URL;
+            // TODO MARC is this really a thumb in tvdb case
+            baseThumbUrl = ScraperImage.TVDB_IMAGE_URL;
+        } else { // by default TMDB
+            baseLargeUrl = ScraperImage.TMPL;
+            baseThumbUrl = ScraperImage.TMPT;
+        }
+        image.setLargeUrl(baseLargeUrl + string);
+        image.setThumbUrl(baseThumbUrl + string);
         image.setLanguage("en");
         image.setSeason(-1);
         image.generateFileNames(ct);

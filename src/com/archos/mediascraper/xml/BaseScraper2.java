@@ -23,6 +23,7 @@ import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.ScrapeStatus;
+import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
@@ -82,7 +83,10 @@ public abstract class BaseScraper2 {
             case BaseTags.MOVIE:
                 return MovieScraper3.generatePreferences(context);
             case BaseTags.TV_SHOW:
-                return ShowScraper4.generatePreferences(context);
+                if (Scraper.SHOW_SCRAPER == Scraper.TVDB)
+                    return ShowScraper3.generatePreferences(context);
+                else // by default TMDB
+                    return ShowScraper4.generatePreferences(context);
             default:
                 return null;
         }
@@ -99,6 +103,7 @@ public abstract class BaseScraper2 {
             Log.e(TAG, "no SearchInfo given");
             return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR, null);
         }
+        // TODO MARC here get season episode
         ScrapeDetailResult result = null;
         ScrapeSearchResult searchResult = getMatches2(info, 1);
         if (searchResult.isOkay()) {
@@ -114,7 +119,10 @@ public abstract class BaseScraper2 {
             case BaseTags.MOVIE:
                 return new MovieScraper3(context);
             case BaseTags.TV_SHOW:
-                return new ShowScraper4(context);
+                if (Scraper.SHOW_SCRAPER == Scraper.TVDB)
+                    return new ShowScraper3(context);
+                else // by default TMDB
+                    return new ShowScraper4(context);
             default:
                 return null;
         }

@@ -49,6 +49,7 @@ import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.MovieScraper3;
+import com.archos.mediascraper.xml.ShowScraper3;
 import com.archos.mediascraper.xml.ShowScraper4;
 
 import org.slf4j.Logger;
@@ -468,8 +469,13 @@ public class AutoScrapeService extends Service {
                                             log.debug("startScraping: rescraping episode for tvId " + videoID + ", season " + season);
                                             SearchResult searchResult = new SearchResult(0,title, (int) videoID);
                                             searchResult.setFile(fileUri);
-                                            searchResult.setScraper(new ShowScraper4(AutoScrapeService.this));
-                                            result = ShowScraper4.getDetails(new SearchResult(0,title, (int) videoID), null);
+                                            if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
+                                                searchResult.setScraper(new ShowScraper3(AutoScrapeService.this));
+                                                result = ShowScraper3.getDetails(new SearchResult(0,title, (int) videoID), b);
+                                            } else { // by default TMDB
+                                                searchResult.setScraper(new ShowScraper4(AutoScrapeService.this));
+                                                result = ShowScraper4.getDetails(new SearchResult(0,title, (int) videoID), b);
+                                            }
 
                                         } else if (scraperType==BaseTags.MOVIE) {
                                             log.debug("startScraping: rescraping movie "+videoID);
