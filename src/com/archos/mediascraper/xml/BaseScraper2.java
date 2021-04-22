@@ -107,13 +107,17 @@ public abstract class BaseScraper2 {
         ScrapeDetailResult result = null;
         ScrapeSearchResult searchResult = getMatches2(info, 1);
         if (searchResult.isOkay()) {
-            // here info is a TvSearchInfo
-            Bundle bundle = new Bundle();
-            TvShowSearchInfo tvSearchInfo = (TvShowSearchInfo) info;
-            bundle.putInt(Scraper.ITEM_REQUEST_SEASON, tvSearchInfo.getSeason());
-            // keeping whole season boosts the perf since there is only one request for tmdb
-            //bundle.putInt(Scraper.ITEM_REQUEST_EPISODE, tvSearchInfo.getEpisode());
-            result = getDetails(searchResult.results.get(0), bundle);
+            if (info.isTvShow()) {
+                // here info is a TvSearchInfo
+                Bundle bundle = new Bundle();
+                TvShowSearchInfo tvSearchInfo = (TvShowSearchInfo) info;
+                bundle.putInt(Scraper.ITEM_REQUEST_SEASON, tvSearchInfo.getSeason());
+                // keeping whole season boosts the perf since there is only one request for tmdb
+                //bundle.putInt(Scraper.ITEM_REQUEST_EPISODE, tvSearchInfo.getEpisode());
+                result = getDetails(searchResult.results.get(0), bundle);
+            } else {
+                result = getDetails(searchResult.results.get(0), null);
+            }
         } else {
             result = new ScrapeDetailResult(null, searchResult.isMovie, null, searchResult.status, searchResult.reason);
         }
