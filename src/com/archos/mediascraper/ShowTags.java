@@ -106,7 +106,6 @@ public class ShowTags extends VideoTags {
         String newBackdrop = backdrop == null ? null : backdrop.getLargeFile();
         String newBackdropUrl = backdrop == null ? null : backdrop.getLargeUrl();
 
-
         ContentResolver cr = context.getContentResolver();
 
         // Check if this TV show is already referenced in the scraperDB
@@ -137,7 +136,6 @@ public class ShowTags extends VideoTags {
                         newStringIsBetter(storedCRating, mContentRating) ||
                         newStringIsBetter(storedImdb, mImdbId) ||
                         newLongIsBetter(storedOnlineId, mOnlineId);
-
 
                 // since show exists check other data for changes too
                 int storedPosterCount = storedPosterCount(showId, cr);

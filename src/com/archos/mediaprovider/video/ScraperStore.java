@@ -120,7 +120,6 @@ public final class ScraperStore {
         /** studios preformatted */
         public static final String STUDIOS_FORMATTED = "s_studios";
 
-
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/show");
             public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/show/id/");
