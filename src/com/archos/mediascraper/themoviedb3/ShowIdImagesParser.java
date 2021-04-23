@@ -75,7 +75,6 @@ public class ShowIdImagesParser {
             ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, showTitle);
             image.setLanguage(poster.second);
             image.setLargeUrl(ScraperImage.TMPL + poster.first.file_path);
-            // TODO MARC do we remove thumbs?
             image.setThumbUrl(ScraperImage.TMPT + poster.first.file_path);
             image.generateFileNames(context);
             posters.add(image);
@@ -85,9 +84,9 @@ public class ShowIdImagesParser {
             log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + ScraperImage.TMPL + backdrop.first.file_path);
             ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
             image.setLanguage(backdrop.second);
-            // TODO MARC there is no point in thumb backdrops!
+            // backdrops are used on phones to choose backdrop
             image.setLargeUrl(ScraperImage.TMBL + backdrop.first.file_path);
-            //image.setThumbUrl(ScraperImage.TMBT + backdrop.first.file_path);
+            image.setThumbUrl(ScraperImage.TMBT + backdrop.first.file_path);
             image.generateFileNames(context);
             backdrops.add(image);
         }
