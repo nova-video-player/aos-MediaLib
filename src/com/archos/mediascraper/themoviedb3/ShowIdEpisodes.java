@@ -50,19 +50,21 @@ public class ShowIdEpisodes {
         if (tvEpisodes != null) {
             for (TvEpisode tvEpisode : tvEpisodes) {
                 EpisodeTags episodeTags = new EpisodeTags();
-                // TODO MARC check if not tvEpisode.guest_stars and tvEpisode.crew instead
-                if (tvEpisode.credits != null) {
-                    if (tvEpisode.credits.guest_stars != null)
-                        for (CastMember guestStar : tvEpisode.credits.guest_stars)
-                            episodeTags.addActorIfAbsent(guestStar.name, guestStar.character);
-                    if (tvEpisode.credits.cast != null)
-                        for (CastMember actor : tvEpisode.credits.cast)
-                            episodeTags.addActorIfAbsent(actor.name, actor.character);
-                    if (tvEpisode.credits.crew != null)
-                        for (CrewMember crew : tvEpisode.credits.crew)
-                            if (crew.job == DIRECTOR)
-                                episodeTags.addDirectorIfAbsent(crew.name);
+                // note: tvEpisode.credits is null thus use tvEpisode.guest_stars and tvEpisode.crew instead
+                if (tvEpisode.guest_stars != null) {
+                    for (CastMember guestStar : tvEpisode.guest_stars)
+                        episodeTags.addActorIfAbsent(guestStar.name, guestStar.character);
+                } else {
+                    log.warn("getEpisodes: guest_star is null for showId " + showId);
                 }
+                if (tvEpisode.crew != null) {
+                    for (CrewMember crew : tvEpisode.crew)
+                        if (crew.job == DIRECTOR)
+                            episodeTags.addDirectorIfAbsent(crew.name);
+                } else {
+                    log.debug("getEpisodes: crew is null for showId " + showId);
+                }
+
                 episodeTags.setPlot(tvEpisode.overview);
                 episodeTags.setRating(tvEpisode.vote_average.floatValue());
                 episodeTags.setTitle(tvEpisode.name);

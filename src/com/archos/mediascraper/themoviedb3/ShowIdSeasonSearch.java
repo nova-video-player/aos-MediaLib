@@ -54,7 +54,7 @@ public class ShowIdSeasonSearch {
                 Map<String, String> options  = new HashMap<String, String>() {{
                     put("include_image_language", "en,null");
                 }};
-                Response<TvSeason> seriesResponse = tmdb.tvSeasonsService().season(showId, season, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES), options).execute();
+                Response<TvSeason> seriesResponse = tmdb.tvSeasonsService().season(showId, season, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.CONTENT_RATINGS), options).execute();
                 switch (seriesResponse.code()) {
                     case 401: // auth issue
                         log.debug("search: auth error");
