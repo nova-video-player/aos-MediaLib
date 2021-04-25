@@ -55,6 +55,7 @@ public class ShowIdParser {
         else log.debug("getResult: rating null for " + serie.name);
         result.setImdbId(serie.external_ids.imdb_id);
         result.setOnlineId(serie.id);
+        log.debug("getResult: onlineId=" + serie.id + ", imdbId=" + serie.external_ids.imdb_id);
         result.setGenres(getLocalizedGenres(serie.genres));
 
         for (Network network : serie.networks)

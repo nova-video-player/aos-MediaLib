@@ -69,6 +69,7 @@ public class ShowIdEpisodes {
                 episodeTags.setRating(tvEpisode.vote_average.floatValue());
                 episodeTags.setTitle(tvEpisode.name);
                 episodeTags.setImdbId(showTags.getImdbId());
+                log.debug("getEpisodes: showId=" + showId + " episode has onlineId=" + tvEpisode.id);
                 episodeTags.setOnlineId(tvEpisode.id);
                 episodeTags.setAired(tvEpisode.air_date);
                 episodeTags.setEpisode(tvEpisode.episode_number);
