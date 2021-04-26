@@ -49,6 +49,7 @@ public class ShowIdEpisodes {
 
         if (tvEpisodes != null) {
             for (TvEpisode tvEpisode : tvEpisodes) {
+                log.debug("getEpisodes: getting showid " + showId + " s" + tvEpisode.season_number + "e" + tvEpisode.episode_number);
                 EpisodeTags episodeTags = new EpisodeTags();
                 // note: tvEpisode.credits is null thus use tvEpisode.guest_stars and tvEpisode.crew instead
                 if (tvEpisode.guest_stars != null) {
@@ -69,7 +70,7 @@ public class ShowIdEpisodes {
                 episodeTags.setRating(tvEpisode.vote_average.floatValue());
                 episodeTags.setTitle(tvEpisode.name);
                 episodeTags.setImdbId(showTags.getImdbId());
-                log.debug("getEpisodes: showId=" + showId + " episode has onlineId=" + tvEpisode.id);
+                log.trace("getEpisodes: showId=" + showId + " episode has onlineId=" + tvEpisode.id);
                 episodeTags.setOnlineId(tvEpisode.id);
                 episodeTags.setAired(tvEpisode.air_date);
                 episodeTags.setEpisode(tvEpisode.episode_number);
