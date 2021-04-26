@@ -141,12 +141,8 @@ public class ShowScraper4 extends BaseScraper2 {
         if (options != null) {
             season = options.getInt(Scraper.ITEM_REQUEST_SEASON, -1);
             episode = options.getInt(Scraper.ITEM_REQUEST_EPISODE, -1);
-            log.debug("getDetailsInternal: options is not null and " + options.containsKey(Scraper.ITEM_REQUEST_SEASON) +
-                    "/" + options.containsKey(Scraper.ITEM_REQUEST_EPISODE) +
-                    ", season=" + season + ", episode=" + episode);
-        } else {
+        } else
             log.debug("getDetailsInternal: options is null");
-        }
 
         String resultLanguage = result.getLanguage();
         if (TextUtils.isEmpty(resultLanguage))
@@ -165,6 +161,8 @@ public class ShowScraper4 extends BaseScraper2 {
         if (log.isTraceEnabled()) debugLruCache(sEpisodeCache);
 
         if (allEpisodes == null) {
+            log.debug("getDetailsInternal: allEpisodes is null, need to get show");
+
             // if we get allEpisodes it means we also have global show info and there is no need to redo it
             if (tmdb == null) reauth();
             showTags = new ShowTags(); // to get the global show info
@@ -173,102 +171,106 @@ public class ShowScraper4 extends BaseScraper2 {
             int number_of_seasons = -1;
 
             // need to parse that show
-            if ((!basicShow && !basicEpisode)) {
-                // start with global show information before retrieving all episodes
-                // if show not known get its info
-                Boolean isShowKnown = isShowAlreadyKnown(showId, mContext);
-                if (! isShowKnown || getAllEpisodes) {
-                    // for getAllEpisodes we need to get the number of seasons thus get it
-                    log.debug("getDetailsInternal: show " + showId + " not known or getAllEpisodes " + getAllEpisodes);
-                    // query first tmdb
-                    ShowIdTvSearchResult showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, resultLanguage, tmdb);
-                    // parse result to get global show basic info
+            // start with global show information before retrieving all episodes
+            // if show not known get its info
+            Boolean isShowKnown = isShowAlreadyKnown(showId, mContext);
+            log.debug("getDetailsInternal: show known " + isShowKnown);
+
+            if (! isShowKnown || getAllEpisodes) {
+                // for getAllEpisodes we need to get the number of seasons thus get it
+                log.debug("getDetailsInternal: show " + showId + " not known or getAllEpisodes " + getAllEpisodes);
+                // query first tmdb
+                ShowIdTvSearchResult showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, resultLanguage, tmdb);
+                // parse result to get global show basic info
+                if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
+                    return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
+                else
+                    showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
+
+                // now we have the number of seasons if we need getAllEpisodes
+                number_of_seasons = showIdTvSearchResult.tvShow.number_of_seasons;
+
+                // no need to do this if show known
+                if (! isShowKnown) {
+                    // if there is no title or description research in en
+                    if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().length() == 0 || showTags.getTitle().length() == 0)
+                        showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
                     if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
                         return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
                     else
                         showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
 
-                    // now we have the number of seasons if we need getAllEpisodes
-                    number_of_seasons = showIdTvSearchResult.tvShow.number_of_seasons;
+                    // get show posters and backdrops
+                    searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdTvSearchResult.tvShow.images, mContext);
 
-                    // no need to do this if show known
-                    if (! isShowKnown) {
-                        // if there is no title or description research in en
-                        if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().length() == 0 || showTags.getTitle().length() == 0)
-                            showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
-                        if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
-                            return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                        else
-                            showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
-
-                        // get show posters and backdrops
-                        searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdTvSearchResult.tvShow.images, mContext);
-
-                        if (!searchImages.backdrops.isEmpty())
-                            showTags.setBackdrops(searchImages.backdrops);
-                        else log.debug("getDetailsInternal: backdrops empty!");
-                        if (!searchImages.posters.isEmpty())
-                            showTags.setPosters(searchImages.posters);
-                        else log.debug("getDetailsInternal: posters empty!");
-                    }
-                } else {
-                    // showTags exits we get it from db
-                    showTags = buildShowTagsOnlineId(mContext, showId);
-                    if (showTags == null) log.warn("getDetailsInternal: show " + showId + " tag is null but known!");
-                    else log.debug("getDetailsInternal: show " + showId  + " " + key +
-                            " in " + resultLanguage  + " already known: " + showTags.getTitle() + ", plot: " + showTags.getPlot());
+                    if (!searchImages.backdrops.isEmpty())
+                        showTags.setBackdrops(searchImages.backdrops);
+                    else log.debug("getDetailsInternal: backdrops empty!");
+                    if (!searchImages.posters.isEmpty())
+                        showTags.setPosters(searchImages.posters);
+                    else log.debug("getDetailsInternal: posters empty!");
                 }
-
-                // this downloads only the default poster and backdrop
-                showTags.downloadPoster(mContext);
-                showTags.downloadBackdrop(mContext);
-
-                // retreive now the desired episodes
-                List<TvEpisode> tvEpisodes = new ArrayList<>();
-                if (getAllEpisodes) {
-                    // get all episodes: loop over seasons and concatenate
-                    for (int s = 1; s <= number_of_seasons; s++) {
-                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, s, resultLanguage, tmdb);
-                        if (showIdSeason.status == ScrapeStatus.OKAY) tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
-                        else {
-                            log.warn("getDetailsInternal: scrapeStatus for season " + s + " is NOK!");
-                            return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdSeason.status, showIdSeason.reason);
-                        }
-                    }
-                } else {
-                    if (episode != -1) {
-                        // get a single episode
-                        ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(showId, season, episode, resultLanguage, tmdb);
-                        if (showIdEpisode.status == ScrapeStatus.OKAY) tvEpisodes.add(showIdEpisode.tvEpisode);
-                        else {
-                            log.warn("getDetailsInternal: scrapeStatus for s" + season + "e" + episode + " is NOK!");
-                            return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdEpisode.status, showIdEpisode.reason);
-                        }
-                    } else {
-                        // by default we get the whole season on which the show has been identified
-                        if (season == -1) {
-                            log.error("getDetailsInternal: season cannot be -1!!!");
-                            return new ScrapeDetailResult(new EpisodeTags(), true, null, ScrapeStatus.ERROR_PARSER, null);
-                        }
-
-                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, season, resultLanguage, tmdb);
-                        if (showIdSeason.status == ScrapeStatus.OKAY)
-                            tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
-                        else {
-                            log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
-                            return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdSeason.status, showIdSeason.reason);
-                        }
-                    }
-                }
-                // get now all episodes in tvEpisodes
-                Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(showId, tvEpisodes, showTags, resultLanguage, tmdb, mContext);
-                if (!searchEpisodes.isEmpty()) {
-                    allEpisodes = searchEpisodes;
-                    // put that result in cache.
-                    sEpisodeCache.put(showKey, allEpisodes);
-                }
-
+            } else {
+                // showTags exits we get it from db
+                showTags = buildShowTagsOnlineId(mContext, showId);
+                if (showTags == null) log.warn("getDetailsInternal: show " + showId + " tag is null but known!");
+                else log.debug("getDetailsInternal: show " + showId  + " " + key +
+                        " in " + resultLanguage  + " already known: " + showTags.getTitle() + ", plot: " + showTags.getPlot());
             }
+
+            // this downloads only the default poster and backdrop
+            showTags.downloadPoster(mContext);
+            showTags.downloadBackdrop(mContext);
+
+            // retreive now the desired episodes
+            List<TvEpisode> tvEpisodes = new ArrayList<>();
+            if (getAllEpisodes) {
+                // get all episodes: loop over seasons and concatenate
+                for (int s = 1; s <= number_of_seasons; s++) {
+                    log.debug("getDetailsInternal: get episodes for show " + showId + " s" + s);
+                    ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, s, resultLanguage, tmdb);
+                    if (showIdSeason.status == ScrapeStatus.OKAY)
+                        tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
+                    else {
+                        log.warn("getDetailsInternal: scrapeStatus for s" + s + " is NOK!");
+                        return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdSeason.status, showIdSeason.reason);
+                    }
+                }
+            } else {
+                if (episode != -1) {
+                    // get a single episode
+                    log.debug("getDetailsInternal: get single episode for show " + showId + " s" + season + "e" + episode);
+                    ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(showId, season, episode, resultLanguage, tmdb);
+                    if (showIdEpisode.status == ScrapeStatus.OKAY)
+                        tvEpisodes.add(showIdEpisode.tvEpisode);
+                    else {
+                        log.warn("getDetailsInternal: scrapeStatus for s" + season + "e" + episode + " is NOK!");
+                        return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdEpisode.status, showIdEpisode.reason);
+                    }
+                } else {
+                    // by default we get the whole season on which the show has been identified
+                    if (season == -1) {
+                        log.error("getDetailsInternal: season cannot be -1!!!");
+                        return new ScrapeDetailResult(new EpisodeTags(), true, null, ScrapeStatus.ERROR_PARSER, null);
+                    }
+                    log.debug("getDetailsInternal: get full season for show " + showId + " s" + season);
+                    ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, season, resultLanguage, tmdb);
+                    if (showIdSeason.status == ScrapeStatus.OKAY)
+                        tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
+                    else {
+                        log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
+                        return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdSeason.status, showIdSeason.reason);
+                    }
+                }
+            }
+            // get now all episodes in tvEpisodes
+            Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(showId, tvEpisodes, showTags, resultLanguage, tmdb, mContext);
+            if (!searchEpisodes.isEmpty()) {
+                allEpisodes = searchEpisodes;
+                // put that result in cache.
+                sEpisodeCache.put(showKey, allEpisodes);
+            }
+
             // if we have episodes and posters map them to each other
             if (!allEpisodes.isEmpty() && !showTags.getAllPostersInDb(mContext).isEmpty())
                 mapPostersEpisodes(allEpisodes, showTags.getAllPostersInDb(mContext), resultLanguage);
@@ -288,7 +290,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")),
                 showTags);
         Bundle extraOut = buildBundle(allEpisodes, options);
-        log.debug("getDetailsInternal ScrapeStatus.OKAY");
+        log.debug("getDetailsInternal: ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 
