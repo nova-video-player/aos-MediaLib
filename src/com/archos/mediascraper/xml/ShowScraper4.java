@@ -109,6 +109,7 @@ public class ShowScraper4 extends BaseScraper2 {
 
     @Override
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
+        // maxItems = -1 means all
         // check input
         if (info == null || !(info instanceof TvShowSearchInfo)) {
             log.error("getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
@@ -120,7 +121,7 @@ public class ShowScraper4 extends BaseScraper2 {
         String language = getLanguage(mContext);
         log.debug("getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
-                + " e:" + searchInfo.getEpisode() + ", maxItems=" +maxItems);
+                + " e:" + searchInfo.getEpisode() + ", maxItems=" + maxItems);
         if (tmdb == null) reauth();
         SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, this, tmdb);
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
@@ -128,6 +129,9 @@ public class ShowScraper4 extends BaseScraper2 {
 
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
+
+        boolean doRebuildShowTag = false;
+
         // ITEM_REQUEST_BASIC_SHOW = true means show (without episodes) is to be scraped manually (ManualShowScrappingSearchFragment)
         //  --> no need to get full season or else we have already all info in getMatch2
         // ITEM_REQUEST_BASIC_VIDEO = true means single episode is to be scraped manually (ManualVideoScrappingSearchFragment/VideoInfoScraperSearchFragment)
@@ -191,7 +195,8 @@ public class ShowScraper4 extends BaseScraper2 {
                 number_of_seasons = showIdTvSearchResult.tvShow.number_of_seasons;
 
                 // no need to do this if show known
-                if (! isShowKnown) {
+                if (!isShowKnown) {
+                    log.debug("getDetailsInternal: show " + showId + " not known: get it");
                     // if there is no title or description research in en
                     if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().length() == 0 || showTags.getTitle().length() == 0)
                         showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
@@ -209,19 +214,29 @@ public class ShowScraper4 extends BaseScraper2 {
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
+
+                    // TODO MARC REMOVE?
+                    // this downloads only the default poster and backdrop
+                    //showTags.downloadPoster(mContext);
+                    //showTags.downloadBackdrop(mContext);
+
+                } else {
+                    doRebuildShowTag = true;
                 }
             } else {
-                // showTags exits we get it from db
-                showTags = buildShowTagsOnlineId(mContext, showId);
-                if (showTags == null) log.warn("getDetailsInternal: show " + showId + " tag is null but known!");
-                else log.debug("getDetailsInternal: show " + showId  + " " + key +
-                        " in " + resultLanguage  + " already known: " + showTags.getTitle() + ", plot: " + showTags.getPlot());
+                doRebuildShowTag = true;
             }
 
-            // this downloads only the default poster and backdrop
-            showTags.downloadPoster(mContext);
-            showTags.downloadBackdrop(mContext);
-
+            if (doRebuildShowTag == true) {
+                log.debug("getDetailsInternal: show " + showId + " is known: rebuild from tag");
+                // showTags exits we get it from db
+                showTags = buildShowTagsOnlineId(mContext, showId);
+                if (showTags == null)
+                    log.warn("getDetailsInternal: show " + showId + " tag is null but known!");
+                else log.debug("getDetailsInternal: show " + showId + " " + key +
+                        " in " + resultLanguage + " already known: " + showTags.getTitle() + ", plot: " + showTags.getPlot());
+            }
+            
             // retreive now the desired episodes
             List<TvEpisode> tvEpisodes = new ArrayList<>();
             if (getAllEpisodes) {

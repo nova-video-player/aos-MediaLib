@@ -257,7 +257,7 @@ public abstract class BaseTags implements Parcelable {
             log.debug("downloadBackdrop: " + mTitle + ", url " + image.getLargeUrl());
             image.download(context);
         } else
-            log.debug("downloadBackdrop: image is null for " + mTitle);
+            log.warn("downloadBackdrop: image is null for " + mTitle);
     }
 
     public final void downloadAllImages(Context context) {

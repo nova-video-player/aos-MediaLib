@@ -49,7 +49,7 @@ public class ShowIdEpisodes {
 
         if (tvEpisodes != null) {
             for (TvEpisode tvEpisode : tvEpisodes) {
-                log.debug("getEpisodes: getting showid " + showId + " s" + tvEpisode.season_number + "e" + tvEpisode.episode_number);
+                log.debug("getEpisodes: filling showid " + showId + " s" + tvEpisode.season_number + "e" + tvEpisode.episode_number);
                 EpisodeTags episodeTags = new EpisodeTags();
                 // note: tvEpisode.credits is null thus use tvEpisode.guest_stars and tvEpisode.crew instead
                 if (tvEpisode.guest_stars != null) {
