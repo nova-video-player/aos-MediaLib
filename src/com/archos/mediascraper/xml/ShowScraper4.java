@@ -215,11 +215,6 @@ public class ShowScraper4 extends BaseScraper2 {
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
 
-                    // TODO MARC REMOVE?
-                    // this downloads only the default poster and backdrop
-                    //showTags.downloadPoster(mContext);
-                    //showTags.downloadBackdrop(mContext);
-
                 } else {
                     doRebuildShowTag = true;
                 }
@@ -236,7 +231,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 else log.debug("getDetailsInternal: show " + showId + " " + key +
                         " in " + resultLanguage + " already known: " + showTags.getTitle() + ", plot: " + showTags.getPlot());
             }
-            
+
             // retreive now the desired episodes
             List<TvEpisode> tvEpisodes = new ArrayList<>();
             if (getAllEpisodes) {
@@ -339,9 +334,11 @@ public class ShowScraper4 extends BaseScraper2 {
         EpisodeTags episodeTag = null;
         if (!allEpisodes.isEmpty()) {
             String key = season + "|" + epnum;
+            log.debug("buildTag: allEpisodes not empty trying to find " + key);
             episodeTag = allEpisodes.get(key);
         }
         if (episodeTag == null) {
+            log.debug("buildTag: shoot episode not in allEpisodes");
             episodeTag = new EpisodeTags();
             // assume episode / season of request
             episodeTag.setSeason(season);
@@ -352,6 +349,7 @@ public class ShowScraper4 extends BaseScraper2 {
             if (posters != null) {
                 for (ScraperImage image : posters) {
                     if (image.getSeason() == season) {
+                        log.debug("buildTag: " + showTags.getTitle() + " season poster s" + season + " " + image.getLargeUrl());
                         episodeTag.setPosters(image.asList());
                         episodeTag.downloadPoster(mContext);
                         break;
@@ -359,6 +357,10 @@ public class ShowScraper4 extends BaseScraper2 {
                 }
             }
         } else {
+            if (episodeTag.getDefaultPoster() == null) log.warn("buildTag: " + showTags.getTitle() + " has no defaultPoster!");
+            if (episodeTag.getPosters() == null) log.warn("buildTag: " + showTags.getTitle() + " has null posters!");
+            else if (episodeTag.getPosters().isEmpty()) log.warn("buildTag: " + showTags.getTitle() + " has empty posters!");
+            if (episodeTag.getShowTags() == null) log.warn("buildTag: " + showTags.getTitle() + " has empty showTags!");
             episodeTag.downloadPicture(mContext);
             episodeTag.downloadPoster(mContext);
         }

@@ -335,8 +335,9 @@ public class EpisodeTags extends BaseTags {
         // downloads the episode cover
         super.downloadPoster(context);
         // also download the showtags cover
-        if (mShowTags != null)
+        if (mShowTags != null) {
             mShowTags.downloadPoster(context);
+        } else log.warn("downloadPoster: showTags is null for " + mShowTitle);
     }
 
     @Override
