@@ -39,7 +39,7 @@ public class ShowIdSeasonSearch {
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
     private final static LruCache<String, ShowIdSeasonSearchResult> sShowCache = new LruCache<>(10);
 
-    public static ShowIdSeasonSearchResult getSeasonShowResponse(int showId, int season, String language, MyTmdb tmdb) {
+    public static ShowIdSeasonSearchResult getSeasonShowResponse(int showId, int season, String language, final boolean adultScrape, MyTmdb tmdb) {
         log.debug("getSeasonShowResponse: quering thetvdb for showId " + showId + " season " + season + " in " + language);
 
         String showKey = showId + "|" + "s" + season + "|" + language;
@@ -54,6 +54,7 @@ public class ShowIdSeasonSearch {
                 // specify image language include_image_language=en,null
                 Map<String, String> options  = new HashMap<String, String>() {{
                     put("include_image_language", "en,null");
+                    put("include_adult", String.valueOf(adultScrape));
                 }};
                 Response<TvSeason> seriesResponse = tmdb.tvSeasonsService().season(showId, season, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.CONTENT_RATINGS), options).execute();
                 switch (seriesResponse.code()) {
@@ -67,7 +68,7 @@ public class ShowIdSeasonSearch {
                         // fallback to english if no result
                         if (!language.equals("en")) {
                             log.debug("getSeasonShowResponse: retrying search for showId " + showId + " in en");
-                            return getSeasonShowResponse(showId, season,"en", tmdb);
+                            return getSeasonShowResponse(showId, season,"en", adultScrape, tmdb);
                         }
                         log.debug("getSeasonShowResponse: showId " + showId + " not found");
                         // record valid answer

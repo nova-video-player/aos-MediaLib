@@ -20,6 +20,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 
+import androidx.preference.PreferenceManager;
+
 import com.archos.medialib.R;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeDetailResult;
@@ -78,12 +80,15 @@ public class MovieScraper3 extends BaseScraper2 {
 
     static String apiKey = null;
 
+    boolean adultScrape = false;
+
     public MovieScraper3(Context context) {
         super(context);
         // ensure cache is initialized
         synchronized (MovieScraper3.class) {
             cache = ScraperCache.getCache(context);
             apiKey = context.getString(R.string.tmdb_api_key);
+            adultScrape = PreferenceManager.getDefaultSharedPreferences(mContext).getBoolean("enable_adult_scrap_key", false);
         }
     }
 
@@ -105,7 +110,7 @@ public class MovieScraper3 extends BaseScraper2 {
         // get configured language
         String language = getLanguage(mContext);
         log.debug("movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
-        SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService);
+        SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService, adultScrape);
         // TODO: this triggers scrape for all search results, is this intended?
         if (searchResult.status == ScrapeStatus.OKAY) {
             for (SearchResult result : searchResult.result) {

@@ -38,7 +38,7 @@ public class ShowIdTvSearch {
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
     private final static LruCache<String, ShowIdTvSearchResult> sShowCache = new LruCache<>(10);
 
-    public static ShowIdTvSearchResult getTvShowResponse(int showId, String language, MyTmdb tmdb) {
+    public static ShowIdTvSearchResult getTvShowResponse(int showId, String language, final boolean adultScrape, MyTmdb tmdb) {
         log.debug("getTvShowResponse: quering thetvdb for showId " + showId + " in " + language);
 
         String showKey = showId + "|" + language;
@@ -52,6 +52,7 @@ public class ShowIdTvSearch {
                 // specify image language include_image_language=en,null
                 Map<String, String> options  = new HashMap<String, String>() {{
                     put("include_image_language", "en,null");
+                    put("include_adult", String.valueOf(adultScrape));
                 }};
                 Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.CONTENT_RATINGS), options).execute();
                 switch (seriesResponse.code()) {
@@ -65,7 +66,7 @@ public class ShowIdTvSearch {
                         // fallback to english if no result
                         if (!language.equals("en")) {
                             log.debug("getTvShowResponse: retrying search for showId " + showId + " in en");
-                            return getTvShowResponse(showId, "en", tmdb);
+                            return getTvShowResponse(showId, "en", adultScrape, tmdb);
                         }
                         log.debug("getTvShowResponse: showId " + showId + " not found");
                         // record valid answer

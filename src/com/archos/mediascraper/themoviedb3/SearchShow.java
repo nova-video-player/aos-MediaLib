@@ -41,7 +41,7 @@ public class SearchShow {
     // Benchmarks tells that with tv shows sorted in folders, size of 200 or 20 or even 10 provides the same cacheHits on fake collection of 30k episodes, 250 shows
     private final static LruCache<String, Response<TvShowResultsPage>> showCache = new LruCache<>(20);
 
-    public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper4 showScraper, MyTmdb tmdb) {
+    public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, final boolean adultScrape, ShowScraper4 showScraper, MyTmdb tmdb) {
         SearchShowResult myResult = new SearchShowResult();
         Response<TvShowResultsPage> response = null;
         boolean authIssue = false;

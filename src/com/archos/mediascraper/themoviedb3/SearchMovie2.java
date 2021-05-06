@@ -16,6 +16,8 @@ package com.archos.mediascraper.themoviedb3;
 
 import android.util.Log;
 
+import androidx.preference.PreferenceManager;
+
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.xml.MovieScraper3;
@@ -34,7 +36,7 @@ public class SearchMovie2 {
     private static final String TAG = SearchMovie2.class.getSimpleName();
     private static final boolean DBG = false;
 
-    public static SearchMovieResult search(String query, String language, String year, int resultLimit, SearchService searchService) {
+    public static SearchMovieResult search(String query, String language, String year, int resultLimit, SearchService searchService, boolean adultScrape) {
         SearchMovieResult myResult = new SearchMovieResult();
         List<SearchResult> parserResult = null;
         Response<MovieResultsPage> response = null;
@@ -53,7 +55,7 @@ public class SearchMovie2 {
         if (DBG) Log.d(TAG, "search: quering tmdb for " + query + " year " + year + " in " + language);
         try {
             response = searchService.movie(query, null, language,
-                    null, true, annee, null).execute();
+                    null, adultScrape, annee, null).execute();
             switch (response.code()) {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");
@@ -65,7 +67,7 @@ public class SearchMovie2 {
                     myResult.status = ScrapeStatus.NOT_FOUND;
                     if (year != null) {
                         if (DBG) Log.d(TAG, "search: retrying search for '" + query + "' without year.");
-                        return search(query, language, null, resultLimit, searchService);
+                        return search(query, language, null, resultLimit, searchService, adultScrape);
                     }
                     if (DBG) Log.d(TAG, "search: " + query + " not found");
                     break;
