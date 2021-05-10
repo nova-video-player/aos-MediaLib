@@ -73,7 +73,7 @@ public class MovieIdParser2 {
             result.setCollectionId(-1);
         if (movie.title != null) result.setTitle(movie.title);
         if (movie.vote_average != null)
-            result.setRating(movie.vote_average.floatValue());
+            result.setRating(Math.round(movie.vote_average.floatValue() * 10)/10.0f);
         if (credits != null) {
             if (credits.guest_stars != null)
                 for (CastMember guestStar : credits.guest_stars)

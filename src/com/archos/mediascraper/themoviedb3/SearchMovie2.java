@@ -52,8 +52,9 @@ public class SearchMovie2 {
         }
         if (DBG) Log.d(TAG, "search: quering tmdb for " + query + " year " + year + " in " + language);
         try {
+            // by default no adult search
             response = searchService.movie(query, null, language,
-                    null, true, annee, null).execute();
+                    null, false, annee, null).execute();
             switch (response.code()) {
                 case 401: // auth issue
                     if (DBG) Log.d(TAG, "search: auth error");

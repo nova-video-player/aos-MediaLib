@@ -17,10 +17,10 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 import android.util.Pair;
 import com.archos.mediascraper.ScraperImage;
-import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResult;
-import com.uwetrottmann.thetvdb.entities.SeriesImageQueryResultResponse;
 import com.uwetrottmann.tmdb2.entities.Image;
 import com.uwetrottmann.tmdb2.entities.Images;
+import com.uwetrottmann.tmdb2.entities.TvSeason;
+import com.uwetrottmann.tmdb2.entities.TvShow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +34,9 @@ public class ShowIdImagesParser {
 
     private static final Logger log = LoggerFactory.getLogger(ShowIdImagesParser.class);
 
-    // TODO MARC refactor like movie for posters/backdrops gen
+    public static ShowIdImagesResult getResult(String showTitle, TvShow tvShow, String language, Context context) {
 
-    public static ShowIdImagesResult getResult(String showTitle, Images images, Context context) {
+        Images images = tvShow.images;
 
         ShowIdImagesResult result = new ShowIdImagesResult();
 
@@ -47,6 +47,20 @@ public class ShowIdImagesParser {
         // backdrops
         List<ScraperImage> backdrops = new ArrayList<>();
         List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
+
+        log.debug("getResult: global " + showTitle + " poster " + tvShow.poster_path + ", backdrop " + tvShow.backdrop_path);
+
+        posters.add(genPoster(showTitle, tvShow.poster_path, language, true, context));
+        backdrops.add(genBackdrop(showTitle, tvShow.backdrop_path, language, context));
+
+        int i = 0;
+        for (TvSeason season : tvShow.seasons) {
+            i += 1;
+            if (season != null) {
+                log.debug("getResult: " + showTitle + " s" + i + " poster " + season.poster_path);
+                if (season.poster_path != "null") posters.add(genPoster(showTitle, tvShow.poster_path, language, false, context));
+            }
+        }
 
         if (images.posters != null)
             for (Image poster : images.posters)
@@ -72,27 +86,36 @@ public class ShowIdImagesParser {
 
         for(Pair<Image, String> poster : tempPosters) {
             log.debug("getResult: generating ScraperImage for poster for " + showTitle + ", large=" + ScraperImage.TMPL + poster.first.file_path);
-            ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, showTitle);
-            image.setLanguage(poster.second);
-            image.setLargeUrl(ScraperImage.TMPL + poster.first.file_path);
-            image.setThumbUrl(ScraperImage.TMPT + poster.first.file_path);
-            image.generateFileNames(context);
-            posters.add(image);
+            posters.add(genPoster(showTitle, poster.first.file_path, poster.second, true, context));
         }
 
         for(Pair<Image, String> backdrop : tempBackdrops) {
             log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + ScraperImage.TMPL + backdrop.first.file_path);
-            ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
-            image.setLanguage(backdrop.second);
-            // backdrops are used on phones to choose backdrop
-            image.setLargeUrl(ScraperImage.TMBL + backdrop.first.file_path);
-            image.setThumbUrl(ScraperImage.TMBT + backdrop.first.file_path);
-            image.generateFileNames(context);
-            backdrops.add(image);
+            posters.add(genBackdrop(showTitle, backdrop.first.file_path, backdrop.second, context));
         }
 
         result.posters = posters;
         result.backdrops = backdrops;
         return result;
+    }
+
+    public static ScraperImage genPoster(String showTitle, String path, String lang, Boolean isShowPoster, Context context) {
+        ScraperImage image = new ScraperImage(isShowPoster ? ScraperImage.Type.SHOW_POSTER : ScraperImage.Type.EPISODE_POSTER, showTitle);
+        image.setLanguage(lang);
+        image.setLargeUrl(ScraperImage.TMPL + path);
+        image.setThumbUrl(ScraperImage.TMPT + path);
+        image.generateFileNames(context);
+        log.debug("genPoster: " + showTitle + ", has poster " + image.getLargeUrl() + " path " + image.getLargeFile());
+        return image;
+    }
+
+    public static ScraperImage genBackdrop(String showTitle, String path, String lang, Context context) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, showTitle);
+        image.setLanguage(lang);
+        image.setLargeUrl(ScraperImage.TMBL + path);
+        image.setThumbUrl(ScraperImage.TMBT + path);
+        image.generateFileNames(context);
+        log.debug("genBackdrop: " + showTitle + ", has backdrop " + image.getLargeUrl() + " path " + image.getLargeFile());
+        return image;
     }
 }

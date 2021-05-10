@@ -87,7 +87,9 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.POSTER_ID,       // 7
         ScraperStore.Show.BACKDROP_ID      // 8
     };
+
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
+
     @Override
     public long save(Context context, long videoId) {
         boolean showFound = false;
@@ -486,6 +488,24 @@ public class ShowTags extends VideoTags {
         String imageUrl = localImage.toString();
         image.setLargeUrl(imageUrl);
         image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultBackdrop(image);
+    }
+
+    /** Add this (local) image as the default show poster */
+    public void addDefaultPosterTMDB(Context context, String path) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, mTitle);
+        image.setLargeUrl(ScraperImage.TMPL + path);
+        image.setThumbUrl(ScraperImage.TMPT + path);
+        image.generateFileNames(context);
+        addDefaultPoster(image);
+    }
+
+    /** Add this (local) image as the default show backdrop */
+    public void addDefaultBackdropTMDB(Context context, String path) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, mTitle);
+        image.setLargeUrl(ScraperImage.TMPL + path);
+        image.setThumbUrl(ScraperImage.TMPT + path);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
     }

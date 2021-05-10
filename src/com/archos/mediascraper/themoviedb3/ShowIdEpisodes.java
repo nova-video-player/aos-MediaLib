@@ -28,7 +28,6 @@ import com.uwetrottmann.tmdb2.entities.TvSeason;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +38,11 @@ public class ShowIdEpisodes {
 
     private static final String DIRECTOR = "Director";
 
-    public static Map<String, EpisodeTags> getEpisodes(int showId, List<TvEpisode> tvEpisodes, ShowTags showTags, String language,
+    public static Map<String, EpisodeTags> getEpisodes(int showId, List<TvEpisode> tvEpisodes, Map<Integer, TvSeason> tvSeasons, ShowTags showTags, String language,
                                                        MyTmdb tmdb, Context context) {
 
         Map<String, EpisodeTags> episodes = new HashMap<>();
-        log.debug("getEpisodes: quering thetvdb for showId " + showId);
+        TvSeason tvSeason;
         // fill in once for all episodes in "en" in case there is something missing in specific language
         SparseArray<TvEpisode> globalEpisodes = null;
 
@@ -66,8 +65,27 @@ public class ShowIdEpisodes {
                     log.debug("getEpisodes: crew is null for showId " + showId);
                 }
 
+                // set episode poster according to corresponding season poster
+                log.debug("getEpisodes: tvEpisode.season_number=" + tvEpisode.season_number + ", tvSeasons.size=" + tvSeasons.size());
+
+                if (tvSeasons != null) {
+                    tvSeason = tvSeasons.get(tvEpisode.season_number);
+                    if (tvSeason != null) {
+                        // note tvSeason.poster_path can be null when show has only one serie e.g. https://api.themoviedb.org/3/tv/93911/season/1?language=en&api_key=051012651ba326cf5b1e2f482342eaa2
+                        if (tvSeason.poster_path != null) {
+                            episodeTags.addDefaultPoster(ShowIdImagesParser.genPoster(showTags.getTitle(), tvSeason.poster_path, language, false, context));
+                        } else {
+                            log.debug("getEpisodes: tvSeason.poster_path is null get showTag default poster");
+                            episodeTags.addDefaultPoster(showTags.getDefaultPoster());
+                        }
+                        log.debug("getEpisodes: " + showTags.getTitle() + " s" + tvEpisode.season_number + ", has poster " + episodeTags.getDefaultPoster().getLargeUrl() + " path " + episodeTags.getDefaultPoster().getLargeFile());
+                    }
+                } else {
+                    log.debug("getEpisodes: no poster set for " + showTags.getTitle() + "s" + tvEpisode.season_number);
+                }
+                log.debug("getEpisodes: " + tvEpisode.name + " has plot " + tvEpisode.overview);
                 episodeTags.setPlot(tvEpisode.overview);
-                episodeTags.setRating(tvEpisode.vote_average.floatValue());
+                episodeTags.setRating(Math.round(tvEpisode.vote_average.floatValue() * 10)/10.0f); // round up first decimal
                 episodeTags.setTitle(tvEpisode.name);
                 episodeTags.setImdbId(showTags.getImdbId());
                 log.trace("getEpisodes: showId=" + showId + " episode has onlineId=" + tvEpisode.id);
@@ -76,8 +94,18 @@ public class ShowIdEpisodes {
                 episodeTags.setEpisode(tvEpisode.episode_number);
                 episodeTags.setSeason(tvEpisode.season_number);
                 episodeTags.setShowTags(showTags);
-                // TODO MARC check it is the still here
-                episodeTags.setEpisodePicture(tvEpisode.still_path, context);
+                if (tvEpisode.still_path != null) {
+                    log.trace("getEpisodes: showId=" + showId + " episode has still=" + tvEpisode.still_path);
+                    episodeTags.setEpisodePicture(tvEpisode.still_path, context, false);
+                } else {
+                    // TODO MARC wrong AR it is picture style
+                    log.trace("getEpisodes: showId=" + showId + " episode has null still using season poster instead...");
+                    // when no still revert to episodeTags.getDefaultPoster() that should be the season poster (global poster is showTags.getDefaultPoster().getLargeUrl())
+                    if (episodeTags.getDefaultPoster() != null)
+                        episodeTags.setEpisodePicture(episodeTags.getDefaultPoster().getLargeUrl(), context, true);
+                    else // we get the tvShow global poster
+                        episodeTags.setEpisodePicture(showTags.getDefaultPoster().getLargeUrl(), context, true);
+                }
                 if ((tvEpisode.overview == null || tvEpisode.name == null)
                         && !language.equals("en")) { // missing overview in native language
                     if (globalEpisodes.get(tvEpisode.id) == null) { // missing: get whole serie

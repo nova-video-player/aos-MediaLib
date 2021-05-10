@@ -15,9 +15,11 @@
 package com.archos.mediascraper.themoviedb3;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import com.archos.medialib.R;
+import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ShowTags;
 import com.uwetrottmann.thetvdb.entities.Series;
 import com.uwetrottmann.thetvdb.entities.SeriesResponse;
@@ -44,8 +46,14 @@ public class ShowIdParser {
         mContext = context;
         ShowTags result = new ShowTags();
 
-        result.setPlot(serie.overview);
-        result.setRating(serie.vote_average.floatValue());
+        if (serie.overview != null) {
+            log.warn("getResult: " + serie.name + " overview/plot " + serie.overview);
+            result.setPlot(serie.overview);
+        } else {
+            log.debug("getResult: " + serie.name + " has no overview/plot");
+        }
+
+        result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);
         result.setTitle(serie.name);
 
         log.debug("getResult: found title=" + serie.name);
@@ -62,6 +70,15 @@ public class ShowIdParser {
             result.addStudioIfAbsent(network.name, '|', ',');
 
         result.setPremiered(serie.first_air_date);
+
+        if (serie.poster_path != null) {
+            log.debug("getResult: " + serie.id + " has poster_path=" + ScraperImage.TMPL + serie.poster_path);
+            result.addDefaultPosterTMDB(mContext, serie.poster_path);
+        } else log.debug("getResult: no poster_path for " + serie.id);
+        if (serie.backdrop_path != null) {
+            log.debug("getResult: " + serie.id + " has backdrop_path=" + ScraperImage.TMBL + serie.backdrop_path);
+            result.addDefaultBackdropTMDB(mContext, serie.backdrop_path);
+        } else log.debug("getResult: no backdrop_path for " + serie.id);
 
         if (serie.credits != null) {
             if (serie.credits.guest_stars != null)

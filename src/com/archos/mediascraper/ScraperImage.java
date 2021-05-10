@@ -43,18 +43,29 @@ public class ScraperImage {
     public static int POSTER_WIDTH = 342; //240
     public static int POSTER_HEIGHT = 513; // 360
 
+    // 780x439 64K or 300x169 16K or 185x104 8K or 92x52 4K
+    public static int PICTURE_WIDTH = 300;
+    public static int PICTURE_HEIGHT = 169;
+
     public final static String TVDB_IMAGE_URL = "https://artworks.thetvdb.com/banners/";
 
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
-    final static String POSTER_THUMB = "w92";
+    final static String POSTER_THUMB = "w154";
     final static String POSTER_LARGE = "w342";
     final static String BACKDROP_THUMB = "w300";
     final static String BACKDROP_LARGE = "w1280";
+    final static String STILL_THUMB = "w154"; // w780
+    final static String STILL_LARGE = "w342"; // w780
+    // for poster
     public final static String TMPT = TMDB_IMAGE_URL + POSTER_THUMB;
     public final static String TMPL = TMDB_IMAGE_URL + POSTER_LARGE;
+    // for backdrop
     public final static String TMBT = TMDB_IMAGE_URL + BACKDROP_THUMB;
     public final static String TMBL = TMDB_IMAGE_URL + BACKDROP_LARGE;
+    // for still
+    public final static String TMST = TMDB_IMAGE_URL + STILL_THUMB;
+    public final static String TMSL = TMDB_IMAGE_URL + STILL_LARGE;
 
     public String getLanguage() {
         return language;
@@ -79,7 +90,6 @@ public class ScraperImage {
                 null, ScraperStore.ShowBackdrops.URI.BASE, ScraperStore.ShowBackdrops.SHOW_ID,
                 ImageScaler.Type.SCALE_OUTSIDE
                 ),
-
         SHOW_POSTER(
                 ScraperStore.ShowPosters.THUMB_URL, ScraperStore.ShowPosters.THUMB_FILE,
                 ScraperStore.ShowPosters.LARGE_URL, ScraperStore.ShowPosters.LARGE_FILE,
@@ -365,6 +375,10 @@ public class ScraperImage {
                 ret = MediaScraper.getBackdropDirectory(context);
                 log.trace("getDir: for backdrop: " + ret.getPath());
                 break;
+            case EPISODE_PICTURE:
+                ret = MediaScraper.getPictureDirectory(context);
+                log.trace("getDir: for picture: " + ret.getPath());
+                break;
             default:
                 // that would be really bad, kind of impossible though
                 log.trace("getDir: could not determine Directory, fallback to public dir");
@@ -396,6 +410,11 @@ public class ScraperImage {
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
                 log.trace("getCacheDir: for backdrop " + ret.getPath());
+                log.trace("getCacheDir: for backdrop " + ret.getPath());
+                break;
+            case EPISODE_PICTURE:
+                ret = MediaScraper.getPictureCacheDirectory(context);
+                log.trace("getCacheDir: for picture " + ret.getPath());
                 break;
             default:
                 // that would be really bad, kind of impossible though
@@ -417,6 +436,7 @@ public class ScraperImage {
             case MOVIE_POSTER:
             case SHOW_POSTER:
             case COLLECTION_POSTER:
+            case EPISODE_PICTURE:
                 return MediaScraper.IMAGE_CACHE_TIMEOUT;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
@@ -545,6 +565,11 @@ public class ScraperImage {
                 }
                 log.trace("saveSizedImage: target Backdrop(" + maxWidth + "," + maxHeight + ")");
                 break;
+            case EPISODE_PICTURE:
+                maxWidth = PICTURE_WIDTH;
+                maxHeight = PICTURE_HEIGHT;
+                log.trace("saveSizedImage: target: Picture(" + maxWidth + "," + maxHeight + ")");
+                break;
             default:
                 maxWidth = POSTER_WIDTH;
                 maxHeight = POSTER_HEIGHT;
@@ -575,6 +600,7 @@ public class ScraperImage {
             return false;
         }
         boolean saveOk = ImageScaler.scale(imageSource, targetName, maxWidth, maxHeight, type.scaleType);
+        log.debug("saveSizedImage: going through ImageScaler to convert " + imageSource.getPath() + " -> " + targetName + " went " + saveOk);
         if (dbgTimer != null) log.trace("saveSizedImage: " + dbgTimer.total() + "download() in total");
         return saveOk;
     }

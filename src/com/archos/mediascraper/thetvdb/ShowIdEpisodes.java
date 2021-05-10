@@ -82,7 +82,7 @@ public class ShowIdEpisodes {
                                     episodeTags.setEpisode(episode.airedEpisodeNumber);
                                     episodeTags.setSeason(episode.airedSeason);
                                     episodeTags.setShowTags(showTags);
-                                    episodeTags.setEpisodePicture(episode.filename, context);
+                                    episodeTags.setEpisodePicture(episode.filename, context, false);
                                     /*
                                     if (genericImage != null)
                                         episodeTags.setPosters(genericImage.asList());

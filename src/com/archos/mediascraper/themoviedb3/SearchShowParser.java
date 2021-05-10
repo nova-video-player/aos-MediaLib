@@ -112,6 +112,7 @@ public class SearchShowParser {
                     isDecisionTaken = true;
                 } else {
                     log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path);
+                    // TODO MARC: this generates the thumb by resizing the large image: pass the two
                     result.setBackdropPath(ScraperImage.TMBL + series.backdrop_path);
                 }
                 if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {

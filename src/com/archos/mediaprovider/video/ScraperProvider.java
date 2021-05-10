@@ -51,7 +51,7 @@ import java.util.Arrays;
  */
 public class ScraperProvider extends ContentProvider {
     private static final String TAG = "ScraperProvider";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     // using offset to avoid collision with mediaprovider's matcher
     public static final int SCRAPER_PROVIDER_OFFSET = 10000;

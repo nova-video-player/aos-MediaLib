@@ -371,7 +371,6 @@ public class EpisodeTags extends BaseTags {
                 return cover;
             }
         }
-
         return null;
     }
 
@@ -421,15 +420,23 @@ public class EpisodeTags extends BaseTags {
         return mEpisodePicture;
     }
 
-    public void setEpisodePicture(String string, Context ct) {
-        ScraperImage image = new ScraperImage(Type.EPISODE_POSTER, "");
+    public void setEpisodePicture(String string, Context ct, boolean isPoster) {
+        log.debug("setEpisodePicture: " + string + " isPoster=" + isPoster);
+        ScraperImage image;
+        if (isPoster)
+            image = new ScraperImage(Type.EPISODE_POSTER, "");
+        else
+            image = new ScraperImage(Type.EPISODE_PICTURE, "");
         String baseLargeUrl, baseThumbUrl;
         if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
             baseLargeUrl = ScraperImage.TVDB_IMAGE_URL;
             baseThumbUrl = ScraperImage.TVDB_IMAGE_URL;
-        } else { // by default TMDB
-            baseLargeUrl = ScraperImage.TMPL;
-            baseThumbUrl = ScraperImage.TMPT;
+        } else if (! isPoster) { // by default TMDB
+            baseLargeUrl = ScraperImage.TMSL;
+            baseThumbUrl = ScraperImage.TMST;
+        } else { // when this is a poster it is the full url already
+            baseLargeUrl = "";
+            baseThumbUrl = "";
         }
         image.setLargeUrl(baseLargeUrl + string);
         image.setThumbUrl(baseThumbUrl + string);

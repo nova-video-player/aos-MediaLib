@@ -53,6 +53,7 @@ public class ShowIdTvSearch {
                 Map<String, String> options  = new HashMap<String, String>() {{
                     put("include_image_language", "en,null");
                 }};
+                // e.g. https://api.themoviedb.org/3/tv/66732?language=en&append_to_response=credits%2Cexternal_ids%2Cimages%2Ccontent_ratings&include_image_language=en%2Cnull&api_key=051012651ba326cf5b1e2f482342eaa2
                 Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.CONTENT_RATINGS), options).execute();
                 switch (seriesResponse.code()) {
                     case 401: // auth issue

@@ -18,6 +18,9 @@ package com.archos.mediascraper;
 import androidx.annotation.Nullable;
 import android.util.Log;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class HttpDownloadWrapper implements Closeable {
-    private static final boolean DBG = false;
-    private static final String TAG = "HttpDownloadWrapper";
+    private static final Logger log = LoggerFactory.getLogger(HttpDownloadWrapper.class);
 
     private HttpURLConnection mUrlConnection;
     private final String mUrl;
@@ -59,10 +61,10 @@ public class HttpDownloadWrapper implements Closeable {
      * @throws IOException
      */
     public InputStream getInputStream(@Nullable Map<String, String> extraHeaders) throws IOException {
-        if (DBG) Log.d(TAG, "Downloading [" + mUrl + "]");
+        log.debug("getInputStream: Downloading [" + mUrl + "]");
 
         if (mUrlConnection != null) {
-            throw new IllegalStateException("Cannot call getInputStream more than once.");
+            throw new IllegalStateException("getInputStream: Cannot call getInputStream more than once.");
         }
 
         URL url = new URL(mUrl);

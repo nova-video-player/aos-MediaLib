@@ -28,9 +28,11 @@ import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.util.Pair;
 
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
+import com.uwetrottmann.tmdb2.entities.Image;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -249,6 +251,26 @@ public abstract class BaseTags implements Parcelable {
             image.download(context);
         } else
             log.warn("downloadPoster: image is null for " + mTitle);
+    }
+
+    // normally not used since huge footprint -> downloaded when browsing
+    public void downloadPosters(Context context) {
+        if (mPosters != null)
+            for (ScraperImage poster : mPosters) {
+                log.debug("downloadPosters: " + mTitle + ", url " + poster.getLargeUrl());
+                poster.download(context);
+            } else
+                log.warn("downloadPosters: mPosters is null for " + mTitle);
+    }
+
+    // normally not used since huge footprint -> downloaded when browsing
+    public void downloadBackdrops(Context context) {
+        if (mPosters != null)
+            for (ScraperImage backdrop : mBackdrops) {
+                log.debug("downloadBackdrops: " + mTitle + ", url " + backdrop.getLargeUrl());
+                backdrop.download(context);
+            } else
+            log.warn("downloadBackdrops: mBackdrops is null for " + mTitle);
     }
 
     public void downloadBackdrop(Context context) {

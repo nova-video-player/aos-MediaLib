@@ -35,6 +35,23 @@ public final class MediaScraper {
     }
 
     /**
+     * returns the picture storage directory in context private dir, e.g.<p>
+     * <code>/data/data/com.archos.mediacenter.video/app_scraper_pictures</code>
+     */
+    public static File getPictureDirectory(Context context) {
+        return context.getDir("scraper_pictures", Context.MODE_PRIVATE);
+    }
+
+    /**
+     * returns the backdrop download cache directory in external context dir, e.g.<p>
+     * <code>/mnt/storage/Android/data/com.archos.mediacenter.video/cache/pictures</code><p>
+     * External cache is NOT cleared when using the clear cache button in system settings > apps
+     */
+    public static File getPictureCacheDirectory(Context context) {
+        return new File(context.getExternalCacheDir(), "pictures");
+    }
+
+    /**
      * returns the xml downloads cache directory in context private dir, e.g.<p>
      * <code>/data/data/com.archos.mediacenter.video/cache/xml</code><p>
      * Internal cache is cleared when using the clear cache button in system settings > apps
@@ -58,7 +75,7 @@ public final class MediaScraper {
      * External cache is NOT cleared when using the clear cache button in system settings > apps
      */
     public static File getBackdropDirectory(Context context) {
-        return new File(context.getExternalFilesDir(null), "backdrops");
+        return context.getDir("scraper_backdrops", Context.MODE_PRIVATE);
     }
     /**
      * returns the backdrop download cache directory in external context dir, e.g.<p>

@@ -203,7 +203,7 @@ public class HttpCache {
      * @return a File or null if the download failed
      */
     public File getFile(String url, boolean useGzip, Map<String, String> extraHeaders) {
-        log.debug("request [" + url + "]");
+        log.debug("getFile: request [" + url + "]");
         if (url == null) {
             log.warn("getFile(null)");
             return null;
@@ -212,8 +212,12 @@ public class HttpCache {
         // if there is a file that seems to be valid we return that one instead.
         if (mPreferredDirectory != null) {
             File preferred = getResultingPreferredCacheFile(url);
-            if (fileIsValid(preferred))
+            if (fileIsValid(preferred)) {
+                log.debug("getFile: already have this file " + preferred.getPath());
                 return preferred;
+            } else {
+                log.debug("getFile: we do not have this " + preferred.getPath());
+            }
         }
         // do not proceed if the file is already downloading..
         mUrlLock.lock(url);
@@ -222,7 +226,7 @@ public class HttpCache {
         try {
             ret = mFileMap.get(url2Filename(url));
             if (ret == null || !ret.exists() || fileNeedsRefresh(ret)) {
-                log.debug("downloading " + ThreadInfo());
+                log.debug("getFile: downloading " + ThreadInfo());
                 // someone may have cleared the cache and we need to recreate the directory.
                 if (!mCacheDirectory.exists()) {
                     if (!mCacheDirectory.mkdirs()) {
@@ -240,10 +244,8 @@ public class HttpCache {
                 try {
                     long start = 0;
                     if (log.isTraceEnabled()) start = System.currentTimeMillis();
-
                     output = new FileOutputStream(inProgressFile);
                     input = downloader.getInputStream(extraHeaders);
-
                     BufferPool pool = getBufferPool();
                     byte[] buffer = pool.obtain();
                     streamCopy2(input, output, buffer);
@@ -251,16 +253,16 @@ public class HttpCache {
 
                     output.close();
                     output = null;
-
                     if (log.isTraceEnabled()) {
                         long end = System.currentTimeMillis();
                         long time = end - start;
                         long size = inProgressFile.exists() ? inProgressFile.length() : 0;
                         logSpeed(url, time, size);
                     }
-
                     if (inProgressFile.renameTo(generatedFile)) {
+                        log.debug("getFile: file renamed into " + generatedFile.getPath());
                         mFileMap.put(url2Filename(url), generatedFile);
+                        log.debug("getFile: mFileMap");
                         ret = generatedFile;
                         downloadSuccess = true;
                     } else {
@@ -269,7 +271,7 @@ public class HttpCache {
                         generatedFile.delete();
                     }
                 } catch (IOException e) {
-                    log.warn("Exception: " + e);
+                    log.warn("getFile: Exception: " + e);
                 } finally {
                     closeSilently(downloader);
                     // if stream are != null close them
@@ -285,14 +287,15 @@ public class HttpCache {
                     if (fallbackFile != null && fallbackFile.exists()) {
                         ret = fallbackFile;
                         downloadSuccess = true;
-                        log.debug("using " + ret.getAbsolutePath() + " as fallback");
+                        log.debug("getFile: using " + ret.getAbsolutePath() + " as fallback");
                     }
                 }
             }
         } finally {
+            // this is not the error
             mUrlLock.unlock(url);
             // ... and threads waiting so they can check the list again
-            log.debug("Exiting getFile() " + ThreadInfo());
+            log.debug("getFile: Exiting getFile() " + ThreadInfo());
         }
 
         return ret;
@@ -304,7 +307,7 @@ public class HttpCache {
             if ((f.lastModified() + mCacheTimeOut) < System.currentTimeMillis()) {
                 if (log.isDebugEnabled()) {
                     DateFormat fmt = DateFormat.getInstance();
-                    log.debug("File " + f.getPath() + " too old f:" + fmt.format(new Date(f.lastModified())) + " now:" + fmt.format(new Date()));
+                    log.debug("fileNeedsRefresh: File " + f.getPath() + " too old f:" + fmt.format(new Date(f.lastModified())) + " now:" + fmt.format(new Date()));
                 }
                 return true;
             }
