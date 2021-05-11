@@ -84,10 +84,7 @@ public abstract class BaseScraper2 {
             case BaseTags.MOVIE:
                 return MovieScraper3.generatePreferences(context);
             case BaseTags.TV_SHOW:
-                if (Scraper.SHOW_SCRAPER == Scraper.TVDB)
-                    return ShowScraper3.generatePreferences(context);
-                else // by default TMDB
-                    return ShowScraper4.generatePreferences(context);
+                return ShowScraper4.generatePreferences(context);
             default:
                 return null;
         }
@@ -129,10 +126,7 @@ public abstract class BaseScraper2 {
             case BaseTags.MOVIE:
                 return new MovieScraper3(context);
             case BaseTags.TV_SHOW:
-                if (Scraper.SHOW_SCRAPER == Scraper.TVDB)
-                    return new ShowScraper3(context);
-                else // by default TMDB
-                    return new ShowScraper4(context);
+                return new ShowScraper4(context);
             default:
                 return null;
         }

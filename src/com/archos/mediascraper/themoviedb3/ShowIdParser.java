@@ -15,14 +15,10 @@
 package com.archos.mediascraper.themoviedb3;
 
 import android.content.Context;
-import android.net.Uri;
-import android.util.Log;
 
 import com.archos.medialib.R;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ShowTags;
-import com.uwetrottmann.thetvdb.entities.Series;
-import com.uwetrottmann.thetvdb.entities.SeriesResponse;
 import com.uwetrottmann.tmdb2.entities.CastMember;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;

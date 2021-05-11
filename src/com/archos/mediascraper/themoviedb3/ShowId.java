@@ -38,7 +38,7 @@ public class ShowId {
         ShowIdResult myResult = new ShowIdResult();
         ShowTags parserResult = null;
 
-        log.debug("getBaseInfo: quering thetvdb for showId " + showId + " in " + language);
+        log.debug("getBaseInfo: quering tmdb for showId " + showId + " in " + language);
         try {
             // use appendToResponse to get imdbId
             Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS)).execute();

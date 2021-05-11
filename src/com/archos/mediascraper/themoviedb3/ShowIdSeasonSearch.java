@@ -45,7 +45,7 @@ public class ShowIdSeasonSearch {
     }};
 
     public static ShowIdSeasonSearchResult getSeasonShowResponse(int showId, int season, String language, MyTmdb tmdb) {
-        log.debug("getSeasonShowResponse: quering thetvdb for showId " + showId + " season " + season + " in " + language);
+        log.debug("getSeasonShowResponse: quering tmdb for showId " + showId + " season " + season + " in " + language);
 
         String showKey = showId + "|" + "s" + season + "|" + language;
         ShowIdSeasonSearchResult myResult = sShowCache.get(showKey);

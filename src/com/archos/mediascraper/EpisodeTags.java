@@ -428,10 +428,7 @@ public class EpisodeTags extends BaseTags {
         else
             image = new ScraperImage(Type.EPISODE_PICTURE, "");
         String baseLargeUrl, baseThumbUrl;
-        if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
-            baseLargeUrl = ScraperImage.TVDB_IMAGE_URL;
-            baseThumbUrl = ScraperImage.TVDB_IMAGE_URL;
-        } else if (! isPoster) { // by default TMDB
+        if (! isPoster) {
             baseLargeUrl = ScraperImage.TMSL;
             baseThumbUrl = ScraperImage.TMST;
         } else { // when this is a poster it is the full url already

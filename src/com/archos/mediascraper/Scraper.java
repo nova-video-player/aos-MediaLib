@@ -22,7 +22,6 @@ import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
 import com.archos.mediascraper.xml.MovieScraper3;
-import com.archos.mediascraper.xml.ShowScraper3;
 import com.archos.mediascraper.xml.ShowScraper4;
 
 public class Scraper {
@@ -31,7 +30,6 @@ public class Scraper {
 
     public final static String TVDB = "tvdb";
     public final static String TMDB = "tmdb";
-    //public final static String SHOW_SCRAPER = TVDB;
     public final static String SHOW_SCRAPER = TMDB;
     public final static String MOVIE_SCRAPER = TMDB;
 
@@ -52,28 +50,17 @@ public class Scraper {
     public Scraper(Context context) {
         if (DBG) Log.d(TAG, "CTOR");
         mContext = context;
-        if (Scraper.SHOW_SCRAPER == Scraper.TVDB) {
-            mShowScraper3 = new ShowScraper3(mContext);
-            mShowScraper4 = null;
-        } else { // by default TMDB
-            mShowScraper4 = new ShowScraper4(mContext);
-            mShowScraper3 = null;
-        }
+        mShowScraper = new ShowScraper4(mContext);
         mMovieScraper = new MovieScraper3(mContext);
     }
 
-    private final ShowScraper4 mShowScraper4;
-    private final ShowScraper3 mShowScraper3;
+    private final ShowScraper4 mShowScraper;
     private final MovieScraper3 mMovieScraper;
 
     private ScrapeSearchResult getMatches(SearchInfo info, int maxItems) {
         info = SearchPreprocessor.instance().reParseInfo(info);
-        if (info.isTvShow()) {
-            if (Scraper.SHOW_SCRAPER == Scraper.TVDB)
-                return mShowScraper3.getMatches2(info, maxItems);
-            else // by default TMDB
-                return mShowScraper4.getMatches2(info, maxItems);
-        }
+        if (info.isTvShow())
+            return mShowScraper.getMatches2(info, maxItems);
         return mMovieScraper.getMatches2(info, maxItems);
     }
 
@@ -110,12 +97,8 @@ public class Scraper {
         }
 
         info = SearchPreprocessor.instance().reParseInfo(info);
-        if (info.isTvShow()) {
-            if (Scraper.SHOW_SCRAPER == Scraper.TVDB)
-                return mShowScraper3.search(info);
-            else // by default TMDB
-                return mShowScraper4.search(info);
-        }
+        if (info.isTvShow())
+            return mShowScraper.search(info);
         return mMovieScraper.search(info);
     }
 
