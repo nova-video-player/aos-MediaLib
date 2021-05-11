@@ -277,13 +277,19 @@ public class ShowScraper4 extends BaseScraper2 {
                         tvEpisodes.add(showIdEpisode.tvEpisode);
                     else {
                         log.warn("getDetailsInternal: scrapeStatus for s" + season + "e" + episode + " is NOK!");
-                        return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdEpisode.status, showIdEpisode.reason);
+                        // save showtag even if episodetag is empty
+                        EpisodeTags episodeTag = new EpisodeTags();
+                        episodeTag.setShowTags(showTags);
+                        return new ScrapeDetailResult(episodeTag, true, null, showIdEpisode.status, showIdEpisode.reason);
                     }
                 } else {
                     // by default we get the whole season on which the show has been identified
                     if (season == -1) {
                         log.error("getDetailsInternal: season cannot be -1!!!");
-                        return new ScrapeDetailResult(new EpisodeTags(), true, null, ScrapeStatus.ERROR_PARSER, null);
+                        // save showtag even if episodetag is empty
+                        EpisodeTags episodeTag = new EpisodeTags();
+                        episodeTag.setShowTags(showTags);
+                        return new ScrapeDetailResult(episodeTag, true, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     log.debug("getDetailsInternal: get full season for show " + showId + " s" + season);
                     ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(showId, season, resultLanguage, tmdb);
@@ -293,8 +299,11 @@ public class ShowScraper4 extends BaseScraper2 {
                             tvSeasons.put(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
                     }
                     else {
+                        // save showtag even if episodetag is empty
+                        EpisodeTags episodeTag = new EpisodeTags();
+                        episodeTag.setShowTags(showTags);
                         log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
-                        return new ScrapeDetailResult(new EpisodeTags(), true, null, showIdSeason.status, showIdSeason.reason);
+                        return new ScrapeDetailResult(episodeTag, true, null, showIdSeason.status, showIdSeason.reason);
                     }
                 }
             }
