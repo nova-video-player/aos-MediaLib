@@ -26,7 +26,6 @@ import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ScraperCache;
-import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.MovieSearchInfo;
 import com.archos.mediascraper.preprocess.SearchInfo;
@@ -36,15 +35,12 @@ import com.archos.mediascraper.themoviedb3.CollectionInfo;
 import com.archos.mediascraper.themoviedb3.CollectionResult;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
 import com.archos.mediascraper.themoviedb3.MovieCollection;
-import com.archos.mediascraper.themoviedb3.MovieCollectionImages;
 import com.archos.mediascraper.themoviedb3.MovieId2;
 import com.archos.mediascraper.themoviedb3.MovieIdDescription2;
-import com.archos.mediascraper.themoviedb3.MovieIdImages2;
 import com.archos.mediascraper.themoviedb3.MovieIdResult;
 import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.themoviedb3.SearchMovie2;
 import com.archos.mediascraper.themoviedb3.SearchMovieResult;
-import com.archos.mediascraper.themoviedb3.SearchMovieTrailer2;
 import com.uwetrottmann.tmdb2.services.CollectionsService;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import com.uwetrottmann.tmdb2.services.SearchService;
@@ -136,20 +132,13 @@ public class MovieScraper3 extends BaseScraper2 {
         MovieTags tag = search.tag;
         tag.setFile(searchFile);
 
-        SearchMovieTrailer2.addTrailers(movieId, tag, language, moviesService);
-
-        // add posters and backdrops
-        // TODO: CHANGE POSTER SIZE HERE? i.e. ORIGINAL
-        MovieIdImages2.addImages(movieId, tag, language, result.getPosterPath(), result.getBackdropPath(),
-                ImageConfiguration.PosterSize.W342, // large poster
-                ImageConfiguration.PosterSize.W92,  // thumb poster
-                ImageConfiguration.BackdropSize.W1280, // large bd
-                ImageConfiguration.BackdropSize.W300,  // thumb bd
-                searchFile.toString(), moviesService, mContext);
+        // TODO MARC remove?
+        /*
         ScraperImage defaultPoster = tag.getDefaultPoster();
         if (defaultPoster != null) {
             tag.setCover(defaultPoster.getLargeFileF());
         }
+         */
 
         // MovieCollection poster/backdrops and information are handled in the MovieTag because it is easier
         if (tag.getCollectionId() != -1 && ! isCollectionAlreadyKnown(tag.getCollectionId(), mContext)) { // in presence of a movie collection/saga
@@ -176,6 +165,8 @@ public class MovieScraper3 extends BaseScraper2 {
             MovieIdDescription2.addDescription(movieId, tag, moviesService);
         }
         tag.downloadPoster(mContext);
+        // TODO MARC ?
+        tag.downloadBackdrop(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
     }
 

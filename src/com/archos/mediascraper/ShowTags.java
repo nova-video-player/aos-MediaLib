@@ -492,7 +492,7 @@ public class ShowTags extends VideoTags {
         addDefaultBackdrop(image);
     }
 
-    /** Add this (local) image as the default show poster */
+    /** Add this url as the default show poster */
     public void addDefaultPosterTMDB(Context context, String path) {
         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, mTitle);
         image.setLargeUrl(ScraperImage.TMPL + path);
@@ -501,11 +501,11 @@ public class ShowTags extends VideoTags {
         addDefaultPoster(image);
     }
 
-    /** Add this (local) image as the default show backdrop */
+    /** Add this url image as the default show backdrop */
     public void addDefaultBackdropTMDB(Context context, String path) {
         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, mTitle);
-        image.setLargeUrl(ScraperImage.TMPL + path);
-        image.setThumbUrl(ScraperImage.TMPT + path);
+        image.setLargeUrl(ScraperImage.TMBL + path);
+        image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
     }

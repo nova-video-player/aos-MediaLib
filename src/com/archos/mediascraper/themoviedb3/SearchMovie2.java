@@ -69,6 +69,7 @@ public class SearchMovie2 {
                         return search(query, language, null, resultLimit, searchService);
                     }
                     if (DBG) Log.d(TAG, "search: " + query + " not found");
+                    // TODO MARC retry with year cleanout not in ()
                     break;
                 default:
                     if (response.isSuccessful()) {

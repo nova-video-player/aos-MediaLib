@@ -39,6 +39,11 @@ public class ShowIdSeasonSearch {
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
     private final static LruCache<String, ShowIdSeasonSearchResult> sShowCache = new LruCache<>(10);
 
+    // specify image language include_image_language=en,null
+    private final static Map<String, String> options  = new HashMap<String, String>() {{
+        put("include_image_language", "en,null");
+    }};
+
     public static ShowIdSeasonSearchResult getSeasonShowResponse(int showId, int season, String language, MyTmdb tmdb) {
         log.debug("getSeasonShowResponse: quering thetvdb for showId " + showId + " season " + season + " in " + language);
 
@@ -51,10 +56,6 @@ public class ShowIdSeasonSearch {
             myResult = new ShowIdSeasonSearchResult();
             try {
                 // use appendToResponse to get imdbId
-                // specify image language include_image_language=en,null
-                Map<String, String> options  = new HashMap<String, String>() {{
-                    put("include_image_language", "en,null");
-                }};
                 // e.g. https://api.themoviedb.org/3/tv/66732/season/1?language=en&append_to_response=credits%2Cexternal_ids%2Cimages%2Ccontent_ratings&include_image_language=en%2Cnull&api_key=051012651ba326cf5b1e2f482342eaa2
                 Response<TvSeason> seriesResponse = tmdb.tvSeasonsService().season(showId, season, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.CONTENT_RATINGS), options).execute();
                 switch (seriesResponse.code()) {
