@@ -385,6 +385,7 @@ public class MovieTags extends VideoTags {
 
     /** Add this url as the default show poster */
     public void addDefaultPosterTMDB(Context context, String path) {
+        log.debug("addDefaultPosterTMDB: poster " + ScraperImage.TMPL + path);
         ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_POSTER, mTitle);
         image.setLargeUrl(ScraperImage.TMPL + path);
         image.setThumbUrl(ScraperImage.TMPT + path);
@@ -394,6 +395,7 @@ public class MovieTags extends VideoTags {
 
     /** Add this url image as the default show backdrop */
     public void addDefaultBackdropTMDB(Context context, String path) {
+        log.debug("addDefaultPosterTMDB: backdrop " + ScraperImage.TMBL + path);
         ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_BACKDROP, mTitle);
         image.setLargeUrl(ScraperImage.TMBL + path);
         image.setThumbUrl(ScraperImage.TMBT + path);
