@@ -128,9 +128,6 @@ public class MovieIdParser2 {
         // backdrops
         List<ScraperImage> backdrops = new ArrayList<>();
         List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
-        if (movie.poster_path != null) result.addDefaultPosterTMDB(mContext, movie.poster_path);
-        if (movie.backdrop_path != null) result.addDefaultBackdropTMDB(mContext, movie.backdrop_path);
-        log.debug("getResult: global " + movie.title + " poster " + movie.poster_path + ", backdrop " + movie.backdrop_path);
         if (movie.images != null) {
             if (movie.images.posters != null)
                 for (Image poster : movie.images.posters)
@@ -158,8 +155,13 @@ public class MovieIdParser2 {
                 log.debug("getResult: generating ScraperImage for backdrop for " + movie.title + ", large=" + ScraperImage.TMPL + backdrop.first.file_path);
                 posters.add(genBackdrop(movie.title, backdrop.first.file_path, backdrop.second, mContext));
             }
+            log.debug("getResult: setting posters and backdrops");
             result.setPosters(posters);
             result.setBackdrops(backdrops);
+            log.debug("getResult: global " + movie.title + " poster " + movie.poster_path + ", backdrop " + movie.backdrop_path);
+            // this must be done after setPosters/setBackdrops otherwise default is removed
+            if (movie.poster_path != null) result.addDefaultPosterTMDB(mContext, movie.poster_path);
+            if (movie.backdrop_path != null) result.addDefaultBackdropTMDB(mContext, movie.backdrop_path);
         }
 
         return result;
