@@ -28,7 +28,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
 import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
+import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
 
 /**
  * Matches everything. Tries to strip away all junk, not very reliable.
@@ -98,7 +100,7 @@ class MovieDefaultMatcher implements InputMatcher {
         // applies to movieName (1928) junk -> movieName () junk -> movieName
         name = removeAfterEmptyParenthesis(name);
 
-        // Strip out starting numbering for collections
+        // Strip out starting numbering for collections "1. ", "1) ", "1 - ", "1.-.", "1._"... but not "1.Foo" or "1-Foo"
         name = ParseUtils.removeNumbering(name);
 
         // Strip out everything else in brackets <[{( .. )})>, most of the time teams names, etc
@@ -168,12 +170,6 @@ class MovieDefaultMatcher implements InputMatcher {
         }
     }
 
-    // matches "[space or punctuation/brackets etc]year", year is group 1
-    private static final Pattern YEAR_PATTERN =
-            Pattern.compile("[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
-
-    private static final Pattern BRACKETS = Pattern.compile("[<({\\[].+?[>)}\\]]");
-
     /**
      * assumes title is always first
      * @return substring from start to first finding of any garbage pattern
@@ -211,27 +207,6 @@ class MovieDefaultMatcher implements InputMatcher {
 
         // return substring from input -> keep case
         return input.substring(0, firstGarbage);
-    }
-
-    private static Pair<String, String> yearExtractor(String input) {
-        log.debug("yearExtractor input: " + input);
-        String year = null;
-        Matcher matcher = YEAR_PATTERN.matcher(input);
-        int start = 0;
-        int stop = 0;
-        boolean found = false;
-        while (matcher.find()) {
-            found = true;
-            start = matcher.start(1);
-            stop = matcher.end(1);
-        }
-        // get the last match and extract it from the string
-        if (found) {
-            year = input.substring(start, stop);
-            input = input.substring(0, start) + input.substring(stop);
-        }
-        log.debug("yearExtractor release year: " + input + " year: " + year);
-        return new Pair<>(input, year);
     }
 
 }

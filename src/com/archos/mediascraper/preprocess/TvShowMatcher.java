@@ -16,6 +16,7 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
+import android.util.Pair;
 
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.ShowUtils;
@@ -69,9 +70,10 @@ class TvShowMatcher implements InputMatcher {
             String showTitle = showName.get(ShowUtils.SHOW);
             String season = showName.get(ShowUtils.SEASON);
             String episode = showName.get(ShowUtils.EPNUM);
+            String year = showName.get(ShowUtils.YEAR);
             int seasonInt = StringUtils.parseInt(season, 0);
             int episodeInt = StringUtils.parseInt(episode, 0);
-            return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt);
+            return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt, year);
         }
         return null;
     }

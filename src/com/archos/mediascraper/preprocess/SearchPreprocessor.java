@@ -66,7 +66,7 @@ public class SearchPreprocessor {
                 if (result == null) {
                     throw new AssertionError("Matcher:" + matcher.getMatcherName() + " returned null file:" + uri.toString());
                 }
-                log.debug("result from" + matcher.getMatcherName());
+                log.debug("result from " + matcher.getMatcherName());
                 return reParseInfo(result);
             }
         }

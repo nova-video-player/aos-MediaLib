@@ -16,6 +16,7 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
+import android.util.Pair;
 
 import com.archos.mediascraper.StringUtils;
 
@@ -24,6 +25,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.archos.mediascraper.ShowUtils.cleanUpName;
+import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
+import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
+import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
+import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
 
 /**
  * Matches Tv Shows in folders like
@@ -75,10 +82,12 @@ class TvShowPathMatcher implements InputMatcher {
         Matcher matcher = PATTERN_.matcher(file.toString());
         if (matcher.matches()) {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
+            Pair<String, String> nameYear = parenthesisYearExtractor(showName);
+            String name = cleanUpName(nameYear.first);
             int season = StringUtils.parseInt(matcher.group(2), 0);
             int episode = StringUtils.parseInt(matcher.group(3), 0);
-            log.debug("getFileInputMatch: " + showName + " season " + season + " episode " + episode);
-            return new TvShowSearchInfo(file, showName, season, episode);
+            log.debug("getFileInputMatch: " + name + " season " + season + " episode " + episode + " year " + nameYear.second);
+            return new TvShowSearchInfo(file, name, season, episode, nameYear.second);
         }
         return null;
     }

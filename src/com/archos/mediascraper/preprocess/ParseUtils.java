@@ -15,6 +15,8 @@
 
 package com.archos.mediascraper.preprocess;
 
+import android.util.Pair;
+
 import com.archos.mediascraper.StringUtils;
 
 import org.slf4j.Logger;
@@ -42,9 +44,16 @@ public class ParseUtils {
         '’', '‘'
     };
 
+    public static final Pattern BRACKETS = Pattern.compile("[<({\\[].+?[>)}\\]]");
+
+    // matches "[space or punctuation/brackets etc]year", year is group 1
+    private static final Pattern YEAR_PATTERN = Pattern.compile("[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
+
+    private static final Pattern PARENTHESIS_YEAR_PATTERN = Pattern.compile("[\\s\\p{Punct}]\\(((?:19|20)\\d{2})\\)(?!\\d)");
+
     // Strip out everything after empty parenthesis (after year pattern removal)
     // i.e. movieName (1969) garbage -> movieName () garbage -> movieName
-    private static final Pattern EMPTY_PARENTHESIS_PATTERN = Pattern.compile("[\\s\\p{Punct}]([(][)])[\\s\\p{Punct}]");
+    private static final Pattern EMPTY_PARENTHESIS_PATTERN = Pattern.compile("[\\s\\p{Punct}]([(][)])[\\s\\p{Punct}]*");
 
     /**
      * Removes leading numbering like "1. A Movie" => "A Movie",
@@ -74,7 +83,7 @@ public class ParseUtils {
     }
 
     // remove all what is after empty parenthesis
-    // only apply to movieName (1928) junk -> movieName () junk -> movieName
+    // only apply to movieName (1928) junk -> movieName () junk -> movieName, junk can be null
     public static String removeAfterEmptyParenthesis(String input) {
         log.debug("removeAfterEmptyParenthesis input: " + input);
         Matcher matcher = EMPTY_PARENTHESIS_PATTERN.matcher(input);
@@ -82,6 +91,7 @@ public class ParseUtils {
         int stop = 0;
         boolean found = false;
         while (matcher.find()) {
+            log.debug("removeAfterEmptyParenthesis: pattern found");
             found = true;
             start = matcher.start(1);
         }
@@ -94,6 +104,40 @@ public class ParseUtils {
 
     private ParseUtils() {
         // static utilities
+    }
+
+    // matches "[space or punctuation/brackets etc]year", year is group 1
+    // "[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)"
+    public static Pair<String, String> yearExtractor(String input) {
+        log.debug("yearExtractor input: " + input);
+        return twoPatternExtractor(input, YEAR_PATTERN);
+    }
+
+    // matches "[space or punctuation/brackets etc](year)", year is group 1
+    public static Pair<String, String> parenthesisYearExtractor(String input) {
+        log.debug("parenthesisYearExtractor input: " + input);
+        return twoPatternExtractor(input, PARENTHESIS_YEAR_PATTERN);
+    }
+
+    public static Pair<String, String> twoPatternExtractor(String input, Pattern pattern) {
+        log.debug("twoPatternExtractor input: " + input);
+        String isolated = null;
+        Matcher matcher = pattern.matcher(input);
+        int start = 0;
+        int stop = 0;
+        boolean found = false;
+        while (matcher.find()) {
+            found = true;
+            start = matcher.start(1);
+            stop = matcher.end(1);
+        }
+        // get the last match and extract it from the string
+        if (found) {
+            isolated = input.substring(start, stop);
+            input = input.substring(0, start) + input.substring(stop);
+        }
+        log.debug("yearExtractor release year: " + input + " isolated: " + isolated);
+        return new Pair<>(input, isolated);
     }
 
 }

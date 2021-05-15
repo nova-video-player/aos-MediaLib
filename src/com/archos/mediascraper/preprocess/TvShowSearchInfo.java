@@ -16,6 +16,7 @@
 package com.archos.mediascraper.preprocess;
 
 import android.net.Uri;
+import android.text.TextUtils;
 
 import java.text.Normalizer;
 import java.util.Locale;
@@ -23,11 +24,12 @@ import java.util.Locale;
 public class TvShowSearchInfo extends SearchInfo {
 
     /** package private, use {@link SearchPreprocessor} */
-    TvShowSearchInfo(Uri file, String showName, int season, int episode) {
+    public TvShowSearchInfo(Uri file, String showName, int season, int episode, String year) {
         super(file);
         mShowName = Normalizer.normalize(showName, Normalizer.Form.NFC);
         mSeason = season;
         mEpisode = episode;
+        mFirstAiredYear = TextUtils.isEmpty(year) ? null : year;
     }
 
     private static final String FULL_FORMAT = "%s S%02dE%02d";
@@ -36,6 +38,7 @@ public class TvShowSearchInfo extends SearchInfo {
     private final String mShowName;
     private final int mSeason;
     private final int mEpisode;
+    private final String mFirstAiredYear;
 
     public String getShowName() {
         return mShowName;
@@ -47,6 +50,10 @@ public class TvShowSearchInfo extends SearchInfo {
 
     public int getEpisode() {
         return mEpisode;
+    }
+
+    public String getFirstAiredYear() {
+        return mFirstAiredYear;
     }
 
     @Override

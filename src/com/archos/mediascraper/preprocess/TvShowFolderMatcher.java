@@ -53,10 +53,11 @@ class TvShowFolderMatcher extends TvShowMatcher {
             String showTitle = showName.get(ShowUtils.SHOW);
             String season = showName.get(ShowUtils.SEASON);
             String episode = showName.get(ShowUtils.EPNUM);
+            String year = showName.get(ShowUtils.YEAR);
             int seasonInt = StringUtils.parseInt(season, 0);
             int episodeInt = StringUtils.parseInt(episode, 0);
-            log.debug("getMatch: " + showTitle + " season " + season + " episode " + episode);
-            return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt);
+            log.debug("getMatch: " + showTitle + " season " + season + " episode " + episode + " year " + year);
+            return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt, year);
         }
         return null;
     }
