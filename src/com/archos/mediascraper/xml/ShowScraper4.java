@@ -219,13 +219,16 @@ public class ShowScraper4 extends BaseScraper2 {
 
                     // get show posters and backdrops
                     searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdTvSearchResult.tvShow, lang, mContext);
-
                     if (!searchImages.backdrops.isEmpty())
                         showTags.setBackdrops(searchImages.backdrops);
                     else log.debug("getDetailsInternal: backdrops empty!");
+                    // needs to be done after setBackdrops not to be erased
+                    if (result.getBackdropPath() != null)  showTags.addDefaultBackdropTMDB(mContext, result.getBackdropPath());
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
+                    // needs to be done after setPosters not to be erased
+                    if (result.getPosterPath() != null) showTags.addDefaultPosterTMDB(mContext, result.getPosterPath());
 
                     // only downloads main backdrop/poster and not the entire collection (x8 in size)
                     showTags.downloadPoster(mContext);
