@@ -15,6 +15,7 @@
 package com.archos.mediascraper.themoviedb3;
 
 import android.util.LruCache;
+import android.util.Pair;
 
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
@@ -34,6 +35,8 @@ import java.util.Map;
 
 import retrofit2.Response;
 
+import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
+
 // Search Show for name query for year in language (ISO 639-1 code)
 public class SearchShow {
     private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
@@ -49,6 +52,7 @@ public class SearchShow {
         boolean isResponseOk = false;
         boolean isResponseEmpty = false;
         String showKey = null;
+        String name;
         log.debug("search: quering tmdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
         try {
             showKey = searchInfo.getShowName() + "|" + language;
@@ -56,11 +60,34 @@ public class SearchShow {
             if (log.isTraceEnabled()) debugLruCache(showCache);
             if (response == null) {
                 log.debug("SearchShowResult: no boost for " + searchInfo.getShowName());
-                response = tmdb.searchService().tv(searchInfo.getShowName(), null, language,null).execute();
+                Integer year = null;
+                if (searchInfo.getFirstAiredYear() != null) {
+                    try {
+                        year = Integer.parseInt(searchInfo.getFirstAiredYear());
+                    } catch (NumberFormatException nfe) {
+                        log.warn("search: not valid year int " + searchInfo.getFirstAiredYear());
+                    }
+                }
+                // TODO MARC for next release for tmdb-java include adult = false
+                response = tmdb.searchService().tv(searchInfo.getShowName(), null, language, year).execute();
                 if (response.code() == 401) authIssue = true; // this is an OR
                 if (response.code() != 404) notFoundIssue = false; // this is an AND
                 if (response.isSuccessful()) isResponseOk = true;
-                if (response.body() == null) isResponseEmpty = true;
+                if (response.body() == null)
+                    isResponseEmpty = true;
+                else {
+                    if (response.body().total_results == 0) notFoundIssue = true;
+                    log.debug("search: response body has " + response.body().total_results + " results");
+                    if (notFoundIssue && searchInfo.getFirstAiredYear() == null) {
+                        // reprocess name with year_extractor without parenthesis since we need to match The.Flash.2014.sXXeYY but not first to cope with Paris.Police.1900
+                        name = searchInfo.getShowName();
+                        Pair<String, String> nameYear = yearExtractor(name);
+                        log.debug("search: not found trying to extract year name=" + nameYear.first + ", year=" + nameYear.second);
+                        if (nameYear.second != null) // avoid infinite loop
+                            return search(new TvShowSearchInfo(searchInfo.getFile(), nameYear.first, searchInfo.getSeason(), searchInfo.getEpisode(), nameYear.second),
+                                language, resultLimit, showScraper, tmdb );
+                    }
+                }
                 if (isResponseOk || isResponseEmpty) showCache.put(showKey, response);
             } else {
                 log.debug("search: boost using cached searched show for " + searchInfo.getShowName());

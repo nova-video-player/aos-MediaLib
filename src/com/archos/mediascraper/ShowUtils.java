@@ -16,6 +16,7 @@ package com.archos.mediascraper;
 
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.preprocess.ParseUtils;
@@ -31,6 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
+import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
+import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
 
 /**
  * Class used to parse the file names and try to guess if we have a tv show.
@@ -45,6 +48,7 @@ public final class ShowUtils {
     public static final String EPNUM = "epnum";
     public static final String SEASON = "season";
     public static final String SHOW = "show";
+    public static final String YEAR = "year";
 
     /** These are considered equivalent to space */
     public static final char[] REPLACE_ME = new char[] {
@@ -82,7 +86,7 @@ public final class ShowUtils {
         Pattern.compile(SEP_OPTIONAL + "(\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_OPTIONAL + "(\\d{1,3})(?!\\d)" + SEP_OPTIONAL + "([^-]*+).*", Pattern.CASE_INSENSITIVE),
         };
 
-    private static String cleanUpName(String name) {
+    public static String cleanUpName(String name) {
         name = ParseUtils.unifyApostrophes(name);
         name = ParseUtils.removeNumbering(name);
         name = ParseUtils.replaceAcronyms(name);
@@ -98,14 +102,22 @@ public final class ShowUtils {
     public static Map<String, String> parseShowName(String filename) {
         log.debug("parseShowName: " + filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
+        Pair<String, String> nameYear;
+        String name;
         for(Pattern regexp: patternsShowFirst) {
             Matcher matcher = regexp.matcher(filename);
             try {
                 if(matcher.find()) {
-                    log.debug("getMatch: patternsShowFirst " + cleanUpName(matcher.group(1)) + " season " + matcher.group(2) + " episode " + matcher.group(3));
-                    buffer.put(SHOW, cleanUpName(matcher.group(1)));
+                    nameYear = parenthesisYearExtractor(matcher.group(1));
+                    // remove junk behind () that was containing year
+                    // applies to movieName (1928) junk -> movieName () junk -> movieName
+                    name = removeAfterEmptyParenthesis(nameYear.first);
+                    name = cleanUpName(name);
+                    log.debug("getMatch: patternsShowFirst " + name + " season " + matcher.group(2) + " episode " + matcher.group(3) + " year " + nameYear.second);
+                    buffer.put(SHOW, name);
                     buffer.put(SEASON, matcher.group(2));
                     buffer.put(EPNUM, matcher.group(3));
+                    buffer.put(YEAR, nameYear.second);
                     return buffer;
                 }
             } catch (IllegalArgumentException ignored) {}
@@ -115,10 +127,16 @@ public final class ShowUtils {
                 Matcher matcher = regexp.matcher(filename);
                 try {
                     if(matcher.find()) {
-                        log.debug("getMatch: patternsEpisodeFirst " + cleanUpName(matcher.group(3)) + " season " + matcher.group(1) + " episode " + matcher.group(2));
-                        buffer.put(SHOW, cleanUpName(matcher.group(3)));
+                        nameYear = parenthesisYearExtractor(matcher.group(3));
+                        // remove junk behind () that was containing year
+                        // applies to movieName (1928) junk -> movieName () junk -> movieName
+                        name = removeAfterEmptyParenthesis(nameYear.first);
+                        name = cleanUpName(nameYear.first);
+                        log.debug("getMatch: patternsEpisodeFirst " + name + " season " + matcher.group(1) + " episode " + matcher.group(2) + " year " + nameYear.second);
+                        buffer.put(SHOW, name);
                         buffer.put(SEASON, matcher.group(1));
                         buffer.put(EPNUM, matcher.group(2));
+                        buffer.put(YEAR, nameYear.second);
                         return buffer;
                     }
                 } catch (IllegalArgumentException ignored) {}
