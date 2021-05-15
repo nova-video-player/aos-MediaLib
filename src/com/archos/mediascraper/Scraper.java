@@ -24,9 +24,11 @@ import com.archos.mediascraper.xml.BaseScraper2;
 import com.archos.mediascraper.xml.MovieScraper3;
 import com.archos.mediascraper.xml.ShowScraper4;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Scraper {
-    private static final String TAG = Scraper.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(Scraper.class);
 
     public final static String TVDB = "tvdb";
     public final static String TMDB = "tmdb";
@@ -48,7 +50,7 @@ public class Scraper {
 
     private final Context mContext;
     public Scraper(Context context) {
-        if (DBG) Log.d(TAG, "CTOR");
+        log.debug("CTOR");
         mContext = context;
         mShowScraper = new ShowScraper4(mContext);
         mMovieScraper = new MovieScraper3(mContext);
@@ -92,7 +94,7 @@ public class Scraper {
      */
     public ScrapeDetailResult getAutoDetails(SearchInfo info) {
         if (info == null) {
-            Log.e(TAG, "getAutoDetails - no SearchInfo");
+            log.error("getAutoDetails - no SearchInfo");
             return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR, null);
         }
 
