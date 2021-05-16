@@ -64,6 +64,10 @@ public class ShowId {
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {
+                            if (!language.equals("en")) {
+                                log.debug("getBaseInfo: retrying search for showId " + showId + " in en");
+                                return getBaseInfo(showId, "en", tmdb, context);
+                            }
                             myResult.status = ScrapeStatus.NOT_FOUND;
                         }
                     } else { // an error at this point is PARSER related

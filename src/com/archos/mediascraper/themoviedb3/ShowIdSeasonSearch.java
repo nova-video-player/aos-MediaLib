@@ -81,6 +81,10 @@ public class ShowIdSeasonSearch {
                                 myResult.tvSeason = seriesResponse.body();
                                 myResult.status = ScrapeStatus.OKAY;
                             } else {
+                                if (!language.equals("en")) {
+                                    log.debug("getSeasonShowResponse: retrying search for showId " + showId + " in en");
+                                    return getSeasonShowResponse(showId, season,"en", tmdb);
+                                }
                                 myResult.status = ScrapeStatus.NOT_FOUND;
                             }
                             // record valid answer

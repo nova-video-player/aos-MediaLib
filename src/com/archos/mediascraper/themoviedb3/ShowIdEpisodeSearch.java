@@ -80,6 +80,10 @@ public class ShowIdEpisodeSearch {
                                 myResult.tvEpisode = seriesResponse.body();
                                 myResult.status = ScrapeStatus.OKAY;
                             } else {
+                                if (!language.equals("en")) {
+                                    log.debug("getEpisodeShowResponse: retrying search for showId " + showId + " in en");
+                                    return getEpisodeShowResponse(showId, season, episode,"en", tmdb);
+                                }
                                 myResult.status = ScrapeStatus.NOT_FOUND;
                             }
                             // record valid answer

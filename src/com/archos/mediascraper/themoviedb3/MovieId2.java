@@ -75,6 +75,10 @@ public class MovieId2 {
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {
+                            if (!language.equals("en")) {
+                                log.debug("getBaseInfo: retrying search for movieId " + movieId + " in en");
+                                return getBaseInfo(movieId, "en", moviesService, context);
+                            }
                             myResult.status = ScrapeStatus.NOT_FOUND;
                         }
                     } else { // an error at this point is PARSER related

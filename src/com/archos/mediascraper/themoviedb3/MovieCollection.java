@@ -60,6 +60,10 @@ public class MovieCollection {
                             myResult.collectionInfo = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {
+                            if (!language.equals("en")) {
+                                if (DBG) Log.d(TAG, "getInfo: retrying search for movieId " + collectionId + " in en");
+                                return getInfo(collectionId, "en", collectionsService);
+                            }
                             myResult.status = ScrapeStatus.NOT_FOUND;
                         }
                     } else { // an error at this point is PARSER related

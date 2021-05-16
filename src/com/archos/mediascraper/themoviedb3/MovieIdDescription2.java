@@ -27,7 +27,7 @@ import retrofit2.Response;
 
 // set overview for movieId in english
 // return boolean for success
-public class MovieIdDescription2 {
+public class    MovieIdDescription2 {
     private static final String TAG = MovieIdDescription2.class.getSimpleName();
     private static final boolean DBG = false;
 
