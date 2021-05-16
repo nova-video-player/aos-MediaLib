@@ -37,8 +37,11 @@ public class ParseUtils {
      **/
     private static final Pattern ACRONYM_DOTS = Pattern.compile("(?<=(\\b|[._])\\p{Lu})[.](?=\\p{Lu}([.]|$))");
 
-    /* Matches "1. ", "1) ", "1 - ", "1.-.", "1._"... but not "1.Foo" or "1-Foo" ..*/
+    /* Matches "1. ", "1) ", "1 - ", "1.-.", "1._"... but not "1.Foo" (could be a starting date with space) or "1-Foo" ..*/
     private static final Pattern LEADING_NUMBERING = Pattern.compile("^(\\d+([.)][\\s\\p{Punct}]+|\\s+\\p{Punct}[\\p{Punct}\\s]*))*");
+    /* Matches "1-Foo" */
+    private static final Pattern LEADING_NUMBERING_DASH = Pattern.compile("^(\\d+([-]|\\s+\\p{Punct}[\\p{Punct}\\s]*))*");
+
     /** besides the plain ' there is the typographic ’ and ‘ which is actually not an apostrophe */
     private static final char[] ALTERNATE_APOSTROPHES = new char[] {
         '’', '‘'
@@ -62,6 +65,10 @@ public class ParseUtils {
      **/
     public static String removeNumbering(String input) {
         return StringUtils.replaceAll(input, "", LEADING_NUMBERING);
+    }
+
+    public static String removeNumberingDash(String input) {
+        return StringUtils.replaceAll(input, "", LEADING_NUMBERING_DASH);
     }
 
     /** replaces "S.H.I.E.L.D." with "SHIELD", only uppercase letters */

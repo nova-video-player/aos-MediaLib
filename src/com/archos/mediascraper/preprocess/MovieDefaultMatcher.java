@@ -102,6 +102,8 @@ class MovieDefaultMatcher implements InputMatcher {
 
         // Strip out starting numbering for collections "1. ", "1) ", "1 - ", "1.-.", "1._"... but not "1.Foo" or "1-Foo"
         name = ParseUtils.removeNumbering(name);
+        // Strip out starting numbering for collections "1-"
+        name = ParseUtils.removeNumberingDash(name);
 
         // Strip out everything else in brackets <[{( .. )})>, most of the time teams names, etc
         name = StringUtils.replaceAll(name, "", BRACKETS);
