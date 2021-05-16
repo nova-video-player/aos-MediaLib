@@ -73,10 +73,11 @@ public final class ShowUtils {
         Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_MANDATORY + "(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
         // special case to avoid x264 or x265
         Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_OPTIONAL + "(?!(?:264|265|720))(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
-        // foo.103 and similar
-        // Note: can detect movies that contain 3 digit numbers like "127 hours" or shows that have such numbers in their name like "zoey 101"
-	// Limit first digit to be >0 in order not to identify "James Bond 007" as tv show
-        Pattern.compile("(.+)" + SEP_MANDATORY + "(?!(?:264|265|720))([1-9])(\\d{2,2})" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
+            // Disable following pattern since it makes L.627 or OSS 117 movies identified as TV serie
+            // foo.103 and similar
+            // Note: can detect movies that contain 3 digit numbers like "127 hours" or shows that have such numbers in their name like "zoey 101"
+            // Limit first digit to be >0 in order not to identify "James Bond 007" as tv show
+        //Pattern.compile("(.+)" + SEP_MANDATORY + "(?!(?:264|265|720))([1-9])(\\d{2,2})" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
         };
     // Name patterns which begin with the number of the episode
     private static final Pattern[] patternsEpisodeFirst = {
