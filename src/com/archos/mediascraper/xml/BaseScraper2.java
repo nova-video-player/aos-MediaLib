@@ -17,7 +17,6 @@ package com.archos.mediascraper.xml;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.ScrapeDetailResult;
@@ -30,6 +29,8 @@ import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.settings.ScraperSettings;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -41,7 +42,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 public abstract class BaseScraper2 {
-    private static final String TAG = "BaseScraper2";
+    private static final Logger log = LoggerFactory.getLogger(BaseScraper2.class);
 
     public final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|cs|sl|hr|ko|en|sv|no|vi|lt";
 
@@ -59,10 +60,10 @@ public abstract class BaseScraper2 {
         try {
             mParser = parserFactory.newSAXParser();
         } catch (ParserConfigurationException e) {
-            Log.d(TAG, "Exception: " + e, e);
+            log.debug("Exception: " + e, e);
             throw new RuntimeException(e);
         } catch (SAXException e) {
-            Log.d(TAG, "Exception: " + e, e);
+            log.debug("Exception: " + e, e);
             throw new RuntimeException(e);
         }
         mName = internalGetPreferenceName();
@@ -98,13 +99,14 @@ public abstract class BaseScraper2 {
      */
     public final ScrapeDetailResult search(SearchInfo info) {
         if (info == null) {
-            Log.e(TAG, "no SearchInfo given");
+            log.error("no SearchInfo given");
             return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR, null);
         }
         ScrapeDetailResult result = null;
         ScrapeSearchResult searchResult = getMatches2(info, 1);
         if (searchResult.isOkay()) {
             if (info.isTvShow()) {
+                log.debug("search: tv show");
                 // here info is a TvSearchInfo
                 Bundle bundle = new Bundle();
                 TvShowSearchInfo tvSearchInfo = (TvShowSearchInfo) info;
@@ -113,6 +115,7 @@ public abstract class BaseScraper2 {
                 //bundle.putInt(Scraper.ITEM_REQUEST_EPISODE, tvSearchInfo.getEpisode());
                 result = getDetails(searchResult.results.get(0), bundle);
             } else {
+                log.debug("search: not tv show");
                 result = getDetails(searchResult.results.get(0), null);
             }
         } else {
