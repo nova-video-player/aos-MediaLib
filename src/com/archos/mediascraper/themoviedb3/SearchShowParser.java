@@ -113,7 +113,7 @@ public class SearchShowParser {
                 } else {
                     log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path);
                     // TODO MARC: this generates the thumb by resizing the large image: pass the two
-                    result.setBackdropPath(ScraperImage.TMBL + series.backdrop_path);
+                    result.setBackdropPath(series.backdrop_path);
                 }
                 if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
                     log.debug("getSearchShowParserResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
@@ -121,7 +121,7 @@ public class SearchShowParser {
                     isDecisionTaken = true;
                 } else {
                     log.debug("getSearchShowParserResult: " + series.name + " has poster_path " + ScraperImage.TMPL + series.poster_path);
-                    result.setPosterPath(ScraperImage.TMPL + series.poster_path);
+                    result.setPosterPath(series.poster_path);
                 }
                 if (! isDecisionTaken) {
                     log.debug("getSearchShowParserResult: taking into account " + series.name + " because banner/image exists");
