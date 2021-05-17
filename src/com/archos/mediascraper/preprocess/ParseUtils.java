@@ -39,7 +39,7 @@ public class ParseUtils {
 
     /* Matches "1. ", "1) ", "1 - ", "1.-.", "1._"... but not "1.Foo" (could be a starting date with space) or "1-Foo" ..*/
     private static final Pattern LEADING_NUMBERING = Pattern.compile("^(\\d+([.)][\\s\\p{Punct}]+|\\s+\\p{Punct}[\\p{Punct}\\s]*))*");
-    /* Matches "1-Foo" */
+    // Matches "1-Foo" to be used with movies only because clashes with 24-s01e01 check with find . -type f -regex '.*/[0-9]+-[^/]*'
     private static final Pattern LEADING_NUMBERING_DASH = Pattern.compile("^(\\d+([-]|\\s+\\p{Punct}[\\p{Punct}\\s]*))*");
 
     /** besides the plain ' there is the typographic ’ and ‘ which is actually not an apostrophe */
