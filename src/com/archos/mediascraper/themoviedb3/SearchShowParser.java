@@ -57,13 +57,11 @@ public class SearchShowParser {
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(result);
          */
-        // skip shows without a banner
-        /*
+        // do NOT skip shows without a banner (otherwise shows like The Wrong Mans not found)
         if (searchShowParserResult.resultsNoBanner.size()>0)
             for (SearchResult result : searchShowParserResult.resultsNoBanner)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(result);
-         */
         log.debug("normalAdd: results.size()=" + results.size());
         return results;
     }
@@ -83,11 +81,18 @@ public class SearchShowParser {
                                                                     TvShowSearchInfo searchInfo, String language, ShowScraper4 showScraper) {
         SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
         int episode, season;
+        String countryOfOrigin = searchInfo.getCountryOfOrigin();
         Boolean isDecisionTaken = false;
         int levenshteinDistanceTitle, levenshteinDistanceOriginalTitle;
         log.debug("getSearchShowParserResult: examining response of " + response.body().total_results + " entries in " + language + ", for " + searchInfo.getShowName());
         for (BaseTvShow series : response.body().results) {
             if (series.id != SERIES_NOT_PERMITTED_ID) {
+                if (countryOfOrigin != null && ! series.origin_country.contains(countryOfOrigin)) {
+                    log.debug("getSearchShowParserResult: skip " + series.original_name + " because does not contain " + countryOfOrigin);
+                    continue;
+                } else {
+                    log.debug("getSearchShowParserResult: " + series.original_name + " contains " + countryOfOrigin);
+                }
                 Bundle extra = new Bundle();
                 extra.putString(ShowUtils.EPNUM, String.valueOf(searchInfo.getEpisode()));
                 extra.putString(ShowUtils.SEASON, String.valueOf(searchInfo.getSeason()));

@@ -51,12 +51,16 @@ public class ParseUtils {
 
     // matches "[space or punctuation/brackets etc]year", year is group 1
     private static final Pattern YEAR_PATTERN = Pattern.compile("[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
+    private static final Pattern YEAR_PATTERN2 = Pattern.compile("(.*)[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
 
-    private static final Pattern PARENTHESIS_YEAR_PATTERN = Pattern.compile("[\\s\\p{Punct}]\\(((?:19|20)\\d{2})\\)(?!\\d)");
+    private static final Pattern PARENTHESIS_YEAR_PATTERN = Pattern.compile("(.*)[\\s\\p{Punct}]+\\(((?:19|20)\\d{2})\\)");
 
     // Strip out everything after empty parenthesis (after year pattern removal)
     // i.e. movieName (1969) garbage -> movieName () garbage -> movieName
-    private static final Pattern EMPTY_PARENTHESIS_PATTERN = Pattern.compile("[\\s\\p{Punct}]([(][)])[\\s\\p{Punct}]*");
+    private static final Pattern EMPTY_PARENTHESIS_PATTERN = Pattern.compile("(.*)[\\s\\p{Punct}]+([(][)])");
+
+    // full list of possible countries of origin is available here https://api.themoviedb.org/3/configuration/countries?api_key=051012651ba326cf5b1e2f482342eaa2
+    private static final Pattern COUNTRY_OF_ORIGIN = Pattern.compile("(.*)[\\s\\p{Punct}]+\\(((US|UK|FR))\\)");
 
     /**
      * Removes leading numbering like "1. A Movie" => "A Movie",
@@ -91,6 +95,12 @@ public class ParseUtils {
 
     // remove all what is after empty parenthesis
     // only apply to movieName (1928) junk -> movieName () junk -> movieName, junk can be null
+    public static String removeAfterEmptyParenthesis2(String input) {
+        Pair<String, String> result = twoPatternExtractor2(input, EMPTY_PARENTHESIS_PATTERN);
+        log.debug("removeAfterEmptyParenthesis input: " + input + " output " + result.first);
+        return result.first;
+    }
+
     public static String removeAfterEmptyParenthesis(String input) {
         log.debug("removeAfterEmptyParenthesis input: " + input);
         Matcher matcher = EMPTY_PARENTHESIS_PATTERN.matcher(input);
@@ -117,33 +127,31 @@ public class ParseUtils {
     // "[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)"
     public static Pair<String, String> yearExtractor(String input) {
         log.debug("yearExtractor input: " + input);
-        return twoPatternExtractor(input, YEAR_PATTERN);
+        return twoPatternExtractor2(input, YEAR_PATTERN);
     }
 
     // matches "[space or punctuation/brackets etc](year)", year is group 1
     public static Pair<String, String> parenthesisYearExtractor(String input) {
         log.debug("parenthesisYearExtractor input: " + input);
-        return twoPatternExtractor(input, PARENTHESIS_YEAR_PATTERN);
+        return twoPatternExtractor2(input, PARENTHESIS_YEAR_PATTERN);
     }
 
-    public static Pair<String, String> twoPatternExtractor(String input, Pattern pattern) {
-        log.debug("twoPatternExtractor input: " + input);
+    // matches country of origin ((US|UK|FR)), country is group 1
+    public static Pair<String, String> getCountryOfOrigin(String input) {
+        String countryOfOrigin = null;
+        log.debug("getCountryOfOrigin input: " + input);
+        return twoPatternExtractor2(input, COUNTRY_OF_ORIGIN);
+    }
+
+    public static Pair<String, String> twoPatternExtractor2(String input, Pattern pattern) {
+        log.debug("twoPatternExtractor2 input: " + input);
         String isolated = null;
         Matcher matcher = pattern.matcher(input);
-        int start = 0;
-        int stop = 0;
-        boolean found = false;
-        while (matcher.find()) {
-            found = true;
-            start = matcher.start(1);
-            stop = matcher.end(1);
+        if (matcher.find()) {
+            input =  matcher.group(1);
+            isolated = matcher.group(2);
         }
-        // get the last match and extract it from the string
-        if (found) {
-            isolated = input.substring(start, stop);
-            input = input.substring(0, start) + input.substring(stop);
-        }
-        log.debug("yearExtractor release year: " + input + " isolated: " + isolated);
+        log.debug("twoPatternExtractor output: " + input + " isolated: " + isolated);
         return new Pair<>(input, isolated);
     }
 

@@ -24,11 +24,12 @@ import java.util.Locale;
 public class TvShowSearchInfo extends SearchInfo {
 
     /** package private, use {@link SearchPreprocessor} */
-    public TvShowSearchInfo(Uri file, String showName, int season, int episode, String year) {
+    public TvShowSearchInfo(Uri file, String showName, int season, int episode, String year, String countryOrOrigin) {
         super(file);
         mShowName = Normalizer.normalize(showName, Normalizer.Form.NFC);
         mSeason = season;
         mEpisode = episode;
+        mCountryOfOrigin = countryOrOrigin;
         mFirstAiredYear = TextUtils.isEmpty(year) ? null : year;
     }
 
@@ -39,6 +40,7 @@ public class TvShowSearchInfo extends SearchInfo {
     private final int mSeason;
     private final int mEpisode;
     private final String mFirstAiredYear;
+    public final String mCountryOfOrigin;
 
     public String getShowName() {
         return mShowName;
@@ -54,6 +56,10 @@ public class TvShowSearchInfo extends SearchInfo {
 
     public String getFirstAiredYear() {
         return mFirstAiredYear;
+    }
+
+    public String getCountryOfOrigin() {
+        return mCountryOfOrigin;
     }
 
     @Override

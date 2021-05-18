@@ -71,9 +71,10 @@ class TvShowMatcher implements InputMatcher {
             String season = showName.get(ShowUtils.SEASON);
             String episode = showName.get(ShowUtils.EPNUM);
             String year = showName.get(ShowUtils.YEAR);
+            String countryOfOrigin = showName.get(ShowUtils.ORIGIN);
             int seasonInt = StringUtils.parseInt(season, 0);
             int episodeInt = StringUtils.parseInt(episode, 0);
-            return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt, year);
+            return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt, year, countryOfOrigin);
         }
         return null;
     }

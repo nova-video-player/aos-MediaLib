@@ -18,6 +18,7 @@ package com.archos.mediascraper.preprocess;
 import android.net.Uri;
 import android.util.Pair;
 
+import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
 
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import java.util.regex.Pattern;
 
 import static com.archos.mediascraper.ShowUtils.cleanUpName;
 import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
+import static com.archos.mediascraper.preprocess.ParseUtils.getCountryOfOrigin;
 import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
 import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
 import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
@@ -84,10 +86,11 @@ class TvShowPathMatcher implements InputMatcher {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
             Pair<String, String> nameYear = parenthesisYearExtractor(showName);
             String name = cleanUpName(nameYear.first);
+            Pair<String, String>  nameCountry = getCountryOfOrigin(name);
             int season = StringUtils.parseInt(matcher.group(2), 0);
             int episode = StringUtils.parseInt(matcher.group(3), 0);
-            log.debug("getFileInputMatch: " + name + " season " + season + " episode " + episode + " year " + nameYear.second);
-            return new TvShowSearchInfo(file, name, season, episode, nameYear.second);
+            log.debug("getFileInputMatch: " + name + " season " + season + " episode " + episode + " year " + nameYear.second + " country " + nameCountry.second);
+            return new TvShowSearchInfo(file, nameCountry.first, season, episode, nameYear.second, nameCountry.second);
         }
         return null;
     }

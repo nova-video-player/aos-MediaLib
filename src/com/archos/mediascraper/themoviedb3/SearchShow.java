@@ -84,7 +84,7 @@ public class SearchShow {
                         Pair<String, String> nameYear = yearExtractor(name);
                         log.debug("search: not found trying to extract year name=" + nameYear.first + ", year=" + nameYear.second);
                         if (nameYear.second != null) // avoid infinite loop
-                            return search(new TvShowSearchInfo(searchInfo.getFile(), nameYear.first, searchInfo.getSeason(), searchInfo.getEpisode(), nameYear.second),
+                            return search(new TvShowSearchInfo(searchInfo.getFile(), nameYear.first, searchInfo.getSeason(), searchInfo.getEpisode(), nameYear.second, searchInfo.getCountryOfOrigin()),
                                 language, resultLimit, showScraper, tmdb );
                     }
                 }

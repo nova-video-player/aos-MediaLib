@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
+import static com.archos.mediascraper.preprocess.ParseUtils.getCountryOfOrigin;
 import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
 import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
 
@@ -49,6 +50,7 @@ public final class ShowUtils {
     public static final String SEASON = "season";
     public static final String SHOW = "show";
     public static final String YEAR = "year";
+    public static final String ORIGIN = "origin";
 
     /** These are considered equivalent to space */
     public static final char[] REPLACE_ME = new char[] {
@@ -104,6 +106,7 @@ public final class ShowUtils {
         log.debug("parseShowName: " + filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
         Pair<String, String> nameYear;
+        Pair<String, String> nameCountry;
         String name;
         for(Pattern regexp: patternsShowFirst) {
             Matcher matcher = regexp.matcher(filename);
@@ -114,11 +117,13 @@ public final class ShowUtils {
                     // applies to movieName (1928) junk -> movieName () junk -> movieName
                     name = removeAfterEmptyParenthesis(nameYear.first);
                     name = cleanUpName(name);
-                    log.debug("getMatch: patternsShowFirst " + name + " season " + matcher.group(2) + " episode " + matcher.group(3) + " year " + nameYear.second);
-                    buffer.put(SHOW, name);
+                    nameCountry = getCountryOfOrigin(name);
+                    log.debug("getMatch: patternsShowFirst " + nameCountry.first + " season " + matcher.group(2) + " episode " + matcher.group(3) + " year " + nameYear.second + " country " + nameCountry.second);
+                    buffer.put(SHOW, nameCountry.first);
                     buffer.put(SEASON, matcher.group(2));
                     buffer.put(EPNUM, matcher.group(3));
                     buffer.put(YEAR, nameYear.second);
+                    buffer.put(ORIGIN, nameCountry.second);
                     return buffer;
                 }
             } catch (IllegalArgumentException ignored) {}
@@ -132,12 +137,14 @@ public final class ShowUtils {
                         // remove junk behind () that was containing year
                         // applies to movieName (1928) junk -> movieName () junk -> movieName
                         name = removeAfterEmptyParenthesis(nameYear.first);
-                        name = cleanUpName(nameYear.first);
-                        log.debug("getMatch: patternsEpisodeFirst " + name + " season " + matcher.group(1) + " episode " + matcher.group(2) + " year " + nameYear.second);
-                        buffer.put(SHOW, name);
+                        name = cleanUpName(name);
+                        nameCountry = getCountryOfOrigin(name);
+                        log.debug("getMatch: patternsEpisodeFirst " + nameCountry.first + " season " + matcher.group(1) + " episode " + matcher.group(2) + " year " + nameYear.second);
+                        buffer.put(SHOW, nameCountry.first);
                         buffer.put(SEASON, matcher.group(1));
                         buffer.put(EPNUM, matcher.group(2));
                         buffer.put(YEAR, nameYear.second);
+                        buffer.put(ORIGIN, nameCountry.second);
                         return buffer;
                     }
                 } catch (IllegalArgumentException ignored) {}
