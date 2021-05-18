@@ -37,7 +37,7 @@ public class ScraperCache {
     private static final Logger log = LoggerFactory.getLogger(ScraperCache.class);
 
     static final String SCRAPER_CACHE = "scraper-cache";
-    static protected final long cacheSize = 10L * 1024L * 1024L; // 10 MB (it is a directory...)
+    static protected final long cacheSize = 100L * 1024L * 1024L; // 100 MB (it is a directory...)
     public static final int CONNECT_TIMEOUT_MILLIS = 15 * 1000; // 15s
     public static final int READ_TIMEOUT_MILLIS = 20 * 1000; // 20s
     static Cache cache;
