@@ -50,8 +50,7 @@ public class ParseUtils {
     public static final Pattern BRACKETS = Pattern.compile("[<({\\[].+?[>)}\\]]");
 
     // matches "[space or punctuation/brackets etc]year", year is group 1
-    private static final Pattern YEAR_PATTERN = Pattern.compile("[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
-    private static final Pattern YEAR_PATTERN2 = Pattern.compile("(.*)[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
+    private static final Pattern YEAR_PATTERN = Pattern.compile("(.*)[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
 
     private static final Pattern PARENTHESIS_YEAR_PATTERN = Pattern.compile("(.*)[\\s\\p{Punct}]+\\(((?:19|20)\\d{2})\\)");
 
