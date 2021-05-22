@@ -106,10 +106,10 @@ public class ShowIdEpisodes {
                     else // we get the tvShow global poster
                         episodeTags.setEpisodePicture(showTags.getDefaultPoster().getLargeUrl(), context, true);
                 }
-                if ((tvEpisode.overview == null || tvEpisode.name == null)
+                if ((tvEpisode.overview == null || tvEpisode.overview.length() == 0 || tvEpisode.name == null || tvEpisode.name.length() == 0)
                         && !language.equals("en")) { // missing overview in native language
                     if (globalEpisodes.get(tvEpisode.id) == null) { // missing: get whole serie
-                        log.debug("getEpisodes: description in " + language + " missing for tvEpisode.name s" + tvEpisode.season_number + "e" + tvEpisode.episode_number + "fallback in en");
+                        log.debug("getEpisodes: description in " + language + " missing for tvEpisode.name s" + tvEpisode.season_number + "e" + tvEpisode.episode_number + "fallback in en for the whole season");
                         ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(showId, tvEpisode.season_number, "en", tmdb);
                         // stack all episodes in en to find later the overview and name
                         if (globalSeasonIdSearchResult.status == ScrapeStatus.OKAY) {
@@ -124,7 +124,7 @@ public class ShowIdEpisodes {
                     // only use globalEpisode if an overview if not found
                     TvEpisode globalEpisode = globalEpisodes.get(tvEpisode.id);
                     if (globalEpisode != null) {
-                        if (tvEpisode.overview == null)
+                        if (tvEpisode.overview == null || tvEpisode.overview.length() == 0)
                             episodeTags.setPlot(globalEpisode.overview);
                         if (tvEpisode.name == null)
                             episodeTags.setTitle(globalEpisode.name);
