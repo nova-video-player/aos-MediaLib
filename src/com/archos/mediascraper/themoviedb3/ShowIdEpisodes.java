@@ -44,7 +44,7 @@ public class ShowIdEpisodes {
         Map<String, EpisodeTags> episodes = new HashMap<>();
         TvSeason tvSeason;
         // fill in once for all episodes in "en" in case there is something missing in specific language
-        SparseArray<TvEpisode> globalEpisodes = null;
+        SparseArray<TvEpisode> globalEpisodes = new SparseArray<>();
 
         if (tvEpisodes != null) {
             for (TvEpisode tvEpisode : tvEpisodes) {
