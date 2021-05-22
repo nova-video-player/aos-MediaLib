@@ -20,18 +20,12 @@ import android.util.Pair;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.xml.ShowScraper4;
-import com.uwetrottmann.tmdb2.entities.AppendToResponse;
-import com.uwetrottmann.tmdb2.entities.TvShow;
 import com.uwetrottmann.tmdb2.entities.TvShowResultsPage;
-import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem;
-import com.uwetrottmann.tmdb2.services.SearchService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import retrofit2.Response;
 
@@ -42,7 +36,7 @@ public class SearchShow {
     private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
 
     // Benchmarks tells that with tv shows sorted in folders, size of 200 or 20 or even 10 provides the same cacheHits on fake collection of 30k episodes, 250 shows
-    private final static LruCache<String, Response<TvShowResultsPage>> showCache = new LruCache<>(20);
+    private final static LruCache<String, Response<TvShowResultsPage>> showCache = new LruCache<>(50);
 
     public static SearchShowResult search(TvShowSearchInfo searchInfo, String language, int resultLimit, ShowScraper4 showScraper, MyTmdb tmdb) {
         SearchShowResult myResult = new SearchShowResult();

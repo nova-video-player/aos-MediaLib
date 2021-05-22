@@ -19,10 +19,8 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.LruCache;
 import android.util.SparseArray;
 
@@ -70,7 +68,6 @@ import java.util.Map;
 
 import okhttp3.Cache;
 
-import static com.archos.mediascraper.TagsFactory.buildShowTags;
 import static com.archos.mediascraper.TagsFactory.buildShowTagsOnlineId;
 
 public class ShowScraper4 extends BaseScraper2 {
@@ -79,7 +76,7 @@ public class ShowScraper4 extends BaseScraper2 {
     private static final Logger log = LoggerFactory.getLogger(ShowScraper4.class);
 
     // Benchmarks tells that with tv shows sorted in folders, size of 100 or 10 or even provides the same cacheHits on fake collection of 30k episodes, 250 shows
-    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(10);
+    private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(100);
 
     private static ScraperSettings sSettings = null;
 

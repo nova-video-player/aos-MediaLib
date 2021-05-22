@@ -37,7 +37,7 @@ public class ShowIdSeasonSearch {
     private static final Logger log = LoggerFactory.getLogger(ShowIdSeasonSearch.class);
 
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
-    private final static LruCache<String, ShowIdSeasonSearchResult> sShowCache = new LruCache<>(10);
+    private final static LruCache<String, ShowIdSeasonSearchResult> sShowCache = new LruCache<>(50);
 
     // specify image language include_image_language=en,null
     private final static Map<String, String> options  = new HashMap<String, String>() {{
