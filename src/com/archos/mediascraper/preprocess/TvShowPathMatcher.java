@@ -67,8 +67,7 @@ class TvShowPathMatcher implements InputMatcher {
 
     @Override
     public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
-        if(simplifiedUri!=null)
-            fileInput = simplifiedUri;
+        log.debug("matchesFileInput: processing " + fileInput.getPath() + " and " + simplifiedUri.getPath());
         return PATTERN_.matcher(fileInput.toString()).matches();
     }
 
@@ -79,8 +78,7 @@ class TvShowPathMatcher implements InputMatcher {
 
     @Override
     public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
-        if(simplifiedUri!=null)
-            file = simplifiedUri;
+        log.debug("getFileInputMatch: processing " + file.getPath());
         Matcher matcher = PATTERN_.matcher(file.toString());
         if (matcher.matches()) {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
@@ -91,6 +89,8 @@ class TvShowPathMatcher implements InputMatcher {
             int episode = StringUtils.parseInt(matcher.group(3), 0);
             log.debug("getFileInputMatch: " + name + " season " + season + " episode " + episode + " year " + nameYear.second + " country " + nameCountry.second);
             return new TvShowSearchInfo(file, nameCountry.first, season, episode, nameYear.second, nameCountry.second);
+        } else {
+            log.debug("getFileInputMatch: no match");
         }
         return null;
     }
