@@ -60,19 +60,21 @@ public class SearchPreprocessor {
      * @return Either {@link MovieSearchInfo} or {@link TvShowSearchInfo}
      */
     public SearchInfo parseFileBased(Uri uri, Uri simplifiedUri) {
+        String candidate = FileUtils.getFileNameWithoutExtension(uri);
         for (InputMatcher matcher : PARSERS) {
+            log.debug("parseFileBased: trying parser " + matcher.getMatcherName() + " for " + candidate + " derived from uri " + uri.getPath() + " and simplifiedUri " + simplifiedUri.getPath());
             if (matcher.matchesFileInput(uri, simplifiedUri)) {
                 SearchInfo result = matcher.getFileInputMatch(uri, simplifiedUri);
                 if (result == null) {
                     throw new AssertionError("Matcher:" + matcher.getMatcherName() + " returned null file:" + uri.toString());
                 }
-                log.debug("parseFileBased: result from " + matcher.getMatcherName());
+                log.debug("parseFileBased: result from " + matcher.getMatcherName() + " for " + candidate + " -> " + result.getSearchSuggestion());
                 return reParseInfo(result);
             }
         }
         // default to something - should not happen
-        log.error("parse error, no matcher");
-        return new MovieSearchInfo(uri, FileUtils.getFileNameWithoutExtension(uri), null);
+        log.error("parseFileBased: parse error, no matcher for " + candidate);
+        return new MovieSearchInfo(uri, candidate, null);
     }
 
     /**
