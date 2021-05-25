@@ -69,17 +69,17 @@ public final class ShowUtils {
 
     // Name patterns where the show is present first. Examples below.
     private static final Pattern[] patternsShowFirst = {
-        // almost anything that has S 00 E 00 in it
-        Pattern.compile("(.+?)" + SEP_MANDATORY + "(?:s|seas|season)" + SEP_OPTIONAL + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "(?:e|ep|episode)" + SEP_OPTIONAL + "(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
-        // almost anything that has 00 x 00
-        Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_MANDATORY + "(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
-        // special case to avoid x264 or x265
-        Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_OPTIONAL + "(?!(?:264|265|720))(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
+            // almost anything that has S 00 E 00 in it and recognize shows with year as season number
+            Pattern.compile("(.+?)" + SEP_MANDATORY + "(?:s|seas|season)" + SEP_OPTIONAL + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "(?:e|ep|episode)" + SEP_OPTIONAL + "(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
+            // almost anything that has 00 x 00, note mandatory separator to fixe detection of movies 5.1x264 as Season 1 episode 264
+            Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_MANDATORY + "(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
+            // special case to avoid x264 or x265
+            Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|\\d{1,2})" + SEP_OPTIONAL + "x" + SEP_OPTIONAL + "(?!(?:264|265|720))(\\d{1,3})(?!\\d).*", Pattern.CASE_INSENSITIVE),
             // Disable following pattern since it makes L.627 or OSS 117 movies identified as TV serie
             // foo.103 and similar
             // Note: can detect movies that contain 3 digit numbers like "127 hours" or shows that have such numbers in their name like "zoey 101"
             // Limit first digit to be >0 in order not to identify "James Bond 007" as tv show
-        //Pattern.compile("(.+)" + SEP_MANDATORY + "(?!(?:264|265|720))([1-9])(\\d{2,2})" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
+            //Pattern.compile("(.+)" + SEP_MANDATORY + "(?!(?:264|265|720))([1-9])(\\d{2,2})" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
         };
     // Name patterns which begin with the number of the episode
     private static final Pattern[] patternsEpisodeFirst = {
@@ -168,12 +168,19 @@ public final class ShowUtils {
         }
         // remove trailing '/' if it exists
         filename = removeTrailingSlash(filename);
+        log.debug("isTvShow: parsing " + filename);
         for(Pattern regexp: patternsShowFirst) {
             Matcher m = regexp.matcher(filename);
             try {
-                if(m.matches())
+                if(m.matches()) {
+                    log.debug("isTvShow: match found " + regexp.toString());
                     return true;
-            } catch (IllegalArgumentException ignored) {}
+                } else {
+                    log.debug("isTvShow: match not found " + regexp.toString());
+                }
+            } catch (IllegalArgumentException ignored) {
+                if (log.isDebugEnabled()) log.debug("isTvShow: IllegalArgumentException");
+            }
         }
         if (ENABLE_PATTERNS_EPISODE_FIRST)
             for(Pattern regexp: patternsEpisodeFirst) {
