@@ -62,8 +62,8 @@ public class SearchShow {
                         log.warn("search: not valid year int " + searchInfo.getFirstAiredYear());
                     }
                 }
-                // TODO MARC for next release for tmdb-java include adult = false
-                response = tmdb.searchService().tv(searchInfo.getShowName(), null, language, year).execute();
+                // adult search false by default
+                response = tmdb.searchService().tv(searchInfo.getShowName(), null, language, year, false).execute();
                 if (response.code() == 401) authIssue = true; // this is an OR
                 if (response.code() != 404) notFoundIssue = false; // this is an AND
                 if (response.isSuccessful()) isResponseOk = true;
