@@ -85,7 +85,23 @@ public class SearchShowParser {
         Boolean isDecisionTaken = false;
         int levenshteinDistanceTitle, levenshteinDistanceOriginalTitle;
         log.debug("getSearchShowParserResult: examining response of " + response.body().total_results + " entries in " + language + ", for " + searchInfo.getShowName());
-        for (BaseTvShow series : response.body().results) {
+
+        // sort first tvshows by popularity so that distinction between levenstein distance is operated on popularity
+        List<BaseTvShow> resultsTvShow = response.body().results;
+        Collections.sort(resultsTvShow, new Comparator<BaseTvShow>() {
+            @Override
+            public int compare(final BaseTvShow btvs1, final BaseTvShow btvs2) {
+                if (btvs1.popularity > btvs2.popularity) {
+                    return -1;
+                } else if (btvs1.popularity.equals(btvs2.popularity)) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        });
+
+        for (BaseTvShow series : resultsTvShow) {
             if (series.id != SERIES_NOT_PERMITTED_ID) {
                 if (countryOfOrigin != null && ! series.origin_country.contains(countryOfOrigin)) {
                     log.debug("getSearchShowParserResult: skip " + series.original_name + " because does not contain " + countryOfOrigin);
@@ -111,6 +127,7 @@ public class SearchShowParser {
                 result.setExtra(extra);
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
+                // TODO (impossible): would be nice to discard show that has not enough seasons to match the search but impossible at this stage BasicTvShow instead of TvShow in response
                 if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
                     log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
                     searchShowParserResult.resultsNoBanner.add(result);
