@@ -111,6 +111,7 @@ public class ShowScraper4 extends BaseScraper2 {
     public ScrapeSearchResult getMatches2(SearchInfo info, int maxItems) {
         // maxItems = -1 means all
         // check input
+        // can return a tvshow with less seasons that the one required in info
         if (info == null || !(info instanceof TvShowSearchInfo)) {
             log.error("getMatches2: bad search info: " + info == null ? "null" : "movie in show scraper");
             log.debug("getMatches2: ScrapeSearchResult ScrapeStatus.ERROR");
@@ -134,7 +135,6 @@ public class ShowScraper4 extends BaseScraper2 {
         boolean doRebuildShowTag = false;
         // never reuse old show info since there could be new episodes/seasons
         final boolean useOldShow = false;
-
         // ITEM_REQUEST_BASIC_SHOW = true means show (without episodes) is to be scraped manually (ManualShowScrappingSearchFragment)
         //  --> no need to get full season or else we have already all info in getMatch2
         // ITEM_REQUEST_BASIC_VIDEO = true means single episode is to be scraped manually (ManualVideoScrappingSearchFragment/VideoInfoScraperSearchFragment)
@@ -200,7 +200,7 @@ public class ShowScraper4 extends BaseScraper2 {
 
                 // now we have the number of seasons if we need getAllEpisodes
                 number_of_seasons = showIdTvSearchResult.tvShow.number_of_seasons;
-
+                if (number_of_seasons < season) log.warn("getDetailsInternal: season (" + season + ")" + " > number_of_seasons (" + number_of_seasons + ")");
                 // no need to do this if show known
                 if (!isShowKnown) {
                     log.debug("getDetailsInternal: show " + showId + " not known: get it");
@@ -280,6 +280,9 @@ public class ShowScraper4 extends BaseScraper2 {
                         // save showtag even if episodetag is empty
                         EpisodeTags episodeTag = new EpisodeTags();
                         episodeTag.setShowTags(showTags);
+                        // even if this is nok record season and episode not to end up with s00e00
+                        episodeTag.setSeason(Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")));
+                        episodeTag.setEpisode(Integer.parseInt(result.getExtra().getString(ShowUtils.EPNUM, "0")));
                         return new ScrapeDetailResult(episodeTag, true, null, showIdEpisode.status, showIdEpisode.reason);
                     }
                 } else {
@@ -297,11 +300,13 @@ public class ShowScraper4 extends BaseScraper2 {
                         tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
                         if (! tvSeasons.containsKey(showIdSeason.tvSeason.season_number))
                             tvSeasons.put(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
-                    }
-                    else {
+                    } else {
                         // save showtag even if episodetag is empty
                         EpisodeTags episodeTag = new EpisodeTags();
                         episodeTag.setShowTags(showTags);
+                        // even if this is nok record season and episode not to end up with s00e00
+                        episodeTag.setSeason(Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")));
+                        episodeTag.setEpisode(Integer.parseInt(result.getExtra().getString(ShowUtils.EPNUM, "0")));
                         log.warn("getDetailsInternal: scrapeStatus for season " + season + " is NOK!");
                         return new ScrapeDetailResult(episodeTag, true, null, showIdSeason.status, showIdSeason.reason);
                     }
