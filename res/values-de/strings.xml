@@ -125,14 +125,14 @@
     <string name="tvshow_genre_documentary">Dokumentarfilm</string>
     <string name="tvshow_genre_drama">Drama</string>
     <string name="tvshow_genre_family">Familie</string>
-    <string name="tvshow_genre_kids">Kids</string>
+    <string name="tvshow_genre_kids">Kinder</string>
     <string name="tvshow_genre_mystery">Mystery</string>
-    <string name="tvshow_genre_news">News</string>
+    <string name="tvshow_genre_news">Nachrichten</string>
     <string name="tvshow_genre_reality">Reality</string>
     <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
     <string name="tvshow_genre_soap">Soap</string>
     <string name="tvshow_genre_talk">Talk</string>
-    <string name="tvshow_genre_war_politics">War &amp; Politics</string>
+    <string name="tvshow_genre_war_politics">Krieg &amp; Politik</string>
     <string name="tvshow_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.

@@ -118,21 +118,21 @@
     <string name="movie_genre_war">Válečný</string>
     <string name="movie_genre_western">Western</string>
     <!-- There are official translations for the tmdb tv genres -->
-    <string name="tvshow_genre_action_adventure">Action &amp; Adventure</string>
+    <string name="tvshow_genre_action_adventure">Akční &amp; Dobrodužný</string>
     <string name="tvshow_genre_animation">Animovaný</string>
     <string name="tvshow_genre_comedy">Komedie</string>
     <string name="tvshow_genre_crime">Krimi</string>
     <string name="tvshow_genre_documentary">Dokumentární</string>
     <string name="tvshow_genre_drama">Drama</string>
     <string name="tvshow_genre_family">Rodinný</string>
-    <string name="tvshow_genre_kids">Kids</string>
+    <string name="tvshow_genre_kids">Dětský</string>
     <string name="tvshow_genre_mystery">Mysteriózní</string>
-    <string name="tvshow_genre_news">News</string>
+    <string name="tvshow_genre_news">Zpravodajství</string>
     <string name="tvshow_genre_reality">Reality</string>
-    <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
-    <string name="tvshow_genre_soap">Soap</string>
+    <string name="tvshow_genre_scifi_fantasy">Sci-fi &amp; Fantasy</string>
+    <string name="tvshow_genre_soap">Soap opera</string>
     <string name="tvshow_genre_talk">Talk</string>
-    <string name="tvshow_genre_war_politics">War &amp; Politics</string>
+    <string name="tvshow_genre_war_politics">Válka &amp; Politika</string>
     <string name="tvshow_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.

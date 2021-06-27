@@ -113,17 +113,17 @@
     <string name="movie_genre_war">Oorlog</string>
     <string name="movie_genre_western">Western</string>
     <!-- There are official translations for the tmdb tv genres -->
-    <string name="tvshow_genre_action_adventure">Action &amp; Adventure</string>
+    <string name="tvshow_genre_action_adventure">Actie &amp; Avontuur</string>
     <string name="tvshow_genre_animation">Animatie</string>
     <string name="tvshow_genre_comedy">Komedie</string>
     <string name="tvshow_genre_crime">Misdaad</string>
     <string name="tvshow_genre_documentary">Documentaire</string>
     <string name="tvshow_genre_drama">Drama</string>
     <string name="tvshow_genre_family">Familie</string>
-    <string name="tvshow_genre_kids">Kids</string>
+    <string name="tvshow_genre_kids">Kinderen</string>
     <string name="tvshow_genre_mystery">Mysterie</string>
-    <string name="tvshow_genre_news">News</string>
-    <string name="tvshow_genre_reality">Reality</string>
+    <string name="tvshow_genre_news">Nieuws</string>
+    <string name="tvshow_genre_reality">Reality-Tv</string>
     <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
     <string name="tvshow_genre_soap">Soap</string>
     <string name="tvshow_genre_talk">Talk</string>

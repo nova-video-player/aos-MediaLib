@@ -66,6 +66,7 @@
     <string name="tv_show_genre_adventure">Kaland</string>
     <string name="tv_show_genre_animation">Animáció</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_awards_show">Díjátadás műsor</string>
     <string name="tv_show_genre_children">Gyerekek</string>
     <string name="tv_show_genre_comedy">Vígjáték</string>
     <string name="tv_show_genre_crime">Krimi</string>
@@ -77,8 +78,13 @@
     <string name="tv_show_genre_game_show">Vetélkedő</string>
     <string name="tv_show_genre_home_garden">Otthon és kert</string>
     <string name="tv_show_genre_horror">Horror</string>
+    <string name="tv_show_genre_indie">Indie</string>
+    <string name="tv_show_genre_martial_arts">Harcművészet</string>
     <string name="tv_show_genre_mini_series">Minisorozat</string>
+    <string name="tv_show_genre_musical">Musical</string>
+    <string name="tv_show_genre_mystery">Rejtély</string>
     <string name="tv_show_genre_news">Hírek</string>
+    <string name="tv_show_genre_podcast">Podcast</string>
     <string name="tv_show_genre_reality">Valóságshow</string>
     <string name="tv_show_genre_romance">Romantikus</string>
     <string name="tv_show_genre_science_fiction">Sci-fi</string>
@@ -89,6 +95,7 @@
     <string name="tv_show_genre_talk_show">Talk-Show</string>
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Utazás</string>
+    <string name="tv_show_genre_war">Háborús</string>
     <string name="tv_show_genre_western">Western</string>
     <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">Akció</string>
