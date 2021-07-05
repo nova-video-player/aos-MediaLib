@@ -18,13 +18,18 @@
     <string name="nfo_export_category">Mediainformatie exporteren</string>
     <string name="nfo_export_auto_title">Automatisch exporteren na zoeken</string>
     <string name="nfo_export_manual_title">Exporteer video\'s met al bestaande informatie</string>
-    <string name="nfo_export_auto_summary">Automatisch exporteer .nfo bestanden na een succesvolle online zoekopdracht</string>
-    <string name="nfo_export_manual_summary">Exporteren .nfo bestanden van bestanden met al opgehaalde informatie</string>
+    <string name="nfo_export_auto_summary">Automatisch exporteren van .nfo bestanden na succesvol online zoeken</string>
+    <string name="nfo_export_manual_summary">Exporteer .nfo bestanden van alle video\'s die al gescraped zijn</string>
     <string name="nfo_export_button">Exporteren .nfo</string>
-    <string name="nfo_export_folder">Exporteer de hele map naar .nfo</string>
+    <string name="nfo_export_folder">Exporteer alles in deze map naar .nfo</string>
     <string name="nfo_export_all">Exporteer de gehele bibliotheek naar .nfo</string>
     <string name="nfo_export_exporting">Exporteren .nfo</string>
     <string name="nfo_export_exporting_all">alles</string>
+    <string name="nfo_export_in_progress">NFO exporteren wordt uitgevoerd</string>
+    <string name="rescrap_in_progress">Informatie vernieuwen voor gehele bibliotheek</string>
+    <string name="rescraping_collection">Informatie vernieuwen van collectie</string>
+    <string name="rescraping_collections">Informatie vernieuwen van collecties</string>
+    <string name="rescraping_noimage_collections">Informatie vernieuwen van collecties zonder afbeelding</string>
     <string name="rescrap_all_title">Alle informatie opnieuw ophalen</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Onmogelijk om te synchroniseren met trakt</string>
@@ -35,7 +40,7 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">SD-kaart niet beschikbaar</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
-    <string name="sdcard_busy_message">De SD-kaart is in gebruik.</string>
+    <string name="sdcard_busy_message">Sorry, je SD-kaart is in gebruik.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">Fout met SD-kaart</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
