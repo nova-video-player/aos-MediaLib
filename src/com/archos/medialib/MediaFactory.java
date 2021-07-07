@@ -74,12 +74,9 @@ public class MediaFactory {
         // TODO missing 28606?
 
         Method method = null;
-        if (Build.VERSION.SDK_INT >= 17) {
-            try {
-                method = AudioManager.class.getMethod("getProperty", String.class);
-            } catch (NoSuchMethodException e) {
-            }
-        }
+        try {
+            method = AudioManager.class.getMethod("getProperty", String.class);
+        } catch (NoSuchMethodException e) { }
         AUDIO_MANAGER_GET_PROPERTY_METHOD = method;
     }
 

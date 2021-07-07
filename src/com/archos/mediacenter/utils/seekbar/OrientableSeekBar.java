@@ -145,10 +145,9 @@ public class OrientableSeekBar extends SeekBar {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setHotspot(float x, float y) {
         final Drawable bg = getBackground();
-        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP))
-            if (bg != null) {
-                bg.setHotspot(x, y);
-            }
+        if (bg != null) {
+            bg.setHotspot(x, y);
+        }
     }
 
     private void trackTouchEvent(MotionEvent event) {
