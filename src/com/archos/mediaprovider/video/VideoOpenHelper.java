@@ -32,6 +32,7 @@ import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperImage.Type;
+import com.archos.mediascraper.themoviedb3.ImageConfiguration;
 
 import java.io.File;
 
@@ -1153,14 +1154,12 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     private static final String SELECTION = VideoColumns.SCRAPER_BACKDROP_URL + " IS NOT NULL AND " +
             VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + " > 0";
     private static final String SELECTION_ID = BaseColumns._ID + "=?";
-    private static final String SHOW_LARGE =
-            "https://artworks.thetvdb.com/banners/fanart/original/";
-    private static final String SHOW_THUMB =
-            "https://artworks.thetvdb.com/banners/_cache/fanart/original/";
-    private static final String MOVIE_LARGE =
-            "https://cf2.imgobject.com/t/p/w1280/";
-    private static final String MOVIE_THUMB =
-            "https://cf2.imgobject.com/t/p/w300/";
+
+    private static final String SHOW_LARGE = ScraperImage.TMPL;
+    private static final String SHOW_THUMB = ScraperImage.TMPT;
+    private static final String MOVIE_LARGE = ScraperImage.TMPL;
+    private static final String MOVIE_THUMB = ScraperImage.TMPT;
+
     /** Converts all backdrop urls already in the db to the new format */
     private static void convertBackdrops(SQLiteDatabase db, Context context) {
         if (DBG) Log.d(TAG, "convertBackdrops");

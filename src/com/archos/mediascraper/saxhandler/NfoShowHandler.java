@@ -306,6 +306,7 @@ public class NfoShowHandler extends BasicHandler {
     }
 
     // matches both http and https
+    // comes from the past should not be needed anymore
     private static final Pattern URL_PATTERN = Pattern.compile("https?://(?:www\\.)?thetvdb\\.com/banners/(?!_)(.+)");
 
     private static String rewriteUrl(String url) {

@@ -57,7 +57,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
     private static final int BOOKMARK = 26;
     private static final int SHOWTITLE = 27;
     private static final int IMDBID = 28;
-    private static final int TVDBID = 29;
+    private static final int TMDBID = 29;
 
     static {
         STRINGS.addKey("episodedetails", ROOT);
@@ -78,7 +78,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
         STRINGS.addKey("resume", RESUME);
         STRINGS.addKey("bookmark", BOOKMARK);
         STRINGS.addKey("imdbid", IMDBID);
-        STRINGS.addKey("tvdbid", TVDBID);
+        STRINGS.addKey("tmdbid", TMDBID);
 
         // fileinfo
         STRINGS.addKey("fileinfo", FILEINFO);
@@ -153,7 +153,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                     case BOOKMARK:
                     case RESUME:
                     case IMDBID:
-                    case TVDBID:
+                    case TMDBID:
                         return true;
                     // actor needs sub node parsing
                     case ACTOR:
@@ -246,7 +246,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                     case IMDBID:
                         mResult.setImdbId(getString());
                         break;
-                    case TVDBID:
+                    case TMDBID:
                         mResult.setOnlineId(getLong());
                         break;
                     default:

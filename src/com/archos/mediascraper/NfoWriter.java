@@ -229,7 +229,7 @@ public class NfoWriter {
             textTag(serializer, "mpaa", tag.getContentRating());
             textTag(serializer, "premiered", formatShowDate(tag.getPremiered()));
             textTag(serializer, "id", tag.getOnlineId());
-            textTag(serializer, "tvdbid", tag.getOnlineId());
+            textTag(serializer, "tmdbid", tag.getOnlineId());
             textTag(serializer, "imdbid", tag.getImdbId());
             for (String studio : tag.getStudios())
                 textTag(serializer, "studio", studio);
