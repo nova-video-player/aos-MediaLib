@@ -195,7 +195,7 @@ public class NfoWriter {
             textTag(serializer, "plot", tag.getPlot());
             textTag(serializer, "mpaa", tag.getContentRating());
             textTag(serializer, "imdbid", tag.getImdbId());
-            textTag(serializer, "tvdbid", tag.getOnlineId());
+            textTag(serializer, "tmdbid", tag.getOnlineId());
             textTag(serializer, "lastplayed", tag.getLastPlayed(TimeUnit.SECONDS));
             textTag(serializer, "bookmark", tag.getBookmark());
             textTag(serializer, "resume", tag.getResume());
