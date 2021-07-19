@@ -49,10 +49,64 @@ class TvShowPathMatcher implements InputMatcher {
     //           ^ show title            ^ season                  ^ episode
     // e.g. "/series/Galactica/Season 1/galactica.ep3.avi"
 
+    // TODO match year too...
+    // https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html
+    // https://www.regular-expressions.info/unicode.html
+    // check https://regex101.com/r/hE9gB4/1
+    // (?i) match case insensitive
+    // ?: nothing but
+    // \p{L} all letters even accents \p{N} numerical \s whitespace (instead of \w)
+    // better lazy .+? than greedy .+ vs. .* or .*?
+    // ++ one or more, *+ zero or more
+    // negative look behind (?<![\p{L}]) previous letter was not a Letter
+    // (?i).*\/((?:[\p{L}\p{N}]++[\s._-]*+)++)\/[^\/]*?(?<![\p{L}])(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+\/[^\/]*?(?<![\p{L}])(?:E|EP|EPISODE)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+
+    private static final String SEP_OPTIONAL = "[[\\p{Punct}&&[^()]]\\s]*+";
+    private static final String SEP_MANDATORY = "[[\\p{Punct}&&[^()]]\\s]++";
+    private static final String NOT_SLASH_LAZY = "[^/]*?"; // lazy
+    private static final String NOT_SLASH_GREEDY = "[^/]*+"; // lazy
+    private static final String PREVIOUS_NOT_LETTER = "(?<!\\p{L})";
+    private static final String CASE_INSENSITIVE = "(?i)";
+    private static final String WHATEVER = ".*";
+    private static final String SLASH = "/";
+    private static final String SEASON = "(?:S|SEAS|SEASON)";
+    private static final String EPISODE = "(?:E|EP|EPISODE)";
+    private static final String SEASON_NUMBER = "20\\d{2}|\\d{1,2}";
+    private static final String EPISODE_NUMBER = "\\d{1,3}";
+    private static final String NOT_DECIMAL = "(?!\\d).*";
+    private static final String LETTER_NUMBER_SEP = "(?:[\\p{L}\\p{N}]++[\\s._-]*+)"; // contains no date between ()...
+
+    // /show-sXXeYY/filename.mkv formerly in TvShowFolderMatcher
+    private static final String SHOW_SXEY_FILE_PATH = CASE_INSENSITIVE + WHATEVER + SLASH + "(" + NOT_SLASH_GREEDY + ")" +
+            SEP_MANDATORY + SEASON + SEP_OPTIONAL + "(" + SEASON_NUMBER + ")" + SEP_OPTIONAL + EPISODE + "(" + EPISODE_NUMBER + ")" + NOT_DECIMAL
+            + SLASH + NOT_SLASH_GREEDY;
+
+    // TODO shorter way (?i).*\/([^\/]++)\/[^\/]*?(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+\/[^\/]*?(?:E|EP|EPISODE)[\s._-]*+(\d{1,3})(?!\d)[^\/]*+
+
+    // NOK for /show-s01e02/garbage.mkv (?i).*\/((?:[^\/]*+[\s._-]*+)++)[\s._-]+?(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})[\s._-]*+(?:E|EP|EPISODE)[\s._-]*+(\d{1,3})\/[^\/]*+
+    // Show/sXX/blah-eYY-blah.mkv
     private static final String SHOW_SEASON_EPISODE_PATH =
-             "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+";
-    private static final Pattern PATTERN_ =
-            Pattern.compile(SHOW_SEASON_EPISODE_PATH);
+            "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+";
+
+    // TODO: better regex? (?i).*\/((?:[^\/]*+[\s._-]*+)++)\/[^\/]*?(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+\/[^\/]*?(?:E|EP|EPISODE)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+
+    // Show/blah-s02e01-blah.mkv
+    private static final String SHOW_SXEY_PATH =
+            "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+";
+
+    // Show-sXX/eYY/blah.mkv
+    //private static final String SHOW_SXEY_FILE_PATH =
+    //        "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*+";
+
+    // Show-sXXeYY/blah.mkv formerly in TvShowFolderMatcher
+    private static final String SHOWSXEY_GARBAGE_PATH =
+            "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*+";
+
+    // TODO WIP: replace PATTERN_ by PATTERNS
+    //private static final Pattern[] PATTERNS = {
+    //        Pattern.compile(SHOW_SEASON_EPISODE_PATH),
+    //        Pattern.compile(SHOWSXEY_GARBAGE_PATH),
+    //};
+
+    private static final Pattern PATTERN_ = Pattern.compile(SHOW_SEASON_EPISODE_PATH);
 
     public static TvShowPathMatcher instance() {
         return INSTANCE;
