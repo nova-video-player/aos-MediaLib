@@ -52,6 +52,10 @@ public final class VideoStore {
     private static final boolean LOCAL_DBG = false;
     private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
 
+    // deprecated replace with value that has never changed
+    private static final String MediaStoreFilesFileColumnsDATA = MediaStore.Files.FileColumns.DATA;
+    //private static final String MediaStoreFilesFileColumnsDATA = "_data";
+
     public static final String AUTHORITY = ArchosMediaCommon.AUTHORITY_VIDEO;
     private static final String CONTENT_AUTHORITY_SLASH = ArchosMediaCommon.CONTENT_AUTHORITY_SLASH_VIDEO;
 
@@ -104,10 +108,10 @@ public final class VideoStore {
                 context.getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cvR, whereR, whereRArgs);
             }
             else { // video not present in VideoStore -> check if video present in Android MediaStore
-                whereR = MediaStore.Files.FileColumns.DATA + " = ?";
+                whereR = MediaStoreFilesFileColumnsDATA + " = ?";
                 cursor.close();
                 cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
-                        new String[] { MediaStore.Files.FileColumns.DATA }, whereR, whereRArgs, null);
+                        new String[] { MediaStoreFilesFileColumnsDATA }, whereR, whereRArgs, null);
 
                 final ContentValues cvR = new ContentValues(1);
 
@@ -134,7 +138,7 @@ public final class VideoStore {
                     context.getContentResolver().update(MediaStore.Files.getContentUri("external"), cvR, whereR, whereRArgs);
                 } else doPopulate = true;
                 if (doPopulate) { // video not present in MediaStore nor in VideoStore, if local file insert it in MediaStore
-                    String col = MediaStore.Files.FileColumns.DATA;
+                    String col = MediaStoreFilesFileColumnsDATA;
                     // Do not try to insert in MediaStore non local files otherwise it crashes on Android>=P
                     if ("file".equals(uri.getScheme())) {
                         if (DBG) Log.d(TAG,"requestIndexing: file is local, add it to cvR for insertion in MediaStore");
