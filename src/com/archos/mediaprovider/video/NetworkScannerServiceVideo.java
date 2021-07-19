@@ -142,7 +142,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         return false;
     }
     public static boolean willBeScanned(Uri uri){ //returns whether or not a video will be scanned by NetworkScannerServiceVideo
-        return (!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri);
+        return (!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri); // http(s)/smb/upnp/(s)ftp(s)/content
     }
     private static boolean isSmbUri(Uri uri) {
         String schema = uri != null ? uri.getScheme() : null;

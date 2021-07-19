@@ -26,6 +26,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
@@ -153,30 +154,28 @@ public final class VideoStore {
             cursor.close();
         }
         // time now to index the file
+        Intent scanIntent = new Intent();
+        scanIntent.setPackage(context.getPackageName());
         String action;
-        if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) {
+        if ((!FileUtils.isLocal(uri)||UriUtils.isContentUri(uri))&& UriUtils.isIndexable(uri)) { // http(s)/smb/upnp/(s)ftp(s)/content
             // send intent to NVP to request indexing
             action = ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE;
             if (DBG) Log.d(TAG, "requestIndexing: not local, content, indexable -> NVP does the scan i.e. VideoStoreImportService");
-        }
-        else {
-            // send intent to Android MediaScanner to request indexing
-            action = Intent.ACTION_MEDIA_SCANNER_SCAN_FILE;
+            scanIntent.setAction(action);
+            scanIntent.setData(uri);
+            if (UriUtils.isContentUri(uri)) { // content://
+                if (DBG) Log.d(TAG, "requestIndexing: content go with intent picked up by VideoSterImportService on uri=" + uri);
+                // if ArchosMediaIntent should be picked up by VideoStoreImportService
+                context.sendBroadcast(scanIntent);
+            }  else {
+                if (DBG) Log.d(TAG, "http(s)/smb/upnp/(s)ftp(s) go with NetworkScannerServiceVideo (startIfHandles) on uri=" + uri);
+                NetworkScannerServiceVideo.startIfHandles(context, scanIntent);
+            }
+        } else { // \/file/null/file i.e local uri which is not contenturi
             if(uri.getScheme()==null)
                 uri = Uri.parse("file://"+uri.toString());
             if (DBG) Log.d(TAG, "requestIndexing: file -> MediaScanner does the scan");
-        }
-        Intent scanIntent = new Intent(action);
-        scanIntent.setData(uri);
-        scanIntent.setPackage(context.getPackageName());
-        if(!UriUtils.isContentUri(uri)) { // doesn't work with content
-            if (DBG) Log.d(TAG, "requestIndexing: not content:// sendBroadcast scan on uri=" + uri);
-            // if ArchosMediaIntent should be picked up by VideoStoreImportService
-            context.sendBroadcast(scanIntent);
-        }
-        else { // if this is content:// then go with NetworkScannerServiceVideo
-            if (DBG) Log.d(TAG, "requestIndexing: content:// go with NetworkScannerServiceVideo (startIfHandles) on uri=" + uri);
-            NetworkScannerServiceVideo.startIfHandles(context, scanIntent);
+            MediaScannerConnection.scanFile(context, new String[]{uri.getPath()}, null, null);
         }
     }
     private static final int ARCHOS_PARAMS_SIZE = 10;
