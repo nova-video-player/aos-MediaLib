@@ -2,7 +2,7 @@
 <resources>
 
     <!-- parse nfo files while indexing smb - default value -->
-    <item name="network_nfo_parse_default" format="boolean" type="bool">true</item>
+    <item name="network_nfo_parse_default" format="boolean" type="bool">false</item>
     <!-- parse nfo files while indexing smb - preference key -->
     <string name="network_nfo_parse_prefkey">network_nfo_parse</string>
 
