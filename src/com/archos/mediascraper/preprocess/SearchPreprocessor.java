@@ -62,11 +62,14 @@ public class SearchPreprocessor {
     public SearchInfo parseFileBased(Uri uri, Uri simplifiedUri) {
         String candidate = FileUtils.getFileNameWithoutExtension(uri);
         for (InputMatcher matcher : PARSERS) {
-            log.debug("parseFileBased: trying parser " + matcher.getMatcherName() + " for " + candidate + " derived from uri " + uri.getPath() + " and simplifiedUri " + simplifiedUri.getPath());
+            log.debug("parseFileBased: trying parser " + matcher.getMatcherName() + " for " + candidate +
+                    " derived from uri " + ((uri != null) ? uri.getPath() : null) +
+                    " and simplifiedUri " + ((simplifiedUri != null) ? simplifiedUri.getPath() : null));
             if (matcher.matchesFileInput(uri, simplifiedUri)) {
                 SearchInfo result = matcher.getFileInputMatch(uri, simplifiedUri);
                 if (result == null) {
-                    throw new AssertionError("Matcher:" + matcher.getMatcherName() + " returned null file:" + uri.toString());
+                    throw new AssertionError("Matcher:" + matcher.getMatcherName() +
+                            " returned null file:" + ((uri != null) ? uri.toString() : null));
                 }
                 log.debug("parseFileBased: result from " + matcher.getMatcherName() + " for " + candidate + " -> " + result.getSearchSuggestion());
                 return reParseInfo(result);
