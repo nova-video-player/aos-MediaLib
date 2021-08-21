@@ -22,9 +22,9 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 
-import androidx.appcompat.app.AppCompatActivity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -35,15 +35,14 @@ import java.util.WeakHashMap;
  * Any Activity between onStart / onStop will trigger that
  */
 public class AppState {
-    private static final String TAG = "AppState";
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(AppState.class);
 
     private static final HashSet<Integer> sStartedActivities = new HashSet<Integer>();
     private static boolean sChangingConfiguration = false;
 
     public static boolean isForeGround() {
         synchronized (sStartedActivities) {
-            if (DBG) Log.d(TAG, "isForeGround=" + (sStartedActivities.size() > 0));
+            log.debug("isForeGround=" + (sStartedActivities.size() > 0));
             return sStartedActivities.size() > 0;
         }
     }
@@ -67,7 +66,7 @@ public class AppState {
     }
 
     private static void notifyListener(Activity activity, boolean foreground) {
-        if (DBG) Log.d(TAG, "notifyListener: " + foreground);
+        log.debug("notifyListener: " + foreground);
         // copy keyset into an array to allow removing of listener from listener.
         OnForeGroundListener[] onForegroundListenerArray = null;
         synchronized (sListeners) {
@@ -89,7 +88,7 @@ public class AppState {
             new ActivityLifecycleCallbacks() {
                 @Override
                 public void onActivityStopped(Activity activity) {
-                    if (DBG) Log.d(TAG, "onActivityStopped:" + activity);
+                    log.debug("onActivityStopped:" + activity);
                     int activityKey = System.identityHashCode(activity);
                     synchronized (sStartedActivities) {
                         boolean foregroundOld = isForeGround();
@@ -99,7 +98,7 @@ public class AppState {
                             boolean foregroundNew = isForeGround();
                             if (foregroundNew != foregroundOld)
                                 notifyListener(activity, foregroundNew);
-                            if (DBG) Log.d(TAG, "onActivityStopped isForeGround: " + isForeGround());
+                            log.debug("onActivityStopped isForeGround: " + isForeGround());
                         }
                     }
                 }
@@ -115,7 +114,7 @@ public class AppState {
                 }
                 @Override
                 public void onActivityStarted(Activity activity) {
-                    if (DBG) Log.d(TAG, "onActivityStarted:" + activity);
+                    log.debug("onActivityStarted:" + activity);
                     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
                         if (!isActuallyForeground(activity))
                             return;
@@ -128,7 +127,7 @@ public class AppState {
                             boolean foregroundNew = isForeGround();
                             if (foregroundNew != foregroundOld)
                                 notifyListener(activity, foregroundNew);
-                            if (DBG) Log.d(TAG, "onActivityStarted isForeGround: " + isForeGround());
+                            log.debug("onActivityStarted isForeGround: " + isForeGround());
                         } else {
                             sChangingConfiguration = false;
                         }
@@ -136,23 +135,23 @@ public class AppState {
                 }
                 @Override
                 public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-                    if (DBG) Log.d(TAG, "onActivitySaveInstanceState:" + activity);
+                    log.debug("onActivitySaveInstanceState:" + activity);
                 }
                 @Override
                 public void onActivityResumed(Activity activity) {
-                    if (DBG) Log.d(TAG, "onActivityResumed:" + activity);
+                    log.debug("onActivityResumed:" + activity);
                 }
                 @Override
                 public void onActivityPaused(Activity activity) {
-                    if (DBG) Log.d(TAG, "onActivityPaused:" + activity);
+                    log.debug("onActivityPaused:" + activity);
                 }
                 @Override
                 public void onActivityDestroyed(Activity activity) {
-                    if (DBG) Log.d(TAG, "onActivityDestroyed:" + activity);
+                    log.debug("onActivityDestroyed:" + activity);
                 }
                 @Override
                 public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                    if (DBG) Log.d(TAG, "onActivityCreated:" + activity);
+                    log.debug("onActivityCreated:" + activity);
                 }
             };
 }
