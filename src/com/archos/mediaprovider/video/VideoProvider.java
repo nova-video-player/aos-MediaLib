@@ -160,6 +160,8 @@ public class VideoProvider extends ContentProvider {
         AppState.addOnForeGroundListener(mForeGroundListener);
         handleForeGround(AppState.isForeGround());
 
+        // TODO MARC remove listeners ???
+
         HandlerThread ht = new HandlerThread("thumbs thread", Process.THREAD_PRIORITY_BACKGROUND);
         ht.start();
         mThumbHandler = new Handler(ht.getLooper()) {
@@ -1377,18 +1379,15 @@ public class VideoProvider extends ContentProvider {
     }
 
     // TODO should it be done at each foreground? probably
-    private final AppState.OnForeGroundListener mForeGroundListener = new AppState.OnForeGroundListener() {
-        @Override
-        public void onForeGroundState(Context applicationContext, boolean foreground) {
-            if(foreground) {
-                if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.startService");
-                VideoStoreImportService.startService(applicationContext);
-            }  else {
-                if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.stopService");
-                VideoStoreImportService.stopService(applicationContext);
-            }
-            handleForeGround(foreground);
+    private final AppState.OnForeGroundListener mForeGroundListener = (applicationContext, foreground) -> {
+        if(foreground) {
+            if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.startService");
+            VideoStoreImportService.startService(applicationContext);
+        }  else {
+            if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.stopService");
+            VideoStoreImportService.stopService(applicationContext);
         }
+        handleForeGround(foreground);
     };
 
     protected void handleForeGround(boolean foreground) {

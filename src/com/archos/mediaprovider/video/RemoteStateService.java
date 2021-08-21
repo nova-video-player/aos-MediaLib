@@ -123,6 +123,9 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                                 log.warn("bad server [" + server + "]");
                                 continue;
                             }
+                            // TODO MARC this checks visibility of smb shares.
+                            // To check: with mdns it might take long to get IP of server (there is no longer a resolver available)
+                            // thus on netstate change it might think share is not available
                             new Thread() {
                                 @Override
                                 public void run() {
