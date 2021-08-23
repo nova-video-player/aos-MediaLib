@@ -43,10 +43,10 @@ public class ShowIdParser {
         ShowTags result = new ShowTags();
 
         if (serie.overview != null) {
-            log.warn("getResult: " + serie.name + " overview/plot " + serie.overview);
+            log.debug("getResult: " + serie.name + " overview/plot " + serie.overview);
             result.setPlot(serie.overview);
         } else {
-            log.debug("getResult: " + serie.name + " has no overview/plot");
+            log.warn("getResult: " + serie.name + " has no overview/plot");
         }
 
         result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);
