@@ -441,6 +441,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
         try {
+            // tidy up the accumulated actor director studio genre piled up in v_.*_deletable tables in one shot during deletes
+            // it has been moved from scraperTables triggers here to gain in efficiency
+            db.execSQL("delete from actor where _id in (select _id from v_actor_deletable)");
+            db.execSQL("delete from director where _id in (select _id from v_director_deletable)");
+            db.execSQL("delete from studio where _id in (select _id from v_studio_deletable)");
+            db.execSQL("delete from genre where _id in (select _id from v_genre_deletable)");
             // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
             // note that the db is being modified during import
             c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE)", null);

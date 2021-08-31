@@ -583,6 +583,14 @@ public final class ScraperTables {
             "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
             "END";
+    private static final String EPISODE_DELETE_TRIGGER_CREATEv2 =
+            "CREATE TRIGGER episode_delete AFTER DELETE ON episode " +
+                    "BEGIN " +
+                    "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
+                    // set scraper type / id to -1 if something is refering this episode
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+                    "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
+                    "END";
     private static final String MOVIE_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS movie_delete";
     private static final String MOVIE_DELETE_TRIGGER_CREATE =
             "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
@@ -597,6 +605,16 @@ public final class ScraperTables {
             + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
             + " = OLD.cover_movie));" +
             "END";
+    private static final String MOVIE_DELETE_TRIGGER_CREATEv2 =
+            "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
+                    "BEGIN " +
+                    // set scraper type / id to -1 if something is refering this episode
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+                    "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
+                    "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
+                    + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
+                    + " = OLD.cover_movie));" +
+                    "END";
     private static final String SHOW_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS show_delete";
     private static final String SHOW_DELETE_TRIGGER_CREATE =
             "CREATE TRIGGER show_delete AFTER DELETE ON show " +
@@ -607,6 +625,11 @@ public final class ScraperTables {
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +
             "END";
+    private static final String SHOW_DELETE_TRIGGER_CREATEv2 =
+            "CREATE TRIGGER show_delete AFTER DELETE ON show " +
+                    "BEGIN " +
+                    "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +
+                    "END";
     private static final String MOVIE_INSERT_TRIGGER_DROP = "DROP TRIGGER IF EXISTS movie_insert";
     private static final String MOVIE_INSERT_TRIGGER_CREATE =
             "CREATE TRIGGER movie_insert AFTER INSERT ON movie " +
@@ -1158,6 +1181,40 @@ public final class ScraperTables {
         if (toVersion == 38) {
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_C_ID + " INTEGER DEFAULT (-1)");
             db.execSQL(CREATE_MOVIE_COLLECTION_TABLE);
+        }
+        if (toVersion == 39) {
+            // create indexes to every non foreign keys with delete to speed up huge batch of delete in files_scanned during directory moves on network shares
+            // performance hit comes from the cascade of triggers
+            // without index, each delete from master table requires search through entire child table for foreign key'd items in O(N)
+            // with index it is much lower (O(1) or whatever the index achieves)
+            db.execSQL("CREATE INDEX subtitles_idx ON subtitles(file_id)");
+            db.execSQL("CREATE INDEX movie_trailers_idx ON movie_trailers(movie_id)");
+            db.execSQL("CREATE INDEX movie_backdrops_idx ON movie_backdrops(movie_id)");
+            db.execSQL("CREATE INDEX movie_posters_idx ON movie_posters(movie_id)");
+            db.execSQL("CREATE INDEX show_backdrops_idx ON show_backdrops(show_id)");
+            db.execSQL("CREATE INDEX show_posters_idx ON show_posters(show_id)");
+            db.execSQL("CREATE INDEX EPISODE_files_idx ON EPISODE(video_id)");
+            db.execSQL("CREATE INDEX EPISODE_show_idx ON EPISODE(show_episode)");
+            db.execSQL("CREATE INDEX MOVIE_idx ON MOVIE(video_id)");
+            db.execSQL("CREATE INDEX GUESTS_idx ON GUESTS(actor_guests)");
+            db.execSQL("CREATE INDEX FILMS_MOVIE_idx ON FILMS_MOVIE(director_films)");
+            db.execSQL("CREATE INDEX BELONGS_MOVIE_idx ON BELONGS_MOVIE(genre_belongs)");
+            db.execSQL("CREATE INDEX PLAYS_MOVIE_idx ON PLAYS_MOVIE(actor_plays)");
+            db.execSQL("CREATE INDEX PRODUCES_MOVIE_idx ON PRODUCES_MOVIE(studio_produces)");
+            db.execSQL("CREATE INDEX FILMS_EPISODE_idx ON FILMS_EPISODE(director_films)");
+            db.execSQL("CREATE INDEX FILMS_SHOW_idx ON FILMS_SHOW(director_films)");
+            db.execSQL("CREATE INDEX BELONGS_SHOW_idx ON BELONGS_SHOW(genre_belongs)");
+            db.execSQL("CREATE INDEX PLAYS_SHOW_idx ON PLAYS_SHOW(actor_plays)");
+            db.execSQL("CREATE INDEX PRODUCES_SHOW_idx ON PRODUCES_SHOW(studio_produces)");
+            db.execSQL("CREATE INDEX files_scraper_idx ON files(ArchosMediaScraper_id, ArchosMediaScraper_type)");
+            db.execSQL("CREATE INDEX MOVIE_cover_idx ON MOVIE(cover_movie)");
+            // create new triggers that does not call each time a clean of v_.*_deletable tables: do it once at startup
+            db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
+            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
+            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
+            db.execSQL(EPISODE_DELETE_TRIGGER_CREATEv2);
+            db.execSQL(SHOW_DELETE_TRIGGER_CREATEv2);
+            db.execSQL(MOVIE_DELETE_TRIGGER_CREATEv2);
         }
     }
 }
