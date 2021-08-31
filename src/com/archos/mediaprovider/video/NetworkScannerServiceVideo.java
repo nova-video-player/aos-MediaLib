@@ -95,6 +95,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
     private static final boolean SCAN_MEDIA_ONLY = true;
 
+    private static final int RECURSION_LIMIT =  15;
+
     // handler message ids
     private static final int MESSAGE_KILL = 1;
     private static final int MESSAGE_DO_SCAN = 2;
@@ -405,7 +407,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                     e.printStackTrace();
                 }
             }
-            WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             WifiLock wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
             wifiLock.acquire();
 
@@ -474,7 +476,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             FileVisitListener fileVisitListener = new FileVisitListener(
                     mBlacklist, prescanItemsMap, nfoScanEnabled, bulkHandler, serverId);
 
-            FileVisitor.visit(f, 15, fileVisitListener);
+            FileVisitor.visit(f, RECURSION_LIMIT, fileVisitListener);
             // once all files where visited we have inserted, updated or deleted files in the db.
             // Nfo has also been processed
             List<MetaFile2> lastPlayedDbs = fileVisitListener.getLastPlayedDbs();
@@ -627,6 +629,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         @Override
         public void onStop(MetaFile2 root) {
+            if (DBG) Log.d(TAG, "onStop");
             // once we are done traversing the directories check for files that
             // were not seen and delete them
             DeleteString deletes = new DeleteString();
@@ -727,9 +730,11 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
 
         public void executePending() {
+            if (DBG) Log.d(TAG, "executePending: process updates");
             mUpdateExecutor.execute();
+            if (DBG) Log.d(TAG, "executePending: process inserts");
             mInsertExecutor.execute();
-
+            if (DBG) Log.d(TAG, "executePending: done");
         }
 
         public int getInsertHandled() {
