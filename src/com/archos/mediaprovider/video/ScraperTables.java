@@ -583,7 +583,7 @@ public final class ScraperTables {
             "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
             "END";
-    private static final String EPISODE_DELETE_TRIGGER_CREATEv2 =
+    private static final String EPISODE_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER episode_delete AFTER DELETE ON episode " +
                     "BEGIN " +
                     "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
@@ -605,7 +605,7 @@ public final class ScraperTables {
             + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
             + " = OLD.cover_movie));" +
             "END";
-    private static final String MOVIE_DELETE_TRIGGER_CREATEv2 =
+    private static final String MOVIE_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
                     "BEGIN " +
                     // set scraper type / id to -1 if something is refering this episode
@@ -625,7 +625,7 @@ public final class ScraperTables {
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +
             "END";
-    private static final String SHOW_DELETE_TRIGGER_CREATEv2 =
+    private static final String SHOW_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER show_delete AFTER DELETE ON show " +
                     "BEGIN " +
                     "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +
@@ -1212,9 +1212,9 @@ public final class ScraperTables {
             db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
             db.execSQL(SHOW_DELETE_TRIGGER_DROP);
             db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            db.execSQL(EPISODE_DELETE_TRIGGER_CREATEv2);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATEv2);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATEv2);
+            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
+            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
+            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
         }
     }
 }
