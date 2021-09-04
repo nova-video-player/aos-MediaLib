@@ -21,7 +21,6 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.Files.FileColumns;
-import android.util.Log;
 
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.CustomCursorFactory;
@@ -34,15 +33,16 @@ import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperImage.Type;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 
 /**
  * Creates the video database
  */
 public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
-    private static final String TAG = ArchosMediaCommon.TAG_PREFIX + "VideoOpenHelper";
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final Logger log = LoggerFactory.getLogger(VideoOpenHelper.class);
 
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
@@ -1051,7 +1051,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        Log.d(TAG, "Creating Database at version " + DATABASE_CREATE_VERSION);
+        log.debug("Creating Database at version " + DATABASE_CREATE_VERSION);
         // create table for imported files
         db.execSQL(CREATE_FILES_IMPORT_TABLE_V21);
         db.execSQL(CREATE_FILES_IMPORT_TRIGGER_INSERT_V21);
@@ -1126,9 +1126,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // create db sets initial version to 10
         // TODO: nova first release is has db version 34, reimport upgrade into create, do not forget mirror action on ScraperTables
-        Log.d(TAG, "onUpgrade: upgrading Database from " + oldVersion + " to " + newVersion);
+        log.debug("onUpgrade: upgrading Database from " + oldVersion + " to " + newVersion);
         if (oldVersion < DATABASE_CREATE_VERSION) {
-            Log.d(TAG, "onUpgrade: upgrade not supported for version " + oldVersion + ", recreating the database.");
+            log.debug("onUpgrade: upgrade not supported for version " + oldVersion + ", recreating the database.");
             // triggers database deletion
             deleteDatabase();
         }
@@ -1143,6 +1143,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             db.execSQL(CREATE_VIDEO_VIEW_V38);
         }
         if (oldVersion < 39) {
+            // drop triggers first before recreation
+            SQLiteUtils.dropTrigger(db, "movie_delete");
+            SQLiteUtils.dropTrigger(db, "episode_delete");
+            SQLiteUtils.dropTrigger(db, "show_delete");
             ScraperTables.upgradeTo(db, 39);
         }
     }
@@ -1165,10 +1169,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 
     /** Converts all backdrop urls already in the db to the new format */
     private static void convertBackdrops(SQLiteDatabase db, Context context) {
-        if (DBG) Log.d(TAG, "convertBackdrops");
+        log.debug("convertBackdrops");
         Cursor c = db.query(VIDEO_VIEW_NAME, PROJECTION, SELECTION, null, null, null, null);
         if (c != null) {
-            if (DBG) Log.d(TAG, "convertBackdrops - found " + c.getCount());
+            log.debug("convertBackdrops - found " + c.getCount());
             while (c.moveToNext()) {
                 String data = c.getString(0);
                 long id = c.getLong(1);
@@ -1187,14 +1191,14 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     ContentValues cv = image.toContentValues(id);
                     long imageId = db.insert(ScraperTables.MOVIE_BACKDROPS_TABLE_NAME,
                             BaseColumns._ID, cv);
-                    if (DBG) Log.d(TAG, "convertBackdrops - " + image.toString() + " imageId:"  + imageId);
+                    log.debug("convertBackdrops - " + image.toString() + " imageId:"  + imageId);
                     if (imageId > 0) {
                         ContentValues update = new ContentValues();
                         update.put(ScraperStore.Movie.BACKDROP_ID, Long.valueOf(imageId));
                         update.put(ScraperStore.Movie.BACKDROP, image.getLargeFile());
                         String[] whereArgs = { String.valueOf(id) };
                         int upd = db.update(ScraperTables.MOVIE_TABLE_NAME, update, SELECTION_ID, whereArgs);
-                        if (DBG) Log.d(TAG, "convertBackdrops - update table result:"  + upd);
+                        log.debug("convertBackdrops - update table result:"  + upd);
                     }
                 } else if (type == ScraperStore.SCRAPER_TYPE_SHOW) {
                     ScraperImage image = new ScraperImage(Type.SHOW_BACKDROP, sName);
@@ -1208,14 +1212,14 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     ContentValues cv = image.toContentValues(id);
                     long imageId = db.insert(ScraperTables.SHOW_BACKDROPS_TABLE_NAME,
                             BaseColumns._ID, cv);
-                    if (DBG) Log.d(TAG, "convertBackdrops - " + image.toString() + " imageId:"  + imageId);
+                    log.debug("convertBackdrops - " + image.toString() + " imageId:"  + imageId);
                     if (imageId > 0) {
                         ContentValues update = new ContentValues();
                         update.put(ScraperStore.Show.BACKDROP_ID, Long.valueOf(imageId));
                         update.put(ScraperStore.Show.BACKDROP, image.getLargeFile());
                         String[] whereArgs = { String.valueOf(id) };
                         int upd = db.update(ScraperTables.SHOW_TABLE_NAME, update, SELECTION_ID, whereArgs);
-                        if (DBG) Log.d(TAG, "convertBackdrops - update table result:"  + upd);
+                        log.debug("convertBackdrops - update table result:"  + upd);
                     }
                 }
             }

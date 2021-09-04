@@ -16,7 +16,13 @@ package com.archos.mediaprovider.video;
 
 import android.database.sqlite.SQLiteDatabase;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class ScraperTables {
+
+    private static final Logger log = LoggerFactory.getLogger(ScraperTables.class);
+
     private ScraperTables() { /* empty */ }
 
     /*
@@ -1175,18 +1181,22 @@ public final class ScraperTables {
 
     public static void upgradeTo(SQLiteDatabase db, int toVersion) {
         if (toVersion == 37) {
+            log.debug("upgradeTo: " + toVersion);
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
         }
         if (toVersion == 38) {
+            log.debug("upgradeTo: " + toVersion);
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_C_ID + " INTEGER DEFAULT (-1)");
             db.execSQL(CREATE_MOVIE_COLLECTION_TABLE);
         }
         if (toVersion == 39) {
+            log.debug("upgradeTo: " + toVersion);
             // create indexes to every non foreign keys with delete to speed up huge batch of delete in files_scanned during directory moves on network shares
             // performance hit comes from the cascade of triggers
             // without index, each delete from master table requires search through entire child table for foreign key'd items in O(N)
             // with index it is much lower (O(1) or whatever the index achieves)
+            log.debug("upgradeTo: creating indexes");
             db.execSQL("CREATE INDEX subtitles_idx ON subtitles(file_id)");
             db.execSQL("CREATE INDEX movie_trailers_idx ON movie_trailers(movie_id)");
             db.execSQL("CREATE INDEX movie_backdrops_idx ON movie_backdrops(movie_id)");
@@ -1209,12 +1219,25 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX files_scraper_idx ON files(ArchosMediaScraper_id, ArchosMediaScraper_type)");
             db.execSQL("CREATE INDEX MOVIE_cover_idx ON MOVIE(cover_movie)");
             // create new triggers that does not call each time a clean of v_.*_deletable tables: do it once at startup
-            db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
-            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
+            // for some reasons sometimes the triggers are not dropped, thus make sure it is deleted
+            db.execSQL("pragma writable_schema = ON");
+            log.debug("upgradeTo: removing trigger movie_delete");
+            db.execSQL("delete from sqlite_master where name = 'movie_delete'");
+            log.debug("upgradeTo: removing trigger show_delete");
+            db.execSQL("delete from sqlite_master where name = 'show_delete'");
+            log.debug("upgradeTo: removing trigger episode_delete");
+            db.execSQL("delete from sqlite_master where name = 'episode_delete'");
+            db.execSQL("pragma writable_schema = OFF");
+            //db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
+            //db.execSQL(SHOW_DELETE_TRIGGER_DROP);
+            //db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
+            log.debug("upgradeTo: creating episode_delete trigger " + EPISODE_DELETE_TRIGGER_CREATE_v2);
             db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
+            log.debug("upgradeTo: creating show_delete trigger " + SHOW_DELETE_TRIGGER_CREATE_v2);
             db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
+            log.debug("upgradeTo: creating movie_delete trigger " + MOVIE_DELETE_TRIGGER_CREATE_v2);
             db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
+            log.debug("upgradeTo: all good");
         }
     }
 }
