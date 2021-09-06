@@ -121,7 +121,7 @@ class TvShowPathMatcher implements InputMatcher {
 
     @Override
     public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
-        log.debug("matchesFileInput: processing " + fileInput.getPath() + " and " + simplifiedUri.getPath());
+        log.debug("matchesFileInput: processing " + ((fileInput != null) ? fileInput.getPath() : null) + " and " + ((simplifiedUri != null) ? simplifiedUri.getPath() : null));
         return PATTERN_.matcher(fileInput.toString()).matches();
     }
 
@@ -132,7 +132,7 @@ class TvShowPathMatcher implements InputMatcher {
 
     @Override
     public SearchInfo getFileInputMatch(Uri file, Uri simplifiedUri) {
-        log.debug("getFileInputMatch: processing " + file.getPath());
+        log.debug("getFileInputMatch: processing " + ((file != null) ? file.getPath() : null));
         Matcher matcher = PATTERN_.matcher(file.toString());
         if (matcher.matches()) {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
