@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
@@ -86,7 +87,8 @@ public class AutoScrapeService extends Service {
             VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID,
             VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID,
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,
-            VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID
+            VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID,
+            VideoStore.Video.VideoColumns.SCRAPER_E_SEASON
     };
     private Thread mThread;
     private boolean restartOnNextRound = false;
@@ -375,6 +377,7 @@ public class AutoScrapeService extends Service {
                                                         PARAM_NOT_SCRAPED,
                                     BaseColumns._ID + " ASC LIMIT " + window);
                             log.debug("startScraping: new batch cursor has size " + cursor.getCount());
+                            log.trace("startScraping: dump cursor " + DatabaseUtils.dumpCursorToString(cursor));
 
                             sNumberOfFilesRemainingToProcess = window;
                             restartOnNextRound = true;
