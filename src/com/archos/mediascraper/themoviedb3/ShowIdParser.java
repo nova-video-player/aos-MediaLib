@@ -38,7 +38,7 @@ public class ShowIdParser {
 
     private static Context mContext;
 
-    public static ShowTags getResult(TvShow serie, Context context) {
+    public static ShowTags getResult(TvShow serie, String year, Context context) {
         mContext = context;
         ShowTags result = new ShowTags();
 
@@ -50,7 +50,7 @@ public class ShowIdParser {
         }
 
         result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);
-        result.setTitle(serie.name);
+        result.setTitle(serie.name + (( year != null) ? " " + year : ""));
 
         log.debug("getResult: found title=" + serie.name);
 

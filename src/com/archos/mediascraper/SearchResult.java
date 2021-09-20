@@ -32,6 +32,8 @@ public class SearchResult implements Parcelable {
     private String mPosterPath;
     private String mBackdropPath;
 
+    private String mYear;
+
     public static final int movie = 1;
     public static final int tvshow = 0;
 
@@ -80,6 +82,9 @@ public class SearchResult implements Parcelable {
 
     public void setPosterPath(String path) { mPosterPath = path; }
     public void setBackdropPath(String path) { mBackdropPath = path;  }
+
+    public void setYear(String year) { mYear = year; }
+    public String getYear() { return mYear; }
 
     public int getOriginSearchSeason() { return mOriginSearchSeason; }
     public void setOriginSearchSeason(int season) { mOriginSearchSeason = season; }

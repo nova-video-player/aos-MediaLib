@@ -22,10 +22,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class SearchShowParserResult {
-    List<SearchResult> resultsNoBanner;
+    List<SearchResult> resultsNoAirDate;
     List<SearchResult> resultsNoPoster;
     List<Pair<SearchResult,Integer>> resultsProbable;
+    List<Pair<SearchResult,Integer>> resultsNoBanner;
     public SearchShowParserResult() {
+        this.resultsNoAirDate = new LinkedList<>();
         // contains list of results without banner
         this.resultsNoBanner = new LinkedList<>();
         // contains list of results without poster

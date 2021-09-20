@@ -47,21 +47,23 @@ public class SearchShow {
         boolean isResponseEmpty = false;
         String showKey = null;
         String name;
-        log.debug("search: quering tmdb for " + searchInfo.getShowName() + " in " + language + ", resultLimit=" + resultLimit);
+        log.debug("search: quering tmdb for " + searchInfo.getShowName() + " year " + searchInfo.getFirstAiredYear() + " in " + language + ", resultLimit=" + resultLimit);
         try {
-            showKey = searchInfo.getShowName() + "|" + language;
+            Integer year = null;
+            if (searchInfo.getFirstAiredYear() != null) {
+                try {
+                    year = Integer.parseInt(searchInfo.getFirstAiredYear());
+                } catch (NumberFormatException nfe) {
+                    log.warn("search: not valid year int " + searchInfo.getFirstAiredYear());
+                }
+            }
+
+            showKey = searchInfo.getShowName() + "|" + year + "|" + language;
+            log.debug("SearchShowResult: cache showKey " + showKey);
             response = showCache.get(showKey);
             if (log.isTraceEnabled()) debugLruCache(showCache);
             if (response == null) {
-                log.debug("SearchShowResult: no boost for " + searchInfo.getShowName());
-                Integer year = null;
-                if (searchInfo.getFirstAiredYear() != null) {
-                    try {
-                        year = Integer.parseInt(searchInfo.getFirstAiredYear());
-                    } catch (NumberFormatException nfe) {
-                        log.warn("search: not valid year int " + searchInfo.getFirstAiredYear());
-                    }
-                }
+                log.debug("SearchShowResult: no boost for " + searchInfo.getShowName() + " year " + year);
                 // adult search false by default
                 response = tmdb.searchService().tv(searchInfo.getShowName(), null, language, year, false).execute();
                 if (response.code() == 401) authIssue = true; // this is an OR
@@ -77,12 +79,18 @@ public class SearchShow {
                         name = searchInfo.getShowName();
                         Pair<String, String> nameYear = yearExtractor(name);
                         log.debug("search: not found trying to extract year name=" + nameYear.first + ", year=" + nameYear.second);
-                        if (nameYear.second != null) // avoid infinite loop
+                        if (nameYear.second != null) { // avoid infinite loop
+                            // remember that it is a reboot show with date year to add to name to discriminate
+                            myResult.year = nameYear.second;
                             return search(new TvShowSearchInfo(searchInfo.getFile(), nameYear.first, searchInfo.getSeason(), searchInfo.getEpisode(), nameYear.second, searchInfo.getCountryOfOrigin()),
-                                language, resultLimit, showScraper, tmdb );
+                                    language, resultLimit, showScraper, tmdb);
+                        }
                     }
                 }
-                if (isResponseOk || isResponseEmpty) showCache.put(showKey, response);
+                if (isResponseOk || isResponseEmpty) {
+                    log.debug("search: inserting in showCache " + showKey + " and response ");
+                    showCache.put(showKey, response);
+                }
             } else {
                 log.debug("search: boost using cached searched show for " + searchInfo.getShowName());
                 isResponseOk = true;
@@ -108,7 +116,7 @@ public class SearchShow {
                 } else {
                     myResult.result = SearchShowParser.getResult(
                             (isResponseOk) ? response : null,
-                            searchInfo, language, resultLimit, showScraper);
+                            searchInfo, year, language, resultLimit, showScraper);
                     myResult.status = ScrapeStatus.OKAY;
                 }
             }

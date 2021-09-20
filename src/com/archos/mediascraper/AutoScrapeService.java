@@ -470,7 +470,6 @@ public class AutoScrapeService extends Service {
                                             searchResult.setFile(fileUri);
                                             searchResult.setScraper(new ShowScraper4(AutoScrapeService.this));
                                             result = ShowScraper4.getDetails(new SearchResult(SearchResult.tvshow,title, (int) videoID), b);
-
                                         } else if (scraperType==BaseTags.MOVIE) {
                                             log.debug("startScraping: rescraping movie "+videoID);
                                             SearchResult searchResult = new SearchResult(SearchResult.movie, title, (int) videoID);
@@ -485,6 +484,7 @@ public class AutoScrapeService extends Service {
                                         SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri,scrapUri);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         result = scraper.getAutoDetails(searchInfo);
+                                        log.debug("startScraping: " + result.tag.getTitle() + " " + result.tag.getOnlineId());
                                     }
 
                                     if (result!=null&&result.tag != null && ID != -1) {

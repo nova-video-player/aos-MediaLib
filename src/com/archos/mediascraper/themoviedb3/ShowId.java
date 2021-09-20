@@ -60,7 +60,8 @@ public class ShowId {
                 default:
                     if (seriesResponse.isSuccessful()) {
                         if (seriesResponse.body() != null) {
-                            parserResult = ShowIdParser.getResult(seriesResponse.body(), context);
+                            // TODO change year null but ShowId not used for now
+                            parserResult = ShowIdParser.getResult(seriesResponse.body(), null, context);
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {

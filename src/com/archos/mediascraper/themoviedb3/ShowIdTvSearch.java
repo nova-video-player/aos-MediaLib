@@ -36,6 +36,7 @@ public class ShowIdTvSearch {
     private static final Logger log = LoggerFactory.getLogger(ShowIdTvSearch.class);
 
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
+    // TODO MARC THIS IS THE CACHE MESSING UP!!!!!!! --> no there is only one id!!!
     private final static LruCache<String, ShowIdTvSearchResult> sShowCache = new LruCache<>(10);
 
     // specify image language include_image_language=en,null

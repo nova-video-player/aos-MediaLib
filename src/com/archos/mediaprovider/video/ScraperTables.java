@@ -133,7 +133,7 @@ public final class ScraperTables {
     private static final String SHOW_TABLE_CREATE =
         "CREATE TABLE " + SHOW_TABLE_NAME + " (" +
         ScraperStore.Show.ID + " INTEGER PRIMARY KEY NOT NULL," +
-        ScraperStore.Show.NAME + " TEXT UNIQUE," +
+        ScraperStore.Show.NAME + " TEXT UNIQUE," + // Remark: this should not be unique, online_id should
         ScraperStore.Show.COVER + " TEXT," +
         ScraperStore.Show.PREMIERED + " INTEGER," +
         ScraperStore.Show.RATING + " FLOAT," +

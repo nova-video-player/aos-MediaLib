@@ -89,6 +89,7 @@ public class ShowTags extends VideoTags {
     };
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
+    private static final String ONLINEID_SELECTION = ScraperStore.Show.ONLINE_ID + "=?";
 
     @Override
     public long save(Context context, long videoId) {
@@ -111,12 +112,18 @@ public class ShowTags extends VideoTags {
         ContentResolver cr = context.getContentResolver();
 
         // Check if this TV show is already referenced in the scraperDB
-        log.debug("Save called for show " + mTitle);
+        log.debug("save: called for show " + mTitle + " id " + mId + " onlineId " + mOnlineId);
+
+        // Remark: uniqueness is based on mTitle and should be based on mOnlineId to avoid tvshow named the same to be merged: keep it like this for now
         String[] selectionArgs = { mTitle };
+        //String[] selectionArgs = { String.valueOf(mOnlineId) };
         Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
                 NAME_SELECTION, selectionArgs, null);
+        //Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
+        //        ONLINEID_SELECTION, selectionArgs, null);
 
         if (cursor != null) {
+            log.debug("save: show found in db");
             if (cursor.moveToFirst()) {
                 showFound = true;
                 // The show was found in the database -> get stored infos
@@ -152,6 +159,7 @@ public class ShowTags extends VideoTags {
         }
 
         if (!showFound || baseInfoChanged) {
+            log.debug("save: show not found in db or baseInfo changed");
             // got to insert or update the baseinfo.
             ContentValues values = new ContentValues();
             values.put(ScraperStore.Show.NAME, mTitle);

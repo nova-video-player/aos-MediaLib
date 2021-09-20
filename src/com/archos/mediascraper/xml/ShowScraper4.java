@@ -125,6 +125,8 @@ public class ShowScraper4 extends BaseScraper2 {
                 + " e:" + searchInfo.getEpisode() + ", maxItems=" + maxItems);
         if (tmdb == null) reauth();
         SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, this, tmdb);
+        // TODO MARC do transmit searchResult.year
+        if (searchResult.result.size() > 0) log.debug("getMatches2: match found " + searchResult.result.get(0).getTitle() + " id " + searchResult.result.get(0).getId());
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
     }
 
@@ -166,6 +168,7 @@ public class ShowScraper4 extends BaseScraper2 {
         ShowTags showTags = null;
         ShowIdImagesResult searchImages = null;
 
+        log.debug("getDetailsInternal: probing cache for showKey " + showKey);
         allEpisodes = sEpisodeCache.get(showKey);
         if (log.isTraceEnabled()) debugLruCache(sEpisodeCache);
 
@@ -195,24 +198,24 @@ public class ShowScraper4 extends BaseScraper2 {
                 // parse result to get global show basic info
                 if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
                     return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                else
-                    showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
+                else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                log.debug("getDetailsInternal: downloaded showTags " + showTags.getOnlineId() + " " + showTags.getTitle());
+
+                // if there is no title or description research in en
+                if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().length() == 0 || showTags.getTitle().length() == 0) {
+                    showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
+                    if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
+                        return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
+                    else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                }
 
                 // now we have the number of seasons if we need getAllEpisodes
                 number_of_seasons = showIdTvSearchResult.tvShow.number_of_seasons;
                 if (number_of_seasons < season) log.warn("getDetailsInternal: season (" + season + ")" + " > number_of_seasons (" + number_of_seasons + ")");
                 // no need to do this if show known
+                // TODO MARC bug ii) same poster/backdrop generated zillions of times
                 if (!isShowKnown) {
-                    log.debug("getDetailsInternal: show " + showId + " not known: get it");
-                    // if there is no title or description research in en
-                    if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().length() == 0 || showTags.getTitle().length() == 0)
-                        showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showId, "en", tmdb);
-                    if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
-                        return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                    else {
-                        lang = "en";
-                        showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, mContext);
-                    }
+                    log.debug("getDetailsInternal: get all images for show " + showId);
 
                     // get show posters and backdrops
                     searchImages = ShowIdImagesParser.getResult(showTags.getTitle(), showIdTvSearchResult.tvShow, lang, mContext);
@@ -313,11 +316,13 @@ public class ShowScraper4 extends BaseScraper2 {
                 }
             }
 
+            // WARNING MARC STRANGE CODE BELOW mixing tvEpisodes or tvShowblah with allEpisodes???
             // get now all episodes in tvEpisodes
             Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(showId, tvEpisodes, tvSeasons, showTags, resultLanguage, tmdb, mContext);
             if (!searchEpisodes.isEmpty()) {
                 allEpisodes = searchEpisodes;
                 // put that result in cache.
+                log.debug("getDetailsInternal: sEpisodeCache put allEpisodes with key " + showKey);
                 sEpisodeCache.put(showKey, allEpisodes);
             }
 
@@ -339,8 +344,8 @@ public class ShowScraper4 extends BaseScraper2 {
                 Integer.parseInt(result.getExtra().getString(ShowUtils.EPNUM, "0")),
                 Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0")),
                 showTags);
+        log.debug("getDetailsInternal : ScrapeStatus.OKAY " + returnValue.getShowTitle() + " " + returnValue.getShowId() + " " + returnValue.getTitle());
         Bundle extraOut = buildBundle(allEpisodes, options);
-        log.debug("getDetailsInternal: ScrapeStatus.OKAY");
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
     }
 
@@ -415,6 +420,7 @@ public class ShowScraper4 extends BaseScraper2 {
             episodeTag.downloadPicture(mContext);
             episodeTag.downloadPoster(mContext);
         }
+        log.debug("buildTag: " + episodeTag.getShowTitle() + " " + episodeTag.getShowId() + " " + episodeTag.getTitle());
         return episodeTag;
     }
 

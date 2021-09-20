@@ -121,6 +121,8 @@ public class EpisodeTags extends BaseTags {
         //---------------------------------------------------
         long showId = mShowTags.save(context, videoId);
 
+        log.debug("Save called for episode " + mTitle + " showId " + showId + " onlineId " + mOnlineId);
+
         //---------------------------------------------------------------------------------------
         // Create a new entry for this episode in the database.
         //---------------------------------------------------------------------------------------

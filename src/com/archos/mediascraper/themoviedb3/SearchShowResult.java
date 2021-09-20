@@ -24,6 +24,7 @@ import java.util.List;
 public class SearchShowResult {
     public static final List<SearchResult> EMPTY_LIST = Collections.<SearchResult>emptyList();
     public List<SearchResult> result;
+    public String year;
     public ScrapeStatus status;
     public Throwable reason;
     public SearchShowResult() {

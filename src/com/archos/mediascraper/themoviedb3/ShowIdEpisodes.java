@@ -93,6 +93,7 @@ public class ShowIdEpisodes {
                 episodeTags.setAired(tvEpisode.air_date);
                 episodeTags.setEpisode(tvEpisode.episode_number);
                 episodeTags.setSeason(tvEpisode.season_number);
+                episodeTags.setShowId(showId);
                 episodeTags.setShowTags(showTags);
                 if (tvEpisode.still_path != null) {
                     log.trace("getEpisodes: showId=" + showId + " episode has still=" + tvEpisode.still_path);
