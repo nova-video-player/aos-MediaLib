@@ -484,7 +484,7 @@ public class AutoScrapeService extends Service {
                                         SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri,scrapUri);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         result = scraper.getAutoDetails(searchInfo);
-                                        log.debug("startScraping: " + result.tag.getTitle() + " " + result.tag.getOnlineId());
+                                        log.debug("startScraping: " + ((result.tag != null) ? result.tag.getTitle() : null) + " " + ((result.tag != null) ? result.tag.getOnlineId() : null));
                                     }
 
                                     if (result!=null&&result.tag != null && ID != -1) {
