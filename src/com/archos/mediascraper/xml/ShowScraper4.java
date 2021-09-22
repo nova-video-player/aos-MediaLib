@@ -125,7 +125,6 @@ public class ShowScraper4 extends BaseScraper2 {
                 + " e:" + searchInfo.getEpisode() + ", maxItems=" + maxItems);
         if (tmdb == null) reauth();
         SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, this, tmdb);
-        // TODO MARC do transmit searchResult.year
         if (searchResult.result.size() > 0) log.debug("getMatches2: match found " + searchResult.result.get(0).getTitle() + " id " + searchResult.result.get(0).getId());
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
     }
@@ -213,7 +212,6 @@ public class ShowScraper4 extends BaseScraper2 {
                 number_of_seasons = showIdTvSearchResult.tvShow.number_of_seasons;
                 if (number_of_seasons < season) log.warn("getDetailsInternal: season (" + season + ")" + " > number_of_seasons (" + number_of_seasons + ")");
                 // no need to do this if show known
-                // TODO MARC bug ii) same poster/backdrop generated zillions of times
                 if (!isShowKnown) {
                     log.debug("getDetailsInternal: get all images for show " + showId);
 
@@ -316,7 +314,6 @@ public class ShowScraper4 extends BaseScraper2 {
                 }
             }
 
-            // WARNING MARC STRANGE CODE BELOW mixing tvEpisodes or tvShowblah with allEpisodes???
             // get now all episodes in tvEpisodes
             Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(showId, tvEpisodes, tvSeasons, showTags, resultLanguage, tmdb, mContext);
             if (!searchEpisodes.isEmpty()) {
