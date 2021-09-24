@@ -25,26 +25,27 @@ import com.archos.mediacenter.utils.AppState;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * receiver for events that trigger mediastore import
  */
 public class VideoStoreImportReceiver extends BroadcastReceiver {
-    private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "VideoStoreImportReceiver";
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final Logger log = LoggerFactory.getLogger(VideoStoreImportReceiver.class);
 
     public VideoStoreImportReceiver() {
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (DBG) Log.d(TAG, "onReceive:" + intent);
+        log.debug("onReceive:" + intent);
         if (AppState.isForeGround()) {
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent if intent supported");
+            log.debug("VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent if intent supported");
             // start network scan / removal service
             NetworkScannerServiceVideo.startIfHandles(context, intent);
             // in addition and all other cases inform import service about the event but only if this is something we handle
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent if intent supported");
+            log.debug("VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent if intent supported");
             VideoStoreImportService.startIfHandles(context, intent);
         }
     }
