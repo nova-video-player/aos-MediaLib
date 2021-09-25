@@ -350,10 +350,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 stopForeground(true);
                 // this service used to be created through bind. So it couldn't be killed with stopself unless it was unbind
                 // (which wasn't done). To have the same behavior, do not stop service for now
-                /*if (msg.arg1 != DONT_KILL_SELF){
-                    Log.d(TAG, "stopSelf");
+                if (msg.arg1 != DONT_KILL_SELF){
+                    log.debug("stopSelf");
                     stopSelf(msg.arg1);
-                }*/
+                }
                 break;
             case MESSAGE_IMPORT_INCR:
                 log.debug("handleMessage: MESSAGE_IMPORT_INCR");
