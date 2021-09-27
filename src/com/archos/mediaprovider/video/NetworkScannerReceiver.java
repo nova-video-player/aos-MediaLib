@@ -27,11 +27,13 @@ import android.util.Log;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashSet;
 
 public class NetworkScannerReceiver extends BroadcastReceiver {
-    private static final boolean DBG = false;
-    private static final String TAG = "NetworkScannerReceiver";
+    private static final Logger log = LoggerFactory.getLogger(NetworkScannerReceiver.class);
 
     private static final HashSet<String> sCurrentlyScanned = new HashSet<String>();
 
@@ -39,7 +41,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Uri uri = intent.getData();
         String action = intent.getAction();
-        if (DBG) Log.d(TAG, "onReceive intent:" + intent + " uri:" + uri);
+        log.debug("onReceive intent:" + intent + " uri:" + uri);
         // we need uri telling us what is scanned
         if (uri == null)
             return;
@@ -48,13 +50,13 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
         } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED.equals(action)) {
             remove(uri);
         }
-        if (DBG) dump();
+        if (log.isDebugEnabled()) dump();
     }
 
     private static synchronized void add(Uri uri) {
         if (uri == null)
             return;
-        if (DBG) Log.d(TAG, "add uri:" + uri);
+        log.debug("add uri:" + uri);
         String path = uri.toString();
         sCurrentlyScanned.add(path);
     }
@@ -62,7 +64,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
     private static synchronized void remove(Uri uri) {
         if (uri == null)
             return;
-        if (DBG) Log.d(TAG, "remove uri:" + uri);
+        log.debug("remove uri:" + uri);
         String path = uri.toString();
         sCurrentlyScanned.remove(path);
     }
@@ -70,11 +72,11 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
 
 
     private static void dump() {
-        Log.d(TAG, "> --- DUMP --- <");
+        log.debug("> --- DUMP --- <");
         for (String key : sCurrentlyScanned) {
-            Log.d(TAG, "> [" + key + "]");
+            log.debug("> [" + key + "]");
         }
-        Log.d(TAG, "> ------------ <");
+        log.debug("> ------------ <");
     }
 
     public interface ScannerListener {
@@ -84,6 +86,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
 
     public static synchronized boolean isScannerWorking() {
         // if there is a path in here then scanner is working.
+        log.debug("isScannerWorking: sCurrentlyScanned.size()=" + sCurrentlyScanned.size() + (sCurrentlyScanned.size() > 0));
         return sCurrentlyScanned.size() > 0;
     }
 }

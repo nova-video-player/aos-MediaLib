@@ -76,6 +76,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import static android.net.wifi.WifiManager.WIFI_MODE_FULL;
 import static android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @SuppressLint("LongLogTag")
 public class NetworkScannerServiceVideo extends Service implements Handler.Callback {
     /*
@@ -89,9 +92,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
      */
 
-    private static final String TAG =  ArchosMediaCommon.TAG_PREFIX + "NetworkScannerServiceVideo";
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = ArchosMediaCommon.PACKAGE_DBG & LOCAL_DBG;
+    private static final Logger log = LoggerFactory.getLogger(NetworkScannerServiceVideo.class);
 
     private static final boolean SCAN_MEDIA_ONLY = true;
 
@@ -128,19 +129,19 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         Uri data = broadcast.getData();
         if ((ArchosMediaIntent.isVideoScanIntent(action) || ArchosMediaIntent.isVideoRemoveIntent(action))
                 && willBeScanned(data)) {
-            if (DBG) Log.d(TAG, "startIfHandles is true: sending intent to NetworkScannerServiceVideo");
+            log.debug("startIfHandles is true: sending intent to NetworkScannerServiceVideo");
             Intent serviceIntent = new Intent(context, NetworkScannerServiceVideo.class);
             serviceIntent.setAction(action);
             serviceIntent.setData(data);
             if(broadcast.getExtras()!=null)
                 serviceIntent.putExtras(broadcast.getExtras()); //in case we have an extra... such as "recordLogExtra"
             if (AppState.isForeGround()) {
-                if (DBG) Log.d(TAG, "startIfHandles: apps is foreground startForegroundService and pass intent to self");
+                log.debug("startIfHandles: apps is foreground startForegroundService and pass intent to self");
                 ContextCompat.startForegroundService(context, serviceIntent);
             }
             return true;
         }
-        if (DBG) Log.d(TAG, "startIfHandles is false: do nothing");
+        log.debug("startIfHandles is false: do nothing");
         return false;
     }
     public static boolean willBeScanned(Uri uri){ //returns whether or not a video will be scanned by NetworkScannerServiceVideo
@@ -152,7 +153,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     }
 
     public NetworkScannerServiceVideo() {
-        if (DBG) Log.d(TAG, "NetworkScannerServiceVideo CTOR");
+        log.debug("NetworkScannerServiceVideo CTOR");
     }
 
     private static  List<ScannerListener> sListener = new ArrayList<>();
@@ -179,13 +180,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
     @Override
     protected void finalize() throws Throwable {
-        if (DBG) Log.d(TAG, "NetworkScannerServiceVideo DTOR");
+        log.debug("NetworkScannerServiceVideo DTOR");
         super.finalize();
     }
 
     @Override
     public void onCreate() {
-        if (DBG) Log.d(TAG, "onCreate");
+        log.debug("onCreate");
 
         // need to do that early to avoid ANR on Android 26+
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -231,7 +232,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
         if(mRecordEndOfScanPreference!=null) //time to set end of scan
             PreferenceManager.getDefaultSharedPreferences(this).edit().putLong(mRecordEndOfScanPreference, System.currentTimeMillis()).apply();
-        if (DBG) Log.d(TAG, "onDestroy");
+        log.debug("onDestroy");
         // remove handler
         mHandlerThread.quit();
         nm.cancel(NOTIFICATION_ID);
@@ -241,19 +242,19 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents delivered here
-        if (DBG) Log.d(TAG, "onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
+        log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
 
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
         if(intent.getExtras()!=null) {
-            if (DBG) Log.d(TAG, "extra not null");
+            log.debug("extra not null");
             mRecordLog = intent.getExtras().getBoolean(RECORD_SCAN_LOG_EXTRA, false);
             mRecordOnFailPreference = intent.getExtras().getString(RECORD_ON_FAIL_PREFERENCE, null);
             if(mRecordEndOfScanPreference==null) //reset only when null to avoid pred not being written when another intent with no pref comes just after (this will be written when service stops)
             mRecordEndOfScanPreference = intent.getExtras().getString(RECORD_END_OF_SCAN_PREFERENCE,null);
         }
         else {
-            if (DBG) Log.d(TAG, "extra null");
+            log.debug("extra null");
             mRecordLog = false;
             mRecordOnFailPreference = null;
             mRecordEndOfScanPreference =  null;
@@ -267,21 +268,21 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (mScanRequests.putIfAbsent(key, mDummy) == null) {
                 Message m = mHandler.obtainMessage(MESSAGE_DO_SCAN, startId, flags, data);
                 mHandler.sendMessage(m);
-            } else if (DBG) Log.d(TAG, "skip scanning " + key + ", already in queue");
+            } else log.debug("skip scanning " + key + ", already in queue");
         } else if (ArchosMediaIntent.isVideoRemoveIntent(action)) {
             Uri data = intent.getData();
             String key = data.toString();
             if (mUnScanRequests.putIfAbsent(key, mDummy) == null) {
                 Message m = mHandler.obtainMessage(MESSAGE_DO_UNSCAN, startId, flags, data);
                 mHandler.sendMessage(m);
-            } else if (DBG) Log.d(TAG, "skip unscanning " + key + ", already in queue");
+            } else log.debug("skip unscanning " + key + ", already in queue");
         }
         return Service.START_REDELIVER_INTENT;
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        if (DBG) Log.d(TAG, "onBind");
+        log.debug("onBind");
         // this service can't bind
         return null;
     }
@@ -289,19 +290,19 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     /** handler implementation */
     @Override
     public boolean handleMessage(Message msg) {
-        if (DBG) Log.d(TAG, "handleMessage:" + msg + " what:" + msg.what + " startid:" + msg.arg1);
+        log.debug("handleMessage:" + msg + " what:" + msg.what + " startid:" + msg.arg1);
         Uri uri;
         String key;
         switch (msg.what) {
             case MESSAGE_KILL:
-                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_KILL");
+                log.debug("handleMessage: MESSAGE_KILL");
                 if (msg.arg1 != -1)
                     stopSelf(msg.arg1);
                 break;
             case MESSAGE_DO_SCAN:
                 uri = (Uri) msg.obj;
                 key = uri.toString();
-                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_DO_SCAN " + uri);
+                log.debug("handleMessage: MESSAGE_DO_SCAN " + uri);
                 doScan(uri);
                 mScanRequests.remove(key);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
@@ -309,13 +310,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             case MESSAGE_DO_UNSCAN:
                 uri = (Uri) msg.obj;
                 key = uri.toString();
-                if (DBG) Log.d(TAG, "handleMessage: MESSAGE_DO_UNSCAN " + uri);
+                log.debug("handleMessage: MESSAGE_DO_UNSCAN " + uri);
                 doRemoveFiles(uri);
                 mUnScanRequests.remove(key);
                 mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
                 break;
             default:
-                if (DBG) Log.d(TAG, "handleMessage: message not found!");
+                log.debug("handleMessage: message not found!");
                 break;
         }
         return true;
@@ -327,7 +328,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
     /** removes files from our db */
     private void doRemoveFiles(Uri data) {
-        if (DBG) Log.d(TAG, "doRemoveFiles " + data);
+        log.debug("doRemoveFiles " + data);
         if (data == null) return;
         ContentResolver cr = getContentResolver();
 
@@ -341,7 +342,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.network_unscan_msg)).setContentText(path).build());
 
         int deleted = cr.delete(VideoStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
-        if (DBG) Log.d(TAG, "removed: " + deleted);
+        log.debug("removed: " + deleted);
 
         // send a "done" notification
         Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, data);
@@ -383,9 +384,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final String SELECT_ID = BaseColumns._ID + "=?";
     /** scans files into our db */
     private void doScan(Uri what) {
-        if (DBG) Log.d(TAG, "doScan " + what);
+        log.debug("doScan " + what);
         mFoundFiles = 0;
-        long start = DBG ? System.currentTimeMillis() : 0;
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         MetaFile2 f = null;
         try {
             f = MetaFileFactoryWithUpnp.getMetaFileForUrl(what);
@@ -393,7 +394,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             e.printStackTrace();
         }
         if (f != null) {
-            if (DBG) Log.d(TAG, "doScan path resolved to:" + f.getUri().toString());
+            log.debug("doScan path resolved to:" + f.getUri().toString());
             ContentResolver cr = getContentResolver();
             if(mRecordLog) {
                 try {
@@ -442,7 +443,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 if (f.isDirectory()&&!path.endsWith("/"))
                     path = path + "/";
             }
-            if (DBG) Log.d(TAG, "doScan: path identified is " + path);
+            log.debug("doScan: path identified is " + path);
             // query database for all files we have already in that directory
             String[] selectionArgs = new String[] { path };
             Cursor prescan = cr.query(VideoStoreInternal.FILES_SCANNED, PrescanItem.PROJECTION, IN_FOLDER_SELECT, selectionArgs, null);
@@ -454,7 +455,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                     if(upnpUri!=null&&!item._data.startsWith(upnpUri)) { // if this isn't in folder about to be listed, we won't need to delete it
                         item.needsDelete = false;
                     }
-                    if (DBG) Log.d(TAG, "doScan: prescan item " + item);
+                    log.debug("doScan: prescan item " + item);
                     if(item.unique_id!=null && !item.unique_id.isEmpty())
                         prescanItemsMap.put(item.unique_id, item);
                     else
@@ -484,10 +485,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             int insertCount = bulkHandler.getInsertHandled();
             int updateCount = bulkHandler.getUpdatesHandled();
             int deleteCount = bulkHandler.getDeletesHandled();
-            if (DBG) Log.d(TAG, "added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount);
+            log.debug("added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount);
 
             int newSubs = handleSubtitles(cr);
-            if (DBG) Log.d(TAG, "added subtitles:" + newSubs);
+            log.debug("added subtitles:" + newSubs);
             // send a "done" notification
             WrapperChannelManager.refreshChannels(this);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
@@ -514,9 +515,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         else if(mRecordLog&&mRecordOnFailPreference!=null){
             PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();//unable to reach server
         }
-        if (DBG) {
+        if (log.isDebugEnabled()) {
             long end = System.currentTimeMillis();
-            Log.d(TAG, "doScan took:" + (end - start) + "ms");
+            log.debug("doScan took:" + (end - start) + "ms");
         }
     }
 
@@ -536,7 +537,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         public FileVisitListener(Blacklist blacklist, HashMap<String, PrescanItem> prescanItemsMap,
                 boolean nfoScanEnabled, BulkOperationHandler bulkHandler, long serverId) {
-            if (DBG) Log.d(TAG, "FileVisitListener: serverId=" + serverId);
+            log.debug("FileVisitListener: serverId=" + serverId);
             mBlacklist = blacklist;
             mPrescanItemsMap = prescanItemsMap;
             mNfoScanEnabled = nfoScanEnabled;
@@ -568,7 +569,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         public boolean onDirectory(MetaFile2 directory) {
             // hidden directories are not scanned
             if (ArchosMediaFile.isHiddenFile(directory)) {
-                if (DBG) Log.d(TAG, "skipping " + directory + ", .hidden!");
+                log.debug("skipping " + directory + ", .hidden!");
                 return false;
             }
 
@@ -584,13 +585,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (ArchosMediaFile.isHiddenFile(file)) return;
             // shortcut for blacklist check for trailer/sample, full should be isBlacklisted
             if (mBlacklist.isFilenameBlacklisted(file.getUri().getLastPathSegment())) return;
-            if (DBG) Log.d(TAG, "FileVisitListener.onFile: File " + file.getUri().toString());
+            log.debug("FileVisitListener.onFile: File " + file.getUri().toString());
             String p = file.getUri().toString();
             PrescanItem existingItem = null;
             String uniqueId = "";
             //special case for upnp : use unique id
             if(file instanceof UpnpFile2){
-                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File is upnp " + ((UpnpFile2)file).getUniqueHash());
+                log.debug("FileVisitListener.onFile: File is upnp " + ((UpnpFile2)file).getUniqueHash());
                 uniqueId = ((UpnpFile2)file).getUniqueHash();
                 existingItem = mPrescanItemsMap.get(((UpnpFile2)file).getUniqueHash());
             }
@@ -598,27 +599,27 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 existingItem = mPrescanItemsMap.get(p);
                 uniqueId = p;
             }
-            if (DBG) Log.d(TAG, "FileVisitListener.onFile: existingItem " + existingItem);
+            log.debug("FileVisitListener.onFile: existingItem " + existingItem);
             if ((existingItem) != null) {
                 // file was already scanned, it does not need to be deleted
                 existingItem.needsDelete = false;
-                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File isn't new:" + file.getName());
+                log.debug("FileVisitListener.onFile: File isn't new:" + file.getName());
                 // check if it is untouched or needs an update
                 long knownDate = existingItem.date_modified;
                 long newDate = file.lastModified() / 1000;
                 if (Math.abs(knownDate - newDate) > 3 || !file.getUri().toString().equals(existingItem._data)) {
-                    if (DBG) Log.d(TAG, "FileVisitListener.onFile: Updating " + file.getName());
+                    log.debug("FileVisitListener.onFile: Updating " + file.getName());
                     // file has changed - add the update
                     mBulkHandler.addUpdate(new FileScanInfo(file, mStorageId),
                             existingItem._id);
                 }
             } else if(!mAlreadyAddedUpnpFiles.contains(uniqueId)){
                 // file is new, add as insert
-                if (DBG) Log.d(TAG, "FileVisitListener.onFile: File is new, serverId=" + mServerId + ", " + file.getUri().toString());
+                log.debug("FileVisitListener.onFile: File is new, serverId=" + mServerId + ", " + file.getUri().toString());
                 mAlreadyAddedUpnpFiles.add(uniqueId); // needed because main difference with usual indexing : a same file can be found twice in one round
                 mBulkHandler.addInsert(new FileScanInfo(file, mStorageId), mServerId);
             }
-            else if (DBG) Log.d(TAG, "FileVisitListener.onFile: File already scanned " + file.getName());
+            else log.debug("FileVisitListener.onFile: File already scanned " + file.getName());
             // nfo are now handled in autoscrapeservice
         }
 
@@ -629,7 +630,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         @Override
         public void onStop(MetaFile2 root) {
-            if (DBG) Log.d(TAG, "onStop");
+            log.debug("onStop");
             // once we are done traversing the directories check for files that
             // were not seen and delete them
             DeleteString deletes = new DeleteString();
@@ -671,7 +672,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 return getStorageId(4 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
             else if (path.startsWith("ftps://"))
                 return getStorageId(5 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
-            else Log.w(TAG, "path has no valid storage id: " + path);
+            else log.warn("path has no valid storage id: " + path);
             return 0;
         }
 
@@ -714,7 +715,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (deleteCount > 0) {
                 Builder delete = ContentProviderOperation.newDelete(VideoStoreInternal.FILES_SCANNED);
                 String deleteSelection = BaseColumns._ID + " IN (" + deletes.toString() + ")";
-                if (DBG) Log.d(TAG, "delete WHERE " + deleteSelection);
+                log.debug("delete WHERE " + deleteSelection);
                 delete.withSelection(deleteSelection, null);
 
                 mUpdateExecutor.add(delete.build());
@@ -723,18 +724,18 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
 
         public void addInsert(FileScanInfo insert, long serverId) {
-            if (DBG) Log.d(TAG, "addInsert: adding in VideoStore and calling executor "+ insert._data + " for serverId=" + serverId);
+            log.debug("addInsert: adding in VideoStore and calling executor "+ insert._data + " for serverId=" + serverId);
             ContentValues item = insert.toContentValues();
             item.put(VideoStore.Files.FileColumns.ARCHOS_SMB_SERVER, Long.valueOf(serverId));
             mInsertExecutor.add(item);
         }
 
         public void executePending() {
-            if (DBG) Log.d(TAG, "executePending: process updates");
+            log.debug("executePending: process updates");
             mUpdateExecutor.execute();
-            if (DBG) Log.d(TAG, "executePending: process inserts");
+            log.debug("executePending: process inserts");
             mInsertExecutor.execute();
-            if (DBG) Log.d(TAG, "executePending: done");
+            log.debug("executePending: done");
         }
 
         public int getInsertHandled() {
@@ -846,7 +847,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                         break;
                     default:
                         // should be impossible
-                        Log.e(TAG, "Bad MediaType:" + mediaType + " when scanning videos and subtitles");
+                        log.error("Bad MediaType:" + mediaType + " when scanning videos and subtitles");
                         break;
                 }
 
@@ -946,7 +947,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             try {
                 id = Long.parseLong(idString);
             } catch (NumberFormatException e) {
-                Log.e(TAG, "Could not insert new SMB Servers", e);
+                log.error("Could not insert new SMB Servers", e);
             }
         }
         return id;
@@ -1005,7 +1006,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         public FileScanInfo(MetaFile2 f, int storageId) {
             if (f == null ) {
-                Log.e(TAG, "Not exists / null:" + f);
+                log.error("Not exists / null:" + f);
                 return;
             }
             boolean isDir = f.isDirectory();
