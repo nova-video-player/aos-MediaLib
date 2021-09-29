@@ -240,6 +240,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         mImporter.destroy();
         // hide notification
         nm.cancel(NOTIFICATION_ID);
+        if (ImportState.VIDEO.isInitialImport()) ImportState.VIDEO.setState(State.IDLE);
         stopForeground(true);
     }
 
@@ -347,6 +348,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             case MESSAGE_KILL:
                 log.debug("handleMessage: MESSAGE_KILL");
                 nm.cancel(NOTIFICATION_ID);
+                if (ImportState.VIDEO.isInitialImport()) ImportState.VIDEO.setState(State.IDLE);
                 stopForeground(true);
                 // this service used to be created through bind. So it couldn't be killed with stopself unless it was unbind
                 // (which wasn't done). To have the same behavior, do not stop service for now
