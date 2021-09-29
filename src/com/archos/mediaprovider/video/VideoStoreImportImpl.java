@@ -83,6 +83,7 @@ public class VideoStoreImportImpl {
 
     public void doFullImport() {
         int countStart = getLocalCount(mCr);
+        log.debug("doFullImport: ImportState.VIDEO.setState " + (countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT));
         ImportState.VIDEO.setState(countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT);
 
         // replace everything with new data
@@ -104,11 +105,13 @@ public class VideoStoreImportImpl {
         doScan(mCr, mContext, mBlackList);
 
         ImportState.VIDEO.setState(State.IDLE);
+        log.debug("doFullImport: ImportState.VIDEO.setState(State.IDLE)");
     }
 
     public void doIncrementalImport() {
         int countStart = getLocalCount(mCr);
         ImportState.VIDEO.setState(countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT);
+        log.debug("doIncrementalImport: ImportState.VIDEO.setState " + (countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT));
 
         String existingFiles = getRemoteIdList(mCr);
         int del = 0;
@@ -127,6 +130,7 @@ public class VideoStoreImportImpl {
         doScan(mCr, mContext, mBlackList);
 
         ImportState.VIDEO.setState(State.IDLE);
+        log.debug("doFullImport: ImportState.VIDEO.setState(State.IDLE)");
     }
 
     private static final String[] ID_DATA_PROJ = new String[] {
@@ -154,6 +158,7 @@ public class VideoStoreImportImpl {
         NfoParser.ImportContext importContext = new NfoParser.ImportContext();
         while (c.moveToNext()) {
             ImportState.VIDEO.setRemainingCount(remaining--);
+            log.debug("doFullImport: ImportState.VIDEO.setRemainingCount " + remaining);
             String id;
             String path;
             int scraperID;

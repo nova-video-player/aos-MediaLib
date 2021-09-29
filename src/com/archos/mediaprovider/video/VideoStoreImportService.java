@@ -224,6 +224,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         log.debug("onCreate: MESSAGE_IMPORT_FULL, is this useful?");
         Message m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0);
         // assume this is the initial import although there could be data in the db already.
+        log.trace("onCreate: ImportState.VIDEO.setState(State.INITIAL_IMPORT)");
         ImportState.VIDEO.setState(State.INITIAL_IMPORT);
         // we also may need to init scraper default content
         mNeedToInitScraper = true;
@@ -275,10 +276,13 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             Message m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, startId, flags);
             mHandler.sendMessageDelayed(m, 1000);
             mNeedToInitScraper = true;
+            log.trace("onStartCommand: ImportState.VIDEO.setAndroidScanning(false)");
             ImportState.VIDEO.setAndroidScanning(false);
+
         } else if (Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)) {
             log.debug("ACTION_MEDIA_SCANNER_STARTED " + intent.getData());
             removeAllMessages(mHandler);
+            log.trace("onStartCommand: ImportState.VIDEO.setAndroidScanning(true)");
             ImportState.VIDEO.setAndroidScanning(true);
         } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)) {
             log.debug("ACTION_VIDEO_SCANNER_METADATA_UPDATE " + intent.getData());
@@ -320,7 +324,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }
 
-    // TODO MARC: problem should send kill signal intent
     public static void stopService(Context context) {
         Intent intent = new Intent(context, VideoStoreImportService.class);
         context.stopService(intent);

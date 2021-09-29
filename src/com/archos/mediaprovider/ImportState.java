@@ -14,7 +14,8 @@
 
 package com.archos.mediaprovider;
 
-import android.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,8 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public enum ImportState {
     VIDEO;
 
-    private static final String TAG = ArchosMediaCommon.TAG_PREFIX + ImportState.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(ImportState.class);
 
     public enum State {
         UNKNOWN,
@@ -44,7 +44,7 @@ public enum ImportState {
         try {
             if (mAndroidScanning) {
                 // ignore
-                if (DBG) Log.d(TAG, "Android scanning: not setting " + state.name());
+                log.debug("Android scanning: not setting " + state.name());
             } else {
                 setStateLocked(state);
             }
@@ -91,8 +91,8 @@ public enum ImportState {
     }
 
     private void setStateLocked(State state) {
-        if (DBG && mState != state) {
-            Log.d(TAG, "State " + mState.name() + " -> " + state.name());
+        if (log.isDebugEnabled() && mState != state) {
+            log.debug("State " + mState.name() + " -> " + state.name());
         }
         mState = state;
     }
@@ -105,7 +105,7 @@ public enum ImportState {
     public State getState() {
         mLock.lock();
         try {
-            if (DBG) Log.d(TAG, "getState=" + mState.name());
+            log.debug("getState=" + mState.name());
             return mState;
         } finally {
             mLock.unlock();
@@ -119,7 +119,7 @@ public enum ImportState {
     public boolean isInitialImport() {
         mLock.lock();
         try {
-            if (DBG) Log.d(TAG, "isInitialImport=" + (mState == State.INITIAL_IMPORT));
+            log.debug("isInitialImport=" + (mState == State.INITIAL_IMPORT));
             return mState == State.INITIAL_IMPORT;
         } finally {
             mLock.unlock();
@@ -129,7 +129,7 @@ public enum ImportState {
     public boolean isRegularImport() {
         mLock.lock();
         try {
-            if (DBG) Log.d(TAG, "isInitialImport=" + (mState == State.REGULAR_IMPORT));
+            log.debug("isInitialImport=" + (mState == State.REGULAR_IMPORT));
             return mState == State.REGULAR_IMPORT;
         } finally {
             mLock.unlock();
@@ -142,7 +142,7 @@ public enum ImportState {
     public int getNumberOfFilesRemainingToImport() {
         mLock.lock();
         try {
-            if (DBG) Log.d(TAG, "mNumberOfFilesRemainingToImport=" +mNumberOfFilesRemainingToImport);
+            log.debug("mNumberOfFilesRemainingToImport=" +mNumberOfFilesRemainingToImport);
             return mNumberOfFilesRemainingToImport;
         } finally {
             mLock.unlock();

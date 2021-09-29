@@ -69,8 +69,6 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
         sCurrentlyScanned.remove(path);
     }
 
-
-
     private static void dump() {
         log.debug("> --- DUMP --- <");
         for (String key : sCurrentlyScanned) {
@@ -86,7 +84,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
 
     public static synchronized boolean isScannerWorking() {
         // if there is a path in here then scanner is working.
-        log.debug("isScannerWorking: sCurrentlyScanned.size()=" + sCurrentlyScanned.size() + (sCurrentlyScanned.size() > 0));
+        log.debug("isScannerWorking: sCurrentlyScanned.size()=" + sCurrentlyScanned.size() + " " + (sCurrentlyScanned.size() > 0));
         return sCurrentlyScanned.size() > 0;
     }
 }
