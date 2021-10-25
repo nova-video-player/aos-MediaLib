@@ -237,7 +237,7 @@ public class AutoScrapeService extends Service {
                             sTotalNumberOfFilesRemainingToProcess--;
                             if (baseTags == null)
                                 continue;
-                            log.debug("startExporting: Base tag created, exporting" + fileUri);
+                            log.debug("startExporting: Base tag created, exporting " + fileUri);
                             if (exportContext != null && fileUri != null)
                                 try {
                                     NfoWriter.export(fileUri, baseTags, exportContext);
