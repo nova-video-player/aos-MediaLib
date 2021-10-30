@@ -17,11 +17,13 @@ package com.archos.mediascraper;
 import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Locale;
@@ -52,8 +54,7 @@ import java.util.Locale;
  */
 public class LocalImages {
 
-    private static final String TAG = LocalImages.class.getSimpleName();
-    private static final boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(LocalImages.class);
 
     private LocalImages() {
         /* all static */
@@ -71,7 +72,7 @@ public class LocalImages {
         if (video != null) {
             File result = path2File(video.toString(), context);
             if (result != null && result.exists()) {
-                if (DBG) Log.d(TAG, "Found cached Poster:" + result.getPath() + " for " +video.toString());
+                log.debug("Found cached Poster:" + result.getPath() + " for " +video.toString());
                 return result;
             }
         }
@@ -97,7 +98,7 @@ public class LocalImages {
         if (result == null ) {
             Uri poster = findPoster(video);
             if (poster != null) {
-                if (DBG) Log.d(TAG, "Found Poster:" + poster.toString() + " for " + video.toString());
+                log.debug("Found Poster:" + poster.toString() + " for " + video.toString());
                 result = saveResized(video, poster, context);
             }
         }
@@ -128,9 +129,9 @@ public class LocalImages {
             return null;
 
         // video = e.g. smb://server/share/Movies/The Movie/The Movie.avi
-
-        Uri parent = FileUtils.getParentUrl(video);
-        String nameNoExt =FileUtils.getFileNameWithoutExtension(video);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt = FileUtils.getFileNameWithoutExtension(video);
         if (parent != null && nameNoExt != null&&!nameNoExt.isEmpty()) {
             // check for smb://server/share/Movies/The Movie/The Movie.tbn
             for (String test : MATCH_LIST_DYNAMIC) {
@@ -173,7 +174,8 @@ public class LocalImages {
         if (video == null)
             return null;
 
-        Uri parent = com.archos.filecorelibrary.FileUtils.getParentUrl(video);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri parent = com.archos.filecorelibrary.FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
         boolean testShowTitle = !TextUtils.isEmpty(showTitle);
         // we create "show name-poster.jpg" files
         String showTitleFile = testShowTitle ? NfoParser.getCustomShowPosterName(showTitle) : "";
@@ -212,7 +214,8 @@ public class LocalImages {
         if (video == null || season <= 0)
             return null;
 
-        Uri parent = FileUtils.getParentUrl(video);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
         boolean testShowTitle = !TextUtils.isEmpty(showTitle);
         // we create "show name-season03.jpg" files
         String showTitleFile = testShowTitle ? NfoParser.getCustomSeasonPosterName(showTitle, season) : "";
@@ -243,7 +246,8 @@ public class LocalImages {
             // smb://server/share/TvShows/The Simpsons/season01.tbn
 
             //TODO test
-            Uri grandParent = FileUtils.getParentUrl(parent);
+            // relocate uri for local files to writeable location to comply with API30
+            Uri grandParent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(parent));
             if (grandParent != null) {
                 Uri result = getIfAvailable(grandParent, parent.getLastPathSegment() + ".tbn");
                 if (result != null)
@@ -279,7 +283,8 @@ public class LocalImages {
         // video = e.g. smb://server/share/Movies/Transformers/Tansformers.3.1080p.avi
 
         // parent = smb://server/share/Movies/Transformers/
-        Uri parent = FileUtils.getParentUrl(video);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
 
         // nameNoExt = Tansformers.3.1080p
         String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);

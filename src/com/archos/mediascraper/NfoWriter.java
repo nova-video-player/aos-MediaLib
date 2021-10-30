@@ -20,7 +20,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import androidx.preference.PreferenceManager;
 
-import android.util.Log;
 import android.util.LruCache;
 import android.util.Xml;
 
@@ -29,6 +28,8 @@ import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.medialib.R;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.BufferedWriter;
@@ -45,8 +46,7 @@ import java.util.concurrent.TimeUnit;
 
 public class NfoWriter {
 
-    private final static String TAG = "NfoWriter";
-    private final static boolean DBG = false;
+    private static final Logger log = LoggerFactory.getLogger(NfoWriter.class);
 
     public static class ExportContext {
         private final LruCache<String, String> exportedFiles = new LruCache<String, String>(64);
@@ -315,13 +315,15 @@ public class NfoWriter {
     private static void exportInternal(Uri video, EpisodeTags tag) throws IOException {
         String videoName = FileUtils.getFileNameWithoutExtension(video);
         Uri parent = FileUtils.getParentUrl(video);
-        Uri exportTarget =  Uri.withAppendedPath(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri exportTarget =  FileUtils.relocateNfoJpgAppPublicDir(Uri.withAppendedPath(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget,null);
             // Delete existing file to avoid overwrite issue (end of previous content still there is the new content is shorter)
             if (editor.exists()) {
                 editor.delete();
             }
+            log.trace("exportInternal: " + video);
             BufferedWriter  writer = new BufferedWriter(new OutputStreamWriter(
                     editor.getOutputStream(), StringUtils.CHARSET_UTF8));
 
@@ -350,7 +352,8 @@ public class NfoWriter {
 
     private static void exportInternal(Uri video, ShowTags tag, ExportContext exportContext) throws IOException {
         String videoName = FileUtils.getFileNameWithoutExtension(video);
-        Uri parent = FileUtils.getParentUrl(video);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
         String showTitle = StringUtils.fileSystemEncode(tag.getTitle());
         Uri exportTarget =  Uri.withAppendedPath(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION);
         try {
@@ -399,8 +402,8 @@ public class NfoWriter {
     private static void exportImage(ScraperImage image, Uri folder,
             String imageName) {
 
-        //TODO test
-        Uri target = Uri.withAppendedPath(folder, imageName);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri target = Uri.withAppendedPath(FileUtils.relocateNfoJpgAppPublicDir(folder), imageName);
         if (image != null) {
             File file = image.getLargeFileF();
             Uri from = Uri.parse(file.getAbsolutePath());

@@ -19,7 +19,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import androidx.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.LruCache;
 
 import com.archos.filecorelibrary.FileUtils;
@@ -32,6 +31,8 @@ import com.archos.mediascraper.saxhandler.NfoMovieHandler;
 import com.archos.mediascraper.saxhandler.NfoRootHandler;
 import com.archos.mediascraper.saxhandler.NfoShowHandler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
@@ -44,8 +45,8 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 public class NfoParser {
-    private static final String TAG = NfoParser.class.getSimpleName();
-    private static final boolean DBG = false;
+
+    private static final Logger log = LoggerFactory.getLogger(NfoParser.class);
 
     /** filename w/o extension + this */
     public static final String CUSTOM_NFO_EXTENSION = ".archos.nfo";
@@ -144,10 +145,10 @@ public class NfoParser {
         try {
             return parserFactory.newSAXParser();
         } catch (ParserConfigurationException e) {
-            Log.e(TAG, "Exception: " + e, e);
+            log.error("Exception: " + e, e);
             throw new RuntimeException(e);
         } catch (SAXException e) {
-            Log.e(TAG, "Exception: " + e, e);
+            log.error("Exception: " + e, e);
             throw new RuntimeException(e);
         }
     }
@@ -181,7 +182,8 @@ public class NfoParser {
         NfoFile result = new NfoFile();
         result.videoFile = video;
 
-        Uri videoParent = result.videoFolder = FileUtils.getParentUrl(video);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri videoParent = result.videoFolder = FileUtils.relocateNfoJpgAppPublicDir(FileUtils.getParentUrl(video));
         String videoNameNoExt = result.videoFileNameNoExt = FileUtils.getFileNameWithoutExtension(video);
         if (videoParent == null)
             return result;
@@ -235,7 +237,7 @@ public class NfoParser {
 
     public static BaseTags getTagForFile(Uri file, Context context) {
         NfoFile nfo = determineNfoFile(file);
-        if (DBG) Log.d(TAG, "getTagForFile: found nfo file " + nfo.videoNfo + ", nfo.hasNfo()=" + nfo.hasNfo());
+        log.debug("getTagForFile: found nfo file " + nfo.videoNfo + ", nfo.hasNfo()=" + nfo.hasNfo());
         if (nfo != null && nfo.hasNfo()) {
             return getTagForFile(nfo, context, null);
         }
@@ -249,7 +251,8 @@ public class NfoParser {
                 importContext = new ImportContext();
             InputStream nfoInputStream = null;
             try {
-                nfoInputStream = FileEditorFactoryWithUpnp.getFileEditorForUrl(nfo.videoNfo, null).getInputStream();
+                // relocate uri for local files to writeable location to comply with API30
+                nfoInputStream = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.relocateNfoJpgAppPublicDir(nfo.videoNfo), null).getInputStream();
                 NfoRootHandler rootHandler = importContext.getRootHandler();
                 importContext.getParser().parse(nfoInputStream, rootHandler);
                 BaseTags tag = rootHandler.getResult(context, nfo.videoFile);
@@ -305,12 +308,12 @@ public class NfoParser {
                 }
             } catch (SAXException e) {
                 // could not parse
-                if (DBG) Log.d(TAG, "Exception: " + e, e);
+                log.debug("Exception: " + e, e);
             } catch (IOException e) {
                 // could not read file
-                if (DBG) Log.d(TAG, "Exception: " + e, e);
+                log.debug("Exception: " + e, e);
             } catch (Exception e) {
-                if (DBG) Log.d(TAG, "Exception: " + e, e);
+                log.debug("Exception: " + e, e);
             }finally {
                 if(nfoInputStream!=null)
                     try {
@@ -387,10 +390,10 @@ public class NfoParser {
             return result;
         } catch (SAXException e) {
             // could not parse
-            if (DBG) Log.d(TAG, "Exception: " + e, e);
+            log.debug("Exception: " + e, e);
         } catch (Exception e) {
             // could not read file
-            if (DBG) Log.d(TAG, "Exception: " + e, e);
+            log.debug("Exception: " + e, e);
         }finally {
             if(nfoInputStream!=null)
                 try {
