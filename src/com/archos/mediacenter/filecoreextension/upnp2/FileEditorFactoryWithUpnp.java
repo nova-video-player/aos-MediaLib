@@ -35,7 +35,7 @@ public class FileEditorFactoryWithUpnp {
             return new HttpFileEditor(uri);
         }
         else {
-            return FileEditorFactory.getFileEditorForUrl(uri,ct);
+            return FileEditorFactory.getFileEditorForUrl( uri, ct);
         }
     }
 }

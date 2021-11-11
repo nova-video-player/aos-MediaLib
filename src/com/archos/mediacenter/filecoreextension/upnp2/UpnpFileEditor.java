@@ -54,8 +54,8 @@ public class UpnpFileEditor extends FileEditor {
     }
 
     @Override
-    public void delete() throws Exception {
-
+    public Boolean delete() throws Exception {
+        return null;
     }
 
     @Override
