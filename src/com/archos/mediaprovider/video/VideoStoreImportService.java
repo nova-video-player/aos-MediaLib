@@ -220,7 +220,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         getContentResolver().registerContentObserver(MediaStore.Video.Media.getContentUri("external"),
                 true, mContentObserver);
         // do a full import here to make sure that we have initial data
-        // TODO is this useful to do it at each launch --> should not?
         log.debug("onCreate: MESSAGE_IMPORT_FULL, is this useful?");
         Message m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0);
         // assume this is the initial import although there could be data in the db already.
@@ -260,13 +259,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // intents are delivered here.
         log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
 
-        /*
         if (intent == null || intent.getAction() == null) {
-            // TODO MARC check if this is not the reason for https://bug.courville.org/app/1/bug/31/report/c6ac4d3e-99e0-48a2-8606-ccfcb8c53267
             log.debug("onStartCommand: intent == null || intent.getAction() == null");
             return START_NOT_STICKY;
         }
-         */
 
         log.debug("onStartCommand: startForeground");
         startForeground(NOTIFICATION_ID, n);
