@@ -154,6 +154,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true)
                 .build();
         startForeground(NOTIFICATION_ID, n);
+        log.debug("onCreate: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
 
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
@@ -257,15 +258,15 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents are delivered here.
-        log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
+        log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId + ((intent != null) ? ", getAction " + intent.getAction() : " getAction null"));
+
+        log.debug("onStartCommand: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
+        startForeground(NOTIFICATION_ID, n);
 
         if (intent == null || intent.getAction() == null) {
             log.debug("onStartCommand: intent == null || intent.getAction() == null");
             return START_NOT_STICKY;
         }
-
-        log.debug("onStartCommand: startForeground");
-        startForeground(NOTIFICATION_ID, n);
 
         // forward startId to handler thread
         // /!\ if an action is added CHECK in startIfHandles if action is listed /!\
@@ -279,7 +280,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             mNeedToInitScraper = true;
             log.trace("onStartCommand: ImportState.VIDEO.setAndroidScanning(false)");
             ImportState.VIDEO.setAndroidScanning(false);
-
         } else if (Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)) {
             log.debug("ACTION_MEDIA_SCANNER_STARTED " + intent.getData());
             removeAllMessages(mHandler);
@@ -297,6 +297,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             m.sendToTarget();
         } else if (Intent.ACTION_SHUTDOWN.equals(action)) {
             log.debug("Import disabled due to shutdown");
+            Message m = mHandler.obtainMessage(MESSAGE_KILL, startId, flags);
+            mHandler.sendMessageDelayed(m, 1000);
             sActive = false;
         } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR.equals(action)) {
             log.debug("ACTION_VIDEO_SCANNER_IMPORT_INCR " + intent.getData());
@@ -326,14 +328,15 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     }
 
     public static void stopService(Context context) {
+        log.debug("stopService");
         Intent intent = new Intent(context, VideoStoreImportService.class);
+        intent.setAction(Intent.ACTION_SHUTDOWN);
         context.stopService(intent);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         log.debug("onBind:" + intent);
-
         return null;
     }
 
@@ -344,7 +347,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         getContentResolver().unregisterContentObserver(mContentObserver);
         return super.onUnbind(intent);
     }
-
     /** handler implementation, called in background thread */
     public boolean handleMessage(Message msg) {
         log.debug("handleMessage:" + msg + " what:" + msg.what + " startid:" + msg.arg1);
