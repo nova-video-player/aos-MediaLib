@@ -42,7 +42,6 @@ import android.os.RemoteException;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.FileUtils;
@@ -62,6 +61,9 @@ import com.archos.mediaprovider.video.VideoStore.Video;
 import com.archos.mediaprovider.video.VideoStore.Files.FileColumns;
 import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -77,13 +79,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 
 public class VideoProvider extends ContentProvider {
-    private static final String TAG = "VideoProvider";
-    public static final String TAG_DOCTOR_WHO =  "DoctorWhoDebug";
-
-    private static final boolean LOCAL_DBG = false;
-    private static final boolean DBG = false;
-    private static final boolean DBG_NET = false; // network state handling
-    private static final boolean DBG_LISTENER = false;
+    private static final Logger log = LoggerFactory.getLogger(VideoProvider.class);
 
     private DbHolder mDbHolder;
     private Handler mThumbHandler;
@@ -116,7 +112,7 @@ public class VideoProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        if (DBG) Log.d(TAG, "onCreate");
+        log.debug("onCreate");
         final Context context = getContext();
         mImageThumbFolder = context.getDir(IMAGE_THUMB_FOLDER_NAME, Context.MODE_PRIVATE).getPath();
 
@@ -138,10 +134,10 @@ public class VideoProvider extends ContentProvider {
         PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(mPreferencechChangeListener);
 
         try {
-            if (DBG) Log.d(TAG, "onCreate: try to VideoStoreImportService.start");
+            log.debug("onCreate: try to VideoStoreImportService.start");
             VideoStoreImportService.startService(context);
         }catch(java.lang.IllegalStateException e){
-            Log.w(TAG, "onCreate: VideoStoreImportService.startService failed!");
+            log.warn("onCreate: VideoStoreImportService.startService failed!");
         }
 
         // handles NetworkState changes
@@ -151,7 +147,7 @@ public class VideoProvider extends ContentProvider {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getOldValue() != evt.getNewValue()) {
-                        if (DBG_NET) Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                        log.trace("NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
                         RemoteStateService.start(context);
                     }
                 }
@@ -159,8 +155,6 @@ public class VideoProvider extends ContentProvider {
         // handles connectivity changes
         AppState.addOnForeGroundListener(mForeGroundListener);
         handleForeGround(AppState.isForeGround());
-
-        // TODO MARC remove listeners ???
 
         HandlerThread ht = new HandlerThread("thumbs thread", Process.THREAD_PRIORITY_BACKGROUND);
         ht.start();
@@ -175,7 +169,7 @@ public class VideoProvider extends ContentProvider {
                         mCurrentThumbRequest = mMediaThumbQueue.poll();
                     }
                     if (mCurrentThumbRequest == null) {
-                        Log.w(TAG, "Have message but no request?");
+                        log.warn("Have message but no request?");
                     } else {
                         try {
                             // In the past "uri needs to be encoded to check if file exists : fixes thumbnail creation with non ascii names".
@@ -186,24 +180,23 @@ public class VideoProvider extends ContentProvider {
                                 editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.encodeUri(Uri.parse(mCurrentThumbRequest.mPath)), null);
                             else
                                 editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(mCurrentThumbRequest.mPath), null);
-                            if(DBG)
-                                Log.d(TAG_DOCTOR_WHO,mCurrentThumbRequest.mPath+" does file exists ? "+ String.valueOf(editor.exists()));
+                            log.debug(mCurrentThumbRequest.mPath+" does file exists ? "+ String.valueOf(editor.exists()));
 
                             if (editor.exists()) {
-                                if (DBG) Log.d(TAG,"mCurrentThumbRequest");
+                                log.debug("mCurrentThumbRequest");
                                 mCurrentThumbRequest.execute();
                             } else {
                                 // original file hasn't been stored yet
                                 synchronized (mMediaThumbQueue) {
-                                    Log.w(TAG, "original file hasn't been stored yet: " + mCurrentThumbRequest.mPath);
+                                    log.warn("original file hasn't been stored yet: " + mCurrentThumbRequest.mPath);
                                 }
                             }
                         } catch (IOException ex) {
-                            Log.w(TAG, ex);
+                            log.error("handleMessage: caught IOException",ex);
                         } catch (UnsupportedOperationException ex) {
                             // This could happen if we unplug the sd card during insert/update/delete
                             // See getDatabaseForUri.
-                            Log.w(TAG, ex);
+                            log.error("handleMessage: caught UnsupportedOperationException", ex);
                         } catch (OutOfMemoryError err) {
                             /*
                              * Note: Catching Errors is in most cases considered
@@ -214,7 +207,7 @@ public class VideoProvider extends ContentProvider {
                              * Android offers no other way to guard against
                              * these problems than by catching OutOfMemoryError.
                              */
-                            Log.w(TAG, err);
+                            log.error("handleMessage: caught OutOfMemoryError", err);
                         } finally {
                             synchronized (mCurrentThumbRequest) {
                                 mCurrentThumbRequest.mState = MediaThumbRequest.State.DONE;
@@ -237,7 +230,7 @@ public class VideoProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projectionIn, String selection, String[] selectionArgs,
             String sort, CancellationSignal cancellationSignal) {
-        if (DBG) Log.d(TAG, "QUERY " + uri);
+        log.debug("QUERY " + uri);
         int table = URI_MATCHER.match(uri);
 
         // let ScraperProvider handle that
@@ -361,7 +354,7 @@ public class VideoProvider extends ContentProvider {
     };
     @Override
     public String getType(Uri url) {
-        if (DBG) Log.d(TAG, "getType" + url);
+        log.debug("getType" + url);
 
         // determine match
         int match = URI_MATCHER.match(url);
@@ -397,7 +390,7 @@ public class VideoProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        if (DBG) Log.d(TAG, "INSRT " + uri + " PID:" + Process.myPid() + " TID:" + Process.myTid());
+        log.debug("INSRT " + uri + " PID:" + Process.myPid() + " TID:" + Process.myTid());
         int match = URI_MATCHER.match(uri);
 
         // let ScraperProvider handle that
@@ -529,7 +522,7 @@ public class VideoProvider extends ContentProvider {
             return false;
         // it's possible that we cannot create the directory
         if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
-            Log.e(TAG, "could not create " + file.getParent());
+            log.error("ensureFileExists: could not create " + file.getParent());
             return false;
         }
         try {
@@ -539,7 +532,7 @@ public class VideoProvider extends ContentProvider {
                 file.setReadable(true, false);
             return ret;
         } catch(IOException ioe) {
-            Log.e(TAG, "File creation failed", ioe);
+            log.error("ensureFileExists: File creation failed (IOException)", ioe);
         }
         return false;
     }
@@ -552,7 +545,7 @@ public class VideoProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        if (DBG) Log.d(TAG, "DELTE " + uri);
+        log.debug("DELTE " + uri);
         int match = URI_MATCHER.match(uri);
 
         // let ScraperProvider handle that
@@ -604,9 +597,9 @@ public class VideoProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues initialValues, String userWhere,
             String[] whereArgs) {
-        if (DBG) Log.d(TAG, "UPDTE " + uri);
+        log.debug("UPDTE " + uri);
         int count;
-        // Log.v(TAG, "update for uri="+uri+", initValues="+initialValues);
+        // log.trace("update for uri="+uri+", initValues="+initialValues);
         int match = URI_MATCHER.match(uri);
 
         // let ScraperProvider handle that
@@ -679,7 +672,7 @@ public class VideoProvider extends ContentProvider {
                     valuesRemove(values, VideoStore.Files.FileColumns.PARENT);
                     valuesRemove(values, VideoStore.Files.FileColumns.STORAGE_ID);
                     if (values.size() < 1) {
-                        Log.e(TAG, "no more Values, aborting update.");
+                        log.error("no more Values, aborting update.");
                         return 0;
                     }
                     count = db.update(table, values, where, whereArgs);
@@ -725,7 +718,7 @@ public class VideoProvider extends ContentProvider {
             try {
                 fout.write(args);
             } catch (IOException e) {
-                Log.w(TAG, e);
+                log.error("PipeByteWriter: caught IOException", e);
             } finally {
                 try {
                     fout.close();
@@ -744,7 +737,7 @@ public class VideoProvider extends ContentProvider {
 
     private static void valuesRemove(ContentValues cv, String what) {
         if (cv.containsKey(what)) {
-            Log.e(TAG, "Removing: " + what + " since that is not supported.");
+            log.error("Removing: " + what + " since that is not supported.");
             cv.remove(what);
         }
     }
@@ -848,7 +841,7 @@ public class VideoProvider extends ContentProvider {
                 .appendPath(origId).build();
 
         if (needBlocking && !waitForThumbnailReady(origUri)) {
-            if (DBG) Log.w(TAG, "original media doesn't exist or it's canceled.");
+            log.warn("original media doesn't exist or it's canceled.");
             return false;
         } else if (cancelRequest) {
             String groupId = uri.getQueryParameter("group_id");
@@ -898,13 +891,13 @@ public class VideoProvider extends ContentProvider {
      * @return
      */
     private boolean waitForThumbnailReady(Uri origUri) {
-        if (DBG) Log.d(TAG,"waitForThumbnailReady");
+        log.debug("waitForThumbnailReady");
 
         String origId = origUri.getLastPathSegment();
         String[] whereArgs = new String[] { origId };
         Cursor c = query(origUri, new String[] { BaseColumns._ID, MediaColumns.DATA,
                 VideoColumns.MINI_THUMB_MAGIC, VideoColumns.ARCHOS_THUMB_TRY}, LIGHT_INDEX_STORAGE_QUERY, whereArgs , null);
-        if(DBG) Log.d(TAG_DOCTOR_WHO, "is cursor null ? "+String.valueOf(c==null));
+        log.debug("is cursor null ? "+String.valueOf(c==null));
         if (c == null) return false;
 
         boolean result = false;
@@ -913,13 +906,13 @@ public class VideoProvider extends ContentProvider {
 
             long id = c.getLong(0);
             String path = c.getString(1);
-            if(DBG) Log.d(TAG_DOCTOR_WHO, "trying to create thumb for "+path);
+            log.debug("trying to create thumb for "+path);
 
             long magic = c.getLong(2);
             int nbTry = c.getInt(3);
             if (magic == 0 && nbTry >= THUMB_TRY_MAX|| !FileUtils.isLocal(Uri.parse(path))&&!PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREFERENCE_CREATE_REMOTE_THUMBS, false)) {
                 // thumbnail creation failed more than one time: abort.
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "thumbnail creation failed more than "+THUMB_TRY_MAX+" times: abort. ");
+                log.debug("thumbnail creation failed more than "+THUMB_TRY_MAX+" times: abort. ");
 
                 c.close();
                 return false;
@@ -927,7 +920,7 @@ public class VideoProvider extends ContentProvider {
 
             MediaThumbRequest req = requestMediaThumbnail(path, origUri,
                     MediaThumbRequest.PRIORITY_HIGH, magic);
-            if(DBG) Log.d(TAG_DOCTOR_WHO, "is MediaThumbRequest null ? "+String.valueOf(req==null));
+            log.debug("is MediaThumbRequest null ? "+String.valueOf(req==null));
             if (req == null) {
                 return false;
             }
@@ -937,7 +930,7 @@ public class VideoProvider extends ContentProvider {
                         req.wait();
                     }
                 } catch (InterruptedException e) {
-                    Log.w(TAG, e);
+                    log.error("waitForThumbnailReady: caught InterruptedException", e);
                 }
                 if (req.mState == MediaThumbRequest.State.DONE) {
                     result = true;
@@ -955,7 +948,7 @@ public class VideoProvider extends ContentProvider {
                         if (c.moveToFirst()) {
                             magic = c.getLong(0);
                             nbTry = c.getInt(1) + 1;
-                            if(DBG) Log.d(TAG_DOCTOR_WHO, " MediaThumbRequest set try to "+String.valueOf(nbTry));
+                            log.debug("MediaThumbRequest set try to "+String.valueOf(nbTry));
 
                             if (magic == 0) {
                                 ContentValues values = new ContentValues();
@@ -993,7 +986,7 @@ public class VideoProvider extends ContentProvider {
                 Message msg = mThumbHandler.obtainMessage(IMAGE_THUMB);
                 msg.sendToTarget();
             } catch (Throwable t) {
-                Log.w(TAG, t);
+                log.error("requestMediaThumbnail: caught throwable", t);
             }
             return req;
         }
@@ -1050,7 +1043,7 @@ public class VideoProvider extends ContentProvider {
 
     @Override
     public int bulkInsert(Uri uri, ContentValues[] values) {
-        if (DBG) Log.d(TAG, "bulkInsert " + uri);
+        log.debug("bulkInsert " + uri);
         int match = URI_MATCHER.match(uri);
 
         // let ScraperProvider handle that
@@ -1088,7 +1081,7 @@ public class VideoProvider extends ContentProvider {
     @Override
     public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
             throws OperationApplicationException {
-        if (DBG) Log.d(TAG, "applyBatch");
+        log.debug("applyBatch");
         ContentProviderResult[] result = null;
         SQLiteDatabase db = mDbHolder.get();
         mVobHandler.onBeginTransaction();
@@ -1198,10 +1191,10 @@ public class VideoProvider extends ContentProvider {
             values.put(Video.Thumbnails.WIDTH, Integer.valueOf(thumbnail.getWidth()));
             values.put(Video.Thumbnails.HEIGHT, Integer.valueOf(thumbnail.getHeight()));
             try {
-                if (DBG) Log.d(TAG, "insert Thumbnail " + mThumbUri + " val:" + values);
+                log.debug("insert Thumbnail " + mThumbUri + " val:" + values);
                 return mCr.insert(mThumbUri, values);
             } catch (Exception ex) {
-                Log.w(TAG, ex);
+                log.error("MediaThumbRequest: caught Exception", ex);
                 return null;
             }
         }
@@ -1216,7 +1209,7 @@ public class VideoProvider extends ContentProvider {
          * @throws IOException
          */
         void execute() throws IOException {
-            if(DBG) Log.d(TAG_DOCTOR_WHO," executing thumb creation ");
+            log.debug("executing thumb creation ");
 
             long magic = mMagic;
             if (magic != 0) {
@@ -1235,12 +1228,12 @@ public class VideoProvider extends ContentProvider {
                     if (c != null) c.close();
                     if (pfd != null) {
                         pfd.close();
-                        if (DBG) Log.d(TAG, "ThumbRequest, already exists.");
+                        log.debug("ThumbRequest, already exists.");
                     }
                 }
                 return;
             }
-            if (DBG) Log.d(TAG, "ThumbRequest, creating.");
+            log.debug("ThumbRequest, creating.");
             // If we can't retrieve the thumbnail, first check if there is one
             // embedded in the EXIF data. If not, or it's not big enough,
             // decompress the full size image.
@@ -1249,15 +1242,15 @@ public class VideoProvider extends ContentProvider {
             if (mPath != null) {
                 if (mIsVideo) {
                     // ARCHOS: this uses libavos
-                    if(DBG) Log.d(TAG_DOCTOR_WHO,"is video");
+                    log.debug("is video");
 
                     bitmap = createVideoThumbnail(mContext, mPath,
                             Video.Thumbnails.MINI_KIND);
-                    if(DBG) Log.d(TAG_DOCTOR_WHO, "test 2 for bitmap  "+String.valueOf(bitmap==null));
+                    log.debug("test 2 for bitmap  "+String.valueOf(bitmap==null));
 
                 }
                 if (bitmap == null) {
-                    Log.w(TAG, "Can't create mini thumbnail for " + mPath);
+                    log.warn("Can't create mini thumbnail for " + mPath);
                     return;
                 }
 
@@ -1266,7 +1259,7 @@ public class VideoProvider extends ContentProvider {
                     OutputStream thumbOut = mCr.openOutputStream(uri);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 85, thumbOut);
                     thumbOut.close();
-                    if (DBG) Log.d(TAG, "ThumbRequest written bitmap");
+                    log.debug("ThumbRequest written bitmap");
                     // also put some random mini_thumb_magic
                     do {
                         magic = sRandom.nextLong();
@@ -1289,7 +1282,7 @@ public class VideoProvider extends ContentProvider {
          */
         public static Bitmap createVideoThumbnail(Context ctx, String filePath, int kind) {
             Bitmap res = createVideoThumbnail_(ctx, filePath, kind);
-            if (DBG) Log.d(TAG, "createVideoThumbnail: " + res);
+            log.debug("createVideoThumbnail: " + res);
             return res;
         }
         private static class Result{
@@ -1308,42 +1301,41 @@ public class VideoProvider extends ContentProvider {
                     Thread t = new Thread(){
                         public void run(){
                             try {
-                                if(DBG) Log.d(TAG_DOCTOR_WHO, "get Thumb for "+filePath);
+                                log.debug("get Thumb for "+filePath);
                                 result.setBitmap(service.getThumbnail(filePath, -1));
 
                             } catch (RemoteException e) {
-                                if(DBG) Log.d(TAG_DOCTOR_WHO, "get Thumb for "+filePath+ " failed (RemoteException)");
+                                log.debug("get Thumb for "+filePath+ " failed (RemoteException)");
 
-                                Log.e(TAG, "can't get thumbnail, service crashed?", e);
+                                log.error("can't get thumbnail, service crashed?", e);
                             }
                         }
                     };
                     t.start();
                     t.join();
                     bitmap = result.bm;
-                    if (DBG) Log.d(TAG, "MediaThumbnailService gave us: " + bitmap);
+                    log.debug("MediaThumbnailService gave us: " + bitmap);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 MediaThumbnailService.release(ctx);
             } else {
-                Log.d(TAG, "no Thumbnail service, crash?");
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "no Thumbnail service, crash?");
+                log.debug("no Thumbnail service, crash?");
 
                 IMediaMetadataRetriever retriever = MediaFactory.createMetadataRetriever(ctx);
                 try {
                     retriever.setDataSource(filePath);
-                    if(DBG) Log.d(TAG_DOCTOR_WHO, "getFrameAtTime -1 ");
+                    log.debug("getFrameAtTime -1 ");
 
                     bitmap = retriever.getFrameAtTime(-1);
 
                 } catch (IllegalArgumentException ex) {
                     // Assume this is a corrupt video file
-                    if(DBG) Log.d(TAG_DOCTOR_WHO, "IllegalArgumentException "+ex.toString());
+                    log.debug("IllegalArgumentException "+ex.toString());
 
                 } catch (RuntimeException ex) {
                     // Assume this is a corrupt video file.
-                    if(DBG) Log.d(TAG_DOCTOR_WHO, "RuntimeException "+ex.toString());
+                    log.debug("RuntimeException "+ex.toString());
 
                 } finally {
                     try {
@@ -1355,13 +1347,13 @@ public class VideoProvider extends ContentProvider {
             }
 
             if (bitmap == null) {
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "bitmap is null ");
+                log.debug("bitmap is null ");
                 return null;
             }
 
-            if(DBG) Log.d(TAG_DOCTOR_WHO, "bitmap is not null ");
+            log.debug("bitmap is not null ");
             if (kind == Video.Thumbnails.MINI_KIND) {
-                if(DBG) Log.d(TAG_DOCTOR_WHO, "MINI_KIND ? ");
+                log.debug("MINI_KIND ? ");
                 // Scale down the bitmap if it's too large.
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
@@ -1371,7 +1363,7 @@ public class VideoProvider extends ContentProvider {
                     int w = Math.round(scale * width);
                     int h = Math.round(scale * height);
                     bitmap = Bitmap.createScaledBitmap(bitmap, w, h, true);
-                    if(DBG) Log.d(TAG_DOCTOR_WHO, "createScaledBitmap");
+                    log.debug("createScaledBitmap");
                 }
             }
             return bitmap;
@@ -1381,10 +1373,10 @@ public class VideoProvider extends ContentProvider {
     // TODO should it be done at each foreground? probably
     private final AppState.OnForeGroundListener mForeGroundListener = (applicationContext, foreground) -> {
         if(foreground) {
-            if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.startService");
+            log.debug("mForeGroundListener: VideoStoreImportService.startService");
             VideoStoreImportService.startService(applicationContext);
         }  else {
-            if (DBG) Log.d(TAG, "mForeGroundListener: VideoStoreImportService.stopService");
+            log.debug("mForeGroundListener: VideoStoreImportService.stopService");
             VideoStoreImportService.stopService(applicationContext);
         }
         handleForeGround(foreground);
@@ -1393,13 +1385,13 @@ public class VideoProvider extends ContentProvider {
     protected void handleForeGround(boolean foreground) {
         final Context context = getContext();
         if (foreground) {
-            if (DBG_NET) Log.d(TAG, "App now in ForeGround");
+            log.trace("App now in ForeGround");
             UpnpServiceManager.restartUpnpServiceIfWasStartedBefore();
             // force check
             RemoteStateService.start(context);
             addNetworkListener();
         } else {
-            if (DBG_NET) Log.d(TAG, "App now in BackGround");
+            log.trace("App now in BackGround");
             UpnpServiceManager.stopServiceIfLaunched();
             removeNetworkListener();
         }
@@ -1408,7 +1400,7 @@ public class VideoProvider extends ContentProvider {
     private void addNetworkListener() {
         if (networkState == null) networkState = NetworkState.instance(getContext());
         if (!mNetworkStateListenerAdded && propertyChangeListener != null) {
-            if (DBG_LISTENER) Log.d(TAG, "addNetworkListener: networkState.addPropertyChangeListener");
+            log.trace("addNetworkListener: networkState.addPropertyChangeListener");
             networkState.addPropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = true;
         }
@@ -1417,7 +1409,7 @@ public class VideoProvider extends ContentProvider {
     private void removeNetworkListener() {
         if (networkState == null) networkState = NetworkState.instance(getContext());
         if (mNetworkStateListenerAdded && propertyChangeListener != null) {
-            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            log.trace("removeListener: networkState.removePropertyChangeListener");
             networkState.removePropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = false;
         }
