@@ -27,7 +27,7 @@ configurations {
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 31
     gradle.startParameter.getTaskNames().each { task ->
         if (task.contains("Open")) {
             groupOpen = true
@@ -50,7 +50,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 31
 	multiDexEnabled true
     }
 
