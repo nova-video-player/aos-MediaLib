@@ -317,7 +317,8 @@ public class AutoScrapeService extends Service {
 
         Intent notificationIntent = new Intent(Intent.ACTION_MAIN);
         notificationIntent.setClassName(this.getPackageName(), "com.archos.mediacenter.video.autoscraper.AutoScraperActivity");
-        PendingIntent contentIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, 0);
+        PendingIntent contentIntent = PendingIntent.getBroadcast(this, 0, notificationIntent,
+                ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT));
         nb.setContentIntent(contentIntent);
 
         if(mThread==null || !mThread.isAlive()) {

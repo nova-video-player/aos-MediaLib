@@ -23,6 +23,8 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import androidx.preference.PreferenceManager;
+
+import android.os.Build;
 import android.util.Log;
 
 import com.archos.environment.ArchosUtils;
@@ -241,7 +243,8 @@ public class NetworkAutoRefresh extends BroadcastReceiver {
             Log.d(TAG, "launching in " + (nextStart - System.currentTimeMillis()) / 1000 / 60 + " minutes");
             Intent intent = new Intent(context, NetworkAutoRefresh.class);
             intent.setAction(ACTION_RESCAN_INDEXED_FOLDERS);
-            mAlarmIntent = PendingIntent.getBroadcast(context, ALARM_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            mAlarmIntent = PendingIntent.getBroadcast(context, ALARM_ID, intent,
+                    ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT));
             alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP,
                     nextStart, periode , mAlarmIntent);
             Log.d(TAG, "setting alarm");
@@ -250,7 +253,8 @@ public class NetworkAutoRefresh extends BroadcastReceiver {
         else{
             Intent intent = new Intent(context, NetworkAutoRefresh.class);
             intent.setAction(ACTION_RESCAN_INDEXED_FOLDERS);
-            mAlarmIntent = PendingIntent.getBroadcast(context, ALARM_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            mAlarmIntent = PendingIntent.getBroadcast(context, ALARM_ID, intent,
+                    ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT));
             alarmMgr.cancel(mAlarmIntent);
         }
         if(setPreference){
