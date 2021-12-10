@@ -22,6 +22,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
@@ -100,31 +101,40 @@ public final class VideoStore {
 
             Cursor cursor = context.getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
                     new String[] { VideoStore.MediaColumns.DATA }, whereR, whereRArgs, null);
-            
+
+            if (DBG) Log.d(TAG, "requestIndexing: VideoStore.MediaColumns cursor dump " + DatabaseUtils.dumpCursorToString(cursor));
             if (cursor.getCount() > 0) { // video present in VideoStore
+                if (DBG) Log.d(TAG, "requestIndexing: video present in VideoStore");
                 final ContentValues cvR = new ContentValues(1);
                 String col = VideoStore.Video.VideoColumns.ARCHOS_HIDDEN_BY_USER;
                 cvR.put(col, 0);
                 context.getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cvR, whereR, whereRArgs);
             }
             else { // video not present in VideoStore -> check if video present in Android MediaStore
+                if (DBG) Log.d(TAG, "requestIndexing: video not present in VideoStore checking MediaStore");
                 whereR = MediaStoreFilesFileColumnsDATA + " = ?";
                 cursor.close();
                 cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
                         new String[] { MediaStoreFilesFileColumnsDATA }, whereR, whereRArgs, null);
 
+                if (DBG) Log.d(TAG, "requestIndexing: MediaStore.Files cursor dump " + DatabaseUtils.dumpCursorToString(cursor));
+
                 final ContentValues cvR = new ContentValues(1);
 
                 Boolean doPopulate = false;
                 if (cursor == null) { // if there is no files in MediaStore cursor can be null
+                    if (DBG) Log.d(TAG, "requestIndexing: video not present in MediaStore, need to populate MediaStore");
                     doPopulate = true;
                 } else if (cursor.getCount()>0) {
+                    if (DBG) Log.d(TAG, "requestIndexing: video present in MediaStore");
                     // video present in MediaStore
                     long newId = 0;
 
                     cursor.close();
                     cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
                             new String[] { "MAX(" + MediaStore.Files.FileColumns._ID + ")" }, null, null, null);
+
+                    if (DBG) Log.d(TAG, "requestIndexing: max MediaStore.Files.FileColumns._ID cursor dump " + DatabaseUtils.dumpCursorToString(cursor));
 
                     if (cursor.getCount() > 0) {
                         cursor.moveToFirst();
@@ -135,9 +145,12 @@ public final class VideoStore {
 
                     String col = MediaStore.Files.FileColumns._ID;
                     cvR.put(col, newId);
+                    if (DBG) Log.d(TAG, "requestIndexing: inserting new content in MediaStore.Files");
                     context.getContentResolver().update(MediaStore.Files.getContentUri("external"), cvR, whereR, whereRArgs);
                 } else doPopulate = true;
                 if (doPopulate) { // video not present in MediaStore nor in VideoStore, if local file insert it in MediaStore
+                    if (DBG) Log.d(TAG, "requestIndexing: video not present in MediaStore nor in VideoStore");
+
                     String col = MediaStoreFilesFileColumnsDATA;
                     // Do not try to insert in MediaStore non local files otherwise it crashes on Android>=P
                     if ("file".equals(uri.getScheme())) {
@@ -179,7 +192,13 @@ public final class VideoStore {
             if(uri.getScheme()==null)
                 uri = Uri.parse("file://"+uri.toString());
             if (DBG) Log.d(TAG, "requestIndexing: file -> MediaScanner does the scan");
-            MediaScannerConnection.scanFile(context, new String[]{uri.getPath()}, null, null);
+            MediaScannerConnection.scanFile(context, new String[]{uri.getPath()}, null,
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                        public void onScanCompleted(String path, Uri uri) {
+                            Log.i(TAG, "requestIndexing: scanned " + path + ":");
+                            Log.i(TAG, "requestIndexing: -> uri=" + uri);
+                        }
+                    });
         }
     }
     private static final int ARCHOS_PARAMS_SIZE = 10;
