@@ -368,22 +368,22 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             case MESSAGE_IMPORT_INCR:
                 log.debug("handleMessage: MESSAGE_IMPORT_INCR");
                 doImport(false);
-                mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
+                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_IMPORT_FULL:
                 log.debug("handleMessage: MESSAGE_IMPORT_FULL");
                 doImport(true);
-                mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
+                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_UPDATE_METADATA:
                 log.debug("handleMessage: MESSAGE_UPDATE_METADATA");
                 mImporter.doScan((Uri)msg.obj);
-                mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
+                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_REMOVE_FILE:
                 log.debug("handleMessage: MESSAGE_REMOVE_FILE");
                 mImporter.doRemove((Uri)msg.obj);
-                mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
+                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_HIDE_VOLUME:
                 log.debug("handleMessage: MESSAGE_HIDE_VOLUME");
@@ -391,7 +391,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 ContentValues cv = new ContentValues();
                 cv.put(VideoStore.Files.FileColumns.STORAGE_ID, String.valueOf(msg.arg2));
                 VideoStoreImportService.this.getContentResolver().insert(VideoStoreInternal.HIDE_VOLUME, cv);
-                mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget();
+                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             default:
                 log.warn("ImportBgHandler - unknown msg.what: " + msg.what);
@@ -574,6 +574,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     /** removes all messages from handler */
     protected static void removeAllMessages(Handler handler) {
+        log.debug("removeAllMessages");
         handler.removeMessages(MESSAGE_KILL);
         handler.removeMessages(MESSAGE_IMPORT_FULL);
         handler.removeMessages(MESSAGE_IMPORT_INCR);
