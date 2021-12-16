@@ -354,10 +354,10 @@ public class NfoWriter {
 
     private static void exportInternal(Uri video, ShowTags tag, ExportContext exportContext) throws IOException {
         String videoName = FileUtils.getFileNameWithoutExtension(video);
-        // relocate uri for local files to writeable location to comply with API30
-        Uri parent = FileUtils.getParentUrl(relocateNfoJpgAppPublicDir(video));
+        Uri parent = FileUtils.getParentUrl(video);
         String showTitle = StringUtils.fileSystemEncode(tag.getTitle());
-        Uri exportTarget =  Uri.withAppendedPath(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION);
+        // relocate uri for local files to writeable location to comply with API30
+        Uri exportTarget =  relocateNfoJpgAppPublicDir(Uri.withAppendedPath(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION));
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget, null);
             // Delete existing file to avoid overwrite issue (end of previous content still there is the new content is shorter)
