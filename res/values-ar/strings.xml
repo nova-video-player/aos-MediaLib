@@ -12,6 +12,7 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">فهرسة الميدافيليس</string>
     <!-- .nfo export options -->
     <!-- trakt.tv -->
     <!-- Title of screen when no sd card is present -->
