@@ -68,7 +68,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 
 public class Trakt {
     private static final String TAG = "Trakt";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     private final static boolean DBG_RETROFIT = false;
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
@@ -359,7 +359,7 @@ public class Trakt {
             if (videoInfo.isShow) {
                 SyncEpisode se = new SyncEpisode();
                 EpisodeIds ei = new EpisodeIds();
-                ei.tvdb = Integer.valueOf(videoInfo.scraperEpisodeId);             
+                ei.tmdb = Integer.valueOf(videoInfo.scraperEpisodeId);
                 se.id(ei);
                 if(videoInfo.lastTimePlayed>0)
                 	se.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
@@ -402,8 +402,8 @@ public class Trakt {
     private AuthParam fillParam(VideoDbInfo videoInfo) {
         if (videoInfo.isShow) {
             ShowWatchingParam param = new ShowWatchingParam();
-            param.tvdb_id = videoInfo.scraperShowId;
-            param.episode_tvdb_id = videoInfo.scraperEpisodeId;
+            param.tmdb_id = videoInfo.scraperShowId;
+            param.episode_tmdb_id = videoInfo.scraperEpisodeId;
             param.duration = videoInfo.duration != -1 ? videoInfo.duration : 0;
             return param;
         } else {
@@ -435,13 +435,13 @@ public class Trakt {
             showParam.progress = (int) progress;
             SyncEpisode se = new SyncEpisode();
             EpisodeIds ids = new EpisodeIds();
-            if(showParam.episode_tvdb_id!=null) {
-                if (DBG) Log.d(TAG, "postWatching: showid=" + showParam.episode_tvdb_id);
-                ids.tvdb = Integer.valueOf(showParam.episode_tvdb_id);
+            if(showParam.episode_tmdb_id!=null) {
+                if (DBG) Log.d(TAG, "postWatching: showid=" + showParam.episode_tmdb_id);
+                ids.tmdb = Integer.valueOf(showParam.episode_tmdb_id);
             }
             se.id(ids);
             ScrobbleProgress ep = new ScrobbleProgress(se, progress, "", "");
-            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids.tvdb);
+            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids.tmdb);
             switch (action) {
                 case "start":
                     if (DBG) Log.d(TAG, "postWatching: sending startWatching");
@@ -698,7 +698,7 @@ public class Trakt {
         if (videoItem.episodeId > 0) {
             SyncEpisode se = new SyncEpisode();
             EpisodeIds ei = new EpisodeIds();
-            ei.tvdb = Integer.valueOf(videoItem.episodeId);
+            ei.tmdb = Integer.valueOf(videoItem.episodeId);
             se.id(ei);
             SyncItems sitems = new SyncItems();
             sitems.episodes(se);

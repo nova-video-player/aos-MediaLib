@@ -65,10 +65,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO MARC if the nohandler is not there because shut down!!!!
+
 public class TraktService extends Service {
     private static final String TAG = "TraktService";
-    private static final boolean DBG = false;
-    private static final boolean DBG_LISTENER = false;
+    private static final boolean DBG = true;
+    private static final boolean DBG_LISTENER = true;
     private static final boolean DBG_NET = false;
 
     private SharedPreferences mPreferences;
@@ -488,7 +490,7 @@ public class TraktService extends Service {
             for (TraktAPI.Episode ep : param.episodes){
                 SyncEpisode se = new SyncEpisode();
                 EpisodeIds ids = new EpisodeIds();
-                ids.tvdb = ep.tvdb ;
+                ids.tmdb = ep.tmdb ;
                 se.id(ids);
                 eps.add(se);
             }
@@ -586,7 +588,7 @@ public class TraktService extends Service {
                 }
                 else {
                     whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
-                    "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID +"= "+movie.episode.ids.tvdb+")";
+                    "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID +"= "+movie.episode.ids.tmdb+")";
                 }
 
                 //final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
@@ -677,7 +679,7 @@ public class TraktService extends Service {
                             final String selection = "_id IN ("+
                                     "SELECT video_id FROM episode where season_episode = " + season.number +
                                     " AND " + inSelection +
-                                    " AND show_episode IN (SELECT _id FROM show WHERE s_online_id = " + show.show.ids.tvdb +"))";
+                                    " AND show_episode IN (SELECT _id FROM show WHERE s_online_id = " + show.show.ids.tmdb +"))";
                             cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, getValuesMarkAs(library, true), selection, null);
                         }
                     }
@@ -767,7 +769,7 @@ public class TraktService extends Service {
                 final int eSeasonNrIdx = c.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_E_SEASON);
                 final int eEpisodeNrIdx = c.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE);
                 final int lastPlayedIdx = c.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED);
-                final int tvdbIdx = c.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID);
+                final int tmdbIdx = c.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID);
                 final int idIdx = c.getColumnIndex(BaseColumns._ID);
 
                 TraktAPI.EpisodeListParam param = new TraktAPI.EpisodeListParam();
@@ -779,7 +781,7 @@ public class TraktService extends Service {
                     final String sOnlineId = c.getString(sOnlineIdIdx);
                     final int eSeasonNr = c.getInt(eSeasonNrIdx);
                     final int eEpisodeNr = c.getInt(eEpisodeNrIdx);
-                    final String tvdbId = c.getString(tvdbIdx);
+                    final String tmdbId = c.getString(tmdbIdx);
                     final long lastTimePlayed = c.getLong(lastPlayedIdx);
                     final int id = c.getInt(idIdx);
 
@@ -791,7 +793,7 @@ public class TraktService extends Service {
                                 return status;
                             }
                             episodeList.clear();
-                            param.tvdb_id = sOnlineId;
+                            param.tmdb_id = sOnlineId;
                             sOnlineIdPrev = sOnlineId;
                             inBuilder = new InBuilder(VideoStore.Video.VideoColumns._ID);
                         }
@@ -800,7 +802,7 @@ public class TraktService extends Service {
 
                         episode.season = eSeasonNr;
                         episode.episode = eEpisodeNr;
-                        episode.tvdb = Integer.valueOf(tvdbId);
+                        episode.tmdb = Integer.valueOf(tmdbId);
                         episode.last_played = Trakt.getDateFormat(lastTimePlayed);
                         episodeList.add(episode);
                         inBuilder.addParam(id);
@@ -1127,7 +1129,7 @@ public class TraktService extends Service {
                                 for(ListEntry onlineItem : traktListItems){
                                     if(videoItem.episodeId > 0
                                             && onlineItem.episode!=null
-                                            && onlineItem.episode.ids.tvdb.equals(videoItem.episodeId)
+                                            && onlineItem.episode.ids.tmdb.equals(videoItem.episodeId)
                                             || videoItem.movieId>0
                                             && onlineItem.movie!=null
                                             && onlineItem.movie.ids.tmdb.equals(videoItem.movieId)){
@@ -1163,7 +1165,7 @@ public class TraktService extends Service {
                             for(VideoStore.VideoList.VideoItem videoItem : localListItems){
                                 if(videoItem.episodeId > 0
                                         && onlineItem.episode!=null
-                                        && onlineItem.episode.ids.tvdb.equals(videoItem.episodeId)
+                                        && onlineItem.episode.ids.tmdb.equals(videoItem.episodeId)
                                         || videoItem.movieId>0
                                         && onlineItem.movie!=null
                                         && onlineItem.movie.ids.tmdb.equals(videoItem.movieId)) {
@@ -1180,7 +1182,7 @@ public class TraktService extends Service {
                                 //add to DB
                                 boolean isEpisode = onlineItem.episode != null;
                                 VideoStore.VideoList.VideoItem videoItem  =
-                                        new VideoStore.VideoList.VideoItem(localId,!isEpisode?onlineItem.movie.ids.tmdb:-1, isEpisode?onlineItem.episode.ids.tvdb:-1, VideoStore.List.SyncStatus.STATUS_OK);
+                                        new VideoStore.VideoList.VideoItem(localId,!isEpisode?onlineItem.movie.ids.tmdb:-1, isEpisode?onlineItem.episode.ids.tmdb:-1, VideoStore.List.SyncStatus.STATUS_OK);
 
                                 getContentResolver().insert(listUri, videoItem.toContentValues());
                             }

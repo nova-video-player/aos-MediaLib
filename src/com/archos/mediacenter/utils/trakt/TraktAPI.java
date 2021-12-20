@@ -58,12 +58,14 @@ public interface TraktAPI {
 
     public static class ShowWatchingParam extends AuthParam {
         String tvdb_id;
+        String tmdb_id;
         String imdb_id; // optional
         String title;
         String year;
         int season;
         int episode;
         String episode_tvdb_id;  // optional
+        String episode_tmdb_id;  // optional
         int duration; // in minutes
         int progress; // %
     }
@@ -72,6 +74,7 @@ public interface TraktAPI {
         int season;
         int episode;
         int tvdb;
+        int tmdb;
         String watched_at;
         String last_played;
     }
@@ -82,6 +85,7 @@ public interface TraktAPI {
     }
     public static class EpisodeListParam extends AuthParam {
         String tvdb_id;
+        String tmdb_id;
         String imdb_id; // optional
         Episode[] episodes;
         String title;
