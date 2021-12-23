@@ -15,6 +15,7 @@
 package com.archos.mediaprovider.video;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -120,6 +121,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final int NOTIFICATION_ID = 1;
     private NotificationManager nm;
     private NotificationCompat.Builder nb;
+    private Notification n;
     private static final String notifChannelId = "NetworkScannerServiceVideo_id";
     private static final String notifChannelName = "NetworkScannerServiceVideo";
     private static final String notifChannelDescr = "NetworkScannerServiceVideo";
@@ -201,9 +203,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle(getString(R.string.scraping_in_progress))
                 .setContentText("")
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(Notification.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
-        startForeground(NOTIFICATION_ID, nb.build());
+        n = nb.build();
+
+        startForeground(NOTIFICATION_ID, n);
+        log.debug("onCreate: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
 
         sIsScannerAlive = true;
         notifyListeners();
@@ -242,7 +247,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents delivered here
-        log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId);
+        log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId + ((intent != null) ? ", getAction " + intent.getAction() : " getAction null"));
+
+        log.debug("onStartCommand: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
+        startForeground(NOTIFICATION_ID, n);
 
         if (intent == null || intent.getAction() == null)
             return START_NOT_STICKY;
