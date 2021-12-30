@@ -22,6 +22,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
@@ -329,7 +330,19 @@ public class VideoStoreImportImpl {
         do {
             if (window > numberOfRows)
                 window = numberOfRows;
-            c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + window);
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>30 requires bundle to LIMIT
+                final Bundle bundle = new Bundle();
+                bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, WHERE_UNSCANNED);
+                bundle.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
+                bundle.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{BaseColumns._ID});
+                bundle.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+                bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, window);
+                bundle.putInt(ContentResolver.QUERY_ARG_OFFSET, 0);
+                c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, bundle, null);
+            } else {
+                c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ,
+                        WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + window);
+            }
             log.debug("doScan: new batch fetching window=" + window + " entries <=" + numberOfRows);
             log.debug("doScan: new batch cursor has size " + c.getCount());
             handleScanCursor(c, cr, context, blacklist);
@@ -523,24 +536,74 @@ public class VideoStoreImportImpl {
                 // transaction size limited, acts like buffered output stream and auto-flushes queue
                 BulkInserter inserter = new BulkInserter(VideoStoreInternal.FILES_IMPORT, cr, 2000);
                 log.debug("copyData: found items to import:" + count);
-                while (allFiles.moveToNext()) {
-                    try {
-                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
-                            cv = new ContentValues(ccount + 1);
-                            DatabaseUtils.cursorRowToContentValues(allFiles, cv);
-                            // since storage_id does not exist on P and above, set it to 1, not sure it is really used now
-                            cv.put("storage_id", 1);
-                        } else {
-                            cv = new ContentValues(ccount);
-                            DatabaseUtils.cursorRowToContentValues(allFiles, cv);
+                final int numberOfRows = allFiles.getCount();
+                int window = WINDOW_SIZE;
+                int index = 0;
+                int cursor_count = 0;
+                // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+                // note that the db is NOT being modified during import --> use an index
+                allFiles.close();
+                do {
+                    if (index + window > numberOfRows)
+                        window = numberOfRows - index;
+
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+                        where = WHERE_ALL_AP;
+                        if (minId != null) {
+                            where = WHERE_MIN_ID_AP;
+                            whereArgs = new String[]{minId};
                         }
-                        if (!ids.contains(cv.getAsLong("_id")))
-                            inserter.add(cv);
-                    } catch (IllegalStateException ignored) {} //we silently ignore empty lines - it means content has been deleted while scanning
-                }
-                imported = inserter.execute();
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>29 requires bundle to LIMIT but it exists since 26
+                            final Bundle BUNDLE_AP = new Bundle();
+                            BUNDLE_AP.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, where);
+                            BUNDLE_AP.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, whereArgs);
+                            BUNDLE_AP.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{BaseColumns._ID});
+                            BUNDLE_AP.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+                            BUNDLE_AP.putInt(ContentResolver.QUERY_ARG_LIMIT, window);
+                            BUNDLE_AP.putInt(ContentResolver.QUERY_ARG_OFFSET, index);
+                            allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
+                                    FILES_PROJECTION_AP, BUNDLE_AP, null));
+                        } else {
+                            allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
+                                    FILES_PROJECTION_AP, where, whereArgs, BaseColumns._ID + " ASC LIMIT " + index + "," + window));
+                        }
+                    } else { // API below 26 LIMIT is allowed
+                        where = WHERE_ALL_BP;
+                        if (minId != null)  {
+                            where = WHERE_MIN_ID_BP;
+                            whereArgs = new String[] { minId };
+                        }
+                        allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
+                                FILES_PROJECTION_BP, where, whereArgs, BaseColumns._ID + " ASC LIMIT " + index + "," + window));
+                    }
+                    log.debug("copyData: new batch fetching cursor from index=" + index + ", window=" + window + " -> index+window=" + (index + window) + "<=" + numberOfRows);
+                    log.debug("copyData: new batch cursor has size " + allFiles.getCount());
+
+                    if (allFiles != null && allFiles.getCount() >0) {
+                        while (allFiles.moveToNext()) {
+                            cursor_count++;
+                            log.debug("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows);
+                            try {
+                                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+                                    cv = new ContentValues(ccount + 1);
+                                    DatabaseUtils.cursorRowToContentValues(allFiles, cv);
+                                    // since storage_id does not exist on P and above, set it to 1, not sure it is really used now
+                                    cv.put("storage_id", 1);
+                                } else {
+                                    cv = new ContentValues(ccount);
+                                    DatabaseUtils.cursorRowToContentValues(allFiles, cv);
+                                }
+                                if (!ids.contains(cv.getAsLong("_id")))
+                                    inserter.add(cv);
+                            } catch (IllegalStateException ignored) {} //we silently ignore empty lines - it means content has been deleted while scanning
+                        }
+                        imported += inserter.execute();
+                    }
+
+                    index += window;
+                    if (allFiles != null) allFiles.close();
+                } while (window < numberOfRows);
             }
-            allFiles.close();
         }
         return imported;
     }

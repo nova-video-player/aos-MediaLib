@@ -18,6 +18,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -43,6 +44,7 @@ import com.archos.medialib.R;
 import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore;
+import com.archos.mediaprovider.video.VideoStoreInternal;
 import com.archos.mediaprovider.video.WrapperChannelManager;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
@@ -198,7 +200,7 @@ public class AutoScrapeService extends Service {
             mExportingThread = new Thread() {
 
                 public void run() {
-                    Cursor cursor = getFileListCursor(PARAM_SCRAPED, null);
+                    Cursor cursor = getFileListCursor(PARAM_SCRAPED, null, null, null);
                     final int numberOfRows = cursor.getCount();
                     sTotalNumberOfFilesRemainingToProcess = numberOfRows;
                     cursor.close();
@@ -213,7 +215,7 @@ public class AutoScrapeService extends Service {
                         if (index + window > numberOfRows)
                             window = numberOfRows - index;
                         log.debug("startExporting: new batch fetching cursor from index" + index + " over window " + window + " entries, " + (index + window) + "<=" + numberOfRows);
-                        cursor = getFileListCursor(PARAM_SCRAPED, BaseColumns._ID + " ASC LIMIT " + index + "," + window);
+                        cursor = getFileListCursor(PARAM_SCRAPED, BaseColumns._ID, index, window);
                         log.debug("startExporting: new batch cursor has size " + cursor.getCount());
 
                         sNumberOfFilesRemainingToProcess = window;
@@ -355,7 +357,7 @@ public class AutoScrapeService extends Service {
 
                         // find all videos not scraped yet looking at VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID
                         // and get the final count (it could change while scrape is in progress)
-                        Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null);
+                        Cursor cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null, null, null);
                         int numberOfRows = cursor.getCount(); // total number of files to be processed
                         sTotalNumberOfFilesRemainingToProcess = numberOfRows;
                         cursor.close();
@@ -376,7 +378,7 @@ public class AutoScrapeService extends Service {
                                             scrapeOnlyMovies ? PARAM_MOVIES :
                                                 shouldRescrapAll ? PARAM_ALL :
                                                         PARAM_NOT_SCRAPED,
-                                    BaseColumns._ID + " ASC LIMIT " + window);
+                                    BaseColumns._ID, null, window);
                             log.debug("startScraping: new batch cursor has size " + cursor.getCount());
                             log.trace("startScraping: dump cursor " + DatabaseUtils.dumpCursorToString(cursor));
 
@@ -575,7 +577,7 @@ public class AutoScrapeService extends Service {
                         }
                         shouldRescrapAll = false; //to avoid rescraping on next round
                         // final check if while scanning there was no more files to scrape added
-                        cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null);
+                        cursor = getFileListCursor(shouldRescrapAll&&onlyNotFound ?PARAM_SCRAPED_NOT_FOUND:shouldRescrapAll?PARAM_ALL:PARAM_NOT_SCRAPED, null, null, null);
                         if(cursor.getCount()>0) {
                             restartOnNextRound = true;
                             log.debug("startScraping: new entries to scrape found most likely added during scrape process, restartOnNextRound");
@@ -617,7 +619,7 @@ public class AutoScrapeService extends Service {
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + ">=0 AND " +
             VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + " IS NOT NULL AND " + WHERE_BASE;
 
-    private Cursor getFileListCursor(int scrapStatusParam, String sortOrder) {
+    private Cursor getFileListCursor(int scrapStatusParam, String sortOrder, Integer offset, Integer limit) {
         // Look for all the videos not yet processed and not located in the Camera folder
         final String cameraPath =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera";
         String[] selectionArgs = new String[]{ cameraPath + "/%" };
@@ -642,6 +644,27 @@ public class AutoScrapeService extends Service {
                 where = WHERE_BASE;
                 break;
         }
-        return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS, where, selectionArgs, sortOrder);
+        final String LIMIT = ((limit != null) ? " ASC LIMIT " : "") +
+                ((offset != null) ? offset + ",": "") +
+                ((limit != null) ? limit : "");
+        if (limit != null) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>30 requires bundle to LIMIT
+                final Bundle bundle = new Bundle();
+                bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, where);
+                bundle.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs);
+                bundle.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{sortOrder});
+                bundle.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+                bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, limit);
+                bundle.putInt(ContentResolver.QUERY_ARG_OFFSET, ((offset != null) ? offset : 0));
+                return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS,
+                        bundle, null);
+            } else {
+                return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS,
+                        where, selectionArgs, sortOrder + LIMIT);
+            }
+        } else {
+            return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS,
+                    where, selectionArgs, sortOrder);
+        }
     }
 }
