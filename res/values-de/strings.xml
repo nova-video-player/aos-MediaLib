@@ -80,13 +80,13 @@
     <string name="tv_show_genre_horror">Horror</string>
     <string name="tv_show_genre_indie">Indie</string>
     <string name="tv_show_genre_martial_arts">Kampfsport</string>
-    <string name="tv_show_genre_mini_series">Mini-Serien</string>
+    <string name="tv_show_genre_mini_series">Mini-Serie</string>
     <string name="tv_show_genre_musical">Musicals</string>
     <string name="tv_show_genre_mystery">Mystery</string>
     <string name="tv_show_genre_news">Nachrichten</string>
     <string name="tv_show_genre_podcast">Podcast</string>
     <string name="tv_show_genre_reality">Reality-TV</string>
-    <string name="tv_show_genre_romance">Romantik</string>
+    <string name="tv_show_genre_romance">Liebesfilm</string>
     <string name="tv_show_genre_science_fiction">Science-Fiction</string>
     <string name="tv_show_genre_soap">Soap</string>
     <string name="tv_show_genre_special_interest">Besondere Interessen</string>

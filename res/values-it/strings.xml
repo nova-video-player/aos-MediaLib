@@ -64,8 +64,9 @@
     </string-array>
     <string name="tv_show_genre_action">Azione</string>
     <string name="tv_show_genre_adventure">Avventura</string>
-    <string name="tv_show_genre_animation">Animazione</string>
+    <string name="tv_show_genre_animation">Serie Tv genere Animazione</string>
     <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_awards_show">programma televisivo premi di genere</string>
     <string name="tv_show_genre_children">Bambini</string>
     <string name="tv_show_genre_comedy">Commedia</string>
     <string name="tv_show_genre_crime">Crime</string>
@@ -77,7 +78,10 @@
     <string name="tv_show_genre_game_show">Game Show</string>
     <string name="tv_show_genre_home_garden">Casa e Giardino</string>
     <string name="tv_show_genre_horror">Horror</string>
+    <string name="tv_show_genre_martial_arts">Serie tv genere arti marziali</string>
     <string name="tv_show_genre_mini_series">Mini-serie</string>
+    <string name="tv_show_genre_musical">Serie Tv genere musical</string>
+    <string name="tv_show_genre_mystery">Serie Tv genere mistero</string>
     <string name="tv_show_genre_news">Notizie</string>
     <string name="tv_show_genre_reality">Reality</string>
     <string name="tv_show_genre_romance">Romantico</string>
@@ -89,6 +93,7 @@
     <string name="tv_show_genre_talk_show">Talk Show</string>
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Viaggi</string>
+    <string name="tv_show_genre_war">Serie Tv genere guerra</string>
     <string name="tv_show_genre_western">Western</string>
     <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">Azione</string>
