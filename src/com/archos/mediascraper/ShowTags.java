@@ -38,6 +38,7 @@ import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -87,11 +88,6 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.POSTER_ID,       // 7
         ScraperStore.Show.BACKDROP_ID      // 8
     };
-
-    private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
-    private static final String ONLINEID_SELECTION = ScraperStore.Show.ONLINE_ID + "=?";
-
-    @Override
     public long save(Context context, long videoId) {
         boolean showFound = false;
         boolean baseInfoChanged = false;
@@ -101,6 +97,7 @@ public class ShowTags extends VideoTags {
         boolean backdropsChanged = false;
 
         long showId = -1;
+        log.debug("save: called for show " + mTitle + " id " + mId + " onlineId " + mOnlineId);
 
         // prepare cover / backdrop info
         ScraperImage cover = getDefaultPoster();
@@ -112,19 +109,13 @@ public class ShowTags extends VideoTags {
         ContentResolver cr = context.getContentResolver();
 
         // Check if this TV show is already referenced in the scraperDB
-        log.debug("save: called for show " + mTitle + " id " + mId + " onlineId " + mOnlineId);
-
-        // Remark: uniqueness is based on mTitle and should be based on mOnlineId to avoid tvshow named the same to be merged: keep it like this for now
-        String[] selectionArgs = { mTitle };
-        //String[] selectionArgs = { String.valueOf(mOnlineId) };
-        Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
-                NAME_SELECTION, selectionArgs, null);
-        //Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
-        //        ONLINEID_SELECTION, selectionArgs, null);
+        // Remark: uniqueness is based on mOnlineID and not mTitle to avoid akward tvshow merge at manual rescrape
+        Cursor cursor = cr.query(ContentUris.withAppendedId(ScraperStore.Show.URI.ONLINE_ID, mOnlineId), BASE_PROJECTION,
+                null, null, null);
 
         if (cursor != null) {
-            log.debug("save: show found in db");
             if (cursor.moveToFirst()) {
+                log.debug("save: showOnlineId found in db");
                 showFound = true;
                 // The show was found in the database -> get stored infos
                 showId = cursor.getLong(0);
@@ -134,19 +125,24 @@ public class ShowTags extends VideoTags {
                 String storedBD = cursor.getString(4);
                 String storedImdb = cursor.getString(5);
                 long storedOnlineId = cursor.getLong(6);
+                log.debug("save: show found in db: showId " + showId + ", onlineId " + storedOnlineId);
 
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
+                log.debug("save: show found in db: storedCover " + storedCover + ", newCover " + newCover);
+                log.debug("save: show found in db: storedBD " + storedBD + ", newBackdrop " + newBackdrop);
 
                 // compare old vs new
                 baseInfoChanged =
                         updateCover || updateBackdrop ||
-                        newFloatIsBetter(storedRating, mRating) ||
-                        newStringIsBetter(storedCRating, mContentRating) ||
-                        newStringIsBetter(storedImdb, mImdbId) ||
-                        newLongIsBetter(storedOnlineId, mOnlineId);
+                                newFloatIsBetter(storedRating, mRating) ||
+                                newStringIsBetter(storedCRating, mContentRating) ||
+                                newStringIsBetter(storedImdb, mImdbId) ||
+                                newLongIsBetter(storedOnlineId, mOnlineId);
 
-                // since show exists check other data for changes too
+                log.debug("save: show found in db: updateCover " + updateCover + ", updateBackdrop " + updateBackdrop + " baseInfoChanged " + baseInfoChanged);
+
+                // since showOnlineId exists check other data for changes too
                 int storedPosterCount = storedPosterCount(showId, cr);
                 int newPosterCount = mPosters == null ? 0 : mPosters.size();
                 postersChanged = storedPosterCount != newPosterCount;
@@ -158,8 +154,20 @@ public class ShowTags extends VideoTags {
             cursor.close();
         }
 
+        if (!showFound) {
+            log.debug("save: showOnlineId not found in db, check if name that should be unique exists still");
+            boolean showNameExists = isShowNameAlreadyKnown(mTitle, context);
+            if (showNameExists) {
+                // same showName exists through with a different showID meaning that we have a show reboot
+                // or same name --> need to prefix with premiered year date for distinction and unique naming
+                int year = getPremieredYear();
+                if (year > 1) mTitle += " " + year;
+                log.debug("save: adding premieredDate in showTitle: " + mTitle);
+            }
+        }
+
         if (!showFound || baseInfoChanged) {
-            log.debug("save: show not found in db or baseInfo changed");
+            log.debug("save: showOnlineId not found in db or baseInfo changed");
             // got to insert or update the baseinfo.
             ContentValues values = new ContentValues();
             values.put(ScraperStore.Show.NAME, mTitle);
@@ -516,5 +524,23 @@ public class ShowTags extends VideoTags {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
+    }
+
+    public boolean isShowNameAlreadyKnown(String showName, Context context) {
+        ContentResolver contentResolver = context.getContentResolver();
+        Cursor cursor = contentResolver.query(
+                ScraperStore.Show.URI.ALL,
+                new String[] {ScraperStore.Show.ID}, ScraperStore.Show.NAME + "=?", new String[] { mTitle }, null);
+        Boolean isKnown = false;
+        if (cursor != null) isKnown = cursor.moveToFirst();
+        cursor.close();
+        log.debug("isShowNameAlreadyKnown: " + showName + " " + isKnown);
+        return isKnown;
+    }
+
+    public int getPremieredYear() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(mPremiered);
+        return cal.get(Calendar.YEAR);
     }
 }
