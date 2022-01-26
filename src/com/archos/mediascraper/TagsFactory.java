@@ -1014,7 +1014,6 @@ public class TagsFactory {
                 }, null, null, null);
         if (c != null && c.moveToFirst())
             showId = c.getLong(9);
-        // TODO MARC!!!! bug onlineId instead of showId?????
         return buildShowTagsFromCursor(context, c, showId);
     }
 
