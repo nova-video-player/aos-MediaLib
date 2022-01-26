@@ -68,7 +68,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 
 public class Trakt {
     private static final String TAG = "Trakt";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
     private final static boolean DBG_RETROFIT = false;
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
