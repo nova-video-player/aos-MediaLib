@@ -13,6 +13,7 @@
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
     <!-- .nfo export options -->
+    <string name="nfo_export_auto_summary">Tự động xuất file .nfo sau khi tìm kiếm thông tin phim thành công</string>
     <!-- trakt.tv -->
     <!-- Title of screen when no sd card is present -->
     <!-- label underneath icon used to indicate that no sd card is present -->

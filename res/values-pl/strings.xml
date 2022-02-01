@@ -15,19 +15,24 @@
     <string name="network_scan_msg">Indeksowanie multimediów</string>
     <string name="network_unscan_msg">Usuwanie multimediów z biblioteki</string>
     <!-- .nfo export options -->
-    <string name="nfo_export_category">Eksport informacji o multimediach</string>
-    <string name="nfo_export_auto_title">Autoeksport po wyszukaniu</string>
-    <string name="nfo_export_manual_title">Eksportuj już przeskanowane pliki video</string>
+    <string name="nfo_export_category">Eksport informacji o mediach</string>
+    <string name="nfo_export_auto_title">Automatyczny eksport po wyszukaniu</string>
+    <string name="nfo_export_manual_title">Eksportuj zaktualizowane wideo</string>
     <string name="nfo_export_auto_summary">Antomatycznie eksportuj pliki .nfo po wyszukaniu online</string>
-    <string name="nfo_export_manual_summary">Eksportuj pliki .nfo już przeskanowanych plików video</string>
+    <string name="nfo_export_manual_summary">Eksportuj pliki .nfo wszystkich zaktualizowanych plików video</string>
     <string name="nfo_export_button">Eksportuj .nfo</string>
     <string name="nfo_export_folder">Eksportuj wszystko z tego folderu do .nfo</string>
     <string name="nfo_export_all">Eksportuj całą bibliotekę do .nfo</string>
     <string name="nfo_export_exporting">Eksportowanie .nfo</string>
     <string name="nfo_export_exporting_all">wszystko</string>
-    <string name="rescrap_all_title">Przeskanuj ponownie</string>
+    <string name="nfo_export_in_progress">Trwa eksportowanie NFO</string>
+    <string name="rescrap_in_progress">Aktualizowanie całej biblioteki</string>
+    <string name="rescraping_collection">Aktualizowanie zbioru</string>
+    <string name="rescraping_collections">Aktualizowanie zbiorów</string>
+    <string name="rescraping_noimage_collections">Aktualizowanie zbiorów bez ilustracji</string>
+    <string name="rescrap_all_title">Aktualizuj wszystko</string>
     <!-- trakt.tv -->
-    <string name="trakt_toast_syncing_error">Niemożliwa synchronizacja z trakt</string>
+    <string name="trakt_toast_syncing_error">Brak synchronizacji z usługą Trakt</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Brak karty SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -35,7 +40,7 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <string name="sdcard_busy_title">Karta SD jest niedostępna</string>
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
-    <string name="sdcard_busy_message">Niestety, karta SD jest zajęta.</string>
+    <string name="sdcard_busy_message">Karta SD jest zajęta.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
     <string name="sdcard_error_title">Błąd karty SD</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
@@ -47,7 +52,7 @@
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">Pamięć wewnętrzna niedostępna</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
-    <string name="storage_busy_message">Nie można korzystać z pamięci wewnętrznej, gdy urządzenie jest podłączone za pomocą USB.</string>
+    <string name="storage_busy_message">Nie można korzystać z pamięci wewnętrznej, gdy jest podłączona do USB.</string>
     <!-- Title of screen when there was an error accessing the internal storage -->
     <string name="storage_error_title">Błąd pamięci wewnętrznej</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
@@ -59,11 +64,12 @@
     </string-array>
     <string name="tv_show_genre_action">Akcja</string>
     <string name="tv_show_genre_adventure">Przygodowy</string>
-    <string name="tv_show_genre_animation">Animacja</string>
+    <string name="tv_show_genre_animation">Animowane</string>
     <string name="tv_show_genre_anime">Anime</string>
-    <string name="tv_show_genre_children">Dzieci</string>
+    <string name="tv_show_genre_awards_show">Ceremonie rozdania nagród</string>
+    <string name="tv_show_genre_children">Dla dzieci</string>
     <string name="tv_show_genre_comedy">Komedia</string>
-    <string name="tv_show_genre_crime">Kryminał</string>
+    <string name="tv_show_genre_crime">Kryminały</string>
     <string name="tv_show_genre_documentary">Dokumentalny</string>
     <string name="tv_show_genre_drama">Dramat</string>
     <string name="tv_show_genre_family">Familijny</string>
@@ -72,16 +78,24 @@
     <string name="tv_show_genre_game_show">Teleturniej</string>
     <string name="tv_show_genre_home_garden">Dom i Ogród</string>
     <string name="tv_show_genre_horror">Horror</string>
-    <string name="tv_show_genre_mini_series">Miniserie</string>
-    <string name="tv_show_genre_news">Aktualności</string>
+    <string name="tv_show_genre_indie">Niezależne</string>
+    <string name="tv_show_genre_martial_arts">Sztuki walki</string>
+    <string name="tv_show_genre_mini_series">Miniserial</string>
+    <string name="tv_show_genre_musical">Muzyczne</string>
+    <string name="tv_show_genre_mystery">Detektywistyczne</string>
+    <string name="tv_show_genre_news">Wiadomości</string>
+    <string name="tv_show_genre_podcast">Podcasty</string>
     <string name="tv_show_genre_reality">Obyczajowy</string>
     <string name="tv_show_genre_romance">Romans</string>
     <string name="tv_show_genre_science_fiction">Science-Fiction</string>
-    <string name="tv_show_genre_soap">Opera mydlana</string>
-    <string name="tv_show_genre_sport">Sport</string>
+    <string name="tv_show_genre_soap">Telenowela</string>
+    <string name="tv_show_genre_special_interest">Inne zainteresowania</string>
+    <string name="tv_show_genre_sport">Sportowe</string>
+    <string name="tv_show_genre_suspense">Dreszczowiec</string>
     <string name="tv_show_genre_talk_show">Talk show</string>
     <string name="tv_show_genre_thriller">Thriller</string>
     <string name="tv_show_genre_travel">Podróże</string>
+    <string name="tv_show_genre_war">Wojenne</string>
     <string name="tv_show_genre_western">Western</string>
     <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">Akcja</string>
@@ -90,16 +104,16 @@
     <string name="movie_genre_comedy">Komedia</string>
     <string name="movie_genre_crime">Kryminał</string>
     <string name="movie_genre_documentary">Dokumentalny</string>
-    <string name="movie_genre_drama">Dramat</string>
+    <string name="movie_genre_drama">Dramaty</string>
     <string name="movie_family">Familijny</string>
-    <string name="movie_genre_fantasy">Fantasy</string>
+    <string name="movie_genre_fantasy">Fantastyka</string>
     <string name="movie_genre_history">Historyczny</string>
     <string name="movie_genre_horror">Horror</string>
     <string name="movie_genre_music">Muzyczny</string>
-    <string name="movie_genre_mystery">Tajemnica</string>
+    <string name="movie_genre_mystery">Detektywistyczne</string>
     <string name="movie_genre_romance">Romans</string>
-    <string name="movie_genre_science_fiction">Sci-Fi</string>
-    <string name="movie_genre_tv_movie">film TV</string>
+    <string name="movie_genre_science_fiction">Fantastyczno-naukowy</string>
+    <string name="movie_genre_tv_movie">Film telewizyjny</string>
     <string name="movie_genre_thriller">Thriller</string>
     <string name="movie_genre_war">Wojenny</string>
     <string name="movie_genre_western">Western</string>
