@@ -143,6 +143,8 @@ dependencies {
     // no host discovery if switch from 2.1.1 to 2.1.2 supposed to be fixed in 2.1.1 https://github.com/4thline/cling/issues/164
     //api group: 'org.fourthline.cling', name: 'cling-core', version:'2.1.1'
     //implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
+    // investigate https://mvnrepository.com/artifact/org.jupnp/jupnp and https://github.com/UniversalMediaServer/UniversalMediaServer/pull/2789
+    //implementation 'org.jupnp:jupnp:2.6.0'
     api files('libs/cling-core-2.1.2.jar');
     implementation files('libs/cling-support-2.1.2.jar');
     implementation files('libs/seamless-util-1.1.2.jar');
