@@ -582,7 +582,7 @@ public class VideoStoreImportImpl {
                         log.debug("copyData: new batch cursor has size " + allFiles.getCount());
                         while (allFiles.moveToNext()) {
                             cursor_count++;
-                            log.debug("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows);
+                            log.trace("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows);
                             try {
                                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
                                     cv = new ContentValues(ccount + 1);
@@ -595,14 +595,17 @@ public class VideoStoreImportImpl {
                                 }
                                 if (!ids.contains(cv.getAsLong("_id")))
                                     inserter.add(cv);
-                            } catch (IllegalStateException ignored) {} //we silently ignore empty lines - it means content has been deleted while scanning
+                            } catch (IllegalStateException ignored) { log.error("copyData: IllegalStateException ", ignored); } //we silently ignore empty lines - it means content has been deleted while scanning
                         }
                         imported += inserter.execute();
+                        log.debug("copyData: inserted in dB " + imported);
+                    } else {
+                        log.debug("copyData: allFiles null now");
                     }
 
                     index += window;
                     if (allFiles != null) allFiles.close();
-                } while (window < numberOfRows);
+                } while (window < numberOfRows && window > 0); // TODO MARC || window == 0
             }
         }
         return imported;
