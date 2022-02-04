@@ -97,9 +97,11 @@ public class MovieIdParser2 {
                 for (CastMember actor : movie.credits.cast)
                     result.addActorIfAbsent(actor.name, actor.character);
             if (movie.credits.crew != null)
-                for (CrewMember crew : movie.credits.crew)
-                    if (crew.job == DIRECTOR)
+                for (CrewMember crew : movie.credits.crew) {
+                    assert crew.job != null;
+                    if (crew.job.equals(DIRECTOR))
                         result.addDirectorIfAbsent(crew.name);
+                }
         }
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         if (movie.rating != null) result.setContentRating(movie.rating.toString());
