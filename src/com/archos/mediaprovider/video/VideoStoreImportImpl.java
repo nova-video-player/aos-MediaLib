@@ -577,9 +577,9 @@ public class VideoStoreImportImpl {
                                 FILES_PROJECTION_BP, where, whereArgs, BaseColumns._ID + " ASC LIMIT " + index + "," + window));
                     }
                     log.debug("copyData: new batch fetching cursor from index=" + index + ", window=" + window + " -> index+window=" + (index + window) + "<=" + numberOfRows);
-                    log.debug("copyData: new batch cursor has size " + allFiles.getCount());
 
                     if (allFiles != null && allFiles.getCount() >0) {
+                        log.debug("copyData: new batch cursor has size " + allFiles.getCount());
                         while (allFiles.moveToNext()) {
                             cursor_count++;
                             log.debug("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows);
