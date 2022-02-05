@@ -595,7 +595,7 @@ public class VideoStoreImportImpl {
                                 }
                                 if (!ids.contains(cv.getAsLong("_id")))
                                     inserter.add(cv);
-                            } catch (IllegalStateException ignored) { log.error("copyData: IllegalStateException ", ignored); } //we silently ignore empty lines - it means content has been deleted while scanning
+                            } catch (IllegalStateException ignored) { } //we silently ignore empty lines - it means content has been deleted while scanning
                         }
                         imported += inserter.execute();
                         log.debug("copyData: inserted in dB " + imported);
@@ -605,7 +605,7 @@ public class VideoStoreImportImpl {
 
                     index += window;
                     if (allFiles != null) allFiles.close();
-                } while (window < numberOfRows && window > 0); // TODO MARC || window == 0
+                } while (window < numberOfRows && window > 0);
             }
         }
         return imported;
