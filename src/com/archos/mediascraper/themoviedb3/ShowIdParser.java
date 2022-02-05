@@ -85,7 +85,7 @@ public class ShowIdParser {
                     result.addActorIfAbsent(actor.name, actor.character);
             if (serie.credits.crew != null)
                 for (CrewMember crew : serie.credits.crew)
-                    if (crew.job == DIRECTOR)
+                    if (crew.job.equals(DIRECTOR))
                         result.addDirectorIfAbsent(crew.name);
         } else {
             log.warn("getResult: credit is null for showId " + serie.name);
