@@ -58,9 +58,11 @@ public class ShowIdEpisodes {
                     log.warn("getEpisodes: guest_star is null for showId " + showId);
                 }
                 if (tvEpisode.crew != null) {
-                    for (CrewMember crew : tvEpisode.crew)
-                        if (crew.job == DIRECTOR)
+                    for (CrewMember crew : tvEpisode.crew) {
+                        assert crew.job != null;
+                        if (crew.job.equals(DIRECTOR))
                             episodeTags.addDirectorIfAbsent(crew.name);
+                    }
                 } else {
                     log.debug("getEpisodes: crew is null for showId " + showId);
                 }
