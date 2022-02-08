@@ -119,8 +119,10 @@ public class TagsFactory {
             actorsMS = getCol(c, VideoColumns.SCRAPER_ACTORS);
             actorsE = getCol(c, VideoColumns.SCRAPER_E_ACTORS);
             directorsME = getCol(c, VideoColumns.SCRAPER_DIRECTORS);
+            writersME = getCol(c, VideoColumns.SCRAPER_WRITERS);
             // unused?
             directorsS = getCol(c, VideoColumns.SCRAPER_S_DIRECTORS);
+            writersS = getCol(c, VideoColumns.SCRAPER_S_WRITERS);
             genresMS = getCol(c, VideoColumns.SCRAPER_GENRES);
             studiosMS = getCol(c, VideoColumns.SCRAPER_STUDIOS);
             seasonE = getCol(c, VideoColumns.SCRAPER_E_SEASON);
@@ -189,6 +191,8 @@ public class TagsFactory {
         public final int actorsE;
         public final int directorsME;
         public final int directorsS;
+        public final int writersME;
+        public final int writersS;
         public final int genresMS;
         public final int studiosMS;
         public final int seasonE;
@@ -247,7 +251,9 @@ public class TagsFactory {
         VideoColumns.SCRAPER_ACTORS,
         VideoColumns.SCRAPER_E_ACTORS,
         VideoColumns.SCRAPER_DIRECTORS,
+        VideoColumns.SCRAPER_WRITERS,
         VideoColumns.SCRAPER_S_DIRECTORS,
+        VideoColumns.SCRAPER_S_WRITERS,
         VideoColumns.SCRAPER_GENRES,
         VideoColumns.SCRAPER_STUDIOS,
         VideoColumns.SCRAPER_E_SEASON,
@@ -313,7 +319,9 @@ public class TagsFactory {
     VideoColumns.SCRAPER_ACTORS,
     VideoColumns.SCRAPER_E_ACTORS,
     VideoColumns.SCRAPER_DIRECTORS,
+    VideoColumns.SCRAPER_WRITERS,
     VideoColumns.SCRAPER_S_DIRECTORS,
+    VideoColumns.SCRAPER_S_WRITERS,
     VideoColumns.SCRAPER_GENRES,
     VideoColumns.SCRAPER_STUDIOS,
     VideoColumns.SCRAPER_E_SEASON,
@@ -362,6 +370,7 @@ public class TagsFactory {
             String backdropUrlMS = getStringCol(cur, cols.backdropUrlMS);
             String actorsMS = getStringCol(cur, cols.actorsMS);
             String directorsME = getStringCol(cur, cols.directorsME);
+            String writersME = getStringCol(cur, cols.writersME);
             String genresMS = getStringCol(cur, cols.genresMS);
             String studiosMS = getStringCol(cur, cols.studiosMS);
             long backdropId = getLongCol(cur, cols.backdropId);
@@ -404,6 +413,7 @@ public class TagsFactory {
                 tag.setPlot(plotME);
                 tag.setActorsFormatted(actorsMS);
                 tag.setDirectorsFormatted(directorsME);
+                tag.setWritersFormatted(writersME);
                 tag.setGenresFormatted(genresMS);
                 tag.setStudiosFormatted(studiosMS);
 
@@ -478,6 +488,7 @@ public class TagsFactory {
                 String actorsE = getStringCol(cur, cols.actorsE);
                 epTag.setActorsFormatted(actorsE);
                 epTag.setDirectorsFormatted(directorsME);
+                epTag.setWritersFormatted(writersME);
 
                 if(coverME != null && posterId <= 0)
                     epTag.setCover(new File(coverME));
@@ -515,7 +526,9 @@ public class TagsFactory {
                     sTag.setPlot(plotS);
                     sTag.setActorsFormatted(actorsMS);
                     String directorsS =getStringCol(cur, cols.directorsS);
+                    String writersS =getStringCol(cur, cols.writersS);
                     sTag.setDirectorsFormatted(directorsS);
+                    sTag.setWritersFormatted(writersS);
                     sTag.setGenresFormatted(genresMS);
                     sTag.setStudiosFormatted(studiosMS);
 
@@ -580,6 +593,7 @@ public class TagsFactory {
             String actorName = getStringCol(cur, ScraperStore.Movie.Actor.NAME);
             String role = getStringCol(cur, ScraperStore.Movie.Actor.ROLE);
             String director = getStringCol(cur, ScraperStore.Movie.Director.NAME);
+            String writer = getStringCol(cur, ScraperStore.Movie.Writer.NAME);
             String genre = getStringCol(cur, ScraperStore.Movie.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Movie.Studio.NAME);
 
@@ -606,6 +620,7 @@ public class TagsFactory {
 
             tag.addActorIfAbsent(actorName, role);
             tag.addDirectorIfAbsent(director);
+            tag.addWriterIfAbsent(writer);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
 
@@ -638,6 +653,7 @@ public class TagsFactory {
             String actorName = getStringCol(cur, ScraperStore.Show.Actor.NAME);
             String role = getStringCol(cur, ScraperStore.Show.Actor.ROLE);
             String director = getStringCol(cur, ScraperStore.Show.Director.NAME);
+            String writer = getStringCol(cur, ScraperStore.Show.Writer.NAME);
             String genre = getStringCol(cur, ScraperStore.Show.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Show.Studio.NAME);
 
@@ -662,6 +678,7 @@ public class TagsFactory {
 
             tag.addActorIfAbsent(actorName, role);
             tag.addDirectorIfAbsent(director);
+            tag.addWriterIfAbsent(writer);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
 
@@ -692,6 +709,7 @@ public class TagsFactory {
             String actorName = getStringCol(cur, ScraperStore.Episode.Actor.NAME);
             String role = getStringCol(cur, ScraperStore.Episode.Actor.ROLE);
             String director = getStringCol(cur, ScraperStore.Episode.Director.NAME);
+            String writer = getStringCol(cur, ScraperStore.Episode.Writer.NAME);
             String cover = getStringCol(cur, ScraperStore.Episode.COVER);
 
             EpisodeTags tag = tags.get(id);
@@ -711,6 +729,7 @@ public class TagsFactory {
             tag.setShowId(show);
             tag.addActorIfAbsent(actorName, role);
             tag.addDirectorIfAbsent(director);
+            tag.addWriterIfAbsent(writer);
 
             if(cover != null)
                 tag.setCover(new File(cover));
@@ -816,6 +835,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addDirectorIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Writers
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Writer.URI.MOVIE, movieId),
+                    new String[] {
+                            ScraperStore.Movie.Writer.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addWriterIfAbsent(c.getString(0));
                 }
                 c.close();
             }
@@ -958,6 +989,18 @@ public class TagsFactory {
                 }
                 c.close();
             }
+            // Writers
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Writer.URI.EPISODE, episodeId),
+                    new String[] {
+                            ScraperStore.Episode.Writer.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addWriterIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
             ShowTags showTags = buildShowTags(context, result.getShowId());
             result.setShowTags(showTags);
             // posters -- need ShowTags
@@ -1063,6 +1106,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     showTags.addDirectorIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Writers
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Writer.URI.SHOW, showId),
+                    new String[] {
+                            ScraperStore.Show.Writer.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    showTags.addWriterIfAbsent(c.getString(0));
                 }
                 c.close();
             }

@@ -1263,29 +1263,33 @@ public final class VideoStore {
              */
             public static final String SCRAPER_E_ACTORS = "e_actors";
             /**
-             * MediaScraper: Movie or Episode Directors
+             * MediaScraper: Movie or Episode Directors, Writers
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_DIRECTORS = "directors";
+            public static final String SCRAPER_WRITERS = "writers";
             /**
-             * MediaScraper: Movie Directors
+             * MediaScraper: Movie Directors, Writers
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_M_DIRECTORS = "m_directors";
+            public static final String SCRAPER_M_WRITERS = "m_writers";
             /**
-             * MediaScraper: Episode Directors
+             * MediaScraper: Episode Directors, Writers
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_E_DIRECTORS = "e_directors";
+            public static final String SCRAPER_E_WRITERS = "e_writers";
             /**
-             * MediaScraper: Show Directors (seems to be unused)
+             * MediaScraper: Show Directors, Writers (seems to be unused)
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_S_DIRECTORS = "s_directors";
+            public static final String SCRAPER_S_WRITERS = "s_writers";
             /**
              * MediaScraper: Movie / Show Genres
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped

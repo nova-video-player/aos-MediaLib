@@ -37,6 +37,7 @@ public class ShowIdEpisodes {
     private static final Logger log = LoggerFactory.getLogger(ShowIdEpisodes.class);
 
     private static final String DIRECTOR = "Director";
+    private static final String WRITER = "Writer";
 
     public static Map<String, EpisodeTags> getEpisodes(int showId, List<TvEpisode> tvEpisodes, Map<Integer, TvSeason> tvSeasons, ShowTags showTags, String language,
                                                        MyTmdb tmdb, Context context) {
@@ -62,6 +63,15 @@ public class ShowIdEpisodes {
                         assert crew.job != null;
                         if (crew.job.equals(DIRECTOR))
                             episodeTags.addDirectorIfAbsent(crew.name);
+                    }
+                } else {
+                    log.debug("getEpisodes: crew is null for showId " + showId);
+                }
+                if (tvEpisode.crew != null) {
+                    for (CrewMember crew : tvEpisode.crew) {
+                        assert crew.job != null;
+                        if (crew.job.equals(WRITER))
+                            episodeTags.addWriterIfAbsent(crew.name);
                     }
                 } else {
                     log.debug("getEpisodes: crew is null for showId " + showId);

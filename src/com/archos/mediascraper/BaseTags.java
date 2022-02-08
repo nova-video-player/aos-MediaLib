@@ -75,7 +75,9 @@ public abstract class BaseTags implements Parcelable {
     protected String mActorsFormatted;
     protected SpannableString mSpannableActorsFormatted;
     protected List<String> mDirectors;
+    protected List<String> mWriters;
     protected String mDirectorsFormatted;
+    protected String mWritersFormatted;
     protected Uri mFile;
     protected long mVideoId;
     protected List<ScraperImage> mPosters;
@@ -87,6 +89,7 @@ public abstract class BaseTags implements Parcelable {
 
     public BaseTags() {
         mDirectors = new LinkedList<String>();
+        mWriters = new LinkedList<String>();
         mActors = new LinkedHashMap<String, String>();
     }
 
@@ -104,10 +107,14 @@ public abstract class BaseTags implements Parcelable {
     public boolean directorExists(String name) {
         return mDirectors.contains(name);
     }
+    public boolean writerExists(String name) {
+        return mWriters.contains(name);
+    }
 
     public Map<String, String> getActors() { return java.util.Collections.unmodifiableMap(mActors); }
     public Map<String, String> getSet() { return mSet; }
     public List<String> getDirectors() { return mDirectors; }
+    public List<String> getWriters() { return mWriters; }
     public Uri getFile() { return mFile; }
     public long getId() { return mId; }
     public long getVideoId() { return mVideoId; }
@@ -133,6 +140,10 @@ public abstract class BaseTags implements Parcelable {
     public String getDirectorsFormatted() {
         ensureFormattedDirectors();
         return mDirectorsFormatted;
+    }
+    public String getWritersFormatted() {
+        ensureFormattedWriters();
+        return mWritersFormatted;
     }
 
     public String getActorsFormatted() {
@@ -207,6 +218,13 @@ public abstract class BaseTags implements Parcelable {
     private void ensureFormattedDirectors() {
         if (mDirectorsFormatted == null && mDirectors != null && !mDirectors.isEmpty()) {
             mDirectorsFormatted = TextUtils.join(", ", mDirectors);
+        }
+    }
+
+    /** does nothing if mWritersFormatted is already set, otherwise builds from mWriters */
+    private void ensureFormattedWriters() {
+        if (mWritersFormatted == null && mWriters != null && !mWriters.isEmpty()) {
+            mWritersFormatted = TextUtils.join(", ", mWriters);
         }
     }
 
@@ -378,8 +396,12 @@ public abstract class BaseTags implements Parcelable {
     public void addDirectorIfAbsent(String director, char... splitCharacters) {
         addIfAbsentSplitNTrim(director, mDirectors, splitCharacters);
     }
+    public void addWriterIfAbsent(String writer, char... splitCharacters) {
+        addIfAbsentSplitNTrim(writer, mWriters, splitCharacters);
+    }
 
     public void setDirectors(List<String> directors) { mDirectors = directors; }
+    public void setWriters(List<String> writers) { mWriters = writers; }
 
     public abstract void setCover(File file);
 
@@ -393,6 +415,7 @@ public abstract class BaseTags implements Parcelable {
     public void setBackdrops(List<ScraperImage> list) { mBackdrops = list; }
     public void setActorsFormatted(String actors) { mActorsFormatted = actors; }
     public void setDirectorsFormatted(String directors) { mDirectorsFormatted = directors; }
+    public void setWritersFormatted(String writers) { mWritersFormatted = writers; }
     public void setContentRating(String contentRating) { mContentRating = contentRating; }
     public void setImdbId(String imdbId) { mImdbId = imdbId; }
     public void setOnlineId(long onlineId) { mOnlineId = onlineId; }
@@ -413,7 +436,7 @@ public abstract class BaseTags implements Parcelable {
 
     @Override
     public String toString() {
-        return " TITLE=" + mTitle + " / RATING=" + mRating + " / DIRECTORS=" + mDirectors + " / PLOT=" + mPlot +
+        return " TITLE=" + mTitle + " / RATING=" + mRating + " / DIRECTORS=" + mDirectors + " / WRITERS=" + mWriters + " / PLOT=" + mPlot +
             " / ACTORS=" + mActors + " / COVER=" + getCover();
     }
 
@@ -428,6 +451,7 @@ public abstract class BaseTags implements Parcelable {
         mPlot = in.readString();
         in.readMap(mActors, LinkedHashMap.class.getClassLoader());
         in.readStringList(mDirectors);
+        in.readStringList(mWriters);
         mFile = Uri.parse(in.readString());
     }
 
@@ -438,6 +462,7 @@ public abstract class BaseTags implements Parcelable {
         out.writeString(nonNull(mPlot));
         out.writeMap(mActors);
         out.writeStringList(mDirectors);
+        out.writeStringList(mWriters);
         out.writeString(mFile!=null?mFile.toString():"");
     }
 

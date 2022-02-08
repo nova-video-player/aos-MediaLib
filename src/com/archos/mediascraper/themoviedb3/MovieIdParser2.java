@@ -52,6 +52,7 @@ public class MovieIdParser2 {
     private static final Logger log = LoggerFactory.getLogger(MovieIdParser2.class);
 
     private static final String DIRECTOR = "Director";
+    private static final String WRITER = "Writer";
 
     private final static int limitTrailers = 40; // limit number of trailers
 
@@ -101,6 +102,12 @@ public class MovieIdParser2 {
                     assert crew.job != null;
                     if (crew.job.equals(DIRECTOR))
                         result.addDirectorIfAbsent(crew.name);
+                }
+            if (movie.credits.crew != null)
+                for (CrewMember crew : movie.credits.crew) {
+                    assert crew.job != null;
+                    if (crew.job.equals(WRITER))
+                        result.addWriterIfAbsent(crew.name);
                 }
         }
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
