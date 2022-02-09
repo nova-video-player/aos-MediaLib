@@ -47,7 +47,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 39;
+    private static final int DATABASE_VERSION = 43;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -390,7 +390,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 
     // ------------- ---##[ Video Files          ]## ---------------------------
     public static final String VIDEO_VIEW_NAME = "video";
-    private static final String CREATE_VIDEO_VIEW_V32 =
+    private static final String CREATE_VIDEO_VIEW_V33 =
             "CREATE VIEW " + VIDEO_VIEW_NAME + " AS SELECT \n" +
                     "    f._id,\n" +
                     "    _data,\n" +
@@ -569,7 +569,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    (Archos_smbserver == 0 OR\n" +
                     "    Archos_smbserver IN (SELECT _id FROM smb_server WHERE active == 1))";
 
-	private static final String CREATE_VIDEO_VIEW_V37 =
+	private static final String CREATE_VIDEO_VIEW_V41 =
 			"CREATE VIEW " + VIDEO_VIEW_NAME + " AS SELECT \n" +
 					"    f._id,\n" +
 					"    _data,\n" +
@@ -750,7 +750,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"    Archos_smbserver IN (SELECT _id FROM smb_server WHERE active == 1))";
 
 	// add movie collection information
-    private static final String CREATE_VIDEO_VIEW_V38 =
+    private static final String CREATE_VIDEO_VIEW_V42 =
             "CREATE VIEW " + VIDEO_VIEW_NAME + " AS SELECT \n" +
                     "    f._id,\n" +
                     "    _data,\n" +
@@ -1116,7 +1116,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         ScraperTables.create(db);
 
         // video view that includes scraper data
-        db.execSQL(CREATE_VIDEO_VIEW_V32);
+        db.execSQL(CREATE_VIDEO_VIEW_V33);
 
         // no longer unique _data column, bucket_id added.
         db.execSQL(CREATE_SUBTITLES_TABLE_V17);
@@ -1150,22 +1150,22 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             // triggers database deletion
             deleteDatabase();
         }
-        if (oldVersion < 37) {
+        if (oldVersion < 41) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
-			ScraperTables.upgradeTo(db, 37);
-			db.execSQL(CREATE_VIDEO_VIEW_V37);
+			ScraperTables.upgradeTo(db, 41);
+			db.execSQL(CREATE_VIDEO_VIEW_V41);
         }
-        if (oldVersion < 38) {
+        if (oldVersion < 42) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
-            ScraperTables.upgradeTo(db, 38);
-            db.execSQL(CREATE_VIDEO_VIEW_V38);
+            ScraperTables.upgradeTo(db, 42);
+            db.execSQL(CREATE_VIDEO_VIEW_V42);
         }
-        if (oldVersion < 39) {
+        if (oldVersion < 43) {
             // drop triggers first before recreation
             SQLiteUtils.dropTrigger(db, "movie_delete");
             SQLiteUtils.dropTrigger(db, "episode_delete");
             SQLiteUtils.dropTrigger(db, "show_delete");
-            ScraperTables.upgradeTo(db, 39);
+            ScraperTables.upgradeTo(db, 43);
         }
     }
 

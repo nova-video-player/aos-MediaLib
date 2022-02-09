@@ -1405,17 +1405,17 @@ public final class ScraperTables {
     }
 
     public static void upgradeTo(SQLiteDatabase db, int toVersion) {
-        if (toVersion == 37) {
+        if (toVersion == 41) {
             log.debug("upgradeTo: " + toVersion);
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.NOVA_PINNED + " INTEGER DEFAULT (0)");
         }
-        if (toVersion == 38) {
+        if (toVersion == 42) {
             log.debug("upgradeTo: " + toVersion);
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_C_ID + " INTEGER DEFAULT (-1)");
             db.execSQL(CREATE_MOVIE_COLLECTION_TABLE);
         }
-        if (toVersion == 39) {
+        if (toVersion == 43) {
             log.debug("upgradeTo: " + toVersion);
             // create indexes to every non foreign keys with delete to speed up huge batch of delete in files_scanned during directory moves on network shares
             // performance hit comes from the cascade of triggers
