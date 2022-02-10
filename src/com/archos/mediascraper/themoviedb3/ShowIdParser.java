@@ -20,6 +20,7 @@ import com.archos.medialib.R;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ShowTags;
 import com.uwetrottmann.tmdb2.entities.CastMember;
+import com.uwetrottmann.tmdb2.entities.ContentRating;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.Network;
@@ -55,8 +56,11 @@ public class ShowIdParser {
         log.debug("getResult: found title=" + serie.name);
 
         // TODO MARC RATING NULL should parse content.rating
-        if (serie.rating != null) result.setContentRating(serie.rating.toString());
-        else log.debug("getResult: rating null for " + serie.name);
+        if (serie.content_ratings.results != null)
+            for (ContentRating results: serie.content_ratings.results)
+                if (results.iso_3166_1.equals("US"))
+                    result.setContentRating(results.rating);
+
         result.setImdbId(serie.external_ids.imdb_id);
         result.setOnlineId(serie.id);
         log.debug("getResult: onlineId=" + serie.id + ", imdbId=" + serie.external_ids.imdb_id);
