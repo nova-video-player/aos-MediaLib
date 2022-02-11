@@ -31,6 +31,8 @@ import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.Image;
 import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.entities.Movie;
+import com.uwetrottmann.tmdb2.entities.ReleaseDate;
+import com.uwetrottmann.tmdb2.entities.ReleaseDatesResult;
 import com.uwetrottmann.tmdb2.entities.Videos;
 
 import org.slf4j.Logger;
@@ -104,7 +106,18 @@ public class MovieIdParser2 {
                 }
         }
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
-        if (movie.rating != null) result.setContentRating(movie.rating.toString());
+        if (movie.release_dates.results != null) {
+            for (int i = 0; i < movie.release_dates.results.size(); i++) {
+                ReleaseDatesResult releaseDatesResult = movie.release_dates.results.get(i);
+                if (releaseDatesResult.iso_3166_1.equals("US")) {
+                    for (int j = 0; j < releaseDatesResult.release_dates.size(); j++) {
+                        ReleaseDate releaseDate = releaseDatesResult.release_dates.get(j);
+                        result.setContentRating(releaseDate.certification);
+                    }
+                }
+            }
+        }
+
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
         List<ScraperTrailer> trailers = new ArrayList<>(movie.videos.results.size());

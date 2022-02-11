@@ -52,7 +52,7 @@ public class MovieId2 {
 
         log.debug("getBaseInfo: quering tmdb for movieId " + movieId + " in " + language);
         try {
-            movieResponse = moviesService.summary((int) movieId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.CONTENT_RATINGS, AppendToResponseItem.VIDEOS), options).execute();
+            movieResponse = moviesService.summary((int) movieId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.RELEASE_DATES, AppendToResponseItem.VIDEOS), options).execute();
             switch (movieResponse.code()) {
                 case 401: // auth issue
                     log.debug("search: auth error");
