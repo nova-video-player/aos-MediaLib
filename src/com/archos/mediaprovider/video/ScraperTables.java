@@ -1415,7 +1415,7 @@ public final class ScraperTables {
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + VideoStore.Video.VideoColumns.SCRAPER_C_ID + " INTEGER DEFAULT (-1)");
             db.execSQL(CREATE_MOVIE_COLLECTION_TABLE);
         }
-        if (toVersion == 40) {
+        if (toVersion == 39) {
             log.debug("upgradeTo: " + toVersion);
             // create indexes to every non foreign keys with delete to speed up huge batch of delete in files_scanned during directory moves on network shares
             // performance hit comes from the cascade of triggers
@@ -1467,6 +1467,10 @@ public final class ScraperTables {
             log.debug("upgradeTo: creating movie_delete trigger " + MOVIE_DELETE_TRIGGER_CREATE_v2);
             db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
             log.debug("upgradeTo: all good");
+        }
+        if (toVersion == 40) {
+            log.debug("upgradeTo: " + toVersion);
+            db.execSQL(WRITERS_TABLE_CREATE);
         }
     }
 }
