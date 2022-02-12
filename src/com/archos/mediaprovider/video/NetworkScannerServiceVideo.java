@@ -103,7 +103,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final int MESSAGE_KILL = 1;
     private static final int MESSAGE_DO_SCAN = 2;
     private static final int MESSAGE_DO_UNSCAN = 3;
-    public static final String RECORD_SCAN_LOG_EXTRA = "record_scan_log_extra";
     public static final String RECORD_ON_FAIL_PREFERENCE = "record_on_fail_preference_extra";
     public static final String RECORD_END_OF_SCAN_PREFERENCE = "record_on_end_preference_extra";
 
@@ -114,7 +113,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private final ConcurrentHashMap<String, Object> mUnScanRequests = new ConcurrentHashMap<String, Object>(4, 0.75f, 2);
     private Blacklist mBlacklist;
     private static boolean sIsScannerAlive;
-    private boolean mRecordLog;
     private String mRecordOnFailPreference;
     private String mRecordEndOfScanPreference;
 
@@ -256,14 +254,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             return START_NOT_STICKY;
         if(intent.getExtras()!=null) {
             log.debug("extra not null");
-            mRecordLog = intent.getExtras().getBoolean(RECORD_SCAN_LOG_EXTRA, false);
             mRecordOnFailPreference = intent.getExtras().getString(RECORD_ON_FAIL_PREFERENCE, null);
             if(mRecordEndOfScanPreference==null) //reset only when null to avoid pred not being written when another intent with no pref comes just after (this will be written when service stops)
             mRecordEndOfScanPreference = intent.getExtras().getString(RECORD_END_OF_SCAN_PREFERENCE,null);
         }
         else {
             log.debug("extra null");
-            mRecordLog = false;
             mRecordOnFailPreference = null;
             mRecordEndOfScanPreference =  null;
         }
@@ -404,18 +400,6 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         if (f != null) {
             log.debug("doScan path resolved to:" + f.getUri().toString());
             ContentResolver cr = getContentResolver();
-            if(mRecordLog) {
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
-                    Date dt = new Date();
-                    String S = sdf.format(dt);
-                    FileWriter fw = NetworkAutoRefresh.getDebugFileWriter(this);
-                    fw.append(S + ": start of scan for " + what + "\n");
-                    fw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
             WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             WifiLock wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
             wifiLock.acquire();
@@ -504,23 +488,11 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             sendBroadcast(intent);
             // and cancel the Notification
             nm.cancel(NOTIFICATION_ID);
-            if(mRecordLog) {
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
-                    Date dt = new Date();
-                    String S = sdf.format(dt);
-                    FileWriter fw = NetworkAutoRefresh.getDebugFileWriter(this);
-                    fw.append(S + " end of scan for " + what + "\n");
-                    fw.append("added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount + " listed files " + mFoundFiles + "\n");
-                    fw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            log.trace("doScan: added:" + insertCount + " modified:" + updateCount + " deleted:" + deleteCount + " listed files " + mFoundFiles);
             wifiLock.release();
 
         }
-        else if(mRecordLog&&mRecordOnFailPreference!=null){
+        else if(mRecordOnFailPreference!=null){
             PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();//unable to reach server
         }
         if (log.isDebugEnabled()) {
