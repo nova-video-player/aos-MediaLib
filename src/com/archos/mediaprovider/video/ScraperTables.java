@@ -145,7 +145,6 @@ public final class ScraperTables {
         "m_content_rating TEXT," + // also content rating e.g. "PG-13"
         ScraperStore.Movie.ACTORS_FORMATTED + " TEXT," +
         ScraperStore.Movie.DIRECTORS_FORMATTED + " TEXT," +
-        ScraperStore.Movie.WRITERS_FORMATTED + " TEXT," +
         ScraperStore.Movie.GERNES_FORMATTED + " TEXT," +
         ScraperStore.Movie.STUDIOS_FORMATTED + " TEXT" +
         ")";
@@ -167,7 +166,6 @@ public final class ScraperTables {
         "s_content_rating TEXT," + // also content rating e.g. "TV-14"
         ScraperStore.Show.ACTORS_FORMATTED + " TEXT," +
         ScraperStore.Show.DIRECTORS_FORMATTED + " TEXT," +
-        ScraperStore.Show.WRITERS_FORMATTED + " TEXT," +
         ScraperStore.Show.GERNES_FORMATTED + " TEXT," +
         ScraperStore.Show.STUDIOS_FORMATTED + " TEXT" +
         ")";
@@ -191,7 +189,6 @@ public final class ScraperTables {
         "e_imdb_id TEXT," + // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
         ScraperStore.Episode.ACTORS_FORMATTED + " TEXT," +
         ScraperStore.Episode.DIRECTORS_FORMATTED + " TEXT," +
-        ScraperStore.Episode.WRITERS_FORMATTED + " TEXT," +
         ScraperStore.Episode.PICTURE + " TEXT" +
         ")";
 
@@ -724,7 +721,6 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
-                    "delete from writer where _id in (select _id from v_writer_deletable); " +
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
@@ -746,7 +742,6 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
-                    "delete from writer where _id in (select _id from v_writer_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             // set scraper type / id to -1 if something is refering this episode
             "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
@@ -771,7 +766,6 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
-                    "delete from writer where _id in (select _id from v_writer_deletable); " +
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +
@@ -1292,6 +1286,9 @@ public final class ScraperTables {
         }
         if (toVersion == 40) {
             log.debug("upgradeTo: " + toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.WRITERS_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.WRITERS_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.WRITERS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL(WRITERS_TABLE_CREATE);
             db.execSQL(WRITERS_MOVIE_TABLE_CREATE);
             db.execSQL(WRITERS_EPISODE_TABLE_CREATE);
