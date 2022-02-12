@@ -274,7 +274,6 @@ public final class ScraperTables {
                     "PRIMARY KEY(" + WRITERS_EPISODE_ID_EPISODE + "," +
                     WRITERS_EPISODE_ID_WRITER + "))";
 
-
     /*
      * Tables associating movie and show tables to studios
      */
@@ -291,7 +290,6 @@ public final class ScraperTables {
         PRODUCES_SHOW_ID_STUDIO + " INTEGER REFERENCES " + STUDIOS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
         "PRIMARY KEY(" + PRODUCES_SHOW_ID_SHOW + "," +
         PRODUCES_SHOW_ID_STUDIO + "))";
-
 
     /*
      *  Tables associating movie, show and episode tables with actors
@@ -319,7 +317,6 @@ public final class ScraperTables {
         GUESTS_ROLE + " TEXT," +
         "PRIMARY KEY(" + GUESTS_ID_EPISODE + "," +
         GUESTS_ID_ACTOR + "))";
-
 
     /*
      *  Tables associating movie and show tables with genres
@@ -453,7 +450,6 @@ public final class ScraperTables {
         " WHERE " + ScraperStore.Director.NAME + " = NEW." + ScraperStore.Movie.Director.NAME + "; " +
         "END";
 
-
     private static final String WRITERS_MOVIE_VIEW_CREATE =
             "CREATE VIEW " + WRITERS_MOVIE_VIEW_NAME + " AS SELECT " +
                     WRITERS_MOVIE_TABLE_NAME + "." +
@@ -478,7 +474,6 @@ public final class ScraperTables {
                     " FROM " + WRITERS_TABLE_NAME +
                     " WHERE " + ScraperStore.Writer.NAME + " = NEW." + ScraperStore.Movie.Writer.NAME + "; " +
                     "END";
-
 
     private static final String FILMS_SHOW_VIEW_CREATE =
         "CREATE VIEW " + FILMS_SHOW_VIEW_NAME + " AS SELECT " +
@@ -703,7 +698,6 @@ public final class ScraperTables {
             "LEFT JOIN films_episode ON films_episode.director_films=director._id " +
             "WHERE coalesce(movie_films, show_films, episode_films) IS NULL";
 
-
     private static final String WRITER_DELETABLE_VIEW_CREATE =
             "CREATE VIEW v_writer_deletable AS " +
                     "SELECT _id FROM writer " +
@@ -711,7 +705,6 @@ public final class ScraperTables {
                     "LEFT JOIN writers_show ON writers_show.writer_writers=writer._id " +
                     "LEFT JOIN writers_episode ON writers_episode.writer_writers=writer._id " +
                     "WHERE coalesce(movie_writers, show_writers, episode_writers) IS NULL";
-
 
     private static final String GENRE_DELETABLE_VIEW_CREATE =
             "CREATE VIEW v_genre_deletable AS " +
@@ -1037,152 +1030,6 @@ public final class ScraperTables {
             ") \n" +
             " GROUP BY _id";
 
-    // views that combine above information with show / episode / movie
-    public static final String VIEW_SHOW_ALL = "v_show_all";
-    private static final String CREATE_VIEW_SHOW_ALL_V0 =
-            "CREATE VIEW " + VIEW_SHOW_ALL + " AS\n" +
-            "SELECT *\n" +
-            "  FROM show\n" +
-            "       NATURAL LEFT JOIN v_show_actors\n" +
-            "       NATURAL LEFT JOIN v_show_directors\n" +
-            "       NATURAL LEFT JOIN v_show_writers\n" +
-            "       NATURAL LEFT JOIN v_show_genres\n" +
-            "       NATURAL LEFT JOIN v_show_studios";
-    public static final String VIEW_EPISODE_ALL = "v_episode_all";
-    private static final String CREATE_VIEW_EPISODE_ALL_V0 =
-            "CREATE VIEW " + VIEW_EPISODE_ALL + " AS\n" +
-            "SELECT *\n" +
-            "  FROM episode\n" +
-            "       NATURAL LEFT JOIN v_episode_actors\n" +
-            "       NATURAL LEFT JOIN v_episode_directors\n" +
-            "       NATURAL LEFT JOIN v_episode_writers";
-    public static final String VIEW_MOVIE_ALL = "v_movie_all";
-    private static final String CREATE_VIEW_MOVIE_ALL_V0 =
-            "CREATE VIEW " + VIEW_MOVIE_ALL + " AS\n" +
-            "SELECT *\n" +
-            "  FROM movie\n" +
-            "       NATURAL LEFT JOIN v_movie_actors\n" +
-            "       NATURAL LEFT JOIN v_movie_directors\n" +
-            "       NATURAL LEFT JOIN v_movie_writers\n" +
-            "       NATURAL LEFT JOIN v_movie_genres\n" +
-            "       NATURAL LEFT JOIN v_movie_studios";
-
-    public static final String VIEW_VIDEO_ALL = "v_video_all";
-    private static final String CREATE_VIEW_VIDEO_ALL_V0 =
-            "CREATE VIEW " + VIEW_VIDEO_ALL + " AS\n" +
-            "SELECT\n" +
-            "    e.video_id AS _id,\n" +
-            "    NULL AS m_id,\n" +
-            "    e.show_episode AS s_id,\n" +
-            "    e._id AS e_id,\n" +
-            "    s.name_show AS scraper_name,\n" +
-            "    NULL AS m_name,\n" +
-            "    s.name_show AS s_name,\n" +
-            "    e.name_episode AS e_name,\n" +
-            "    e.season_episode AS e_season,\n" +
-            "    e.number_episode AS e_episode,\n" +
-            "    e.aired_episode AS e_aired,\n" +
-            "    s.premiered_show AS s_premiered,\n" +
-            "    NULL AS m_year,\n" +
-            "    e.rating_episode AS rating,\n" +
-            "    NULL AS m_rating,\n" +
-            "    e.rating_episode AS e_rating,\n" +
-            "    s.rating_show AS s_rating,\n" +
-            "    e.plot_episode AS plot,\n" +
-            "    NULL AS m_plot,\n" +
-            "    e.plot_episode AS e_plot,\n" +
-            "    s.plot_show AS s_plot,\n" +
-            "    s.actors AS actors,\n" +
-            "    NULL AS m_actors,\n" +
-            "    s.actors AS s_actors,\n" +
-            "    e.guests AS e_actors,\n" +
-            "    e.directors AS directors,\n" +
-            "    NULL AS m_directors,\n" +
-            "    e.directors AS e_directors,\n" +
-            "    s.directors AS s_directors,\n" +
-
-                    "    e.writers AS writers,\n" +
-                    "    NULL AS m_writers,\n" +
-                    "    e.writers AS e_writers,\n" +
-                    "    s.writers AS s_writers,\n" +
-
-            "    s.genres AS genres,\n" +
-            "    NULL AS m_genres,\n" +
-            "    s.genres AS s_genres,\n" +
-            "    s.studios AS studios,\n" +
-            "    NULL AS m_studios,\n" +
-            "    s.studios AS s_studios,\n" +
-            "    coalesce(e.cover_episode, s.cover_show) AS cover,\n" +
-            "    NULL AS m_cover,\n" +
-            "    e.cover_episode AS e_cover,\n" +
-            "    s.cover_show AS s_cover,\n" +
-            "    s.backdrop_url_show AS bd_url,\n" +
-            "    NULL AS m_bd_url,\n" +
-            "    s.backdrop_url_show AS s_bd_url,\n" +
-            "    s.backdrop_show AS bd_file,\n" +
-            "    NULL AS m_bd_file,\n" +
-            "    s.backdrop_show AS s_bd_file\n" +
-            "FROM\n" +
-            "    v_episode_all AS e\n" +
-            "        LEFT JOIN\n" +
-            "        v_show_all AS s\n" +
-            "        ON\n" +
-            "        (s_id = s._id)\n" +
-            "UNION\n" +
-            "SELECT\n" +
-            "    m.video_id AS _id,\n" +
-            "    m._id AS m_id,\n" +
-            "    NULL AS s_id,\n" +
-            "    NULL AS e_id,\n" +
-            "    m.name_movie AS scraper_name,\n" +
-            "    m.name_movie AS m_name,\n" +
-            "    NULL AS s_name,\n" +
-            "    NULL AS e_name,\n" +
-            "    NULL AS e_season,\n" +
-            "    NULL AS e_episode,\n" +
-            "    NULL AS e_aired,\n" +
-            "    NULL AS s_premiered,\n" +
-            "    m.year_movie AS m_year,\n" +
-            "    m.rating_movie AS rating,\n" +
-            "    m.rating_movie AS m_rating,\n" +
-            "    NULL AS e_rating,\n" +
-            "    NULL AS s_rating,\n" +
-            "    m.plot_movie AS plot,\n" +
-            "    m.plot_movie AS m_plot,\n" +
-            "    NULL AS e_plot,\n" +
-            "    NULL AS s_plot,\n" +
-            "    m.actors AS actors,\n" +
-            "    m.actors AS m_actors,\n" +
-            "    NULL AS s_actors,\n" +
-            "    NULL AS e_actors,\n" +
-            "    m.directors AS directors,\n" +
-            "    m.directors AS m_directors,\n" +
-            "    NULL AS e_directors,\n" +
-            "    NULL AS s_directors,\n" +
-                    "    m.writers AS writers,\n" +
-                    "    m.writers AS m_writers,\n" +
-                    "    NULL AS e_writers,\n" +
-                    "    NULL AS s_writers,\n" +
-
-            "    m.genres AS genres,\n" +
-            "    m.genres AS m_genres,\n" +
-            "    NULL AS s_genres,\n" +
-            "    m.studios AS studios,\n" +
-            "    m.studios AS m_studios,\n" +
-            "    NULL AS s_studios,\n" +
-            "    m.cover_movie AS cover,\n" +
-            "    m.cover_movie AS m_cover,\n" +
-            "    NULL AS e_cover,\n" +
-            "    NULL AS s_cover,\n" +
-            "    m.backdrop_url_movie AS bd_url,\n" +
-            "    m.backdrop_url_movie AS m_bd_url,\n" +
-            "    NULL AS s_bd_url,\n" +
-            "    m.backdrop_movie AS bd_file,\n" +
-            "    m.backdrop_movie AS m_bd_file,\n" +
-            "    NULL AS s_bd_file\n" +
-            "FROM\n" +
-            "    v_movie_all AS m";
-
     /* Version 11 */
     // additions for posters backdrops
     public static final String MOVIE_POSTERS_TABLE_NAME = "movie_posters";
@@ -1303,7 +1150,6 @@ public final class ScraperTables {
         db.execSQL(MOVIE_TABLE_CREATE);
         db.execSQL(ACTORS_TABLE_CREATE);
         db.execSQL(DIRECTORS_TABLE_CREATE);
-        db.execSQL(WRITERS_TABLE_CREATE);
         db.execSQL(GENRES_TABLE_CREATE);
         db.execSQL(STUDIOS_TABLE_CREATE);
         db.execSQL(SHOW_TABLE_CREATE);
@@ -1311,11 +1157,6 @@ public final class ScraperTables {
         db.execSQL(GUESTS_TABLE_CREATE);
 
         db.execSQL(FILMS_MOVIE_TABLE_CREATE);
-
-        db.execSQL(WRITERS_MOVIE_TABLE_CREATE);
-        db.execSQL(WRITERS_EPISODE_TABLE_CREATE);
-        db.execSQL(WRITERS_SHOW_TABLE_CREATE);
-
         db.execSQL(BELONGS_MOVIE_TABLE_CREATE);
         db.execSQL(PLAYS_MOVIE_TABLE_CREATE);
         db.execSQL(PRODUCES_MOVIE_TABLE_CREATE);
@@ -1332,11 +1173,6 @@ public final class ScraperTables {
         db.execSQL(FILMS_MOVIE_VIEW_CREATE);
         db.execSQL(FILMS_SHOW_VIEW_CREATE);
         db.execSQL(FILMS_EPISODE_VIEW_CREATE);
-
-        db.execSQL(WRITERS_MOVIE_VIEW_CREATE);
-        db.execSQL(WRITERS_SHOW_VIEW_CREATE);
-        db.execSQL(WRITERS_EPISODE_VIEW_CREATE);
-
         db.execSQL(PRODUCES_MOVIE_VIEW_CREATE);
         db.execSQL(PRODUCES_SHOW_VIEW_CREATE);
         db.execSQL(BELONGS_MOVIE_VIEW_CREATE);
@@ -1349,11 +1185,6 @@ public final class ScraperTables {
         db.execSQL(FILMS_MOVIE_VIEW_INSERT_TRIGGER);
         db.execSQL(FILMS_SHOW_VIEW_INSERT_TRIGGER);
         db.execSQL(FILMS_EPISODE_VIEW_INSERT_TRIGGER);
-
-        db.execSQL(WRITERS_MOVIE_VIEW_INSERT_TRIGGER);
-        db.execSQL(WRITERS_SHOW_VIEW_INSERT_TRIGGER);
-        db.execSQL(WRITERS_EPISODE_VIEW_INSERT_TRIGGER);
-
         db.execSQL(PRODUCES_MOVIE_VIEW_INSERT_TRIGGER);
         db.execSQL(PRODUCES_SHOW_VIEW_INSERT_TRIGGER);
         db.execSQL(BELONGS_MOVIE_VIEW_INSERT_TRIGGER);
@@ -1361,7 +1192,6 @@ public final class ScraperTables {
 
         db.execSQL(ACTOR_DELETABLE_VIEW_CREATE);
         db.execSQL(DIRECTOR_DELETABLE_VIEW_CREATE);
-        db.execSQL(WRITER_DELETABLE_VIEW_CREATE);
         db.execSQL(GENRE_DELETABLE_VIEW_CREATE);
         db.execSQL(STUDIO_DELETABLE_VIEW_CREATE);
 
@@ -1378,10 +1208,6 @@ public final class ScraperTables {
         db.execSQL(CREATE_VIEW_SHOW_DIRECTORS);
         db.execSQL(CREATE_VIEW_EPISODE_DIRECTORS);
         db.execSQL(CREATE_VIEW_MOVIE_DIRECTORS);
-
-        db.execSQL(CREATE_VIEW_SHOW_WRITERS);
-        db.execSQL(CREATE_VIEW_EPISODE_WRITERS);
-        db.execSQL(CREATE_VIEW_MOVIE_WRITERS);
 
         db.execSQL(CREATE_VIEW_SHOW_ACTORS);
         db.execSQL(CREATE_VIEW_EPISODE_ACTORS);
@@ -1433,20 +1259,16 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX MOVIE_idx ON MOVIE(video_id)");
             db.execSQL("CREATE INDEX GUESTS_idx ON GUESTS(actor_guests)");
             db.execSQL("CREATE INDEX FILMS_MOVIE_idx ON FILMS_MOVIE(director_films)");
-
             db.execSQL("CREATE INDEX BELONGS_MOVIE_idx ON BELONGS_MOVIE(genre_belongs)");
             db.execSQL("CREATE INDEX PLAYS_MOVIE_idx ON PLAYS_MOVIE(actor_plays)");
             db.execSQL("CREATE INDEX PRODUCES_MOVIE_idx ON PRODUCES_MOVIE(studio_produces)");
             db.execSQL("CREATE INDEX FILMS_EPISODE_idx ON FILMS_EPISODE(director_films)");
-
             db.execSQL("CREATE INDEX FILMS_SHOW_idx ON FILMS_SHOW(director_films)");
-
             db.execSQL("CREATE INDEX BELONGS_SHOW_idx ON BELONGS_SHOW(genre_belongs)");
             db.execSQL("CREATE INDEX PLAYS_SHOW_idx ON PLAYS_SHOW(actor_plays)");
             db.execSQL("CREATE INDEX PRODUCES_SHOW_idx ON PRODUCES_SHOW(studio_produces)");
             db.execSQL("CREATE INDEX files_scraper_idx ON files(ArchosMediaScraper_id, ArchosMediaScraper_type)");
             db.execSQL("CREATE INDEX MOVIE_cover_idx ON MOVIE(cover_movie)");
-
             // create new triggers that does not call each time a clean of v_.*_deletable tables: do it once at startup
             // for some reasons sometimes the triggers are not dropped, thus make sure it is deleted
             db.execSQL("pragma writable_schema = ON");
@@ -1470,7 +1292,22 @@ public final class ScraperTables {
         }
         if (toVersion == 40) {
             log.debug("upgradeTo: " + toVersion);
+            db.execSQL(WRITERS_TABLE_CREATE);
+            db.execSQL(WRITERS_MOVIE_TABLE_CREATE);
+            db.execSQL(WRITERS_EPISODE_TABLE_CREATE);
+            db.execSQL(WRITERS_SHOW_TABLE_CREATE);
+            db.execSQL(WRITERS_MOVIE_VIEW_CREATE);
+            db.execSQL(WRITERS_SHOW_VIEW_CREATE);
+            db.execSQL(WRITERS_EPISODE_VIEW_CREATE);
+            db.execSQL(WRITERS_MOVIE_VIEW_INSERT_TRIGGER);
+            db.execSQL(WRITERS_SHOW_VIEW_INSERT_TRIGGER);
+            db.execSQL(WRITERS_EPISODE_VIEW_INSERT_TRIGGER);
+            db.execSQL(WRITER_DELETABLE_VIEW_CREATE);
+            db.execSQL(CREATE_VIEW_SHOW_WRITERS);
+            db.execSQL(CREATE_VIEW_EPISODE_WRITERS);
+            db.execSQL(CREATE_VIEW_MOVIE_WRITERS);
             log.debug("upgradeTo: creating indexes");
+            // cf. v39 migration create indexes to speed up rescan in case of delete/renames
             db.execSQL("CREATE INDEX WRITERS_MOVIE_idx ON WRITERS_MOVIE(writer_writers)");
             db.execSQL("CREATE INDEX WRITERS_EPISODE_idx ON WRITERS_EPISODE(writer_writers)");
             db.execSQL("CREATE INDEX WRITERS_SHOW_idx ON WRITERS_SHOW(writer_writers)");
