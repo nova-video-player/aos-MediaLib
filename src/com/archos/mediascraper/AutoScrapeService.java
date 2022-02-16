@@ -563,7 +563,11 @@ public class AutoScrapeService extends Service {
                                 }
                             } catch (Exception e) {
                                 log.error("startScraping: caught exception", e);
-                                log.debug("startScraping: exception for cursor " + DatabaseUtils.dumpCursorToString(cursor));
+                                try {
+                                    log.debug("startScraping: exception for cursor " + DatabaseUtils.dumpCursorToString(cursor));
+                                } catch (Exception ee) {
+                                    log.error("startScraping: caught exception dumping the cursor", ee);
+                                }
                             }
                             cursor.close();
                             numberOfRowsRemaining -= window;
@@ -647,9 +651,8 @@ public class AutoScrapeService extends Service {
                 break;
         }
         final String LIMIT = ((offset != null) ? offset + ",": "") + ((limit != null) ? limit : "");
-        log.debug("getFileListCursor: LIMIT " + LIMIT);
         if (limit != null || offset != null) {
-            return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("limit", 0 + "," + 10).build(), SCRAPER_ACTIVITY_COLS, where, selectionArgs, sortOrder);
+            return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("limit", LIMIT).build(), SCRAPER_ACTIVITY_COLS, where, selectionArgs, sortOrder);
         } else {
             return getContentResolver().query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SCRAPER_ACTIVITY_COLS, where, selectionArgs, sortOrder);
         }
