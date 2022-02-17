@@ -65,15 +65,24 @@ public class Blacklist {
     };
 
     private static final String[] BLACKLISTED_CAM_DIRS = {
+            "/WhatsApp", "/Android/media/com.whatsapp",
             "/DCIM", "/Camera",
-            "/WhatsApp", "/GooglePlus",
+            "/GooglePlus",
             "/Allo", "/Pictures",
             "/Snapchat", "/Telegram",
             "/com.facebook.katana",
             "/com.facebook.orca",
             "/Movies/Instagram", "/Movies/Messenger",
-            "/Movies/Twitter", "/tencent", "/Android/media/com.whatsapp"
+            "/Movies/Twitter", "/tencent",
     };
+
+    public String[] getBlackListCamDirs() {
+        return BLACKLISTED_CAM_DIRS;
+    }
+
+    public String[] getBlackListCamera() {
+        return BLACKLISTED_CAMERA;
+    }
 
     public boolean isBlacklisted(Uri file) {
         if (DBG) Log.d(TAG,"isBlacklisted: ExternalStorageDirectory=" + Environment.getExternalStorageDirectory().getPath() + ", ExtSdcards=" + ExtStorageManager.getExtStorageManager().getExtSdcards());
@@ -87,6 +96,18 @@ public class Blacklist {
             for (String extPath: extPathList)
                 for (String blacklistedDir : BLACKLISTED_CAM_DIRS)
                     if (filePath.startsWith(extPath+blacklistedDir)) return true;
+            for (String blacklisted : mBlacklisteds)
+                if (filePath.startsWith(blacklisted)) return true;
+        }
+        // this one needs to be done on networkscannerservicevideo: the shortcut is done
+        return isFilenameBlacklisted(file.getLastPathSegment());
+    }
+
+    public boolean isBlacklistedManual(Uri file) {
+        if (DBG) Log.d(TAG,"isBlacklisted: ExternalStorageDirectory=" + Environment.getExternalStorageDirectory().getPath() + ", ExtSdcards=" + ExtStorageManager.getExtStorageManager().getExtSdcards());
+        if (file == null) return true;
+        String filePath = file.getPath();
+        if (FileUtils.isLocal(file)) { // only makes sense if file is locale
             for (String blacklisted : mBlacklisteds)
                 if (filePath.startsWith(blacklisted)) return true;
         }

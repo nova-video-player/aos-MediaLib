@@ -23,6 +23,7 @@ import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
@@ -31,11 +32,13 @@ import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.MediaColumns;
 import android.text.TextUtils;
 
+import com.archos.filecorelibrary.ExtStorageManager;
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.IMediaMetadataRetriever;
 import com.archos.medialib.MediaMetadata;
+import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaFile;
 import com.archos.mediaprovider.ArchosMediaFile.MediaFileType;
 import com.archos.mediaprovider.BulkInserter;
@@ -53,6 +56,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.archos.filecorelibrary.FileUtils.isNetworkShare;
 import static com.archos.filecorelibrary.FileUtils.isSlowRemote;
@@ -70,12 +76,23 @@ public class VideoStoreImportImpl {
     private static final String MediaColumnsDATA = MediaColumns.DATA;
 
     private static final int WINDOW_SIZE = 2000;
+    private static String BLACKLIST;
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;
         mCr = mContext.getContentResolver();
         mBlackList = Blacklist.getInstance(context);
         mMediaRetrieverServiceClient = new MediaRetrieverServiceClient(context);
+        String [] blacklistCamDirs = mBlackList.getBlackListCamDirs();
+        BLACKLIST = "";
+        for (String blacklisted : mBlackList.getBlackListCamera())
+            BLACKLIST += " AND _data NOT LIKE '%" + blacklisted + "%'";
+        List<String> extPathList = ExtStorageManager.getExtStorageManager().getExtSdcards();
+        extPathList.add(Environment.getExternalStorageDirectory().getPath());
+        for (String extPath: extPathList)
+            for (String blacklistedDir : blacklistCamDirs)
+                BLACKLIST += " AND _data NOT LIKE '%" + extPath+blacklistedDir + "%'";
+        log.debug("VideoStoreImportImpl: BLACKLIST " + BLACKLIST);
     }
 
     public void destroy() {
@@ -248,7 +265,8 @@ public class VideoStoreImportImpl {
             boolean retrieve = false;
             if (mMft != null) {
                 mimeType = mMft.mimeType;
-                if (!isNoMediaPath(path) && !blacklist.isBlacklisted(mPath)) {
+                if (!isNoMediaPath(path) && !blacklist.isBlacklistedManual(mPath)) {
+                //if (!isNoMediaPath(path) && !blacklist.isBlacklisted(mPath)) {
                     if (ArchosMediaFile.isAudioFileType(mMft.fileType)) {
                         mediaType = FileColumns.MEDIA_TYPE_AUDIO;
                     } else if (ArchosMediaFile.isVideoFileType(mMft.fileType)) {
@@ -506,17 +524,17 @@ public class VideoStoreImportImpl {
         Cursor allFiles = null;
         ContentValues cv = null;
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
-            where = WHERE_ALL_AP;
+            where = WHERE_ALL_AP + BLACKLIST;
             if (minId != null) {
-                where = WHERE_MIN_ID_AP;
+                where = WHERE_MIN_ID_AP + BLACKLIST;
                 whereArgs = new String[]{minId};
             }
             allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
                     FILES_PROJECTION_AP, where, whereArgs, BaseColumns._ID));
         } else {
-            where = WHERE_ALL_BP;
+            where = WHERE_ALL_BP + BLACKLIST;
             if (minId != null)  {
-                where = WHERE_MIN_ID_BP;
+                where = WHERE_MIN_ID_BP + BLACKLIST;
                 whereArgs = new String[] { minId };
             }
             allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
@@ -548,9 +566,9 @@ public class VideoStoreImportImpl {
                         window = numberOfRows - index;
 
                     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
-                        where = WHERE_ALL_AP;
+                        where = WHERE_ALL_AP + BLACKLIST;
                         if (minId != null) {
-                            where = WHERE_MIN_ID_AP;
+                            where = WHERE_MIN_ID_AP + BLACKLIST;
                             whereArgs = new String[]{minId};
                         }
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>29 requires bundle to LIMIT but it exists since 26
@@ -568,9 +586,9 @@ public class VideoStoreImportImpl {
                                     FILES_PROJECTION_AP, where, whereArgs, BaseColumns._ID + " ASC LIMIT " + index + "," + window));
                         }
                     } else { // API below 26 LIMIT is allowed
-                        where = WHERE_ALL_BP;
+                        where = WHERE_ALL_BP + BLACKLIST;
                         if (minId != null)  {
-                            where = WHERE_MIN_ID_BP;
+                            where = WHERE_MIN_ID_BP + BLACKLIST;
                             whereArgs = new String[] { minId };
                         }
                         allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
