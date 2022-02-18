@@ -66,6 +66,7 @@ public class Blacklist {
 
     private static final String[] BLACKLISTED_CAM_DIRS = {
             "/WhatsApp", "/Android/media/com.whatsapp",
+            "/Android/data/org.courville.nova",
             "/DCIM", "/Camera",
             "/GooglePlus",
             "/Allo", "/Pictures",
