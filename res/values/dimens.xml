@@ -44,7 +44,7 @@
     <dimen name="video_grid_poster_margin_right">2dip</dimen> <!-- margin to have background visible around the thumbnail when pressed -->
 
     <dimen name="video_details_item_height">178dip</dimen>
-    <dimen name="video_details_item_height_new">390dip</dimen>
+    <dimen name="video_details_item_height_new">490dip</dimen>
     <dimen name="video_details_poster_height">174dip</dimen>      <!-- (video_details_item_height - 2 - 2) for the top and bottom margin -->
     <dimen name="video_details_poster_width">116dip</dimen>       <!-- "video_details_poster_width" = 2 / 3 * video_details_poster_height -->
     <dimen name="video_details_poster_margin_top">2dip</dimen>    <!-- margin to have background visible around the thumbnail when pressed -->
