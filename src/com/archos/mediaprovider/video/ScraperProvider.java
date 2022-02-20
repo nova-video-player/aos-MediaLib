@@ -128,6 +128,7 @@ public class ScraperProvider extends ContentProvider {
     private static final int MOVIE_TRAILERS_ID = SCRAPER_PROVIDER_OFFSET + 143;
     private static final int MOVIE_TRAILERS_MOVIE_ID = SCRAPER_PROVIDER_OFFSET + 144;
 
+
     private static final int MOVIE_COLLECTION = SCRAPER_PROVIDER_OFFSET + 150;
     private static final int MOVIE_COLLECTION_ID = SCRAPER_PROVIDER_OFFSET + 151;
     private static final int MOVIE_COLLECTION_NAME = SCRAPER_PROVIDER_OFFSET + 152;
@@ -147,6 +148,10 @@ public class ScraperProvider extends ContentProvider {
     private static final int WRITER_SHOW = SCRAPER_PROVIDER_OFFSET + 165;
     private static final int WRITER_EPISODE = SCRAPER_PROVIDER_OFFSET + 166;
     private static final int WRITER_NAME = SCRAPER_PROVIDER_OFFSET + 167;
+
+    private static final int SHOW_NETWORKLOGOS = SCRAPER_PROVIDER_OFFSET + 168;
+    private static final int SHOW_NETWORKLOGOS_ID = SCRAPER_PROVIDER_OFFSET + 169;
+    private static final int SHOW_NETWORKLOGOS_SHOW_ID = SCRAPER_PROVIDER_OFFSET + 170;
 
     private static UriMatcher sUriMatcher;
 
@@ -325,6 +330,14 @@ public class ScraperProvider extends ContentProvider {
                 SHOW_BACKDROPS_ID);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowBackdrops.URI.BY_SHOW_ID) + "/#",
                 SHOW_BACKDROPS_SHOW_ID);
+
+        // show networklogos
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowNetworkLogos.URI.BASE),
+                SHOW_NETWORKLOGOS);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowNetworkLogos.URI.BASE) + "/#",
+                SHOW_NETWORKLOGOS_ID);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowNetworkLogos.URI.BY_SHOW_ID) + "/#",
+                SHOW_NETWORKLOGOS_SHOW_ID);
 
         // movie trailers
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieTrailers.URI.BASE),
@@ -703,6 +716,15 @@ public class ScraperProvider extends ContentProvider {
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.ShowBackdrops.URI.BASE, cr);
                 break;
+            case SHOW_NETWORKLOGOS:
+                rowId = db.insert(ScraperTables.SHOW_NETWORKLOGOS_TABLE_NAME,
+                        ScraperStore.ShowNetworkLogos.ID, values);
+                if (rowId < 0) {
+                    rowId = findScraperImage(db, ScraperTables.SHOW_NETWORKLOGOS_TABLE_NAME,
+                            ScraperImage.Type.SHOW_NETWORK, values);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.ShowNetworkLogos.URI.BASE, cr);
+                break;
             case MOVIE_COLLECTION:
                 // see MOVIE_POSTERS
                 rowId = db.insert(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
@@ -1034,6 +1056,17 @@ public class ScraperProvider extends ContentProvider {
             case SHOW_BACKDROPS:
                 qb.setTables(ScraperTables.SHOW_BACKDROPS_TABLE_NAME);
                 break;
+
+            case SHOW_NETWORKLOGOS_ID:
+                useId = true;
+                //$FALL-THROUGH$
+            case SHOW_NETWORKLOGOS_SHOW_ID:
+                qb.appendWhere(useId ? BaseColumns._ID  + "=" : ScraperStore.ShowNetworkLogos.SHOW_ID + "=");
+                qb.appendWhereEscapeString(data);
+                //$FALL-THROUGH$
+            case SHOW_NETWORKLOGOS:
+                qb.setTables(ScraperTables.SHOW_NETWORKLOGOS_TABLE_NAME);
+                break;
             case MOVIE_TRAILERS_ID:
                 useId = true;
                 //$FALL-THROUGH$
@@ -1103,6 +1136,12 @@ public class ScraperProvider extends ContentProvider {
                 cols[0] = thumb ? ScraperStore.ShowBackdrops.THUMB_URL : ScraperStore.ShowBackdrops.LARGE_URL;
                 cols[1] = thumb ? ScraperStore.ShowBackdrops.THUMB_FILE : ScraperStore.ShowBackdrops.LARGE_FILE;
                 type = Type.SHOW_BACKDROP;
+                break;
+            case SHOW_NETWORKLOGOS_ID:
+                table = ScraperTables.SHOW_NETWORKLOGOS_TABLE_NAME;
+                cols[0] = thumb ? ScraperStore.ShowNetworkLogos.THUMB_URL : ScraperStore.ShowNetworkLogos.LARGE_URL;
+                cols[1] = thumb ? ScraperStore.ShowNetworkLogos.THUMB_FILE : ScraperStore.ShowNetworkLogos.LARGE_FILE;
+                type = Type.SHOW_NETWORK;
                 break;
             default:
                 throw new FileNotFoundException("No files supported by provider at " + uri);
@@ -1230,6 +1269,9 @@ public class ScraperProvider extends ContentProvider {
                 break;
             case SHOW_BACKDROPS:
                 table = ScraperTables.SHOW_BACKDROPS_TABLE_NAME;
+                break;
+            case SHOW_NETWORKLOGOS:
+                table = ScraperTables.SHOW_NETWORKLOGOS_TABLE_NAME;
                 break;
             case SHOW_POSTERS:
                 table = ScraperTables.SHOW_POSTERS_TABLE_NAME;

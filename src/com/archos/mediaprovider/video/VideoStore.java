@@ -1351,6 +1351,7 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code>("http://..") or <code>null</code> if not present
              */
             public static final String SCRAPER_BACKDROP_URL = "bd_url";
+            public static final String SCRAPER_NETWORKLOGO_URL = "nl_url";
             /**
              * MediaScraper: Backdrop (Fanart) Url - Movie
              * <P>TYPE: <code>String</code>("http://..") or <code>null</code> if not a movie
@@ -1361,11 +1362,13 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code>("http://..") or <code>null</code> if not a show / episode
              */
             public static final String SCRAPER_S_BACKDROP_URL = "s_bd_url";
+            public static final String SCRAPER_S_NETWORKLOGO_URL = "s_nl_url";
             /**
              * MediaScraper: Backdrop (Fanart) file (NOT PRESENT ATM)
              * <P>TYPE: <code>String</code>(path to file) or <code>null</code> if not present
              */
             public static final String SCRAPER_BACKDROP_FILE = "bd_file";
+            public static final String SCRAPER_NETWORKLOGO_FILE = "nl_file";
             /**
              * MediaScraper: Backdrop (Fanart) file (NOT PRESENT ATM) Movie
              * <P>TYPE: <code>String</code>(path to file) or <code>null</code> if not a movie
@@ -1376,6 +1379,7 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code>(path to file) or <code>null</code> if not a show
              */
             public static final String SCRAPER_S_BACKDROP_FILE = "s_bd_file";
+            public static final String SCRAPER_S_NETWORKLOGO_FILE = "s_nl_file";
 
             /**
              * MediaScraper: Poster ID
@@ -1387,6 +1391,7 @@ public final class VideoStore {
              * <P>TYPE: <code>int</code> or <code>null</code>
              */
             public static final String SCRAPER_BACKDROP_ID = "backdrop_id";
+            public static final String SCRAPER_NETWORKLOGO_ID = "networklogo_id";
             /**
              * MediaScraper: Poster (full resolution) - url to download from
              * <P>TYPE: <code>String</code> or <code>null</code>
@@ -1402,11 +1407,13 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code> or <code>null</code>
              */
             public static final String SCRAPER_BACKDROP_LARGE_URL = "bd_large_url";
+            public static final String SCRAPER_NETWORKLOGO_LARGE_URL = "nl_large_url";
             /**
              * MediaScraper: Backdrop (full resolution) - file on storage
              * <P>TYPE: <code>String</code> or <code>null</code>
              */
             public static final String SCRAPER_BACKDROP_LARGE_FILE = "bd_large_file";
+            public static final String SCRAPER_NETWORKLOGO_LARGE_FILE = "nl_large_file";
 
             /**
              * MediaScraper: Poster (thumb resolution) - url to download from
@@ -1423,11 +1430,13 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code> or <code>null</code>
              */
             public static final String SCRAPER_BACKDROP_THUMB_URL = "bd_thumb_url";
+            public static final String SCRAPER_NETWORKLOGO_THUMB_URL = "nl_thumb_url";
             /**
              * MediaScraper: Backdrop (thumb resolution) - file on storage
              * <P>TYPE: <code>String</code> or <code>null</code>
              */
             public static final String SCRAPER_BACKDROP_THUMB_FILE = "bd_thumb_file";
+            public static final String SCRAPER_NETWORKLOGO_THUMB_FILE = "nl_thumb_file";
             /**
              * MediaScraper: Show Poster ID
              * <P>TYPE: <code>int</code> or <code>null</code>

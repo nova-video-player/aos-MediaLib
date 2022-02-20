@@ -113,6 +113,11 @@ public final class ScraperStore {
         public static final String BACKDROP_URL = "backdrop_url_show";
         public static final String POSTER_ID = "s_poster_id";
         public static final String BACKDROP_ID = "s_backdrop_id";
+
+        public static final String NETWORKLOGO = "networklogo_show";
+        public static final String NETWORKLOGO_URL = "networklogo_url_show";
+        public static final String NETWORKLOGO_ID = "s_networklogo_id";
+
         /** id in online db "73255" > http://thetvdb.com/?tab=series&id=73255 */
         public static final String ONLINE_ID = "s_online_id";
         /** IMDb id "tt0285331" > http://www.imdb.com/title/tt0285331 */
@@ -200,6 +205,8 @@ public final class ScraperStore {
         public static final String MOVIE_OR_SHOW_COVER = "cover";
         public static final String MOVIE_OR_SHOW_BACKDROP = "backdrop";
         public static final String MOVIE_OR_SHOW_BACKDROP_URL = "backdrop_url";
+        public static final String MOVIE_OR_SHOW_NETWORKLOGO = "networklogo";
+        public static final String MOVIE_OR_SHOW_NETWORKLOGO_URL = "networklogo_url";
         public static final String MOVIE_OR_SHOW_PLOT = "plot";
         public static final String EPISODE_PLOT = "plot_episode";
 
@@ -399,6 +406,19 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/showbackdrops");
             public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/showbackdrops/byremote");
+        }
+    }
+
+    public static class ShowNetworkLogos {
+        public static final String ID = "_id";
+        public static final String SHOW_ID = "show_id";
+        public static final String THUMB_URL = "s_nl_thumb_url";
+        public static final String THUMB_FILE = "s_nl_thumb_file";
+        public static final String LARGE_URL = "s_nl_large_url";
+        public static final String LARGE_FILE = "s_nl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/shownetworklogos");
+            public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/shownetworklogos/byremote");
         }
     }
 

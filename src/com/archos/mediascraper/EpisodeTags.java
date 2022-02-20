@@ -425,6 +425,14 @@ public class EpisodeTags extends BaseTags {
         return null;
     }
 
+    @Override
+    public List<ScraperImage> getAllNetworkLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
+
     /** Add this (local) image as the default season poster */
     public void addDefaultPoster(Context context, Uri localImage, String showTitle) {
         ScraperImage image = new ScraperImage(ScraperImage.Type.EPISODE_POSTER, showTitle);

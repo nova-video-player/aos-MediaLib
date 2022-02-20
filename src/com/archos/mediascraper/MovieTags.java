@@ -337,6 +337,13 @@ public class MovieTags extends VideoTags {
         return result;
     }
 
+    @Override
+    public List<ScraperImage> getAllNetworkLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
     public void setYear(int year) { mYear = year; }
 
     @Override

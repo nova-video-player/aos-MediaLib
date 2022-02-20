@@ -76,6 +76,7 @@ public class NfoShowHandler extends BasicHandler {
     private ShowTags mResult;
     private final LinkedHashMap<String, Integer> mPosters = new LinkedHashMap<String, Integer>();
     private final ArrayList<String> mBackdrops = new ArrayList<String>();
+    private final ArrayList<String> mNetworkLogos = new ArrayList<String>();
     private boolean mCanParse;
 
     private String mActorName, mActorRole;
@@ -92,6 +93,7 @@ public class NfoShowHandler extends BasicHandler {
         mResult = null;
         mPosters.clear();
         mBackdrops.clear();
+        mNetworkLogos.clear();
         mCanParse = false;
         mActorName = null;
         mActorRole = null;
@@ -287,6 +289,20 @@ public class NfoShowHandler extends BasicHandler {
                     }
                 }
                 mResult.setBackdrops(images);
+            }
+
+            if (!mNetworkLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mNetworkLogos.size());
+                for (String url : mNetworkLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_NETWORK, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setNetworkLogos(images);
             }
             return mResult;
         }

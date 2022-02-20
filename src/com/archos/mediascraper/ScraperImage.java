@@ -49,6 +49,7 @@ public class ScraperImage {
 
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
+    final static String GITHUB_STUDIO_NETWOK_LOGO_URL = "https://raw.githubusercontent.com/bronnel/resource.images.studios.coloured/master/resources/";
     final static String POSTER_THUMB = "w154";
     final static String POSTER_LARGE = "w342";
     final static String BACKDROP_THUMB = "w300";
@@ -64,6 +65,9 @@ public class ScraperImage {
     // for still
     public final static String TMST = TMDB_IMAGE_URL + STILL_THUMB;
     public final static String TMSL = TMDB_IMAGE_URL + STILL_LARGE;
+    // for network logos
+    public final static String GNL = GITHUB_STUDIO_NETWOK_LOGO_URL;
+
 
     public String getLanguage() {
         return language;
@@ -94,6 +98,12 @@ public class ScraperImage {
                 null, ScraperStore.ShowPosters.URI.BASE, ScraperStore.ShowPosters.SHOW_ID,
                 ImageScaler.Type.SCALE_INSIDE
                 ),
+        SHOW_NETWORK(
+                ScraperStore.ShowNetworkLogos.THUMB_URL, ScraperStore.ShowNetworkLogos.THUMB_FILE,
+                ScraperStore.ShowNetworkLogos.LARGE_URL, ScraperStore.ShowNetworkLogos.LARGE_FILE,
+                null, ScraperStore.ShowNetworkLogos.URI.BASE, ScraperStore.ShowNetworkLogos.SHOW_ID,
+                ImageScaler.Type.SCALE_INSIDE
+        ),
         EPISODE_POSTER(
                 ScraperStore.ShowPosters.THUMB_URL, ScraperStore.ShowPosters.THUMB_FILE,
                 ScraperStore.ShowPosters.LARGE_URL, ScraperStore.ShowPosters.LARGE_FILE,
@@ -221,7 +231,7 @@ public class ScraperImage {
      * @return true if this is the poster or the backdrop for a TV show
      */
     public boolean isShow() {
-        return (mType==Type.SHOW_POSTER || mType==Type.SHOW_BACKDROP);
+        return (mType==Type.SHOW_POSTER || mType==Type.SHOW_BACKDROP );
     }
 
     public long save(Context context, long remoteId) {
@@ -369,6 +379,10 @@ public class ScraperImage {
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case SHOW_NETWORK:
+                ret = MediaScraper.getNetworkLogoDirectory(context);
+                log.trace("getDir: for networklogo: " + ret.getPath());
+                break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
                 log.trace("getDir: for backdrop: " + ret.getPath());
@@ -405,6 +419,11 @@ public class ScraperImage {
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case SHOW_NETWORK:
+                ret = MediaScraper.getNetworkLogoCacheDirectory(context);
+                log.trace("getCacheDir: for networklogo " + ret.getPath());
+                log.trace("getCacheDir: for networklogo " + ret.getPath());
+                break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
                 log.trace("getCacheDir: for backdrop " + ret.getPath());
@@ -438,6 +457,8 @@ public class ScraperImage {
                 return MediaScraper.IMAGE_CACHE_TIMEOUT;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case SHOW_NETWORK:
+                return MediaScraper.NETWORKLOGO_CACHE_TIMEOUT;
             case COLLECTION_BACKDROP:
                 return MediaScraper.BACKDROP_CACHE_TIMEOUT;
             default:
@@ -550,6 +571,19 @@ public class ScraperImage {
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+            case SHOW_NETWORK:
+                if (thumb) {
+                    maxWidth = thumbWidth;
+                    maxHeight = thumbHeight;
+                } else {
+                    // TODO maybe use fixed values here. In case we are connected to a high res display
+                    // we might get a wrong / temporary size here.
+                    DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+                    maxHeight = displayMetrics.heightPixels;
+                    maxWidth = displayMetrics.widthPixels;
+                }
+                log.trace("saveSizedImage: target NetworkLogo(" + maxWidth + "," + maxHeight + ")");
+                break;
             case COLLECTION_BACKDROP:
                 if (thumb) {
                     maxWidth = thumbWidth;
@@ -651,6 +685,12 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Show.BACKDROP_ID, Long.valueOf(mId));
                 updateValues.put(ScraperStore.Show.BACKDROP_URL, mLargeUrl);
                 updateValues.put(ScraperStore.Show.BACKDROP, mLargeFile);
+                break;
+            case SHOW_NETWORK:
+                updateUri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, mRemoteId);
+                updateValues.put(ScraperStore.Show.NETWORKLOGO_ID, Long.valueOf(mId));
+                updateValues.put(ScraperStore.Show.NETWORKLOGO_URL, mLargeUrl);
+                updateValues.put(ScraperStore.Show.NETWORKLOGO, mLargeFile);
                 break;
             case MOVIE_POSTER:
                 if(mOnlineID>0) {

@@ -80,6 +80,15 @@ public class ShowIdParser {
             result.addDefaultBackdropTMDB(mContext, serie.backdrop_path);
         } else log.debug("getResult: no backdrop_path for " + serie.id);
 
+
+
+        if (serie.networks != null) {
+                for (int i = 0; i < serie.networks.size(); i++) {
+                    result.addNetworkLogoGITHUB(mContext, serie.networks.get(i).name.replaceAll(" ", "%20") + ".png");
+                    log.debug("getResult: " + serie.id + " has networklogo_path=" + ScraperImage.GNL + serie.networks.get(i).name.replaceAll(" ", "%20") + ".png");
+                }
+        } else log.debug("getResult: no networklogo_path for " + serie.id);
+
         if (serie.credits != null) {
             if (serie.credits.guest_stars != null)
                 for (CastMember guestStar : serie.credits.guest_stars)

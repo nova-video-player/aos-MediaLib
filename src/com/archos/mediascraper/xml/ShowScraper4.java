@@ -222,6 +222,13 @@ public class ShowScraper4 extends BaseScraper2 {
                     else log.debug("getDetailsInternal: backdrops empty!");
                     // needs to be done after setBackdrops not to be erased
                     if (result.getBackdropPath() != null)  showTags.addDefaultBackdropTMDB(mContext, result.getBackdropPath());
+
+                    if (!searchImages.networklogos.isEmpty())
+                        showTags.setNetworkLogos(searchImages.networklogos);
+                    else log.debug("getDetailsInternal: networklogos empty!");
+                    // needs to be done after setNetworkLogos not to be erased
+                    if (result.getNetworkLogoPath() != null)  showTags.addNetworkLogoGITHUB(mContext, result.getNetworkLogoPath());
+
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
@@ -231,8 +238,11 @@ public class ShowScraper4 extends BaseScraper2 {
                     // only downloads main backdrop/poster and not the entire collection (x8 in size)
                     showTags.downloadPoster(mContext);
                     showTags.downloadBackdrop(mContext);
+                    showTags.downloadNetworkLogo(mContext);
                     //showTags.downloadPosters(mContext);
                     //showTags.downloadBackdrops(mContext);
+                    showTags.downloadNetworkLogos(mContext);
+
 
                 } else {
                     doRebuildShowTag = true;
