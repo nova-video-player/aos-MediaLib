@@ -379,13 +379,16 @@ public class ScraperImage {
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+                ret = MediaScraper.getBackdropDirectory(context);
+                log.trace("getDir: for backdrop: " + ret.getPath());
+                break;
             case SHOW_NETWORK:
                 ret = MediaScraper.getNetworkLogoDirectory(context);
                 log.trace("getDir: for networklogo: " + ret.getPath());
                 break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
-                log.trace("getDir: for backdrop: " + ret.getPath());
+                log.trace("getDir: for collection_backdrop: " + ret.getPath());
                 break;
             case EPISODE_PICTURE:
                 ret = MediaScraper.getPictureDirectory(context);
@@ -419,15 +422,16 @@ public class ScraperImage {
                 break;
             case MOVIE_BACKDROP:
             case SHOW_BACKDROP:
+                ret = MediaScraper.getBackdropCacheDirectory(context);
+                log.trace("getCacheDir: for backdrop " + ret.getPath());
+                break;
             case SHOW_NETWORK:
                 ret = MediaScraper.getNetworkLogoCacheDirectory(context);
-                log.trace("getCacheDir: for networklogo " + ret.getPath());
                 log.trace("getCacheDir: for networklogo " + ret.getPath());
                 break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
-                log.trace("getCacheDir: for backdrop " + ret.getPath());
-                log.trace("getCacheDir: for backdrop " + ret.getPath());
+                log.trace("getCacheDir: for collection_backdrop " + ret.getPath());
                 break;
             case EPISODE_PICTURE:
                 ret = MediaScraper.getPictureCacheDirectory(context);
