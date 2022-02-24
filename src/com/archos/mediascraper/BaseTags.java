@@ -253,6 +253,16 @@ public abstract class BaseTags implements Parcelable {
         return null;
     }
 
+    public List<File> getNetworkLogosLargeFileF() {
+        List<File> files = new ArrayList<>();
+        for (int i = 0; i < getNetworkLogos().size(); i++) {
+            ScraperImage file = getNetworkLogos().get(i);
+            File mfile = file.getLargeFileF();
+            files.add(mfile);
+        }
+        return files;
+    }
+
     public File downloadGetDefaultPosterFile(Context context) {
         ScraperImage image = getDefaultPoster();
         return downloadGetImage(image, context);
