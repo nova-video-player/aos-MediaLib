@@ -724,6 +724,7 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
+                    "delete from writer where _id in (select _id from v_writer_deletable); " +
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
@@ -745,6 +746,7 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
+                    "delete from writer where _id in (select _id from v_writer_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             // set scraper type / id to -1 if something is refering this episode
             "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
@@ -769,6 +771,7 @@ public final class ScraperTables {
             "BEGIN " +
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
+                    "delete from writer where _id in (select _id from v_writer_deletable); " +
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "INSERT INTO delete_files(name) VALUES(OLD.cover_show);" +

@@ -484,6 +484,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    m_directors,\n" +
                     "    e_directors,\n" +
                     "    s_directors,\n" +
+                    "    coalesce(m_writers, e_writers) AS writers,\n" +
+                    "    m_writers,\n" +
+                    "    e_writers,\n" +
+                    "    s_writers,\n" +
                     "    coalesce(m_genres, s_genres) AS genres,\n" +
                     "    m_genres,\n" +
                     "    s_genres,\n" +
@@ -664,6 +668,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"    m_directors,\n" +
 					"    e_directors,\n" +
 					"    s_directors,\n" +
+                    "    coalesce(m_writers, e_writers) AS writers,\n" +
+                    "    m_writers,\n" +
+                    "    e_writers,\n" +
+                    "    s_writers,\n" +
 					"    coalesce(m_genres, s_genres) AS genres,\n" +
 					"    m_genres,\n" +
 					"    s_genres,\n" +
@@ -845,6 +853,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    m_directors,\n" +
                     "    e_directors,\n" +
                     "    s_directors,\n" +
+                    "    coalesce(m_writers, e_writers) AS writers,\n" +
+                    "    m_writers,\n" +
+                    "    e_writers,\n" +
+                    "    s_writers,\n" +
                     "    coalesce(m_genres, s_genres) AS genres,\n" +
                     "    m_genres,\n" +
                     "    s_genres,\n" +
