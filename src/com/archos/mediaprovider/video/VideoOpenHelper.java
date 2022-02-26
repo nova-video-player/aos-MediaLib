@@ -505,8 +505,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(mb.m_bd_large_file, backdrop_movie) AS m_bd_file,\n" +
                     "    coalesce(sb.s_bd_large_file, backdrop_show) AS s_bd_file,\n" +
 
+                    "    coalesce(nl.s_nl_large_url, networklogo_url_show) AS nl_url,\n" +
+                    "    coalesce(nl.s_nl_large_file, networklogo_show) AS nl_file,\n" +
                     "    coalesce(nl.s_nl_large_url, networklogo_url_show) AS s_nl_url,\n" +
-
                     "    coalesce(nl.s_nl_large_file, networklogo_show) AS s_nl_file,\n" +
 
                     "    coalesce(mp._id, ep._id, sp._id) AS poster_id,\n" +
@@ -519,6 +520,14 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(mb.m_bd_thumb_file, sb.s_bd_thumb_file) AS bd_thumb_file,\n" +
                     "    coalesce(mb.m_bd_large_url, sb.s_bd_large_url) AS bd_large_url,\n" +
                     "    coalesce(mb.m_bd_large_file, sb.s_bd_large_file) AS bd_large_file,\n" +
+
+
+                    "    coalesce(nl._id, nl._id) AS networklogo_id,\n" +
+                    "    coalesce(nl.s_nl_thumb_url, nl.s_nl_thumb_url) AS nl_thumb_url,\n" +
+                    "    coalesce(nl.s_nl_thumb_file, nl.s_nl_thumb_file) AS nl_thumb_file,\n" +
+                    "    coalesce(nl.s_nl_large_url, nl.s_nl_large_url) AS nl_large_url,\n" +
+                    "    coalesce(nl.s_nl_large_file, nl.s_nl_large_file) AS nl_large_file,\n" +
+
                     "    ep._id AS e_poster_id,\n" +
                     "    ep.s_po_thumb_url AS e_po_thumb_url,\n" +
                     "    ep.s_po_thumb_file AS e_po_thumb_file,\n" +
@@ -689,6 +698,8 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"    coalesce(mb.m_bd_large_file, backdrop_movie) AS m_bd_file,\n" +
 					"    coalesce(sb.s_bd_large_file, backdrop_show) AS s_bd_file,\n" +
 
+                    "    coalesce(nl.s_nl_large_url, networklogo_url_show) AS nl_url,\n" +
+                    "    coalesce(nl.s_nl_large_file, networklogo_show) AS nl_file,\n" +
                     "    coalesce(nl.s_nl_large_url, networklogo_url_show) AS s_nl_url,\n" +
                     "    coalesce(nl.s_nl_large_file, networklogo_show) AS s_nl_file,\n" +
 
@@ -702,6 +713,13 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"    coalesce(mb.m_bd_thumb_file, sb.s_bd_thumb_file) AS bd_thumb_file,\n" +
 					"    coalesce(mb.m_bd_large_url, sb.s_bd_large_url) AS bd_large_url,\n" +
 					"    coalesce(mb.m_bd_large_file, sb.s_bd_large_file) AS bd_large_file,\n" +
+
+                    "    coalesce(nl._id, nl._id) AS networklogo_id,\n" +
+                    "    coalesce(nl.s_nl_thumb_url, nl.s_nl_thumb_url) AS nl_thumb_url,\n" +
+                    "    coalesce(nl.s_nl_thumb_file, nl.s_nl_thumb_file) AS nl_thumb_file,\n" +
+                    "    coalesce(nl.s_nl_large_url, nl.s_nl_large_url) AS nl_large_url,\n" +
+                    "    coalesce(nl.s_nl_large_file, nl.s_nl_large_file) AS nl_large_file,\n" +
+
 					"    ep._id AS e_poster_id,\n" +
 					"    ep.s_po_thumb_url AS e_po_thumb_url,\n" +
 					"    ep.s_po_thumb_file AS e_po_thumb_file,\n" +
@@ -874,6 +892,8 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(mb.m_bd_large_file, backdrop_movie) AS m_bd_file,\n" +
                     "    coalesce(sb.s_bd_large_file, backdrop_show) AS s_bd_file,\n" +
 
+                    "    coalesce(nl.s_nl_large_url, networklogo_url_show) AS nl_url,\n" +
+                    "    coalesce(nl.s_nl_large_file, networklogo_show) AS nl_file,\n" +
                     "    coalesce(nl.s_nl_large_url, networklogo_url_show) AS s_nl_url,\n" +
                     "    coalesce(nl.s_nl_large_file, networklogo_show) AS s_nl_file,\n" +
 
@@ -887,6 +907,13 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(mb.m_bd_thumb_file, sb.s_bd_thumb_file) AS bd_thumb_file,\n" +
                     "    coalesce(mb.m_bd_large_url, sb.s_bd_large_url) AS bd_large_url,\n" +
                     "    coalesce(mb.m_bd_large_file, sb.s_bd_large_file) AS bd_large_file,\n" +
+
+                    "    coalesce(nl._id, nl._id) AS networklogo_id,\n" +
+                    "    coalesce(nl.s_nl_thumb_url, nl.s_nl_thumb_url) AS nl_thumb_url,\n" +
+                    "    coalesce(nl.s_nl_thumb_file, nl.s_nl_thumb_file) AS nl_thumb_file,\n" +
+                    "    coalesce(nl.s_nl_large_url, nl.s_nl_large_url) AS nl_large_url,\n" +
+                    "    coalesce(nl.s_nl_large_file, nl.s_nl_large_file) AS nl_large_file,\n" +
+
                     "    ep._id AS e_poster_id,\n" +
                     "    ep.s_po_thumb_url AS e_po_thumb_url,\n" +
                     "    ep.s_po_thumb_file AS e_po_thumb_file,\n" +
