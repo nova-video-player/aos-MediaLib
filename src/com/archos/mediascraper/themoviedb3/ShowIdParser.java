@@ -84,8 +84,8 @@ public class ShowIdParser {
 
         if (serie.networks != null) {
                 for (int i = 0; i < serie.networks.size(); i++) {
-                    result.addNetworkLogoGITHUB(mContext, serie.networks.get(i).name.replaceAll(" ", "%20") + ".png");
                     log.debug("getResult: " + serie.id + " has networklogo_path=" + ScraperImage.GNL + serie.networks.get(i).name.replaceAll(" ", "%20") + ".png");
+                    result.addNetworkLogoGITHUB(mContext, serie.networks.get(i).name.replaceAll(" ", "%20") + ".png");
                 }
         } else log.debug("getResult: no networklogo_path for " + serie.id);
 
