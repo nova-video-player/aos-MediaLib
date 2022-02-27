@@ -168,7 +168,7 @@ public final class VideoStore {
                     }
                 }
             }
-            cursor.close();
+            if (cursor != null) cursor.close();
         }
         // time now to index the file
         Intent scanIntent = new Intent();
