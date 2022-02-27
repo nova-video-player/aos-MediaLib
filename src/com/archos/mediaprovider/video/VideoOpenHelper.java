@@ -17,7 +17,6 @@ package com.archos.mediaprovider.video;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.provider.BaseColumns;
 import android.provider.MediaStore.Files.FileColumns;
@@ -25,13 +24,11 @@ import android.provider.MediaStore.Files.FileColumns;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.CustomCursorFactory;
 import com.archos.mediaprovider.SQLiteUtils;
-import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.DeleteOnDowngradeSQLiteOpenHelper;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 import com.archos.mediaprovider.video.VideoStore.Video.VideoColumns;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperImage.Type;
-import com.archos.mediascraper.themoviedb3.ImageConfiguration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +44,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 40;
+    private static final int DATABASE_VERSION = 41;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -484,10 +481,6 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    m_directors,\n" +
                     "    e_directors,\n" +
                     "    s_directors,\n" +
-                    "    coalesce(m_writers, e_writers) AS writers,\n" +
-                    "    m_writers,\n" +
-                    "    e_writers,\n" +
-                    "    s_writers,\n" +
                     "    coalesce(m_genres, s_genres) AS genres,\n" +
                     "    m_genres,\n" +
                     "    s_genres,\n" +
@@ -677,10 +670,6 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"    m_directors,\n" +
 					"    e_directors,\n" +
 					"    s_directors,\n" +
-                    "    coalesce(m_writers, e_writers) AS writers,\n" +
-                    "    m_writers,\n" +
-                    "    e_writers,\n" +
-                    "    s_writers,\n" +
 					"    coalesce(m_genres, s_genres) AS genres,\n" +
 					"    m_genres,\n" +
 					"    s_genres,\n" +
@@ -778,6 +767,194 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 
 	// add movie collection information
     private static final String CREATE_VIDEO_VIEW_V38 =
+            "CREATE VIEW " + VIDEO_VIEW_NAME + " AS SELECT \n" +
+                    "    f._id,\n" +
+                    "    _data,\n" +
+                    "    _display_name,\n" +
+                    "    _size,\n" +
+                    "    mime_type,\n" +
+                    "    date_added,\n" +
+                    "    date_modified,\n" +
+                    "    inserted,\n" +
+                    "    coalesce( archos_title, title ) AS title,\n" +
+                    "    title AS android_title,\n" +
+                    "    archos_title,\n" +
+                    "    duration,\n" +
+                    "    artist,\n" +
+                    "    album,\n" +
+                    "    NULL AS resolution,\n" +
+                    "    NULL AS description,\n" +
+                    "    NULL AS isprivate,\n" +
+                    "    NULL AS tags,\n" +
+                    "    NULL AS category,\n" +
+                    "    NULL AS language,\n" +
+                    "    mini_thumb_data,\n" +
+                    "    NULL AS latitude,\n" +
+                    "    NULL AS longitude,\n" +
+                    "    NULL AS datetaken,\n" +
+                    "    mini_thumb_magic,\n" +
+                    "    bucket_id,\n" +
+                    "    bucket_display_name,\n" +
+                    "    bookmark,\n" +
+                    "    width,\n" +
+                    "    height,\n" +
+                    "    Archos_favorite_track,\n" +
+                    "    Archos_bookmark,\n" +
+                    "    Archos_lastTimePlayed,\n" +
+                    "    Archos_playerParams,\n" +
+                    "    Archos_playerSubtitleDelay,\n" +
+                    "    ArchosMediaScraper_id,\n" +
+                    "    ArchosMediaScraper_type,\n" +
+                    "    Archos_numberOfSubtitleTracks,\n" +
+                    "    subtitle_count_ext,\n" +
+                    "    Archos_numberOfAudioTracks,\n" +
+                    "    Archos_sampleRate,\n" +
+                    "    Archos_numberOfChannels,\n" +
+                    "    Archos_audioWaveCodec,\n" +
+                    "    Archos_audioBitRate,\n" +
+                    "    Archos_videoFourCCCodec,\n" +
+                    "    Archos_videoBitRate,\n" +
+                    "    Archos_framesPerThousandSeconds,\n" +
+                    "    Archos_encodingProfile,\n" +
+                    "    Archos_playerSubtitleRatio,\n" +
+                    "    Archos_thumbTry,\n" +
+                    "    Archos_hideFile,\n" +
+                    "    Archos_hiddenByUser,\n" +  //NEW hidden by user feature
+                    "    m._id AS m_id,\n" +
+                    "    s._id AS s_id,\n" +
+                    "    e._id AS e_id,\n" +
+                    "    coalesce(name_movie, name_show) AS scraper_name,\n" +
+                    "    name_movie AS m_name,\n" +
+                    "    name_show AS s_name,\n" +
+                    "    name_episode AS e_name,\n" +
+                    "    season_episode AS e_season,\n" +
+                    "    number_episode AS e_episode,\n" +
+                    "    aired_episode AS e_aired,\n" +
+                    "    premiered_show AS s_premiered,\n" +
+                    "    year_movie AS m_year,\n" +
+                    "    coalesce(rating_movie, rating_episode) AS rating,\n" +
+                    "    rating_movie AS m_rating,\n" +
+                    "    rating_episode AS e_rating,\n" +
+                    "    rating_show AS s_rating,\n" +
+                    "    coalesce(m_online_id, s_online_id) AS online_id,\n" +
+                    "    coalesce(m_online_id, e_online_id) AS "+VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID+",\n" +
+                    "    coalesce(m_imdb_id, s_imdb_id) AS imdb_id,\n" +
+                    "    coalesce(m_content_rating, s_content_rating) AS content_rating,\n" +
+                    "    m_online_id,\n" +
+                    "    m_imdb_id,\n" +
+                    "    m_content_rating,\n" +
+                    "    s_online_id,\n" +
+                    "    s_imdb_id,\n" +
+                    "    s_content_rating,\n" +
+                    "    e_online_id,\n" +
+                    "    e_imdb_id,\n" +
+                    "    coalesce(plot_movie, plot_episode) AS plot,\n" +
+                    "    plot_movie AS m_plot,\n" +
+                    "    plot_episode AS e_plot,\n" +
+                    "    plot_show AS s_plot,\n" +
+                    "    coalesce(m_actors, s_actors) AS actors,\n" +
+                    "    m_actors,\n" +
+                    "    s_actors,\n" +
+                    "    e_actors,\n" +
+                    "    coalesce(m_directors, e_directors) AS directors,\n" +
+                    "    m_directors,\n" +
+                    "    e_directors,\n" +
+                    "    s_directors,\n" +
+                    "    coalesce(m_genres, s_genres) AS genres,\n" +
+                    "    m_genres,\n" +
+                    "    s_genres,\n" +
+                    "    coalesce(m_studios, s_studios) AS studios,\n" +
+                    "    m_studios,\n" +
+                    "    s_studios,\n" +
+                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, sp.s_po_large_file, cover_episode, cover_show) AS cover,\n" +
+                    "    coalesce(mp.m_po_large_file, cover_movie) AS m_cover,\n" +
+                    "    coalesce(ep.s_po_large_file, cover_episode) AS e_cover,\n" +
+                    "    coalesce(sp.s_po_large_file, cover_show) AS s_cover,\n" +
+                    "    coalesce(mb.m_bd_large_url, backdrop_url_movie, sb.s_bd_large_url, backdrop_url_show) AS bd_url,\n" +
+                    "    coalesce(mb.m_bd_large_url, backdrop_url_movie) AS m_bd_url,\n" +
+                    "    coalesce(sb.s_bd_large_url, backdrop_url_show) AS s_bd_url,\n" +
+                    "    coalesce(mb.m_bd_large_file, backdrop_movie, sb.s_bd_large_file, backdrop_show) AS bd_file,\n" +
+                    "    coalesce(mb.m_bd_large_file, backdrop_movie) AS m_bd_file,\n" +
+                    "    coalesce(sb.s_bd_large_file, backdrop_show) AS s_bd_file,\n" +
+                    "    coalesce(mp._id, ep._id, sp._id) AS poster_id,\n" +
+                    "    coalesce(mp.m_po_thumb_url, ep.s_po_thumb_url, sp.s_po_thumb_url) AS po_thumb_url,\n" +
+                    "    coalesce(mp.m_po_thumb_file, ep.s_po_thumb_file, sp.s_po_thumb_file) AS po_thumb_file,\n" +
+                    "    coalesce(mp.m_po_large_url, ep.s_po_large_url, sp.s_po_large_url) AS po_large_url,\n" +
+                    "    coalesce(mp.m_po_large_file, ep.s_po_large_file, sp.s_po_large_file) AS po_large_file,\n" +
+                    "    coalesce(mb._id, sb._id) AS backdrop_id,\n" +
+                    "    coalesce(mb.m_bd_thumb_url, sb.s_bd_thumb_url) AS bd_thumb_url,\n" +
+                    "    coalesce(mb.m_bd_thumb_file, sb.s_bd_thumb_file) AS bd_thumb_file,\n" +
+                    "    coalesce(mb.m_bd_large_url, sb.s_bd_large_url) AS bd_large_url,\n" +
+                    "    coalesce(mb.m_bd_large_file, sb.s_bd_large_file) AS bd_large_file,\n" +
+                    "    ep._id AS e_poster_id,\n" +
+                    "    ep.s_po_thumb_url AS e_po_thumb_url,\n" +
+                    "    ep.s_po_thumb_file AS e_po_thumb_file,\n" +
+                    "    ep.s_po_large_url AS e_po_large_url,\n" +
+                    "    ep.s_po_large_file AS e_po_large_file,\n" +
+                    "    ep.s_po_season AS e_po_season,\n" +
+                    "    sp._id AS s_poster_id,\n" +
+                    "    sp.s_po_thumb_url,\n" +
+                    "    sp.s_po_thumb_file,\n" +
+                    "    sp.s_po_large_url,\n" +
+                    "    sp.s_po_large_file,\n" +
+                    "    sb._id AS s_backdrop_id,\n" +
+                    "    sb.s_bd_thumb_url,\n" +
+                    "    sb.s_bd_thumb_file,\n" +
+                    "    sb.s_bd_large_url,\n" +
+                    "    sb.s_bd_large_file,\n" +
+                    "    mp._id AS m_poster_id,\n" +
+                    "    mp.m_po_thumb_url,\n" +
+                    "    mp.m_po_thumb_file,\n" +
+                    "    mp.m_po_large_url,\n" +
+                    "    mp.m_po_large_file,\n" +
+                    "    mb._id AS m_backdrop_id,\n" +
+                    "    mb.m_bd_thumb_url,\n" +
+                    "    mb.m_bd_thumb_file,\n" +
+                    "    mb.m_bd_large_url,\n" +
+                    "    mb.m_bd_large_file,\n" +
+                    "    autoscrape_status,\n" +
+                    "    Archos_traktSeen,\n" +
+                    "    Archos_traktLibrary,\n" +
+                    "    Archos_videoStereo,\n" +
+                    "    Archos_videoDefinition,\n" +
+                    "    Archos_traktResume,\n" +
+                    "    "+VideoColumns.ARCHOS_CALCULATED_VIDEO_FORMAT +",\n" +
+                    "    "+VideoColumns.ARCHOS_CALCULATED_BEST_AUDIOTRACK_FORMAT +",\n" +
+                    "    "+VideoColumns.ARCHOS_GUESSED_VIDEO_FORMAT+",\n" +
+                    "    "+VideoColumns.ARCHOS_GUESSED_AUDIO_FORMAT +",\n" +
+                    "    "+ScraperStore.Episode.PICTURE+" AS "+ VideoColumns.SCRAPER_E_PICTURE+",\n"+
+                    "    coalesce(m." + VideoColumns.NOVA_PINNED + ", s." + VideoColumns.NOVA_PINNED + ") AS " + VideoColumns.NOVA_PINNED + ",\n" +
+                    "    c.m_coll_id AS m_coll_id,\n" +
+                    "    c.m_coll_name AS m_coll_name,\n" +
+                    "    c.m_coll_description AS m_coll_description,\n" +
+                    "    c.m_coll_po_large_url AS m_coll_po_large_url,\n" +
+                    "    c.m_coll_po_large_file AS m_coll_po_large_file,\n" +
+                    "    c.m_coll_bd_large_url AS m_coll_bd_large_url,\n" +
+                    "    c.m_coll_bd_large_file AS m_coll_bd_large_file,\n" +
+                    "    c.m_coll_po_thumb_url AS m_coll_po_thumb_url,\n" +
+                    "    c.m_coll_po_thumb_file AS m_coll_po_thumb_file,\n" +
+                    "    c.m_coll_bd_thumb_url AS m_coll_bd_thumb_url,\n" +
+                    "    c.m_coll_bd_thumb_file AS m_coll_bd_thumb_file\n" +
+                    "FROM\n" +
+                    "files AS f\n" +
+                    "LEFT JOIN movie AS m ON (m.video_id = f._id)\n" +
+                    "       LEFT JOIN movie_posters AS mp ON ( m.m_poster_id = mp._id ) \n" +
+                    "       LEFT JOIN movie_backdrops AS mb ON ( m.m_backdrop_id = mb._id )\n" +
+                    "LEFT JOIN episode AS e ON (e.video_id = f._id)\n" +
+                    "       LEFT JOIN show_posters AS ep ON ( e.e_poster_id = ep._id )\n" +
+                    "   LEFT JOIN show AS s on (e.show_episode = s._id)\n" +
+                    "       LEFT JOIN show_posters AS sp ON ( s.s_poster_id = sp._id ) \n" +
+                    "       LEFT JOIN show_backdrops AS sb ON ( s.s_backdrop_id = sb._id )\n" +
+                    "LEFT JOIN movie_collection AS c ON (c.m_coll_id = m.m_coll_id) \n" +
+                    "WHERE\n" +
+                    "    volume_hidden == 0 AND\n" +
+                    "    media_type == 3 AND\n" +
+                    "    (Archos_smbserver == 0 OR\n" +
+                    "    Archos_smbserver IN (SELECT _id FROM smb_server WHERE active == 1))";
+
+
+    // add movie collection information
+    private static final String CREATE_VIDEO_VIEW_V41 =
             "CREATE VIEW " + VIDEO_VIEW_NAME + " AS SELECT \n" +
                     "    f._id,\n" +
                     "    _data,\n" +
@@ -1209,6 +1386,10 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         }
         if (oldVersion < 40) {
             ScraperTables.upgradeTo(db, 40);
+        }
+        if (oldVersion < 41) {
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
+            db.execSQL(CREATE_VIDEO_VIEW_V41);
         }
     }
 
