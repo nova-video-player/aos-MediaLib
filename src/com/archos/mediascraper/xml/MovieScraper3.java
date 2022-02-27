@@ -56,6 +56,8 @@ import okhttp3.Cache;
 import static com.archos.mediascraper.MovieTags.isCollectionAlreadyKnown;
 import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.downloadCollectionImage;
 
+import androidx.preference.PreferenceManager;
+
 
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
@@ -101,7 +103,7 @@ public class MovieScraper3 extends BaseScraper2 {
         // get configured language
         String language = getLanguage(mContext);
         log.debug("movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
-        SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService);
+        SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService, adultScrape);
         // TODO: this triggers scrape for all search results, is this intended?
         if (searchResult.status == ScrapeStatus.OKAY) {
             for (SearchResult result : searchResult.result) {

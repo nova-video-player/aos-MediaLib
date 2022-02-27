@@ -40,7 +40,7 @@ public class ShowIdEpisodes {
     private static final String WRITER = "Writer";
 
     public static Map<String, EpisodeTags> getEpisodes(int showId, List<TvEpisode> tvEpisodes, Map<Integer, TvSeason> tvSeasons, ShowTags showTags, String language,
-                                                       MyTmdb tmdb, Context context) {
+                                                       final boolean adultScrape, MyTmdb tmdb, Context context) {
 
         Map<String, EpisodeTags> episodes = new HashMap<>();
         TvSeason tvSeason;
@@ -123,7 +123,7 @@ public class ShowIdEpisodes {
                         && !language.equals("en")) { // missing overview in native language
                     if (globalEpisodes.get(tvEpisode.id) == null) { // missing: get whole serie
                         log.debug("getEpisodes: description in " + language + " missing for tvEpisode.name s" + tvEpisode.season_number + "e" + tvEpisode.episode_number + "fallback in en for the whole season");
-                        ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(showId, tvEpisode.season_number, "en", tmdb);
+                        ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(showId, tvEpisode.season_number, "en", adultScrape,tmdb);
                         // stack all episodes in en to find later the overview and name
                         if (globalSeasonIdSearchResult.status == ScrapeStatus.OKAY) {
                             if (globalSeasonIdSearchResult.tvSeason != null) {

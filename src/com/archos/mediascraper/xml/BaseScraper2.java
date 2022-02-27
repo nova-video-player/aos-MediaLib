@@ -18,6 +18,8 @@ package com.archos.mediascraper.xml;
 import android.content.Context;
 import android.os.Bundle;
 
+import androidx.preference.PreferenceManager;
+
 import com.archos.mediascraper.BaseTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
@@ -52,6 +54,8 @@ public abstract class BaseScraper2 {
 
     private final String mName;
 
+    boolean adultScrape = false;
+
     /**
      * constructor for child classes only
      */
@@ -68,6 +72,7 @@ public abstract class BaseScraper2 {
         }
         mName = internalGetPreferenceName();
         mContext = context;
+        adultScrape = PreferenceManager.getDefaultSharedPreferences(mContext).getBoolean("enable_adult_scrap_key", false);
     }
 
     public final String getName() {

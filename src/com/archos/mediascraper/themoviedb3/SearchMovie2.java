@@ -37,7 +37,7 @@ import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
 public class SearchMovie2 {
     private static final Logger log = LoggerFactory.getLogger(SearchMovie2.class);
 
-    public static SearchMovieResult search(String query, String language, String year, int resultLimit, SearchService searchService) {
+    public static SearchMovieResult search(String query, String language, String year, int resultLimit, SearchService searchService, boolean adultScrape) {
         SearchMovieResult myResult = new SearchMovieResult();
         List<SearchResult> parserResult = null;
         Response<MovieResultsPage> response = null;
@@ -58,7 +58,7 @@ public class SearchMovie2 {
         try {
             // by default no adult search
             response = searchService.movie(query, null, language,
-                    null, false, annee, null).execute();
+                    null, adultScrape, annee, null).execute();
             switch (response.code()) {
                 case 401: // auth issue
                     log.debug("search: auth error");
@@ -105,11 +105,11 @@ public class SearchMovie2 {
                 Pair<String, String> nameYear = yearExtractor(query);
                 log.debug("search: not found trying to extract year name=" + nameYear.first + ", year=" + nameYear.second);
                 if (nameYear.second != null) // avoid infinite loop
-                    return search(nameYear.first, language, nameYear.second, resultLimit, searchService);
+                    return search(nameYear.first, language, nameYear.second, resultLimit, searchService, adultScrape);
                 else myResult.status = ScrapeStatus.NOT_FOUND;
             } else {
                 log.debug("search: retrying search for '" + query + "' without year.");
-                return search(query, language, null, resultLimit, searchService);
+                return search(query, language, null, resultLimit, searchService, adultScrape);
             }
         }
         return myResult;

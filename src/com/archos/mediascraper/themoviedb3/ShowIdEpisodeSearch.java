@@ -39,12 +39,13 @@ public class ShowIdEpisodeSearch {
     // In theory this is to buffer two consecutive requests in ShowScraper (or 4 if there is english)
     private final static LruCache<String, ShowIdEpisodeSearchResult> sShowCache = new LruCache<>(10);
 
-    // specify image language include_image_language=en,null
-    private final static Map<String, String> options  = new HashMap<String, String>() {{
-        put("include_image_language", "en,null");
-    }};
+    public static ShowIdEpisodeSearchResult getEpisodeShowResponse(int showId, int season, int episode, String language, final boolean adultScrape, MyTmdb tmdb) {
+        // specify image language include_image_language=en,null
+        final Map<String, String> options  = new HashMap<String, String>() {{
+            put("include_image_language", "en,null");
+            put("include_adult", String.valueOf(adultScrape));
+        }};
 
-    public static ShowIdEpisodeSearchResult getEpisodeShowResponse(int showId, int season, int episode, String language, MyTmdb tmdb) {
         log.debug("getEpisodeShowResponse: quering tmdb for showId " + showId + " season " + season + " episode " + episode + " in " + language);
 
         String showKey = showId + "|" + language;
@@ -68,7 +69,7 @@ public class ShowIdEpisodeSearch {
                         // fallback to english if no result
                         if (!language.equals("en")) {
                             log.debug("getEpisodeShowResponse: retrying search for showId " + showId + " in en");
-                            return getEpisodeShowResponse(showId, season, episode,"en", tmdb);
+                            return getEpisodeShowResponse(showId, season, episode,"en", adultScrape, tmdb);
                         }
                         log.debug("getEpisodeShowResponse: showId " + showId + " not found");
                         // record valid answer
@@ -82,7 +83,7 @@ public class ShowIdEpisodeSearch {
                             } else {
                                 if (!language.equals("en")) {
                                     log.debug("getEpisodeShowResponse: retrying search for showId " + showId + " in en");
-                                    return getEpisodeShowResponse(showId, season, episode,"en", tmdb);
+                                    return getEpisodeShowResponse(showId, season, episode,"en", adultScrape, tmdb);
                                 }
                                 myResult.status = ScrapeStatus.NOT_FOUND;
                             }
