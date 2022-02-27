@@ -77,7 +77,7 @@ public class Trakt {
     private static String API_KEY;
     private static String API_SECRET;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
-    public static final int SCROBBLE_THRESHOLD = 85;
+    public static final int SCROBBLE_THRESHOLD = 90;
     // TODO: question do we want more?
     public static final int LIMIT_RESPONSES = 10000;
 
