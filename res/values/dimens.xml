@@ -50,7 +50,7 @@
     <dimen name="video_details_poster_margin_top">2dip</dimen>    <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_details_poster_margin_bottom">2dip</dimen> <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_details_poster_margin_left">2dip</dimen>   <!-- margin to have background visible around the thumbnail when pressed -->
-    <dimen name="video_details_number_width">60dip</dimen>
+    <dimen name="video_details_number_width">30dip</dimen>
     <dimen name="video_show_details_item_height">180dip</dimen>
 
     <dimen name="video_list_item_height">64dip</dimen>
@@ -59,7 +59,7 @@
     <dimen name="video_list_thumbnail_margin_top">2dip</dimen>    <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_list_thumbnail_margin_bottom">2dip</dimen> <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_list_thumbnail_margin_left">2dip</dimen>   <!-- margin to have background visible around the thumbnail when pressed -->
-    <dimen name="video_list_number_width">60dip</dimen>
+    <dimen name="video_list_number_width">30dip</dimen>
 
     <dimen name="video_trakt_library_margin_left">8dip</dimen>
     <dimen name="video_list_trakt_library_margin_left">3dip</dimen>
