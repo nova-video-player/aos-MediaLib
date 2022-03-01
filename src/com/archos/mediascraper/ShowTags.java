@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.OperationApplicationException;
 import android.content.ContentProviderOperation.Builder;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -90,6 +92,8 @@ public class ShowTags extends VideoTags {
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
     private static final String ONLINEID_SELECTION = ScraperStore.Show.ONLINE_ID + "=?";
+    private static final String NAME_ONLINEID_SELECTION = ScraperStore.Show.NAME + "=? AND " +
+            ScraperStore.Show.ONLINE_ID + "=?";
 
     @Override
     public long save(Context context, long videoId) {
@@ -115,16 +119,21 @@ public class ShowTags extends VideoTags {
         log.debug("save: called for show " + mTitle + " id " + mId + " onlineId " + mOnlineId);
 
         // Remark: uniqueness is based on mTitle and should be based on mOnlineId to avoid tvshow named the same to be merged: keep it like this for now
-        String[] selectionArgs = { mTitle };
+        //String[] selectionArgs = { mTitle };
+        String[] selectionArgs = { mTitle, String.valueOf(mOnlineId) };
         //String[] selectionArgs = { String.valueOf(mOnlineId) };
+
+        //Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
+        //        NAME_SELECTION, selectionArgs, null);
         Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
-                NAME_SELECTION, selectionArgs, null);
+                NAME_ONLINEID_SELECTION, selectionArgs, null);
+
         //Cursor cursor = cr.query(ScraperStore.Show.URI.ALL, BASE_PROJECTION,
         //        ONLINEID_SELECTION, selectionArgs, null);
 
         if (cursor != null) {
-            log.debug("save: show found in db");
             if (cursor.moveToFirst()) {
+                log.debug("save: show found in db " + DatabaseUtils.dumpCursorToString(cursor));
                 showFound = true;
                 // The show was found in the database -> get stored infos
                 showId = cursor.getLong(0);
@@ -138,6 +147,12 @@ public class ShowTags extends VideoTags {
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
 
+                log.debug("save: show found in db: storedCover " + storedCover + ", newCover " + newCover);
+                log.debug("save: show found in db: storedBD " + storedBD + ", newBackdrop " + newBackdrop);
+                log.debug("save: show found in db: storedRating " + storedRating + ", mRating " + mRating);
+                log.debug("save: show found in db: storedCRating " + storedCRating + ", mContentRating " + mContentRating);
+                log.debug("save: show found in db: storedImdb " + storedImdb + ", mImdbId " + mImdbId);
+                log.debug("save: show found in db: storedOnlineId " + storedOnlineId + ", mOnlineId " + mOnlineId);
                 // compare old vs new
                 baseInfoChanged =
                         updateCover || updateBackdrop ||
@@ -145,6 +160,8 @@ public class ShowTags extends VideoTags {
                         newStringIsBetter(storedCRating, mContentRating) ||
                         newStringIsBetter(storedImdb, mImdbId) ||
                         newLongIsBetter(storedOnlineId, mOnlineId);
+
+                log.debug("save: show found in db: updateCover " + updateCover + ", updateBackdrop " + updateBackdrop + " baseInfoChanged " + baseInfoChanged);
 
                 // since show exists check other data for changes too
                 int storedPosterCount = storedPosterCount(showId, cr);
@@ -156,6 +173,18 @@ public class ShowTags extends VideoTags {
                 backdropsChanged = storedBackdropCount != newBackdropCount;
             }
             cursor.close();
+        }
+
+        if (!showFound) {
+            log.debug("save: showOnlineId not found in db, check if name that should be unique exists still");
+            boolean showNameExists = isShowNameAlreadyKnown(mTitle, context);
+            if (showNameExists) {
+                // same showName exists through with a different showID meaning that we have a show reboot
+                // or same name --> need to prefix with premiered year date for distinction and unique naming
+                int year = getPremieredYear();
+                if (year > 1) mTitle += " " + year;
+                log.debug("save: adding premieredDate in showTitle: " + mTitle);
+            }
         }
 
         if (!showFound || baseInfoChanged) {
@@ -185,7 +214,7 @@ public class ShowTags extends VideoTags {
             }
             if (showFound) {
                 // update if it is already there
-                log.debug("Updating show base info");
+                log.debug("Updating show base info: mTitle " + mTitle + " showId " + showId);
                 Uri uri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, showId);
                 int update = cr.update(uri, values, null, null);
                 if (update != 1) {
@@ -524,5 +553,23 @@ public class ShowTags extends VideoTags {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
+    }
+
+    public boolean isShowNameAlreadyKnown(String showName, Context context) {
+        ContentResolver contentResolver = context.getContentResolver();
+        Cursor cursor = contentResolver.query(
+                ScraperStore.Show.URI.ALL,
+                new String[] {ScraperStore.Show.ID}, ScraperStore.Show.NAME + "=?", new String[] { mTitle }, null);
+        Boolean isKnown = false;
+        if (cursor != null) isKnown = cursor.moveToFirst();
+        cursor.close();
+        log.debug("isShowNameAlreadyKnown: " + showName + " " + isKnown);
+        return isKnown;
+    }
+
+    public int getPremieredYear() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(mPremiered);
+        return cal.get(Calendar.YEAR);
     }
 }
