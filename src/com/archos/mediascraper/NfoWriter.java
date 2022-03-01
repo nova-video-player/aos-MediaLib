@@ -241,6 +241,8 @@ public class NfoWriter {
                 textTag(serializer, "studio", studio);
             for (String genre : tag.getGenres())
                 textTag(serializer, "genre", genre);
+            for (String seasonposter : tag.getSeasonPlots())
+                textTag(serializer, "seasonposter", seasonposter);
             for (Entry<String, String> entry : tag.getActors().entrySet()) {
                 serializer.startTag("", "actor");
                 {

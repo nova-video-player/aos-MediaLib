@@ -130,6 +130,8 @@ public final class ScraperStore {
         public static final String DIRECTORS_FORMATTED = "s_directors";
         /** writers preformatted - usually empty, use episode instead */
         public static final String WRITERS_FORMATTED = "s_writers";
+        /** seasonplots preformatted */
+        public static final String SEASONPLOTS_FORMATTED = "s_seasonplots";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "s_genres";
         /** studios preformatted */
@@ -161,6 +163,12 @@ public final class ScraperStore {
             public static final String SHOW = "show_v_writers_show";
             public static final String NAME = "name_v_writers_show";
             public static final String WRITER = "writer_v_writers_show";
+        }
+
+        public static class SeasonPlot {
+            public static final String SHOW = "show_v_seasonplots_show";
+            public static final String NAME = "name_v_seasonplots_show";
+            public static final String SEASONPLOT = "seasonplot_v_seasonplots_show";
         }
 
         public static class Studio {
@@ -356,6 +364,20 @@ public final class ScraperStore {
             public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/writer/show/");
             public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/writer/episode/");
             public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/writer/name/");
+        }
+    }
+
+    public static class SeasonPlot {
+        public static final String ID = "_id";
+        public static final String NAME = "name_seasonplot";
+        public static final String COUNT = "count_seasonplot";
+
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot/id/");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplots");
+            public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot/show/");
+            public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot/name/");
         }
     }
 

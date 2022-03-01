@@ -451,7 +451,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
         try {
-            // tidy up the accumulated actor director writer studio genre piled up in v_.*_deletable tables in one shot during deletes
+            // tidy up the accumulated actor director writer seasonplot studio genre piled up in v_.*_deletable tables in one shot during deletes
             // it has been moved from scraperTables triggers here to gain in efficiency
             db.execSQL("delete from actor where _id in (select _id from v_actor_deletable)");
             db.execSQL("delete from director where _id in (select _id from v_director_deletable)");

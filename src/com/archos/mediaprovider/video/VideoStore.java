@@ -1269,6 +1269,7 @@ public final class VideoStore {
              */
             public static final String SCRAPER_DIRECTORS = "directors";
             public static final String SCRAPER_WRITERS = "writers";
+            public static final String SCRAPER_SEASONPLOTS = "seasonplots";
             /**
              * MediaScraper: Movie Directors, Writers
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
@@ -1290,6 +1291,7 @@ public final class VideoStore {
              */
             public static final String SCRAPER_S_DIRECTORS = "s_directors";
             public static final String SCRAPER_S_WRITERS = "s_writers";
+            public static final String SCRAPER_S_SEASONPLOTS = "s_seasonplots";
             /**
              * MediaScraper: Movie / Show Genres
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped

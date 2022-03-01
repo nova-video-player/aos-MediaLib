@@ -153,6 +153,12 @@ public class ScraperProvider extends ContentProvider {
     private static final int SHOW_NETWORKLOGOS_ID = SCRAPER_PROVIDER_OFFSET + 169;
     private static final int SHOW_NETWORKLOGOS_SHOW_ID = SCRAPER_PROVIDER_OFFSET + 170;
 
+    private static final int SEASONPLOT = SCRAPER_PROVIDER_OFFSET + 171;
+    private static final int SEASONPLOT_ID = SCRAPER_PROVIDER_OFFSET + 172;
+    private static final int SEASONPLOT_ALL = SCRAPER_PROVIDER_OFFSET + 173;
+    private static final int SEASONPLOT_SHOW = SCRAPER_PROVIDER_OFFSET + 174;
+    private static final int SEASONPLOT_NAME = SCRAPER_PROVIDER_OFFSET + 175;
+
     private static UriMatcher sUriMatcher;
 
     /**
@@ -231,6 +237,17 @@ public class ScraperProvider extends ContentProvider {
                 WRITER_EPISODE);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Writer.URI.NAME) + "*",
                 WRITER_NAME);
+
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.BASE),
+                SEASONPLOT);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.ALL),
+                SEASONPLOT_ALL);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.SHOW),
+                SEASONPLOT_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.SHOW) + "#",
+                SEASONPLOT_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.NAME) + "*",
+                SEASONPLOT_NAME);
 
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Actor.URI.BASE),
                 ACTOR);
@@ -515,6 +532,11 @@ public class ScraperProvider extends ContentProvider {
                         ScraperStore.Writer.ID, values);
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Writer.URI.ID, cr);
                 break;
+            case SEASONPLOT:
+                rowId = db.insert(ScraperTables.SEASONPLOTS_TABLE_NAME,
+                        ScraperStore.SeasonPlot.ID, values);
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.SeasonPlot.URI.ID, cr);
+                break;
             case ACTOR:
                 rowId = db.insert(ScraperTables.ACTORS_TABLE_NAME,
                         ScraperStore.Actor.ID, values);
@@ -569,6 +591,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Writer.URI.ID, cr);
+                break;
+            case SEASONPLOT_SHOW:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SEASONPLOTS_SHOW_VIEW_NAME,
+                            ScraperStore.Show.SeasonPlot.SHOW, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.SeasonPlot.URI.ID, cr);
                 break;
             case DIRECTOR_EPISODE:
                 try {
@@ -960,6 +992,28 @@ public class ScraperProvider extends ContentProvider {
             case WRITER_NAME:
                 qb.setTables(ScraperTables.WRITERS_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Writer.NAME + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SEASONPLOT_ID:
+                qb.setTables(ScraperTables.SEASONPLOTS_TABLE_NAME);
+                qb.appendWhere(ScraperStore.SeasonPlot.ID + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SEASONPLOT_ALL:
+                qb.setTables(ScraperTables.SEASONPLOTS_TABLE_NAME);
+                break;
+
+            case SEASONPLOT_SHOW:
+                qb.setTables(ScraperTables.SEASONPLOTS_SHOW_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Show.SeasonPlot.SHOW + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SEASONPLOT_NAME:
+                qb.setTables(ScraperTables.SEASONPLOTS_TABLE_NAME);
+                qb.appendWhere(ScraperStore.SeasonPlot.NAME + " = ");
                 qb.appendWhereEscapeString(data);
                 break;
 
@@ -1380,6 +1434,12 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Show.ID + " = " +
                 ScraperTables.WRITERS_SHOW_VIEW_NAME + "." +
                 ScraperStore.Show.Writer.SHOW + ") " +
+                " LEFT JOIN " +
+                ScraperTables.SEASONPLOTS_SHOW_VIEW_NAME + " ON (" +
+                ScraperTables.SHOW_TABLE_NAME + "." +
+                ScraperStore.Show.ID + " = " +
+                ScraperTables.SEASONPLOTS_SHOW_VIEW_NAME + "." +
+                ScraperStore.Show.SeasonPlot.SHOW + ") " +
                 "LEFT JOIN " + ScraperTables.PLAYS_SHOW_VIEW_NAME + " ON (" +
                 ScraperTables.SHOW_TABLE_NAME + "." +
                 ScraperStore.Show.ID + " = " + 

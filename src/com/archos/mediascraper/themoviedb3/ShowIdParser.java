@@ -24,6 +24,8 @@ import com.uwetrottmann.tmdb2.entities.ContentRating;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.Network;
+import com.uwetrottmann.tmdb2.entities.ReleaseDate;
+import com.uwetrottmann.tmdb2.entities.TvSeason;
 import com.uwetrottmann.tmdb2.entities.TvShow;
 
 import org.slf4j.Logger;
@@ -48,6 +50,21 @@ public class ShowIdParser {
             result.setPlot(serie.overview);
         } else {
             log.warn("getResult: " + serie.name + " has no overview/plot");
+        }
+        // setting season plots
+        List<String> SeasonPlots = new ArrayList<>();
+        String seasonPlot;
+        if (serie.seasons != null) {
+            for (TvSeason season : serie.seasons) {
+                assert season.overview != null;
+                if (!season.overview.isEmpty()) {
+                    seasonPlot = "SeasonNumber " + season.season_number + "=&%" + season.overview + "=&%" + season.name;
+                } else {
+                    seasonPlot = "SeasonNumber " + season.season_number + "=&%" + "Season plot is not available" + "=&%" + season.name;
+                }
+                SeasonPlots.add(seasonPlot);
+                result.setSeasonPlots(SeasonPlots);
+            }
         }
 
         result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);

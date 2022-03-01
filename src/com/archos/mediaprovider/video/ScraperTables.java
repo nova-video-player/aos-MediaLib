@@ -35,11 +35,13 @@ public final class ScraperTables {
     public static final String GENRES_TABLE_NAME = "GENRE";
     public static final String DIRECTORS_TABLE_NAME = "DIRECTOR";
     public static final String WRITERS_TABLE_NAME = "WRITER";
+    public static final String SEASONPLOTS_TABLE_NAME = "SEASONPLOT";
     public static final String STUDIOS_TABLE_NAME = "STUDIO";
     public static final String FILMS_MOVIE_TABLE_NAME = "FILMS_MOVIE";
     public static final String WRITERS_MOVIE_TABLE_NAME = "WRITERS_MOVIE";
     public static final String FILMS_SHOW_TABLE_NAME = "FILMS_SHOW";
     public static final String WRITERS_SHOW_TABLE_NAME = "WRITERS_SHOW";
+    public static final String SEASONPLOTS_SHOW_TABLE_NAME = "SEASONPLOTS_SHOW";
     public static final String FILMS_EPISODE_TABLE_NAME = "FILMS_EPISODE";
     public static final String WRITERS_EPISODE_TABLE_NAME = "WRITERS_EPISODE";
     public static final String GUESTS_TABLE_NAME = "GUESTS";
@@ -62,6 +64,7 @@ public final class ScraperTables {
 
     public static final String WRITERS_MOVIE_VIEW_NAME = "V_WRITERS_MOVIE";
     public static final String WRITERS_SHOW_VIEW_NAME = "V_WRITERS_SHOW";
+    public static final String SEASONPLOTS_SHOW_VIEW_NAME = "V_SEASONPLOTS_SHOW";
     public static final String WRITERS_EPISODE_VIEW_NAME = "V_WRITERS_EPISODE";
 
     public static final String PRODUCES_MOVIE_VIEW_NAME = "V_PRODUCES_MOVIE";
@@ -91,6 +94,9 @@ public final class ScraperTables {
 
     private static final String WRITERS_SHOW_ID_SHOW = "show_writers";
     private static final String WRITERS_SHOW_ID_WRITER = "writer_writers";
+
+    private static final String SEASONPLOTS_SHOW_ID_SHOW = "show_seasonplots";
+    private static final String SEASONPLOTS_SHOW_ID_SEASONPLOT = "seasonplot_seasonplots";
 
     private static final String FILMS_EPISODE_ID_DIRECTOR = "director_films";
     private static final String FILMS_EPISODE_ID_EPISODE = "episode_films";
@@ -219,6 +225,12 @@ public final class ScraperTables {
                     ScraperStore.Writer.NAME + " TEXT UNIQUE," +
                     ScraperStore.Writer.COUNT + " INTEGER)";
 
+    private static final String SEASONPLOTS_TABLE_CREATE =
+            "CREATE TABLE " + SEASONPLOTS_TABLE_NAME + " (" +
+                    ScraperStore.SeasonPlot.ID + " INTEGER PRIMARY KEY NOT NULL," +
+                    ScraperStore.SeasonPlot.NAME + " TEXT UNIQUE," +
+                    ScraperStore.SeasonPlot.COUNT + " INTEGER)";
+
     private static final String STUDIOS_TABLE_CREATE =
         "CREATE TABLE " + STUDIOS_TABLE_NAME + " (" +
         ScraperStore.Studio.ID + " INTEGER PRIMARY KEY NOT NULL," +
@@ -266,6 +278,13 @@ public final class ScraperTables {
                     WRITERS_SHOW_ID_WRITER + " INTEGER REFERENCES " + WRITERS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
                     "PRIMARY KEY(" + WRITERS_SHOW_ID_SHOW + "," +
                     WRITERS_SHOW_ID_WRITER + "))";
+
+    private static final String SEASONPLOTS_SHOW_TABLE_CREATE =
+            "CREATE TABLE " + SEASONPLOTS_SHOW_TABLE_NAME + " (" +
+                    SEASONPLOTS_SHOW_ID_SHOW + " INTEGER REFERENCES " + SHOW_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    SEASONPLOTS_SHOW_ID_SEASONPLOT + " INTEGER REFERENCES " + SEASONPLOTS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + SEASONPLOTS_SHOW_ID_SHOW + "," +
+                    SEASONPLOTS_SHOW_ID_SEASONPLOT + "))";
 
     private static final String WRITERS_EPISODE_TABLE_CREATE =
             "CREATE TABLE " + WRITERS_EPISODE_TABLE_NAME + " (" +
@@ -525,10 +544,6 @@ public final class ScraperTables {
         " WHERE " + ScraperStore.Director.NAME + " = NEW." + ScraperStore.Episode.Director.NAME + "; " +
         "END";
 
-
-
-
-
     private static final String WRITERS_SHOW_VIEW_CREATE =
             "CREATE VIEW " + WRITERS_SHOW_VIEW_NAME + " AS SELECT " +
                     WRITERS_SHOW_TABLE_NAME + "." +
@@ -541,6 +556,18 @@ public final class ScraperTables {
                     " ON (" + WRITERS_SHOW_TABLE_NAME + "." + WRITERS_SHOW_ID_WRITER +
                     " = " + WRITERS_TABLE_NAME + "." + ScraperStore.Writer.ID + ")";
 
+    private static final String SEASONPLOTS_SHOW_VIEW_CREATE =
+            "CREATE VIEW " + SEASONPLOTS_SHOW_VIEW_NAME + " AS SELECT " +
+                    SEASONPLOTS_SHOW_TABLE_NAME + "." +
+                    SEASONPLOTS_SHOW_ID_SHOW + " AS " + ScraperStore.Show.SeasonPlot.SHOW + ", " +
+                    SEASONPLOTS_TABLE_NAME + "." +
+                    ScraperStore.SeasonPlot.NAME + " AS " + ScraperStore.Show.SeasonPlot.NAME + ", " +
+                    SEASONPLOTS_TABLE_NAME + "." +
+                    ScraperStore.SeasonPlot.ID + " AS " + ScraperStore.Show.SeasonPlot.SEASONPLOT + " FROM " +
+                    SEASONPLOTS_SHOW_TABLE_NAME + " LEFT JOIN " + SEASONPLOTS_TABLE_NAME +
+                    " ON (" + SEASONPLOTS_SHOW_TABLE_NAME + "." + SEASONPLOTS_SHOW_ID_SEASONPLOT +
+                    " = " + SEASONPLOTS_TABLE_NAME + "." + ScraperStore.SeasonPlot.ID + ")";
+
     private static final String WRITERS_SHOW_VIEW_INSERT_TRIGGER =
             "CREATE TRIGGER insert_writers_show INSTEAD OF INSERT ON " + WRITERS_SHOW_VIEW_NAME +
                     " BEGIN " +
@@ -552,6 +579,19 @@ public final class ScraperTables {
                     WRITERS_TABLE_NAME + "." + ScraperStore.Writer.ID + " " +
                     " FROM " + WRITERS_TABLE_NAME +
                     " WHERE " + ScraperStore.Writer.NAME + " = NEW." + ScraperStore.Show.Writer.NAME + "; " +
+                    "END";
+
+    private static final String SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_seasonplots_show INSTEAD OF INSERT ON " + SEASONPLOTS_SHOW_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + SEASONPLOTS_TABLE_NAME + " ( " + ScraperStore.SeasonPlot.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Show.SeasonPlot.NAME + "); " +
+                    "INSERT INTO " + SEASONPLOTS_SHOW_TABLE_NAME +
+                    " ( " + SEASONPLOTS_SHOW_ID_SHOW + "," + SEASONPLOTS_SHOW_ID_SEASONPLOT + " ) " +
+                    "SELECT NEW." + ScraperStore.Show.SeasonPlot.SHOW + ", " +
+                    SEASONPLOTS_TABLE_NAME + "." + ScraperStore.SeasonPlot.ID + " " +
+                    " FROM " + SEASONPLOTS_TABLE_NAME +
+                    " WHERE " + ScraperStore.SeasonPlot.NAME + " = NEW." + ScraperStore.Show.SeasonPlot.NAME + "; " +
                     "END";
 
     private static final String WRITERS_EPISODE_VIEW_CREATE =
@@ -705,6 +745,12 @@ public final class ScraperTables {
                     "LEFT JOIN writers_show ON writers_show.writer_writers=writer._id " +
                     "LEFT JOIN writers_episode ON writers_episode.writer_writers=writer._id " +
                     "WHERE coalesce(movie_writers, show_writers, episode_writers) IS NULL";
+
+    private static final String SEASONPLOT_DELETABLE_VIEW_CREATE =
+            "CREATE VIEW v_seasonplot_deletable AS " +
+                    "SELECT _id FROM seasonplot " +
+                    "LEFT JOIN seasonplots_show ON seasonplots_show.seasonplot_seasonplots=seasonplot._id " +
+                    "WHERE coalesce(movie_seasonplots, show_seasonplots, episode_seasonplots) IS NULL";
 
     private static final String GENRE_DELETABLE_VIEW_CREATE =
             "CREATE VIEW v_genre_deletable AS " +
@@ -923,6 +969,18 @@ public final class ScraperTables {
                     "           LEFT JOIN writer\n" +
                     "                  ON ( writer_writers = _id ) \n" +
                     "     ORDER BY writers_show.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+    public static final String VIEW_SHOW_SEASONPLOTS = "v_show_seasonplots";
+    private static final String CREATE_VIEW_SHOW_SEASONPLOTS =
+            "CREATE VIEW " + VIEW_SHOW_SEASONPLOTS + " AS\n" +
+                    "SELECT _id, group_concat( name_seasonplot, ', ' ) AS seasonplots\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT show_seasonplots AS _id, name_seasonplot\n" +
+                    "      FROM seasonplots_show\n" +
+                    "           LEFT JOIN seasonplot\n" +
+                    "                  ON ( seasonplot_seasonplots = _id ) \n" +
+                    "     ORDER BY seasonplots_show.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
     public static final String VIEW_EPISODE_WRITERS = "v_episode_writers";
@@ -1325,19 +1383,26 @@ public final class ScraperTables {
             log.debug("upgradeTo: " + toVersion);
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.WRITERS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.WRITERS_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.SEASONPLOTS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.WRITERS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL(WRITERS_TABLE_CREATE);
+            db.execSQL(SEASONPLOTS_TABLE_CREATE);
             db.execSQL(WRITERS_MOVIE_TABLE_CREATE);
             db.execSQL(WRITERS_EPISODE_TABLE_CREATE);
             db.execSQL(WRITERS_SHOW_TABLE_CREATE);
+            db.execSQL(SEASONPLOTS_SHOW_TABLE_CREATE);
             db.execSQL(WRITERS_MOVIE_VIEW_CREATE);
             db.execSQL(WRITERS_SHOW_VIEW_CREATE);
+            db.execSQL(SEASONPLOTS_SHOW_VIEW_CREATE);
             db.execSQL(WRITERS_EPISODE_VIEW_CREATE);
             db.execSQL(WRITERS_MOVIE_VIEW_INSERT_TRIGGER);
             db.execSQL(WRITERS_SHOW_VIEW_INSERT_TRIGGER);
+            db.execSQL(SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER);
             db.execSQL(WRITERS_EPISODE_VIEW_INSERT_TRIGGER);
             db.execSQL(WRITER_DELETABLE_VIEW_CREATE);
+            db.execSQL(SEASONPLOT_DELETABLE_VIEW_CREATE);
             db.execSQL(CREATE_VIEW_SHOW_WRITERS);
+            db.execSQL(CREATE_VIEW_SHOW_SEASONPLOTS);
             db.execSQL(CREATE_VIEW_EPISODE_WRITERS);
             db.execSQL(CREATE_VIEW_MOVIE_WRITERS);
             log.debug("upgradeTo: creating indexes");
@@ -1345,6 +1410,7 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX WRITERS_MOVIE_idx ON WRITERS_MOVIE(writer_writers)");
             db.execSQL("CREATE INDEX WRITERS_EPISODE_idx ON WRITERS_EPISODE(writer_writers)");
             db.execSQL("CREATE INDEX WRITERS_SHOW_idx ON WRITERS_SHOW(writer_writers)");
+            db.execSQL("CREATE INDEX SEASONPLOTS_SHOW_idx ON SEASONPLOTS_SHOW(seasonplot_seasonplots)");
         }
     }
 }
