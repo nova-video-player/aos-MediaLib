@@ -1185,9 +1185,9 @@ public final class ScraperTables {
                     "    show_id         INTEGER REFERENCES show ( _id ) ON DELETE CASCADE\n" +
                     "                                                    ON UPDATE CASCADE,\n" +
                     "    s_nl_thumb_url  TEXT,\n" +
-                    "    s_nl_thumb_file TEXT UNIQUE ON CONFLICT IGNORE,\n" +
+                    "    s_nl_thumb_file TEXT,\n" +
                     "    s_nl_large_url  TEXT,\n" +
-                    "    s_nl_large_file TEXT UNIQUE ON CONFLICT IGNORE\n" +
+                    "    s_nl_large_file TEXT \n" +
                     ")";
 
 
