@@ -243,10 +243,15 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // stop handler thread
         mHandlerThread.quit();
         mImporter.destroy();
-        // hide notification
-        nm.cancel(NOTIFICATION_ID);
         if (ImportState.VIDEO.isInitialImport()) ImportState.VIDEO.setState(State.IDLE);
-        stopForeground(true);
+        // hide notification
+        if (AppState.isForeGround()) {
+            nm.cancel(NOTIFICATION_ID);
+            stopForeground(true);
+        } else {
+            // if app goes in background do not remove notif use stopSelf
+            stopSelf();
+        }
     }
 
     /** wether it's ok do do an import now, will mark db dirty if not */
