@@ -92,7 +92,7 @@ public class VideoStoreImportImpl {
         for (String extPath: extPathList)
             for (String blacklistedDir : blacklistCamDirs)
                 BLACKLIST += " AND _data NOT LIKE '%" + extPath+blacklistedDir + "%'";
-        log.debug("VideoStoreImportImpl: BLACKLIST " + BLACKLIST);
+        log.debug("VideoStoreImportImpl: BLACKLIST" + BLACKLIST);
     }
 
     public void destroy() {
