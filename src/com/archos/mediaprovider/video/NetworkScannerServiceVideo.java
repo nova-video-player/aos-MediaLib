@@ -125,6 +125,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final String notifChannelDescr = "NetworkScannerServiceVideo";
 
     public static boolean startIfHandles(Context context, Intent broadcast) {
+        log.debug("startIfHandles");
         String action = broadcast.getAction();
         Uri data = broadcast.getData();
         if ((ArchosMediaIntent.isVideoScanIntent(action) || ArchosMediaIntent.isVideoRemoveIntent(action))
