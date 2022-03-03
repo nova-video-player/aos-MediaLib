@@ -107,11 +107,13 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     }
 
     public static boolean startIfHandles(Context context, Intent broadcast) {
+        log.debug("startIfHandles");
         mContext = context;
         String action = broadcast.getAction();
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)
                 || ArchosMediaIntent.ACTION_VIDEO_SCANNER_STORAGE_PERMISSION_GRANTED.equals(action)
                 || Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)
+                || Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)
                 || ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)
                 || ArchosMediaIntent.isVideoRemoveIntent(action)
                 || Intent.ACTION_SHUTDOWN.equals(action)
@@ -305,6 +307,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             removeAllMessages(mHandler);
             Message m = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, startId, flags);
             mHandler.sendMessageDelayed(m, 1000);
+        } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
+            log.debug("ACTION_MEDIA_SCANNER_SCAN_FILE " + intent.getData());
+            Message m = mHandler.obtainMessage(MESSAGE_UPDATE_METADATA, startId, flags, intent.getData());
+            m.sendToTarget();
         } else {
             log.warn("onStartCommand: intent not treated, cancelling notification and stopForeground");
             nm.cancel(NOTIFICATION_ID);
