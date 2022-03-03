@@ -134,11 +134,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         return false;
     }
 
-    @Override
-    public void onCreate() {
-
-        log.debug("onCreate");
-
+    private Notification createNotification() {
         // need to do that early to avoid ANR on Android 26+
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -148,13 +144,19 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             if (nm != null)
                 nm.createNotificationChannel(nc);
         }
-        n = new NotificationCompat.Builder(this, notifChannelId)
+        return new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle(getString(R.string.video_store_import))
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true)
                 .build();
+    }
+
+    @Override
+    public void onCreate() {
+        log.debug("onCreate");
+        n = createNotification();
         startForeground(NOTIFICATION_ID, n);
         log.debug("onCreate: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
 
