@@ -18,7 +18,6 @@ import android.content.ContentProviderOperation;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -26,7 +25,6 @@ import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.DisplayMetrics;
 
-import androidx.preference.PreferenceManager;
 
 import com.archos.mediaprovider.video.ScraperStore;
 
