@@ -18,12 +18,15 @@ import android.content.ContentProviderOperation;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.DisplayMetrics;
+
+import androidx.preference.PreferenceManager;
 
 import com.archos.mediaprovider.video.ScraperStore;
 
@@ -343,7 +346,7 @@ public class ScraperImage {
         return new File(getDir(mType, context), getFileName(url, mNameSeed, thumb)).getPath();
     }
 
-    private static String getFileName(String url, String nameSeed, boolean thumb) {
+    private String getFileName(String url, String nameSeed, boolean thumb) {
         // goal is to generate a stable + unique filename
         int urlHash;
         int seedHash;
@@ -361,8 +364,15 @@ public class ScraperImage {
             log.warn("getFileName: nameSeed is null! for url " +  url);
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
-
-        String name = String.valueOf(seedHash) + String.valueOf(urlHash);
+        boolean logo;
+        logo = mType == Type.SHOW_NETWORK;
+        String name = null;
+        if (logo) {
+            assert url != null;
+            name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
+            return name;
+        } else
+            name = String.valueOf(seedHash) + String.valueOf(urlHash);
         return name + (thumb ? "t.jpg" : "l.jpg");
     }
 
