@@ -24,6 +24,7 @@ import com.uwetrottmann.tmdb2.entities.ContentRating;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.Network;
+import com.uwetrottmann.tmdb2.entities.Person;
 import com.uwetrottmann.tmdb2.entities.ReleaseDate;
 import com.uwetrottmann.tmdb2.entities.TvSeason;
 import com.uwetrottmann.tmdb2.entities.TvShow;
@@ -65,6 +66,12 @@ public class ShowIdParser {
                 SeasonPlots.add(seasonPlot);
                 result.setSeasonPlots(SeasonPlots);
             }
+        }
+
+        // Utilizing the unused series director as a pipeline for series created by tag
+        if (serie.created_by != null) {
+            for (Person person : serie.created_by)
+            result.addDirectorIfAbsent(person.name);
         }
 
         result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);
