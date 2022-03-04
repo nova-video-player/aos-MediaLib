@@ -246,9 +246,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (ImportState.VIDEO.isInitialImport()) ImportState.VIDEO.setState(State.IDLE);
         // hide notification
         if (AppState.isForeGround()) {
+            log.debug("onDestroy: app is in foreground stopForeground");
             nm.cancel(NOTIFICATION_ID);
             stopForeground(true);
         } else {
+            log.debug("onDestroy: app is in background stopSelf");
             // if app goes in background do not remove notif use stopSelf
             stopSelf();
         }
