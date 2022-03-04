@@ -116,7 +116,6 @@ public class TagsFactory {
             coverME = getCol(c, VideoColumns.SCRAPER_COVER);
             coverS = getCol(c, VideoColumns.SCRAPER_S_COVER);
             backdropUrlMS = getCol(c, VideoColumns.SCRAPER_BACKDROP_URL);
-            networklogoUrlMS = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_URL);
             actorsMS = getCol(c, VideoColumns.SCRAPER_ACTORS);
             actorsE = getCol(c, VideoColumns.SCRAPER_E_ACTORS);
             directorsME = getCol(c, VideoColumns.SCRAPER_DIRECTORS);
@@ -146,11 +145,11 @@ public class TagsFactory {
             backdropTUrl = getCol(c, VideoColumns.SCRAPER_BACKDROP_THUMB_URL);
             backdropId = getCol(c, VideoColumns.SCRAPER_BACKDROP_ID);
 
-            networklogoLFile = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_LARGE_FILE);
-            networklogoLUrl = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_LARGE_URL);
-            networklogoTFile = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_THUMB_FILE);
-            networklogoTUrl = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_THUMB_URL);
-            networklogoId = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_ID);
+            networklogoSLFile = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_FILE);
+            networklogoSLUrl = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_URL);
+            networklogoSTFile = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_FILE);
+            networklogoSTUrl = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_URL);
+            networklogoSId = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_ID);
 
             actorphotoSLFile = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_FILE);
             actorphotoSLUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
@@ -202,7 +201,6 @@ public class TagsFactory {
         public final int coverME;
         public final int coverS;
         public final int backdropUrlMS;
-        public final int networklogoUrlMS;
         public final int actorsMS;
         public final int actorsE;
         public final int directorsME;
@@ -221,11 +219,11 @@ public class TagsFactory {
         public final int backdropTUrl;
         public final int backdropId;
 
-        public final int networklogoLFile;
-        public final int networklogoLUrl;
-        public final int networklogoTFile;
-        public final int networklogoTUrl;
-        public final int networklogoId;
+        public final int networklogoSLFile;
+        public final int networklogoSLUrl;
+        public final int networklogoSTFile;
+        public final int networklogoSTUrl;
+        public final int networklogoSId;
 
         public final int actorphotoSLFile;
         public final int actorphotoSLUrl;
@@ -278,7 +276,6 @@ public class TagsFactory {
         VideoColumns.SCRAPER_COVER,
         VideoColumns.SCRAPER_S_COVER,
         VideoColumns.SCRAPER_BACKDROP_URL,
-            VideoColumns.SCRAPER_NETWORKLOGO_URL,
         VideoColumns.SCRAPER_ACTORS,
         VideoColumns.SCRAPER_E_ACTORS,
         VideoColumns.SCRAPER_DIRECTORS,
@@ -307,11 +304,6 @@ public class TagsFactory {
         VideoColumns.SCRAPER_BACKDROP_THUMB_FILE,
         VideoColumns.SCRAPER_BACKDROP_THUMB_URL,
         VideoColumns.SCRAPER_BACKDROP_ID,
-            VideoColumns.SCRAPER_NETWORKLOGO_LARGE_FILE,
-            VideoColumns.SCRAPER_NETWORKLOGO_LARGE_URL,
-            VideoColumns.SCRAPER_NETWORKLOGO_THUMB_FILE,
-            VideoColumns.SCRAPER_NETWORKLOGO_THUMB_URL,
-            VideoColumns.SCRAPER_NETWORKLOGO_ID,
         VideoColumns.SCRAPER_C_ID,
         VideoColumns.SCRAPER_C_NAME,
         VideoColumns.SCRAPER_C_DESCRIPTION,
@@ -406,7 +398,6 @@ public class TagsFactory {
             String plotME = getStringCol(cur, cols.plotME);
             String coverME = getStringCol(cur, cols.coverME);
             String backdropUrlMS = getStringCol(cur, cols.backdropUrlMS);
-            String networklogoUrlMS = getStringCol(cur, cols.networklogoUrlMS);
             String actorsMS = getStringCol(cur, cols.actorsMS);
             String directorsME = getStringCol(cur, cols.directorsME);
             String writersME = getStringCol(cur, cols.writersME);
@@ -418,11 +409,11 @@ public class TagsFactory {
             String backdropTFile = getStringCol(cur, cols.backdropTFile);
             String backdropTUrl = getStringCol(cur, cols.backdropTUrl);
 
-            long networklogoId = getLongCol(cur, cols.networklogoId);
-            String networklogoLFile = getStringCol(cur, cols.networklogoLFile);
-            String networklogoLUrl = getStringCol(cur, cols.networklogoLUrl);
-            String networklogoTFile = getStringCol(cur, cols.networklogoTFile);
-            String networklogoTUrl = getStringCol(cur, cols.networklogoTUrl);
+            long networklogoSId = getLongCol(cur, cols.networklogoSId);
+            String networklogoSLFile = getStringCol(cur, cols.networklogoSLFile);
+            String networklogoSLUrl = getStringCol(cur, cols.networklogoSLUrl);
+            String networklogoSTFile = getStringCol(cur, cols.networklogoSTFile);
+            String networklogoSTUrl = getStringCol(cur, cols.networklogoSTUrl);
 
             long actorphotoSId = getLongCol(cur, cols.actorphotoSId);
             String actorphotoSLFile = getStringCol(cur, cols.actorphotoSLFile);
@@ -598,10 +589,6 @@ public class TagsFactory {
                         Log.w(TAG, "No Backdrop due to missing paths in database");
                     }
 
-                    if (networklogoUrlMS != null && networklogoId <= 0) {
-                        Log.w(TAG, "No NetworkLogo due to missing paths in database");
-                    }
-
                     if (backdropId > 0) {
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_BACKDROP, titleMS);
                         image.setLargeFile(backdropLFile);
@@ -613,13 +600,13 @@ public class TagsFactory {
                         sTag.setBackdrops(image.asList());
                     }
 
-                    if (networklogoId > 0) {
+                    if (networklogoSId > 0) {
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_NETWORK, titleMS);
-                        image.setLargeFile(networklogoLFile);
-                        image.setLargeUrl(networklogoLUrl);
-                        image.setThumbFile(networklogoTFile);
-                        image.setThumbUrl(networklogoTUrl);
-                        image.setId(networklogoId);
+                        image.setLargeFile(networklogoSLFile);
+                        image.setLargeUrl(networklogoSLUrl);
+                        image.setThumbFile(networklogoSTFile);
+                        image.setThumbUrl(networklogoSTUrl);
+                        image.setId(networklogoSId);
                         image.setRemoteId(showId);
                         sTag.setNetworkLogos(image.asList());
                     }

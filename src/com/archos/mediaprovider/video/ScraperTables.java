@@ -876,8 +876,6 @@ public final class ScraperTables {
             "coalesce(cover_episode, cover_show) AS " + ScraperStore.AllVideos.MOVIE_OR_SHOW_COVER + ", " +
             "backdrop_show AS " + ScraperStore.AllVideos.MOVIE_OR_SHOW_BACKDROP + ", " +
             "backdrop_url_show AS " + ScraperStore.AllVideos.MOVIE_OR_SHOW_BACKDROP_URL + ", " +
-                    "networklogo_show AS " + ScraperStore.AllVideos.MOVIE_OR_SHOW_NETWORKLOGO + ", " +
-                    "networklogo_url_show AS " + ScraperStore.AllVideos.MOVIE_OR_SHOW_NETWORKLOGO_URL + ", " +
             "plot_show AS " + ScraperStore.AllVideos.MOVIE_OR_SHOW_PLOT + ", " +
             "plot_episode AS " + ScraperStore.AllVideos.EPISODE_PLOT + " " +
             "FROM show LEFT JOIN episode ON show_episode = show._id";

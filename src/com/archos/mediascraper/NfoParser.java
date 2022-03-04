@@ -390,7 +390,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show NetworkLogo
-                Uri networklogo = LocalImages.findNetworkLogo(videoFile, showTitle);
+                Uri networklogo = LocalImages.findShowNetworkLogo(videoFile, showTitle);
                 if (networklogo != null) {
                     result.addDefaultNetworkLogo(context, networklogo);
                 }

@@ -217,8 +217,6 @@ public final class ScraperStore {
         public static final String MOVIE_OR_SHOW_COVER = "cover";
         public static final String MOVIE_OR_SHOW_BACKDROP = "backdrop";
         public static final String MOVIE_OR_SHOW_BACKDROP_URL = "backdrop_url";
-        public static final String MOVIE_OR_SHOW_NETWORKLOGO = "networklogo";
-        public static final String MOVIE_OR_SHOW_NETWORKLOGO_URL = "networklogo_url";
         public static final String MOVIE_OR_SHOW_PLOT = "plot";
         public static final String EPISODE_PLOT = "plot_episode";
 
