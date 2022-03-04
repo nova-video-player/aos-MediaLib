@@ -68,6 +68,7 @@ public class NfoParser {
 
     /** showtitle / filename + this */
     public static final String NETWORKLOGO_EXTENSION = "-networklogo.archos.png";
+    public static final String ACTORPHOTO_EXTENSION = "-actorphoto.archos.png";
     public static String getCustomShowPosterName(String showTitle) {
         String titleEncoded = StringUtils.fileSystemEncode(showTitle);
         if (titleEncoded != null)
@@ -86,6 +87,13 @@ public class NfoParser {
         String titleEncoded = StringUtils.fileSystemEncode(showTitle);
         if (titleEncoded != null)
             return titleEncoded + NETWORKLOGO_EXTENSION;
+        return null;
+    }
+
+    public static String getCustomShowActorPhotoName(String showTitle) {
+        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
+        if (titleEncoded != null)
+            return titleEncoded + ACTORPHOTO_EXTENSION;
         return null;
     }
 
@@ -385,6 +393,12 @@ public class NfoParser {
                 Uri networklogo = LocalImages.findNetworkLogo(videoFile, showTitle);
                 if (networklogo != null) {
                     result.addDefaultNetworkLogo(context, networklogo);
+                }
+
+                // check if we can add local image as show ActorPhoto
+                Uri actorphoto = LocalImages.findActorPhoto(videoFile, showTitle);
+                if (actorphoto != null) {
+                    result.addDefaultActorPhoto(context, actorphoto);
                 }
 
                 // store in cache

@@ -114,6 +114,13 @@ public class ShowIdParser {
         } else log.debug("getResult: no networklogo_path for " + serie.id);
 
         if (serie.credits != null) {
+            if (serie.credits.cast != null)
+                    for (int i = 0; i < serie.credits.cast.size(); i++) {
+                        result.addActorPhotoTMDB(mContext, serie.credits.cast.get(i).profile_path);
+                    }
+        } else log.debug("getResult: no actor_photo_path for " + serie.id);
+
+        if (serie.credits != null) {
             if (serie.credits.guest_stars != null)
                 for (CastMember guestStar : serie.credits.guest_stars)
                     result.addActorIfAbsent(guestStar.name, guestStar.character);

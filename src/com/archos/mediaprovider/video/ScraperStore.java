@@ -118,6 +118,10 @@ public final class ScraperStore {
         public static final String NETWORKLOGO_URL = "networklogo_url_show";
         public static final String NETWORKLOGO_ID = "s_networklogo_id";
 
+        public static final String ACTORPHOTO = "actorphoto_show";
+        public static final String ACTORPHOTO_URL = "actorphoto_url_show";
+        public static final String ACTORPHOTO_ID = "s_actorphoto_id";
+
         /** id in online db "73255" > http://thetvdb.com/?tab=series&id=73255 */
         public static final String ONLINE_ID = "s_online_id";
         /** IMDb id "tt0285331" > http://www.imdb.com/title/tt0285331 */
@@ -441,6 +445,19 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/shownetworklogos");
             public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/shownetworklogos/byremote");
+        }
+    }
+
+    public static class ShowActorPhotos {
+        public static final String ID = "_id";
+        public static final String SHOW_ID = "show_id";
+        public static final String THUMB_URL = "s_ap_thumb_url";
+        public static final String THUMB_FILE = "s_ap_thumb_file";
+        public static final String LARGE_URL = "s_ap_large_url";
+        public static final String LARGE_FILE = "s_ap_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/showactorphotos");
+            public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/showactorphotos/byremote");
         }
     }
 

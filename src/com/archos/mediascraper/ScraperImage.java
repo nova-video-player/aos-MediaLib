@@ -50,6 +50,7 @@ public class ScraperImage {
 
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
+    final static String TMDB_CAST_IMAGE_URL = "https://image.tmdb.org/t/p/w154";
     final static String GITHUB_STUDIO_NETWOK_LOGO_URL = "https://raw.githubusercontent.com/bronnel/resource.images.studios.coloured/master/resources/";
     final static String POSTER_THUMB = "w154";
     final static String POSTER_LARGE = "w342";
@@ -68,6 +69,8 @@ public class ScraperImage {
     public final static String TMSL = TMDB_IMAGE_URL + STILL_LARGE;
     // for network logos
     public final static String GNL = GITHUB_STUDIO_NETWOK_LOGO_URL;
+    // for actor photos
+    public final static String AP = TMDB_CAST_IMAGE_URL;
 
 
     public String getLanguage() {
@@ -103,6 +106,12 @@ public class ScraperImage {
                 ScraperStore.ShowNetworkLogos.THUMB_URL, ScraperStore.ShowNetworkLogos.THUMB_FILE,
                 ScraperStore.ShowNetworkLogos.LARGE_URL, ScraperStore.ShowNetworkLogos.LARGE_FILE,
                 null, ScraperStore.ShowNetworkLogos.URI.BASE, ScraperStore.ShowNetworkLogos.SHOW_ID,
+                ImageScaler.Type.SCALE_INSIDE
+        ),
+        SHOW_ACTOR_PHOTO(
+                ScraperStore.ShowActorPhotos.THUMB_URL, ScraperStore.ShowActorPhotos.THUMB_FILE,
+                ScraperStore.ShowActorPhotos.LARGE_URL, ScraperStore.ShowActorPhotos.LARGE_FILE,
+                null, ScraperStore.ShowActorPhotos.URI.BASE, ScraperStore.ShowActorPhotos.SHOW_ID,
                 ImageScaler.Type.SCALE_INSIDE
         ),
         EPISODE_POSTER(
@@ -363,11 +372,17 @@ public class ScraperImage {
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
         boolean logo;
+        boolean actorphoto;
         logo = mType == Type.SHOW_NETWORK;
+        actorphoto = mType == Type.SHOW_ACTOR_PHOTO;
         String name = null;
         if (logo) {
             assert url != null;
             name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
+            return name;
+        } else if (actorphoto){
+            assert url != null;
+            name = url.replaceAll(TMDB_CAST_IMAGE_URL, "");
             return name;
         } else
             name = String.valueOf(seedHash) + String.valueOf(urlHash);
@@ -393,6 +408,10 @@ public class ScraperImage {
             case SHOW_NETWORK:
                 ret = MediaScraper.getNetworkLogoDirectory(context);
                 log.trace("getDir: for networklogo: " + ret.getPath());
+                break;
+            case SHOW_ACTOR_PHOTO:
+                ret = MediaScraper.getActorPhotoDirectory(context);
+                log.trace("getDir: for actorphoto: " + ret.getPath());
                 break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
@@ -437,6 +456,10 @@ public class ScraperImage {
                 ret = MediaScraper.getNetworkLogoCacheDirectory(context);
                 log.trace("getCacheDir: for networklogo " + ret.getPath());
                 break;
+            case SHOW_ACTOR_PHOTO:
+                ret = MediaScraper.getActorPhotoCacheDirectory(context);
+                log.trace("getCacheDir: for actorphoto " + ret.getPath());
+                break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
                 log.trace("getCacheDir: for collection_backdrop " + ret.getPath());
@@ -471,6 +494,8 @@ public class ScraperImage {
             case SHOW_BACKDROP:
             case SHOW_NETWORK:
                 return MediaScraper.NETWORKLOGO_CACHE_TIMEOUT;
+            case SHOW_ACTOR_PHOTO:
+                return MediaScraper.ACTORPHOTO_CACHE_TIMEOUT;
             case COLLECTION_BACKDROP:
                 return MediaScraper.BACKDROP_CACHE_TIMEOUT;
             default:
@@ -596,6 +621,17 @@ public class ScraperImage {
                 }
                 log.trace("saveSizedImage: target NetworkLogo(" + maxWidth + "," + maxHeight + ")");
                 break;
+            case SHOW_ACTOR_PHOTO:
+                if (thumb) {
+                    maxWidth = thumbWidth;
+                    maxHeight = thumbHeight;
+                } else {
+                    DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+                    maxHeight = displayMetrics.heightPixels;
+                    maxWidth = displayMetrics.widthPixels;
+                }
+                log.trace("saveSizedImage: target ActorPhoto(" + maxWidth + "," + maxHeight + ")");
+                break;
             case COLLECTION_BACKDROP:
                 if (thumb) {
                     maxWidth = thumbWidth;
@@ -703,6 +739,12 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Show.NETWORKLOGO_ID, Long.valueOf(mId));
                 updateValues.put(ScraperStore.Show.NETWORKLOGO_URL, mLargeUrl);
                 updateValues.put(ScraperStore.Show.NETWORKLOGO, mLargeFile);
+                break;
+            case SHOW_ACTOR_PHOTO:
+                updateUri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, mRemoteId);
+                updateValues.put(ScraperStore.Show.ACTORPHOTO_ID, Long.valueOf(mId));
+                updateValues.put(ScraperStore.Show.ACTORPHOTO_URL, mLargeUrl);
+                updateValues.put(ScraperStore.Show.ACTORPHOTO, mLargeFile);
                 break;
             case MOVIE_POSTER:
                 if(mOnlineID>0) {

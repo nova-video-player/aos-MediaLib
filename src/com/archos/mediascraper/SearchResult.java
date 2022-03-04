@@ -32,6 +32,7 @@ public class SearchResult implements Parcelable {
     private String mPosterPath;
     private String mBackdropPath;
     private String mNetworkLogoPath;
+    private String mActorPhotoPath;
 
     private String mYear;
 
@@ -81,10 +82,12 @@ public class SearchResult implements Parcelable {
     public String getPosterPath() { return mPosterPath; }
     public String getBackdropPath() { return mBackdropPath; }
     public String getNetworkLogoPath() { return mNetworkLogoPath; }
+    public String getActorPhotoPath() { return mActorPhotoPath; }
 
     public void setPosterPath(String path) { mPosterPath = path; }
     public void setBackdropPath(String path) { mBackdropPath = path;  }
     public void setNetworkLogoPath(String path) { mNetworkLogoPath = path;  }
+    public void setActorPhotoPath(String path) { mActorPhotoPath = path;  }
 
     public void setYear(String year) { mYear = year; }
     public String getYear() { return mYear; }

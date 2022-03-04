@@ -85,6 +85,7 @@ public abstract class BaseTags implements Parcelable {
     protected List<ScraperImage> mPosters;
     protected List<ScraperImage> mBackdrops;
     protected List<ScraperImage> mNetworkLogos;
+    protected List<ScraperImage> mActorPhotos;
     protected long mRuntimeMs;
     protected long mLastPlayedMs;
     protected long mBookmark;
@@ -137,6 +138,8 @@ public abstract class BaseTags implements Parcelable {
     public ScraperImage getDefaultBackdrop() { return getFirst(mBackdrops); }
     public List<ScraperImage> getNetworkLogos() { return mNetworkLogos; }
     public ScraperImage getDefaultNetworkLogo() { return getFirst(mNetworkLogos); }
+    public List<ScraperImage> getActorPhotos() { return mActorPhotos; }
+    public ScraperImage getDefaultActorPhoto() { return getFirst(mActorPhotos); }
     public String getContentRating() { return mContentRating; }
     public String getImdbId() { return mImdbId; }
     public long getOnlineId() { return mOnlineId; }
@@ -148,6 +151,7 @@ public abstract class BaseTags implements Parcelable {
     public abstract List<ScraperImage> getAllBackdropsInDb(Context context);
     public abstract List<ScraperImage> getAllPostersInDb(Context context);
     public abstract List<ScraperImage> getAllNetworkLogosInDb(Context context);
+    public abstract List<ScraperImage> getAllActorPhotosInDb(Context context);
     public abstract List<ScraperTrailer> getAllTrailersInDb(Context context);
     public String getDirectorsFormatted() {
         ensureFormattedDirectors();
@@ -273,10 +277,27 @@ public abstract class BaseTags implements Parcelable {
         return null;
     }
 
+    public File getActorPhoto() {
+        ScraperImage image = getDefaultActorPhoto();
+        if (image != null)
+            return image.getLargeFileF();
+        return null;
+    }
+
     public List<File> getNetworkLogosLargeFileF() {
         List<File> files = new ArrayList<>();
         for (int i = 0; i < getNetworkLogos().size(); i++) {
             ScraperImage file = getNetworkLogos().get(i);
+            File mfile = file.getLargeFileF();
+            files.add(mfile);
+        }
+        return files;
+    }
+
+    public List<File> getActorPhotosLargeFileF() {
+        List<File> files = new ArrayList<>();
+        for (int i = 0; i < getActorPhotos().size(); i++) {
+            ScraperImage file = getActorPhotos().get(i);
             File mfile = file.getLargeFileF();
             files.add(mfile);
         }
@@ -289,6 +310,10 @@ public abstract class BaseTags implements Parcelable {
     }
     public File downloadGetDefaultNetworkLogoFile(Context context) {
         ScraperImage image = getDefaultNetworkLogo();
+        return downloadGetImage(image, context);
+    }
+    public File downloadGetDefaultActorPhotoFile(Context context) {
+        ScraperImage image = getDefaultActorPhoto();
         return downloadGetImage(image, context);
     }
     public File downloadGetDefaultBackdropFile(Context context) {
@@ -346,6 +371,16 @@ public abstract class BaseTags implements Parcelable {
             log.warn("downloadNetworkLogos: mNetworkLogos is null for " + mTitle);
     }
 
+    // normally not used since huge footprint -> downloaded when browsing
+    public void downloadActorPhotos(Context context) {
+        if (mActorPhotos != null)
+            for (ScraperImage actorphoto : mActorPhotos) {
+                log.debug("downloadActorPhotos: " + mTitle + ", url " + actorphoto.getLargeUrl());
+                actorphoto.download(context);
+            } else
+            log.warn("downloadActorPhotos: mActorPhotos is null for " + mTitle);
+    }
+
     public void downloadBackdrop(Context context) {
         ScraperImage image = getDefaultBackdrop();
         if (image != null) {
@@ -364,10 +399,20 @@ public abstract class BaseTags implements Parcelable {
             log.warn("downloadNetworkLogo: image is null for " + mTitle);
     }
 
+    public void downloadActorPhoto(Context context) {
+        ScraperImage image = getDefaultActorPhoto();
+        if (image != null) {
+            log.debug("downloadActorPhoto: " + mTitle + ", url " + image.getLargeUrl());
+            image.download(context);
+        } else
+            log.warn("downloadActorPhoto: image is null for " + mTitle);
+    }
+
     public final void downloadAllImages(Context context) {
         downloadPoster(context);
         downloadBackdrop(context);
         downloadNetworkLogo(context);
+        downloadActorPhoto(context);
     }
 
     /**
@@ -483,6 +528,7 @@ public abstract class BaseTags implements Parcelable {
     public void setPosters(List<ScraperImage> list) { mPosters = list; }
     public void setBackdrops(List<ScraperImage> list) { mBackdrops = list; }
     public void setNetworkLogos(List<ScraperImage> list) { mNetworkLogos = list; }
+    public void setActorPhotos(List<ScraperImage> list) { mActorPhotos = list; }
     public void setActorsFormatted(String actors) { mActorsFormatted = actors; }
     public void setDirectorsFormatted(String directors) { mDirectorsFormatted = directors; }
     public void setWritersFormatted(String writers) { mWritersFormatted = writers; }
@@ -508,6 +554,11 @@ public abstract class BaseTags implements Parcelable {
     /** Adds this image as first element to the list of network logos */
     public void addDefaultNetworkLogo(ScraperImage image) {
         mNetworkLogos = addAsFirstItem(mNetworkLogos, image);
+    }
+
+    /** Adds this image as first element to the list of actor photos */
+    public void addDefaultActorPhoto(ScraperImage image) {
+        mActorPhotos = addAsFirstItem(mActorPhotos, image);
     }
 
     @Override

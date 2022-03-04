@@ -152,6 +152,12 @@ public class TagsFactory {
             networklogoTUrl = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_THUMB_URL);
             networklogoId = getCol(c, VideoColumns.SCRAPER_NETWORKLOGO_ID);
 
+            actorphotoSLFile = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_FILE);
+            actorphotoSLUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
+            actorphotoSTFile = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_FILE);
+            actorphotoSTUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
+            actorphotoSId = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_ID);
+
             collectionId = getCol(c, VideoColumns.SCRAPER_C_ID);
             collectionName = getCol(c, VideoColumns.SCRAPER_C_NAME);
             collectionDescription = getCol(c, VideoColumns.SCRAPER_C_DESCRIPTION);
@@ -220,6 +226,12 @@ public class TagsFactory {
         public final int networklogoTFile;
         public final int networklogoTUrl;
         public final int networklogoId;
+
+        public final int actorphotoSLFile;
+        public final int actorphotoSLUrl;
+        public final int actorphotoSTFile;
+        public final int actorphotoSTUrl;
+        public final int actorphotoSId;
 
         public final int posterLFile;
         public final int posterLUrl;
@@ -411,6 +423,12 @@ public class TagsFactory {
             String networklogoLUrl = getStringCol(cur, cols.networklogoLUrl);
             String networklogoTFile = getStringCol(cur, cols.networklogoTFile);
             String networklogoTUrl = getStringCol(cur, cols.networklogoTUrl);
+
+            long actorphotoSId = getLongCol(cur, cols.actorphotoSId);
+            String actorphotoSLFile = getStringCol(cur, cols.actorphotoSLFile);
+            String actorphotoSLUrl = getStringCol(cur, cols.actorphotoSLUrl);
+            String actorphotoSTFile = getStringCol(cur, cols.actorphotoSTFile);
+            String actorphotoSTUrl = getStringCol(cur, cols.actorphotoSTUrl);
 
             long posterId = getLongCol(cur, cols.posterId);
             String posterLFile = getStringCol(cur, cols.posterLFile);
@@ -606,6 +624,17 @@ public class TagsFactory {
                         sTag.setNetworkLogos(image.asList());
                     }
 
+                    if (actorphotoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_ACTOR_PHOTO, titleMS);
+                        image.setLargeFile(actorphotoSLFile);
+                        image.setLargeUrl(actorphotoSLUrl);
+                        image.setThumbFile(actorphotoSTFile);
+                        image.setThumbUrl(actorphotoSTUrl);
+                        image.setId(actorphotoSId);
+                        image.setRemoteId(showId);
+                        sTag.setActorPhotos(image.asList());
+                    }
+
                     if (posterSId >0) {
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, titleMS);
                         image.setLargeFile(posterSLFile);
@@ -715,6 +744,9 @@ public class TagsFactory {
             String networklogoUrl = getStringCol(cur, ScraperStore.Show.NETWORKLOGO_URL);
             String networklogoPath = getStringCol(cur, ScraperStore.Show.NETWORKLOGO);
 
+            String actorphotoSUrl = getStringCol(cur, ScraperStore.Show.ACTORPHOTO_URL);
+            String actorphotoSPath = getStringCol(cur, ScraperStore.Show.ACTORPHOTO);
+
             ShowTags tag = tags.get(id);
             if(tag == null) {
                 tag = new ShowTags();
@@ -750,6 +782,12 @@ public class TagsFactory {
                 image.setLargeUrl(networklogoUrl);
                 image.setLargeFile(networklogoPath);
                 tag.setNetworkLogos(image.asList());
+            }
+            if(actorphotoSUrl != null && actorphotoSPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_ACTOR_PHOTO, null);
+                image.setLargeUrl(actorphotoSUrl);
+                image.setLargeFile(actorphotoSPath);
+                tag.setActorPhotos(image.asList());
             }
 
         } while(cur.moveToNext());
@@ -1099,6 +1137,7 @@ public class TagsFactory {
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.NETWORKLOGO_ID,          // 9
+                        ScraperStore.Show.ACTORPHOTO_ID,          // 9
                 }, null, null, null);
         return buildShowTagsFromCursor(context, c, showId);
     }
@@ -1119,7 +1158,8 @@ public class TagsFactory {
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.NETWORKLOGO_ID,          // 8
-                        ScraperStore.Show.ID,                   // 9
+                        ScraperStore.Show.ACTORPHOTO_ID,          // 9
+                        ScraperStore.Show.ID,                   // 10
                 }, null, null, null);
         if (c != null && c.moveToFirst())
             showId = c.getLong(9);
@@ -1131,6 +1171,7 @@ public class TagsFactory {
         long posterId = -1;
         long backdropId = -1;
         long networklogoId = -1;
+        long actorphotoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 showTags = new ShowTags();
@@ -1145,6 +1186,7 @@ public class TagsFactory {
                 posterId = c.getLong(7);
                 backdropId = c.getLong(8);
                 networklogoId = c.getLong(9);
+                actorphotoId = c.getLong(10);
             }
             c.close();
         }
@@ -1267,6 +1309,20 @@ public class TagsFactory {
                     allNetworkLogosSorted.addLast(image);
             }
             showTags.setNetworkLogos(allNetworkLogosSorted);
+
+            // actorphotos
+            List<ScraperImage> allActorPhotosInDb = showTags.getAllActorPhotosInDb(context);
+            if (allActorPhotosInDb == null)
+                allActorPhotosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allActorPhotosSorted = new LinkedList<ScraperImage>();
+            // find the selected actorphoto and make it first in the list
+            for (ScraperImage image : allActorPhotosInDb) {
+                if (image.getId() == actorphotoId)
+                    allActorPhotosSorted.addFirst(image);
+                else
+                    allActorPhotosSorted.addLast(image);
+            }
+            showTags.setActorPhotos(allActorPhotosSorted);
         }
         return showTags;
     }

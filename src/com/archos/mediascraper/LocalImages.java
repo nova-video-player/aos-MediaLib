@@ -276,6 +276,18 @@ public class LocalImages {
             "networklogo.jpg",
     };
 
+    /** %filename% + this */
+    private static final String[] MATCH_LIST_AP_DYNAMIC = {
+            NfoParser.ACTORPHOTO_EXTENSION,
+            "-actorphoto.jpg",
+            "-actorphoto.png",
+    };
+    /** this as filename */
+    private static final String[] MATCH_LIST_AP_STATIC = {
+            "actorphoto.png",
+            "actorphoto.jpg",
+    };
+
     /** this as filename */
     private static final String[] MATCH_LIST_BD_STATIC = {
         "fanart.png",
@@ -323,10 +335,6 @@ public class LocalImages {
         return result;
     }
 
-
-
-
-
     public static Uri findNetworkLogo(Uri video, String videoTitle) {
         if (video == null)
             return null;
@@ -357,14 +365,35 @@ public class LocalImages {
         return result;
     }
 
+    public static Uri findActorPhoto(Uri video, String videoTitle) {
+        if (video == null)
+            return null;
 
+        Uri result = null;
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
 
-
-
-
-
-
-
+        if (parent != null && nameNoExt != null) {
+            boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
+            String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
+            for (String extension : MATCH_LIST_AP_DYNAMIC) {
+                if (testVideoTitle) {
+                    result = getIfAvailable(parent, videoTitleSanitized + extension);
+                    if (result != null)
+                        return result;
+                }
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+            for (String extension : MATCH_LIST_AP_STATIC) {
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+        }
+        return result;
+    }
 
     /** returns Uri only if /folder/folder/.../name is an existing file */
     private static Uri getIfAvailable(Uri folder, String name) {

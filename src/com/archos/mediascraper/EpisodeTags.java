@@ -432,6 +432,13 @@ public class EpisodeTags extends BaseTags {
         return result;
     }
 
+    @Override
+    public List<ScraperImage> getAllActorPhotosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
 
     /** Add this (local) image as the default season poster */
     public void addDefaultPoster(Context context, Uri localImage, String showTitle) {
