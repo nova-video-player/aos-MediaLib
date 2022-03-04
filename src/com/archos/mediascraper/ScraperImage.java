@@ -372,15 +372,15 @@ public class ScraperImage {
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
         boolean logo;
-        boolean actorphoto;
+        boolean castphoto;
         logo = mType == Type.SHOW_NETWORK;
-        actorphoto = mType == Type.SHOW_ACTOR_PHOTO;
+        castphoto = mType == Type.SHOW_ACTOR_PHOTO;
         String name = null;
         if (logo) {
             assert url != null;
             name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
             return name;
-        } else if (actorphoto){
+        } else if (castphoto){
             assert url != null;
             name = url.replaceAll(TMDB_CAST_IMAGE_URL, "");
             return name;
