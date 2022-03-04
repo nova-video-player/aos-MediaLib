@@ -396,7 +396,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show ActorPhoto
-                Uri actorphoto = LocalImages.findActorPhoto(videoFile, showTitle);
+                Uri actorphoto = LocalImages.findShowActorPhoto(videoFile, showTitle);
                 if (actorphoto != null) {
                     result.addDefaultActorPhoto(context, actorphoto);
                 }

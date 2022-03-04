@@ -277,13 +277,13 @@ public class LocalImages {
     };
 
     /** %filename% + this */
-    private static final String[] MATCH_LIST_AP_DYNAMIC = {
+    private static final String[] MATCH_LIST_SAP_DYNAMIC = {
             NfoParser.ACTORPHOTO_EXTENSION,
             "-actorphoto.jpg",
             "-actorphoto.png",
     };
     /** this as filename */
-    private static final String[] MATCH_LIST_AP_STATIC = {
+    private static final String[] MATCH_LIST_SAP_STATIC = {
             "actorphoto.png",
             "actorphoto.jpg",
     };
@@ -365,7 +365,7 @@ public class LocalImages {
         return result;
     }
 
-    public static Uri findActorPhoto(Uri video, String videoTitle) {
+    public static Uri findShowActorPhoto(Uri video, String videoTitle) {
         if (video == null)
             return null;
 
@@ -376,7 +376,7 @@ public class LocalImages {
         if (parent != null && nameNoExt != null) {
             boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
             String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
-            for (String extension : MATCH_LIST_AP_DYNAMIC) {
+            for (String extension : MATCH_LIST_SAP_DYNAMIC) {
                 if (testVideoTitle) {
                     result = getIfAvailable(parent, videoTitleSanitized + extension);
                     if (result != null)
@@ -386,7 +386,7 @@ public class LocalImages {
                 if (result != null)
                     return result;
             }
-            for (String extension : MATCH_LIST_AP_STATIC) {
+            for (String extension : MATCH_LIST_SAP_STATIC) {
                 result = getIfAvailable(parent, nameNoExt + extension);
                 if (result != null)
                     return result;
