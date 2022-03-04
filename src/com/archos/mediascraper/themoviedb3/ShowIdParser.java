@@ -71,7 +71,23 @@ public class ShowIdParser {
         // Utilizing the unused series director as a pipeline for series created by tag
         if (serie.created_by != null) {
             for (Person person : serie.created_by)
-            result.addDirectorIfAbsent(person.name);
+            result.addDirectorIfAbsent(person.name); // director = created_by
+        }
+
+        // Utilizing the unused series writer as a pipeline for series actor
+        List<String> Actors = new ArrayList<>();
+        String Actor = "";
+        if (serie.credits != null) {
+            if (serie.credits.cast != null) {
+                for (CastMember actor : serie.credits.cast) {
+                    assert actor.name != null;
+                    if (!actor.name.isEmpty()) {
+                        Actor = actor.name + "=&%#" + actor.character + "=&%#" + actor.profile_path;
+                        Actors.add(Actor);
+                        result.setWriters(Actors); // writer = actor
+                    }
+                }
+            }
         }
 
         result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);
