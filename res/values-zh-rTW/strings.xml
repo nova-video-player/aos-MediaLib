@@ -18,8 +18,8 @@
     <string name="nfo_export_category">匯出媒體資訊</string>
     <string name="nfo_export_auto_title">搜尋後自動匯出</string>
     <string name="nfo_export_manual_title">匯出已經抓取資料的影片</string>
-    <string name="nfo_export_auto_summary">線上搜尋成功後自動匯出 .nfo 檔案</string>
-    <string name="nfo_export_manual_summary">匯出每個已經抓取資料影片的 .nfo 檔案</string>
+    <string name="nfo_export_auto_summary">線上搜尋成功後自動匯出「.nfo」檔案</string>
+    <string name="nfo_export_manual_summary">匯出每個已經抓取資料影片的「.nfo」檔案</string>
     <string name="nfo_export_button">匯出 .nfo 檔案</string>
     <string name="nfo_export_folder">將此資料夾所有內容匯出到 .nfo 檔案</string>
     <string name="nfo_export_all">將整個媒體庫匯出到 .nfo 檔案</string>
