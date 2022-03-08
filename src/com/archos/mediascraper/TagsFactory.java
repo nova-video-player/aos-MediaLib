@@ -157,6 +157,12 @@ public class TagsFactory {
             actorphotoSTUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
             actorphotoSId = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_ID);
 
+            clearlogoSLFile = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_FILE);
+            clearlogoSLUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
+            clearlogoSTFile = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_FILE);
+            clearlogoSTUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
+            clearlogoSId = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_ID);
+
             collectionId = getCol(c, VideoColumns.SCRAPER_C_ID);
             collectionName = getCol(c, VideoColumns.SCRAPER_C_NAME);
             collectionDescription = getCol(c, VideoColumns.SCRAPER_C_DESCRIPTION);
@@ -230,6 +236,12 @@ public class TagsFactory {
         public final int actorphotoSTFile;
         public final int actorphotoSTUrl;
         public final int actorphotoSId;
+
+        public final int clearlogoSLFile;
+        public final int clearlogoSLUrl;
+        public final int clearlogoSTFile;
+        public final int clearlogoSTUrl;
+        public final int clearlogoSId;
 
         public final int posterLFile;
         public final int posterLUrl;
@@ -420,6 +432,12 @@ public class TagsFactory {
             String actorphotoSLUrl = getStringCol(cur, cols.actorphotoSLUrl);
             String actorphotoSTFile = getStringCol(cur, cols.actorphotoSTFile);
             String actorphotoSTUrl = getStringCol(cur, cols.actorphotoSTUrl);
+
+            long clearlogoSId = getLongCol(cur, cols.clearlogoSId);
+            String clearlogoSLFile = getStringCol(cur, cols.clearlogoSLFile);
+            String clearlogoSLUrl = getStringCol(cur, cols.clearlogoSLUrl);
+            String clearlogoSTFile = getStringCol(cur, cols.clearlogoSTFile);
+            String clearlogoSTUrl = getStringCol(cur, cols.clearlogoSTUrl);
 
             long posterId = getLongCol(cur, cols.posterId);
             String posterLFile = getStringCol(cur, cols.posterLFile);
@@ -622,6 +640,17 @@ public class TagsFactory {
                         sTag.setActorPhotos(image.asList());
                     }
 
+                    if (clearlogoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_TITLE_CLEARLOGO, titleMS);
+                        image.setLargeFile(clearlogoSLFile);
+                        image.setLargeUrl(clearlogoSLUrl);
+                        image.setThumbFile(clearlogoSTFile);
+                        image.setThumbUrl(clearlogoSTUrl);
+                        image.setId(clearlogoSId);
+                        image.setRemoteId(showId);
+                        sTag.setClearLogos(image.asList());
+                    }
+
                     if (posterSId >0) {
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, titleMS);
                         image.setLargeFile(posterSLFile);
@@ -734,6 +763,9 @@ public class TagsFactory {
             String actorphotoSUrl = getStringCol(cur, ScraperStore.Show.ACTORPHOTO_URL);
             String actorphotoSPath = getStringCol(cur, ScraperStore.Show.ACTORPHOTO);
 
+            String clearlogoSUrl = getStringCol(cur, ScraperStore.Show.CLEARLOGO_URL);
+            String clearlogoSPath = getStringCol(cur, ScraperStore.Show.CLEARLOGO);
+
             ShowTags tag = tags.get(id);
             if(tag == null) {
                 tag = new ShowTags();
@@ -775,6 +807,12 @@ public class TagsFactory {
                 image.setLargeUrl(actorphotoSUrl);
                 image.setLargeFile(actorphotoSPath);
                 tag.setActorPhotos(image.asList());
+            }
+            if(clearlogoSUrl != null && clearlogoSPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_TITLE_CLEARLOGO, null);
+                image.setLargeUrl(clearlogoSUrl);
+                image.setLargeFile(clearlogoSPath);
+                tag.setClearLogos(image.asList());
             }
 
         } while(cur.moveToNext());
@@ -1125,6 +1163,7 @@ public class TagsFactory {
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.NETWORKLOGO_ID,          // 9
                         ScraperStore.Show.ACTORPHOTO_ID,          // 9
+                        ScraperStore.Show.CLEARLOGO_ID,          // 9
                 }, null, null, null);
         return buildShowTagsFromCursor(context, c, showId);
     }
@@ -1146,6 +1185,7 @@ public class TagsFactory {
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.NETWORKLOGO_ID,          // 8
                         ScraperStore.Show.ACTORPHOTO_ID,          // 9
+                        ScraperStore.Show.CLEARLOGO_ID,          // 9
                         ScraperStore.Show.ID,                   // 10
                 }, null, null, null);
         if (c != null && c.moveToFirst())
@@ -1159,6 +1199,7 @@ public class TagsFactory {
         long backdropId = -1;
         long networklogoId = -1;
         long actorphotoId = -1;
+        long clearlogoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 showTags = new ShowTags();
@@ -1174,6 +1215,7 @@ public class TagsFactory {
                 backdropId = c.getLong(8);
                 networklogoId = c.getLong(9);
                 actorphotoId = c.getLong(10);
+                clearlogoId = c.getLong(11);
             }
             c.close();
         }
@@ -1310,6 +1352,20 @@ public class TagsFactory {
                     allActorPhotosSorted.addLast(image);
             }
             showTags.setActorPhotos(allActorPhotosSorted);
+
+            // clearlogos
+            List<ScraperImage> allClearLogosInDb = showTags.getAllClearLogosInDb(context);
+            if (allClearLogosInDb == null)
+                allClearLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allClearLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected clearlogo and make it first in the list
+            for (ScraperImage image : allClearLogosInDb) {
+                if (image.getId() == clearlogoId)
+                    allClearLogosSorted.addFirst(image);
+                else
+                    allClearLogosSorted.addLast(image);
+            }
+            showTags.setClearLogos(allClearLogosSorted);
         }
         return showTags;
     }

@@ -303,6 +303,18 @@ public class NfoWriter {
                 }
                 serializer.endTag("", "actorphoto");
             }
+            List<ScraperImage> clearlogos = tag.getClearLogos();
+            if (clearlogos != null && !clearlogos.isEmpty()) {
+                serializer.startTag("", "clearlogo");
+                for (ScraperImage image : clearlogos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "clearlogo");
+            }
         }
         serializer.endTag("", "tvshow");
 
@@ -408,6 +420,7 @@ public class NfoWriter {
                 exportImage(tag.getDefaultBackdrop(), parent, showTitle + NfoParser.BACKDROP_EXTENSION);
                 exportImage(tag.getDefaultNetworkLogo(), parent, showTitle + NfoParser.NETWORKLOGO_EXTENSION);
                 exportImage(tag.getDefaultActorPhoto(), parent, showTitle + NfoParser.ACTORPHOTO_EXTENSION);
+                exportImage(tag.getDefaultClearLogo(), parent, showTitle + NfoParser.CLEARLOGO_EXTENSION);
             } finally {
                 if (writer != null) {
                     // writer is only != null if writing nfo has thrown an exception

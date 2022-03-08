@@ -28,6 +28,7 @@ public class ShowIdImagesResult {
     public List<ScraperImage> stills;
     public List<ScraperImage> networklogos;
     public List<ScraperImage> actorphotos;
+    public List<ScraperImage> clearlogos;
     public ScrapeStatus status;
     public Throwable reason;
     public ShowIdImagesResult() {
@@ -36,5 +37,6 @@ public class ShowIdImagesResult {
         this.stills = new LinkedList<>();
         this.networklogos = new LinkedList<>();
         this.actorphotos = new LinkedList<>();
+        this.clearlogos = new LinkedList<>();
     }
 }

@@ -169,10 +169,13 @@ public final class ScraperTables {
                 ScraperStore.Show.NETWORKLOGO + " TEXT," +
                 ScraperStore.Show.ACTORPHOTO_URL + " TEXT," +
                 ScraperStore.Show.ACTORPHOTO + " TEXT," +
+                ScraperStore.Show.CLEARLOGO_URL + " TEXT," +
+                ScraperStore.Show.CLEARLOGO + " TEXT," +
         "s_backdrop_id INTEGER," + // show has backdrop + poster
         "s_poster_id INTEGER," +
                 "s_networklogo_id INTEGER," +
                 "s_actorphoto_id INTEGER," +
+                "s_clearlogo_id INTEGER," +
         "s_online_id INTEGER," + // also the id in the online db "73255" - http://thetvdb.com/?tab=series&id=73255
         "s_imdb_id TEXT," + // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
         "s_content_rating TEXT," + // also content rating e.g. "TV-14"
@@ -1170,6 +1173,7 @@ public final class ScraperTables {
     public static final String SHOW_BACKDROPS_TABLE_NAME = "show_backdrops";
     public static final String SHOW_NETWORKLOGOS_TABLE_NAME = "show_networklogos";
     public static final String SHOW_ACTORPHOTOS_TABLE_NAME = "show_actorphotos";
+    public static final String SHOW_CLEARLOGOS_TABLE_NAME = "show_clearlogos";
     private static final String CREATE_SHOW_BACKDROPS_TABLE =
             "CREATE TABLE " + SHOW_BACKDROPS_TABLE_NAME + " ( \n" +
             "    _id             INTEGER PRIMARY KEY,\n" +
@@ -1203,6 +1207,17 @@ public final class ScraperTables {
                     "    s_ap_large_file TEXT \n" +
                     ")";
 
+    private static final String CREATE_SHOW_CLEARLOGOS_TABLE =
+            "CREATE TABLE " + SHOW_CLEARLOGOS_TABLE_NAME + " ( \n" +
+                    "    _id             INTEGER PRIMARY KEY,\n" +
+                    "    show_id         INTEGER REFERENCES show ( _id ) ON DELETE CASCADE\n" +
+                    "                                                    ON UPDATE CASCADE,\n" +
+                    "    s_cl_thumb_url  TEXT,\n" +
+                    "    s_cl_thumb_file TEXT,\n" +
+                    "    s_cl_large_url  TEXT,\n" +
+                    "    s_cl_large_file TEXT \n" +
+                    ")";
+
 
     private static final String CREATE_SHOW_BACKDROPS_DELETE_TRIGGER =
             "CREATE TRIGGER " + SHOW_BACKDROPS_TABLE_NAME + "_delete\n" +
@@ -1229,6 +1244,14 @@ public final class ScraperTables {
                     + "    INSERT INTO delete_files(name) VALUES ( OLD.s_ap_thumb_file );\n" +
                     "END";
 
+    private static final String CREATE_SHOW_CLEARLOGOS_DELETE_TRIGGER =
+            "CREATE TRIGGER " + SHOW_CLEARLOGOS_TABLE_NAME + "_delete\n" +
+                    "       AFTER DELETE ON " + SHOW_CLEARLOGOS_TABLE_NAME + "\n" +
+                    "BEGIN\n" +
+                    "    INSERT INTO delete_files(name) VALUES ( OLD.s_cl_large_file );\n"
+                    + "    INSERT INTO delete_files(name) VALUES ( OLD.s_cl_thumb_file );\n" +
+                    "END";
+
     private static final String DROP_SHOW_BACKDROPS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_BACKDROPS_TABLE_NAME + "_delete";
 
@@ -1238,6 +1261,9 @@ public final class ScraperTables {
 
     private static final String DROP_SHOW_ACTORPHOTOS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_ACTORPHOTOS_TABLE_NAME + "_delete";
+
+    private static final String DROP_SHOW_CLEARLOGOS_DELETE_TRIGGER =
+            "DROP TRIGGER IF EXISTS " + SHOW_CLEARLOGOS_TABLE_NAME + "_delete";
 
 
     public static final String MOVIE_COLLECTION_TABLE_NAME = "movie_collection";
@@ -1339,6 +1365,8 @@ public final class ScraperTables {
         db.execSQL(CREATE_SHOW_NETWORKLOGOS_DELETE_TRIGGER);
         db.execSQL(CREATE_SHOW_ACTORPHOTOS_TABLE);
         db.execSQL(CREATE_SHOW_ACTORPHOTOS_DELETE_TRIGGER);
+        db.execSQL(CREATE_SHOW_CLEARLOGOS_TABLE);
+        db.execSQL(CREATE_SHOW_CLEARLOGOS_DELETE_TRIGGER);
 
         // V28
         db.execSQL(CREATE_MOVIE_TRAILERS_TABLE);
@@ -1369,6 +1397,7 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX show_backdrops_idx ON show_backdrops(show_id)");
             db.execSQL("CREATE INDEX show_networklogos_idx ON show_networklogos(show_id)");
             db.execSQL("CREATE INDEX show_actorphotos_idx ON show_actorphotos(show_id)");
+            db.execSQL("CREATE INDEX show_clearlogos_idx ON show_clearlogos(show_id)");
             db.execSQL("CREATE INDEX show_posters_idx ON show_posters(show_id)");
             db.execSQL("CREATE INDEX EPISODE_files_idx ON EPISODE(video_id)");
             db.execSQL("CREATE INDEX EPISODE_show_idx ON EPISODE(show_episode)");

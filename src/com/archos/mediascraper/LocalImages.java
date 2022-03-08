@@ -288,6 +288,18 @@ public class LocalImages {
             "actorphoto.jpg",
     };
 
+    /** %filename% + this */
+    private static final String[] MATCH_LIST_SCL_DYNAMIC = {
+            NfoParser.CLEARLOGO_EXTENSION,
+            "-clearlogo.jpg",
+            "-clearlogo.png",
+    };
+    /** this as filename */
+    private static final String[] MATCH_LIST_SCL_STATIC = {
+            "clearlogo.png",
+            "clearlogo.jpg",
+    };
+
     /** this as filename */
     private static final String[] MATCH_LIST_BD_STATIC = {
         "fanart.png",
@@ -387,6 +399,36 @@ public class LocalImages {
                     return result;
             }
             for (String extension : MATCH_LIST_SAP_STATIC) {
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+        }
+        return result;
+    }
+
+    public static Uri findShowClearLogo(Uri video, String videoTitle) {
+        if (video == null)
+            return null;
+
+        Uri result = null;
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
+
+        if (parent != null && nameNoExt != null) {
+            boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
+            String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
+            for (String extension : MATCH_LIST_SCL_DYNAMIC) {
+                if (testVideoTitle) {
+                    result = getIfAvailable(parent, videoTitleSanitized + extension);
+                    if (result != null)
+                        return result;
+                }
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+            for (String extension : MATCH_LIST_SCL_STATIC) {
                 result = getIfAvailable(parent, nameNoExt + extension);
                 if (result != null)
                     return result;

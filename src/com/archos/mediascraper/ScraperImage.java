@@ -114,6 +114,12 @@ public class ScraperImage {
                 null, ScraperStore.ShowActorPhotos.URI.BASE, ScraperStore.ShowActorPhotos.SHOW_ID,
                 ImageScaler.Type.SCALE_INSIDE
         ),
+        SHOW_TITLE_CLEARLOGO(
+                ScraperStore.ShowClearLogos.THUMB_URL, ScraperStore.ShowClearLogos.THUMB_FILE,
+                ScraperStore.ShowClearLogos.LARGE_URL, ScraperStore.ShowClearLogos.LARGE_FILE,
+                null, ScraperStore.ShowClearLogos.URI.BASE, ScraperStore.ShowClearLogos.SHOW_ID,
+                ImageScaler.Type.SCALE_INSIDE
+        ),
         EPISODE_POSTER(
                 ScraperStore.ShowPosters.THUMB_URL, ScraperStore.ShowPosters.THUMB_FILE,
                 ScraperStore.ShowPosters.LARGE_URL, ScraperStore.ShowPosters.LARGE_FILE,
@@ -413,6 +419,10 @@ public class ScraperImage {
                 ret = MediaScraper.getActorPhotoDirectory(context);
                 log.trace("getDir: for actorphoto: " + ret.getPath());
                 break;
+            case SHOW_TITLE_CLEARLOGO:
+                ret = MediaScraper.getClearLogoDirectory(context);
+                log.trace("getDir: for clearlogo: " + ret.getPath());
+                break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
                 log.trace("getDir: for collection_backdrop: " + ret.getPath());
@@ -460,6 +470,10 @@ public class ScraperImage {
                 ret = MediaScraper.getActorPhotoCacheDirectory(context);
                 log.trace("getCacheDir: for actorphoto " + ret.getPath());
                 break;
+            case SHOW_TITLE_CLEARLOGO:
+                ret = MediaScraper.getClearLogoCacheDirectory(context);
+                log.trace("getCacheDir: for clearlogo " + ret.getPath());
+                break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
                 log.trace("getCacheDir: for collection_backdrop " + ret.getPath());
@@ -496,6 +510,8 @@ public class ScraperImage {
                 return MediaScraper.NETWORKLOGO_CACHE_TIMEOUT;
             case SHOW_ACTOR_PHOTO:
                 return MediaScraper.ACTORPHOTO_CACHE_TIMEOUT;
+            case SHOW_TITLE_CLEARLOGO:
+                return MediaScraper.CLEARLOGO_CACHE_TIMEOUT;
             case COLLECTION_BACKDROP:
                 return MediaScraper.BACKDROP_CACHE_TIMEOUT;
             default:
@@ -632,6 +648,17 @@ public class ScraperImage {
                 }
                 log.trace("saveSizedImage: target ActorPhoto(" + maxWidth + "," + maxHeight + ")");
                 break;
+            case SHOW_TITLE_CLEARLOGO:
+                if (thumb) {
+                    maxWidth = thumbWidth;
+                    maxHeight = thumbHeight;
+                } else {
+                    DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+                    maxHeight = displayMetrics.heightPixels;
+                    maxWidth = displayMetrics.widthPixels;
+                }
+                log.trace("saveSizedImage: target ClearLogo(" + maxWidth + "," + maxHeight + ")");
+                break;
             case COLLECTION_BACKDROP:
                 if (thumb) {
                     maxWidth = thumbWidth;
@@ -745,6 +772,12 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Show.ACTORPHOTO_ID, Long.valueOf(mId));
                 updateValues.put(ScraperStore.Show.ACTORPHOTO_URL, mLargeUrl);
                 updateValues.put(ScraperStore.Show.ACTORPHOTO, mLargeFile);
+                break;
+            case SHOW_TITLE_CLEARLOGO:
+                updateUri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, mRemoteId);
+                updateValues.put(ScraperStore.Show.CLEARLOGO_ID, Long.valueOf(mId));
+                updateValues.put(ScraperStore.Show.CLEARLOGO_URL, mLargeUrl);
+                updateValues.put(ScraperStore.Show.CLEARLOGO, mLargeFile);
                 break;
             case MOVIE_POSTER:
                 if(mOnlineID>0) {

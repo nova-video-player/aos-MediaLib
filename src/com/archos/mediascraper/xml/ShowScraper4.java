@@ -235,6 +235,12 @@ public class ShowScraper4 extends BaseScraper2 {
                     // needs to be done after setActorPhotos not to be erased
                     if (result.getActorPhotoPath() != null)  showTags.addActorPhotoTMDB(mContext, result.getActorPhotoPath());
 
+                    if (!searchImages.clearlogos.isEmpty())
+                        showTags.setClearLogos(searchImages.clearlogos);
+                    else log.debug("getDetailsInternal: clearlogos empty!");
+                    // needs to be done after setClearLogos not to be erased
+                    if (result.getClearLogoPath() != null)  showTags.addClearLogoFTV(mContext, result.getClearLogoPath());
+
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
@@ -246,10 +252,12 @@ public class ShowScraper4 extends BaseScraper2 {
                     showTags.downloadBackdrop(mContext);
                     showTags.downloadNetworkLogo(mContext);
                     showTags.downloadActorPhoto(mContext);
+                    showTags.downloadClearLogo(mContext);
                     //showTags.downloadPosters(mContext);
                     //showTags.downloadBackdrops(mContext);
                     showTags.downloadNetworkLogos(mContext);
                     showTags.downloadActorPhotos(mContext);
+                    //showTags.downloadClearLogos(mContext);
 
 
                 } else {

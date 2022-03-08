@@ -29,9 +29,15 @@ import com.uwetrottmann.tmdb2.entities.ReleaseDate;
 import com.uwetrottmann.tmdb2.entities.TvSeason;
 import com.uwetrottmann.tmdb2.entities.TvShow;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +45,24 @@ public class ShowIdParser {
     private static final Logger log = LoggerFactory.getLogger(ShowIdParser.class);
 
     private static final String DIRECTOR = "Director";
+    private static String readUrl(String urlString) throws Exception {
+        BufferedReader reader = null;
+        try {
+            URL url = new URL(urlString);
+            reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            StringBuffer buffer = new StringBuffer();
+            int read;
+            char[] chars = new char[1024];
+            while ((read = reader.read(chars)) != -1)
+                buffer.append(chars, 0, read);
+
+            return buffer.toString();
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
+    }
+
 
     private static Context mContext;
 
@@ -120,6 +144,27 @@ public class ShowIdParser {
             result.addDefaultBackdropTMDB(mContext, serie.backdrop_path);
         } else log.debug("getResult: no backdrop_path for " + serie.id);
 
+        //set series logo
+        String apikey = "ac6ed0ad315f924847ff24fa4f555571";
+        String url = "http://webservice.fanart.tv/v3/tv/" + serie.external_ids.tvdb_id + "?api_key=" + apikey;
+        List<String> enClearLogos = new ArrayList<>();
+        try {
+            JSONObject json = new JSONObject(readUrl(url));
+
+            JSONArray resultsff = json.getJSONArray("hdtvlogo");
+            for(int i = 0; i < resultsff.length(); i++){
+                JSONObject movieObject = resultsff.getJSONObject(i);
+                if (movieObject.get("lang").equals("en"))
+                    enClearLogos.add(movieObject.getString("url"));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < enClearLogos.size(); i++) {
+            result.addClearLogoFTV(mContext, enClearLogos.get(0));
+        }
 
 
         if (serie.networks != null) {

@@ -92,11 +92,17 @@ public final class MediaScraper {
     public static File getActorPhotoDirectory(Context context) {
         return context.getDir("scraper_actorphotos", Context.MODE_PRIVATE);
     }
+    public static File getClearLogoDirectory(Context context) {
+        return context.getDir("scraper_clearlogos", Context.MODE_PRIVATE);
+    }
     public static File getNetworkLogoCacheDirectory(Context context) {
         return new File(context.getExternalCacheDir(), "networklogos");
     }
     public static File getActorPhotoCacheDirectory(Context context) {
         return new File(context.getExternalCacheDir(), "actorphotos");
+    }
+    public static File getClearLogoCacheDirectory(Context context) {
+        return new File(context.getExternalCacheDir(), "clearlogos");
     }
 
 
@@ -115,6 +121,9 @@ public final class MediaScraper {
 
     /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
     public static final long ACTORPHOTO_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
+
+    /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
+    public static final long CLEARLOGO_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
 
     /** Timeout for {@link ScraperCache} - 2 hours */
     public static final int SCRAPER_CACHE_TIMEOUT_COUNT = 2;

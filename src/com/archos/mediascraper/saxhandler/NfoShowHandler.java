@@ -78,6 +78,7 @@ public class NfoShowHandler extends BasicHandler {
     private final ArrayList<String> mBackdrops = new ArrayList<String>();
     private final ArrayList<String> mNetworkLogos = new ArrayList<String>();
     private final ArrayList<String> mActorPhotos = new ArrayList<String>();
+    private final ArrayList<String> mClearLogos = new ArrayList<String>();
     private boolean mCanParse;
 
     private String mActorName, mActorRole;
@@ -96,6 +97,7 @@ public class NfoShowHandler extends BasicHandler {
         mBackdrops.clear();
         mNetworkLogos.clear();
         mActorPhotos.clear();
+        mClearLogos.clear();
         mCanParse = false;
         mActorName = null;
         mActorRole = null;
@@ -319,6 +321,20 @@ public class NfoShowHandler extends BasicHandler {
                     }
                 }
                 mResult.setActorPhotos(images);
+            }
+
+            if (!mClearLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mClearLogos.size());
+                for (String url : mClearLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_TITLE_CLEARLOGO, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setClearLogos(images);
             }
             return mResult;
         }
