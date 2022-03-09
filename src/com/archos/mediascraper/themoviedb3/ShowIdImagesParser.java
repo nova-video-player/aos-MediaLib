@@ -98,7 +98,7 @@ public class ShowIdImagesParser {
             for (Image backdrop : images.backdrops)
                 tempBackdrops.add(Pair.create(backdrop, backdrop.iso_639_1));
 
-        //set series logo
+        //set series clearlogos
         String apikey = "ac6ed0ad315f924847ff24fa4f555571";
         String url = "http://webservice.fanart.tv/v3/tv/" + tvShow.external_ids.tvdb_id + "?api_key=" + apikey;
         try {
@@ -106,7 +106,6 @@ public class ShowIdImagesParser {
             JSONArray resultsff = json.getJSONArray("hdtvlogo");
             for(int j = 0; j < resultsff.length(); j++){
                 JSONObject movieObject = resultsff.getJSONObject(j);
-                String lang = movieObject.getString("lang");
                 tempClearLogos.add(movieObject.getString("url"));
                 clearlogos.add(genClearLogo(showTitle, movieObject.getString("url"),  context));
             }
@@ -139,8 +138,6 @@ public class ShowIdImagesParser {
             log.debug("getResult: generating ScraperImage for backdrop for " + showTitle + ", large=" + ScraperImage.TMPL + backdrop.first.file_path);
             posters.add(genBackdrop(showTitle, backdrop.first.file_path, backdrop.second, context));
         }
-
-
 
         result.posters = posters;
         result.backdrops = backdrops;
