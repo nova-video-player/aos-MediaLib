@@ -154,7 +154,7 @@ public class ShowIdParser {
             JSONArray resultsff = json.getJSONArray("hdtvlogo");
             for(int i = 0; i < resultsff.length(); i++){
                 JSONObject movieObject = resultsff.getJSONObject(i);
-                if (movieObject.get("lang").equals("en"))
+                if (movieObject.getString("lang").equalsIgnoreCase("en"))
                     enClearLogos.add(movieObject.getString("url"));
             }
         } catch (JSONException e) {
