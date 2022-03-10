@@ -184,7 +184,8 @@ public class ShowTags extends VideoTags {
             log.debug("save: show not found in db or baseInfo changed");
             // got to insert or update the baseinfo.
             ContentValues values = new ContentValues();
-            values.put(ScraperStore.Show.NAME, finalTitle);
+            // never update NAME if showFound not to break UNIQUE even using same NAME...
+            if (!showFound) values.put(ScraperStore.Show.NAME, finalTitle);
             values.put(ScraperStore.Show.ONLINE_ID, Long.valueOf(mOnlineId));
             values.put(ScraperStore.Show.IMDB_ID, mImdbId);
             values.put(ScraperStore.Show.CONTENT_RATING, mContentRating);
