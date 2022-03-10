@@ -150,15 +150,12 @@ public class ShowIdParser {
         List<String> enClearLogos = new ArrayList<>();
         try {
             JSONObject json = new JSONObject(readUrl(url));
-
             JSONArray resultsff = json.getJSONArray("hdtvlogo");
             for(int i = 0; i < resultsff.length(); i++){
                 JSONObject movieObject = resultsff.getJSONObject(i);
                 if (movieObject.getString("lang").equalsIgnoreCase("en"))
                     enClearLogos.add(movieObject.getString("url"));
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -166,6 +163,19 @@ public class ShowIdParser {
             result.addClearLogoFTV(mContext, enClearLogos.get(0));
         }
 
+        // setting multiple series tags using a single pipeline (tagline, type, status, vote_count, popularity)
+        String tmdbapikey = "?api_key=" + "0fd42d7cf783faf9a5eefeb78e1cc5c9";
+        String baseTvUrl = "https://api.themoviedb.org/3/tv/";
+        String lang = "&language=en-US";
+        String newUrl = baseTvUrl + serie.id + tmdbapikey + lang;
+        try {
+            JSONObject json = new JSONObject(readUrl(newUrl));
+            String tagline = json.getString("tagline"); // tagline is not available from UweTrottmann-tmdb-java
+            String tvTag = tagline + "=&%#" + serie.type + "=&%#" + serie.status + "=&%#" + serie.vote_count + "=&%#" + serie.popularity;
+            result.addTaglineIfAbsent(tvTag);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         if (serie.networks != null) {
                 for (int i = 0; i < serie.networks.size(); i++) {

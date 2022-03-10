@@ -59,6 +59,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
     private static final int IMDBID = 28;
     private static final int TMDBID = 29;
     private static final int WRITER = 30;
+    private static final int TAGLINE = 31;
 
     static {
         STRINGS.addKey("episodedetails", ROOT);
@@ -73,6 +74,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
         STRINGS.addKey("aired", AIRED);
         STRINGS.addKey("director", DIRECTOR);
         STRINGS.addKey("writer", WRITER);
+        STRINGS.addKey("tagline", TAGLINE);
         STRINGS.addKey("actor", ACTOR);
         STRINGS.addKey("name", NAME);
         STRINGS.addKey("role", ROLE);
@@ -152,6 +154,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                     case AIRED:
                     case DIRECTOR:
                     case WRITER:
+                    case TAGLINE:
                     case LASTPLAYED:
                     case BOOKMARK:
                     case RESUME:
@@ -232,6 +235,9 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                         break;
                     case WRITER:
                         mResult.addWriterIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case TAGLINE:
+                        mResult.addTaglineIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
                     case ACTOR:
                         mInActor = false;

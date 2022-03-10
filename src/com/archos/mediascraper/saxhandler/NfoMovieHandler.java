@@ -75,6 +75,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int BACKDROPLARGE = 31;
     private static final int BACKDROPTHUMB = 32;
     private static final int WRITER = 33;
+    private static final int TAGLINE = 34;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -88,6 +89,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("genre", GENRE);
         STRINGS.addKey("director", DIRECTOR);
         STRINGS.addKey("writer", WRITER);
+        STRINGS.addKey("tagline", TAGLINE);
         STRINGS.addKey("actor", ACTOR);
         STRINGS.addKey("name", NAME);
         STRINGS.addKey("role", ROLE);
@@ -198,6 +200,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case GENRE:
                     case DIRECTOR:
                     case WRITER:
+                    case TAGLINE:
                     case STUDIO:
                     case TMDBID:
                     case RUNTIME:
@@ -315,6 +318,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case WRITER:
                         mMovie.addWriterIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case TAGLINE:
+                        mMovie.addTaglineIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
                     case STUDIO:
                         mMovie.addStudioIfAbsent(getString(), NfoParser.STRING_SPLITTERS);

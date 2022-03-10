@@ -143,6 +143,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Episode.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Episode.WRITERS_FORMATTED, getWritersFormatted());
+        values.put(ScraperStore.Episode.TAGLINES_FORMATTED, getTaglinesFormatted());
 
         File cover = getCover();
         String coverPath = (cover != null) ? cover.getPath() : null;
@@ -186,6 +187,14 @@ public class EpisodeTags extends BaseTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Writer.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Writer.NAME, writer);
             cop.withValueBackReference(ScraperStore.Episode.Writer.EPISODE, 0);
+            allOperations.add(cop.build());
+        }
+
+        // then taglines etc
+        for(String tagline: mTaglines) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Tagline.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Tagline.NAME, tagline);
+            cop.withValueBackReference(ScraperStore.Episode.Tagline.EPISODE, 0);
             allOperations.add(cop.build());
         }
 
@@ -245,6 +254,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Episode.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Episode.WRITERS_FORMATTED, getWritersFormatted());
+        values.put(ScraperStore.Episode.TAGLINES_FORMATTED, getTaglinesFormatted());
 
         ScraperImage pic = getEpisodePicture();
         if(pic!=null && pic.getLargeFile()!=null)
@@ -285,6 +295,14 @@ public class EpisodeTags extends BaseTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Writer.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Writer.NAME, writer);
             cop.withValueBackReference(ScraperStore.Episode.Writer.EPISODE, firstIndex);
+            list.add(cop.build());
+        }
+
+        // then taglines etc
+        for(String tagline: mTaglines) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Tagline.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Tagline.NAME, tagline);
+            cop.withValueBackReference(ScraperStore.Episode.Tagline.EPISODE, firstIndex);
             list.add(cop.build());
         }
 

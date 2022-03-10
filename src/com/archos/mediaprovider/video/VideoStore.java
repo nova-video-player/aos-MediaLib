@@ -1263,34 +1263,38 @@ public final class VideoStore {
              */
             public static final String SCRAPER_E_ACTORS = "e_actors";
             /**
-             * MediaScraper: Movie or Episode Directors, Writers
+             * MediaScraper: Movie or Episode Directors, Writers, Taglines
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_DIRECTORS = "directors";
             public static final String SCRAPER_WRITERS = "writers";
+            public static final String SCRAPER_TAGLINES = "taglines";
             public static final String SCRAPER_SEASONPLOTS = "seasonplots";
             /**
-             * MediaScraper: Movie Directors, Writers
+             * MediaScraper: Movie Directors, Writers, Taglines
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_M_DIRECTORS = "m_directors";
             public static final String SCRAPER_M_WRITERS = "m_writers";
+            public static final String SCRAPER_M_TAGLINES = "m_taglines";
             /**
-             * MediaScraper: Episode Directors, Writers
+             * MediaScraper: Episode Directors, Writers, Taglines
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_E_DIRECTORS = "e_directors";
             public static final String SCRAPER_E_WRITERS = "e_writers";
+            public static final String SCRAPER_E_TAGLINES = "e_taglines";
             /**
-             * MediaScraper: Show Directors, Writers (seems to be unused)
+             * MediaScraper: Show Directors, Writers, Taglines (seems to be unused)
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_S_DIRECTORS = "s_directors";
             public static final String SCRAPER_S_WRITERS = "s_writers";
+            public static final String SCRAPER_S_TAGLINES = "s_taglines";
             public static final String SCRAPER_S_SEASONPLOTS = "s_seasonplots";
             /**
              * MediaScraper: Movie / Show Genres

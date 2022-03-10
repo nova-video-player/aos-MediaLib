@@ -167,6 +167,14 @@ public class ScraperProvider extends ContentProvider {
     private static final int SHOW_CLEARLOGOS_ID = SCRAPER_PROVIDER_OFFSET + 180;
     private static final int SHOW_CLEARLOGOS_SHOW_ID = SCRAPER_PROVIDER_OFFSET + 181;
 
+    private static final int TAGLINE = SCRAPER_PROVIDER_OFFSET + 182;
+    private static final int TAGLINE_ID = SCRAPER_PROVIDER_OFFSET + 183;
+    private static final int TAGLINE_ALL = SCRAPER_PROVIDER_OFFSET + 184;
+    private static final int TAGLINE_MOVIE = SCRAPER_PROVIDER_OFFSET + 185;
+    private static final int TAGLINE_SHOW = SCRAPER_PROVIDER_OFFSET + 186;
+    private static final int TAGLINE_EPISODE = SCRAPER_PROVIDER_OFFSET + 187;
+    private static final int TAGLINE_NAME = SCRAPER_PROVIDER_OFFSET + 188;
+
     private static UriMatcher sUriMatcher;
 
     /**
@@ -245,6 +253,25 @@ public class ScraperProvider extends ContentProvider {
                 WRITER_EPISODE);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Writer.URI.NAME) + "*",
                 WRITER_NAME);
+
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.BASE),
+                TAGLINE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.ALL),
+                TAGLINE_ALL);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.MOVIE),
+                TAGLINE_MOVIE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.MOVIE) + "#",
+                TAGLINE_MOVIE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.SHOW),
+                TAGLINE_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.SHOW) + "#",
+                TAGLINE_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.EPISODE),
+                TAGLINE_EPISODE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.EPISODE) + "#",
+                TAGLINE_EPISODE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Tagline.URI.NAME) + "*",
+                TAGLINE_NAME);
 
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.BASE),
                 SEASONPLOT);
@@ -556,6 +583,11 @@ public class ScraperProvider extends ContentProvider {
                         ScraperStore.Writer.ID, values);
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Writer.URI.ID, cr);
                 break;
+            case TAGLINE:
+                rowId = db.insert(ScraperTables.TAGLINES_TABLE_NAME,
+                        ScraperStore.Tagline.ID, values);
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Tagline.URI.ID, cr);
+                break;
             case SEASONPLOT:
                 rowId = db.insert(ScraperTables.SEASONPLOTS_TABLE_NAME,
                         ScraperStore.SeasonPlot.ID, values);
@@ -596,6 +628,16 @@ public class ScraperProvider extends ContentProvider {
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Writer.URI.ID, cr);
                 break;
+            case TAGLINE_MOVIE:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.TAGLINES_MOVIE_VIEW_NAME,
+                            ScraperStore.Movie.Tagline.MOVIE, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Tagline.URI.ID, cr);
+                break;
             case DIRECTOR_SHOW:
                 try {
                     rowId = db.insertOrThrow(ScraperTables.FILMS_SHOW_VIEW_NAME,
@@ -615,6 +657,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Writer.URI.ID, cr);
+                break;
+            case TAGLINE_SHOW:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.TAGLINES_SHOW_VIEW_NAME,
+                            ScraperStore.Show.Tagline.SHOW, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Tagline.URI.ID, cr);
                 break;
             case SEASONPLOT_SHOW:
                 try {
@@ -645,6 +697,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Writer.URI.ID, cr);
+                break;
+            case TAGLINE_EPISODE:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.TAGLINES_EPISODE_VIEW_NAME,
+                            ScraperStore.Episode.Tagline.EPISODE, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Tagline.URI.ID, cr);
                 break;
             case ACTOR_MOVIE:
                 try {
@@ -1034,6 +1096,40 @@ public class ScraperProvider extends ContentProvider {
             case WRITER_NAME:
                 qb.setTables(ScraperTables.WRITERS_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Writer.NAME + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case TAGLINE_ID:
+                qb.setTables(ScraperTables.TAGLINES_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Tagline.ID + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case TAGLINE_ALL:
+                qb.setTables(ScraperTables.TAGLINES_TABLE_NAME);
+                break;
+
+            case TAGLINE_MOVIE:
+                qb.setTables(ScraperTables.TAGLINES_MOVIE_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Movie.Tagline.MOVIE + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case TAGLINE_SHOW:
+                qb.setTables(ScraperTables.TAGLINES_SHOW_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Show.Tagline.SHOW + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case TAGLINE_EPISODE:
+                qb.setTables(ScraperTables.TAGLINES_EPISODE_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Episode.Tagline.EPISODE + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case TAGLINE_NAME:
+                qb.setTables(ScraperTables.TAGLINES_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Tagline.NAME + " = ");
                 qb.appendWhereEscapeString(data);
                 break;
 
@@ -1460,6 +1556,11 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Episode.ID + " = " +
                 ScraperTables.WRITERS_EPISODE_VIEW_NAME + "." +
                 ScraperStore.Episode.Writer.EPISODE + ") " +
+                " LEFT JOIN " + ScraperTables.TAGLINES_EPISODE_VIEW_NAME + " ON (" +
+                ScraperTables.EPISODE_TABLE_NAME + "." +
+                ScraperStore.Episode.ID + " = " +
+                ScraperTables.TAGLINES_EPISODE_VIEW_NAME + "." +
+                ScraperStore.Episode.Tagline.EPISODE + ") " +
                 "LEFT JOIN " + ScraperTables.GUESTS_VIEW_NAME + " ON (" +
                 ScraperTables.EPISODE_TABLE_NAME + "." +
                 ScraperStore.Episode.ID + " = " + 
@@ -1481,6 +1582,11 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Movie.ID + " = " +
                 ScraperTables.WRITERS_MOVIE_VIEW_NAME + "." +
                 ScraperStore.Movie.Writer.MOVIE + ") " +
+                " LEFT JOIN " + ScraperTables.TAGLINES_MOVIE_VIEW_NAME + " ON (" +
+                ScraperTables.MOVIE_TABLE_NAME + "." +
+                ScraperStore.Movie.ID + " = " +
+                ScraperTables.TAGLINES_MOVIE_VIEW_NAME + "." +
+                ScraperStore.Movie.Tagline.MOVIE + ") " +
                 "LEFT JOIN " + ScraperTables.PLAYS_MOVIE_VIEW_NAME + " ON (" +
                 ScraperTables.MOVIE_TABLE_NAME + "." +
                 ScraperStore.Movie.ID + " = " + 
@@ -1514,6 +1620,12 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Show.ID + " = " +
                 ScraperTables.WRITERS_SHOW_VIEW_NAME + "." +
                 ScraperStore.Show.Writer.SHOW + ") " +
+                " LEFT JOIN " +
+                ScraperTables.TAGLINES_SHOW_VIEW_NAME + " ON (" +
+                ScraperTables.SHOW_TABLE_NAME + "." +
+                ScraperStore.Show.ID + " = " +
+                ScraperTables.TAGLINES_SHOW_VIEW_NAME + "." +
+                ScraperStore.Show.Tagline.SHOW + ") " +
                 " LEFT JOIN " +
                 ScraperTables.SEASONPLOTS_SHOW_VIEW_NAME + " ON (" +
                 ScraperTables.SHOW_TABLE_NAME + "." +

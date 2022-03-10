@@ -35,15 +35,19 @@ public final class ScraperTables {
     public static final String GENRES_TABLE_NAME = "GENRE";
     public static final String DIRECTORS_TABLE_NAME = "DIRECTOR";
     public static final String WRITERS_TABLE_NAME = "WRITER";
+    public static final String TAGLINES_TABLE_NAME = "TAGLINE";
     public static final String SEASONPLOTS_TABLE_NAME = "SEASONPLOT";
     public static final String STUDIOS_TABLE_NAME = "STUDIO";
     public static final String FILMS_MOVIE_TABLE_NAME = "FILMS_MOVIE";
     public static final String WRITERS_MOVIE_TABLE_NAME = "WRITERS_MOVIE";
+    public static final String TAGLINES_MOVIE_TABLE_NAME = "TAGLINES_MOVIE";
     public static final String FILMS_SHOW_TABLE_NAME = "FILMS_SHOW";
     public static final String WRITERS_SHOW_TABLE_NAME = "WRITERS_SHOW";
+    public static final String TAGLINES_SHOW_TABLE_NAME = "TAGLINES_SHOW";
     public static final String SEASONPLOTS_SHOW_TABLE_NAME = "SEASONPLOTS_SHOW";
     public static final String FILMS_EPISODE_TABLE_NAME = "FILMS_EPISODE";
     public static final String WRITERS_EPISODE_TABLE_NAME = "WRITERS_EPISODE";
+    public static final String TAGLINES_EPISODE_TABLE_NAME = "TAGLINES_EPISODE";
     public static final String GUESTS_TABLE_NAME = "GUESTS";
     public static final String PRODUCES_MOVIE_TABLE_NAME = "PRODUCES_MOVIE";
     public static final String PRODUCES_SHOW_TABLE_NAME = "PRODUCES_SHOW";
@@ -64,8 +68,13 @@ public final class ScraperTables {
 
     public static final String WRITERS_MOVIE_VIEW_NAME = "V_WRITERS_MOVIE";
     public static final String WRITERS_SHOW_VIEW_NAME = "V_WRITERS_SHOW";
-    public static final String SEASONPLOTS_SHOW_VIEW_NAME = "V_SEASONPLOTS_SHOW";
     public static final String WRITERS_EPISODE_VIEW_NAME = "V_WRITERS_EPISODE";
+
+    public static final String TAGLINES_MOVIE_VIEW_NAME = "V_TAGLINES_MOVIE";
+    public static final String TAGLINES_SHOW_VIEW_NAME = "V_TAGLINES_SHOW";
+    public static final String TAGLINES_EPISODE_VIEW_NAME = "V_TAGLINES_EPISODE";
+
+    public static final String SEASONPLOTS_SHOW_VIEW_NAME = "V_SEASONPLOTS_SHOW";
 
     public static final String PRODUCES_MOVIE_VIEW_NAME = "V_PRODUCES_MOVIE";
     public static final String PRODUCES_SHOW_VIEW_NAME = "V_PRODUCES_SHOW";
@@ -77,6 +86,7 @@ public final class ScraperTables {
     public static final String ACTOR_DELETABLE_VIEW_NAME = "v_actor_deletable";
     public static final String DIRECTOR_DELETABLE_VIEW_NAME = "v_director_deletable";
     public static final String WRITER_DELETABLE_VIEW_NAME = "v_writer_deletable";
+    public static final String TAGLINE_DELETABLE_VIEW_NAME = "v_tagline_deletable";
     public static final String GENRE_DELETABLE_VIEW_NAME = "v_genre_deletable";
     public static final String STUDIO_DELETABLE_VIEW_NAME = "v_studio_deletable";
     /*
@@ -89,11 +99,17 @@ public final class ScraperTables {
     private static final String WRITERS_MOVIE_ID_MOVIE = "movie_writers";
     private static final String WRITERS_MOVIE_ID_WRITER = "writer_writers";
 
+    private static final String TAGLINES_MOVIE_ID_MOVIE = "movie_taglines";
+    private static final String TAGLINES_MOVIE_ID_TAGLINE = "tagline_taglines";
+
     private static final String FILMS_SHOW_ID_SHOW = "show_films";
     private static final String FILMS_SHOW_ID_DIRECTOR = "director_films";
 
     private static final String WRITERS_SHOW_ID_SHOW = "show_writers";
     private static final String WRITERS_SHOW_ID_WRITER = "writer_writers";
+
+    private static final String TAGLINES_SHOW_ID_SHOW = "show_taglines";
+    private static final String TAGLINES_SHOW_ID_TAGLINE = "tagline_taglines";
 
     private static final String SEASONPLOTS_SHOW_ID_SHOW = "show_seasonplots";
     private static final String SEASONPLOTS_SHOW_ID_SEASONPLOT = "seasonplot_seasonplots";
@@ -103,6 +119,9 @@ public final class ScraperTables {
 
     private static final String WRITERS_EPISODE_ID_WRITER = "writer_writers";
     private static final String WRITERS_EPISODE_ID_EPISODE = "episode_writers";
+
+    private static final String TAGLINES_EPISODE_ID_TAGLINE = "tagline_taglines";
+    private static final String TAGLINES_EPISODE_ID_EPISODE = "episode_taglines";
 
     private static final String PRODUCES_MOVIE_ID_MOVIE = "movie_produces";
     private static final String PRODUCES_MOVIE_ID_STUDIO = "studio_produces";
@@ -231,6 +250,12 @@ public final class ScraperTables {
                     ScraperStore.Writer.NAME + " TEXT UNIQUE," +
                     ScraperStore.Writer.COUNT + " INTEGER)";
 
+    private static final String TAGLINES_TABLE_CREATE =
+            "CREATE TABLE " + TAGLINES_TABLE_NAME + " (" +
+                    ScraperStore.Tagline.ID + " INTEGER PRIMARY KEY NOT NULL," +
+                    ScraperStore.Tagline.NAME + " TEXT UNIQUE," +
+                    ScraperStore.Tagline.COUNT + " INTEGER)";
+
     private static final String SEASONPLOTS_TABLE_CREATE =
             "CREATE TABLE " + SEASONPLOTS_TABLE_NAME + " (" +
                     ScraperStore.SeasonPlot.ID + " INTEGER PRIMARY KEY NOT NULL," +
@@ -298,6 +323,31 @@ public final class ScraperTables {
                     WRITERS_EPISODE_ID_WRITER + " INTEGER REFERENCES " + WRITERS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
                     "PRIMARY KEY(" + WRITERS_EPISODE_ID_EPISODE + "," +
                     WRITERS_EPISODE_ID_WRITER + "))";
+
+
+    /*
+     *  Tables associating movie, show and episode tables with taglines
+     */
+    private static final String TAGLINES_MOVIE_TABLE_CREATE =
+            "CREATE TABLE " + TAGLINES_MOVIE_TABLE_NAME + " (" +
+                    TAGLINES_MOVIE_ID_MOVIE + " INTEGER REFERENCES " + MOVIE_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    TAGLINES_MOVIE_ID_TAGLINE + " INTEGER REFERENCES " + TAGLINES_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + TAGLINES_MOVIE_ID_MOVIE + "," +
+                    TAGLINES_MOVIE_ID_TAGLINE + "))";
+
+    private static final String TAGLINES_SHOW_TABLE_CREATE =
+            "CREATE TABLE " + TAGLINES_SHOW_TABLE_NAME + " (" +
+                    TAGLINES_SHOW_ID_SHOW + " INTEGER REFERENCES " + SHOW_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    TAGLINES_SHOW_ID_TAGLINE + " INTEGER REFERENCES " + TAGLINES_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + TAGLINES_SHOW_ID_SHOW + "," +
+                    TAGLINES_SHOW_ID_TAGLINE + "))";
+
+    private static final String TAGLINES_EPISODE_TABLE_CREATE =
+            "CREATE TABLE " + TAGLINES_EPISODE_TABLE_NAME + " (" +
+                    TAGLINES_EPISODE_ID_EPISODE + " INTEGER REFERENCES " + EPISODE_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    TAGLINES_EPISODE_ID_TAGLINE + " INTEGER REFERENCES " + TAGLINES_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + TAGLINES_EPISODE_ID_EPISODE + "," +
+                    TAGLINES_EPISODE_ID_TAGLINE + "))";
 
     /*
      * Tables associating movie and show tables to studios
@@ -500,6 +550,31 @@ public final class ScraperTables {
                     " WHERE " + ScraperStore.Writer.NAME + " = NEW." + ScraperStore.Movie.Writer.NAME + "; " +
                     "END";
 
+    private static final String TAGLINES_MOVIE_VIEW_CREATE =
+            "CREATE VIEW " + TAGLINES_MOVIE_VIEW_NAME + " AS SELECT " +
+                    TAGLINES_MOVIE_TABLE_NAME + "." +
+                    TAGLINES_MOVIE_ID_MOVIE + " AS " + ScraperStore.Movie.Tagline.MOVIE + ", " +
+                    TAGLINES_TABLE_NAME + "." +
+                    ScraperStore.Tagline.NAME + " AS " + ScraperStore.Movie.Tagline.NAME + ", " +
+                    TAGLINES_TABLE_NAME + "." +
+                    ScraperStore.Tagline.ID + " AS " + ScraperStore.Movie.Tagline.TAGLINE + " FROM " +
+                    TAGLINES_MOVIE_TABLE_NAME + " LEFT JOIN " + TAGLINES_TABLE_NAME +
+                    " ON (" + TAGLINES_MOVIE_TABLE_NAME + "." + TAGLINES_MOVIE_ID_TAGLINE +
+                    " = " + TAGLINES_TABLE_NAME + "." + ScraperStore.Tagline.ID + ")";
+
+    private static final String TAGLINES_MOVIE_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_taglines_movie INSTEAD OF INSERT ON " + TAGLINES_MOVIE_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + TAGLINES_TABLE_NAME + " ( " + ScraperStore.Tagline.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Movie.Tagline.NAME + "); " +
+                    "INSERT INTO " + TAGLINES_MOVIE_TABLE_NAME +
+                    " ( " + TAGLINES_MOVIE_ID_MOVIE + "," + TAGLINES_MOVIE_ID_TAGLINE + " ) " +
+                    "SELECT NEW." + ScraperStore.Movie.Tagline.MOVIE + ", " +
+                    TAGLINES_TABLE_NAME + "." + ScraperStore.Tagline.ID + " " +
+                    " FROM " + TAGLINES_TABLE_NAME +
+                    " WHERE " + ScraperStore.Tagline.NAME + " = NEW." + ScraperStore.Movie.Tagline.NAME + "; " +
+                    "END";
+
     private static final String FILMS_SHOW_VIEW_CREATE =
         "CREATE VIEW " + FILMS_SHOW_VIEW_NAME + " AS SELECT " +
         FILMS_SHOW_TABLE_NAME + "." +
@@ -562,6 +637,18 @@ public final class ScraperTables {
                     " ON (" + WRITERS_SHOW_TABLE_NAME + "." + WRITERS_SHOW_ID_WRITER +
                     " = " + WRITERS_TABLE_NAME + "." + ScraperStore.Writer.ID + ")";
 
+    private static final String TAGLINES_SHOW_VIEW_CREATE =
+            "CREATE VIEW " + TAGLINES_SHOW_VIEW_NAME + " AS SELECT " +
+                    TAGLINES_SHOW_TABLE_NAME + "." +
+                    TAGLINES_SHOW_ID_SHOW + " AS " + ScraperStore.Show.Tagline.SHOW + ", " +
+                    TAGLINES_TABLE_NAME + "." +
+                    ScraperStore.Tagline.NAME + " AS " + ScraperStore.Show.Tagline.NAME + ", " +
+                    TAGLINES_TABLE_NAME + "." +
+                    ScraperStore.Tagline.ID + " AS " + ScraperStore.Show.Tagline.TAGLINE + " FROM " +
+                    TAGLINES_SHOW_TABLE_NAME + " LEFT JOIN " + TAGLINES_TABLE_NAME +
+                    " ON (" + TAGLINES_SHOW_TABLE_NAME + "." + TAGLINES_SHOW_ID_TAGLINE +
+                    " = " + TAGLINES_TABLE_NAME + "." + ScraperStore.Tagline.ID + ")";
+
     private static final String SEASONPLOTS_SHOW_VIEW_CREATE =
             "CREATE VIEW " + SEASONPLOTS_SHOW_VIEW_NAME + " AS SELECT " +
                     SEASONPLOTS_SHOW_TABLE_NAME + "." +
@@ -585,6 +672,19 @@ public final class ScraperTables {
                     WRITERS_TABLE_NAME + "." + ScraperStore.Writer.ID + " " +
                     " FROM " + WRITERS_TABLE_NAME +
                     " WHERE " + ScraperStore.Writer.NAME + " = NEW." + ScraperStore.Show.Writer.NAME + "; " +
+                    "END";
+
+    private static final String TAGLINES_SHOW_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_taglines_show INSTEAD OF INSERT ON " + TAGLINES_SHOW_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + TAGLINES_TABLE_NAME + " ( " + ScraperStore.Tagline.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Show.Tagline.NAME + "); " +
+                    "INSERT INTO " + TAGLINES_SHOW_TABLE_NAME +
+                    " ( " + TAGLINES_SHOW_ID_SHOW + "," + TAGLINES_SHOW_ID_TAGLINE + " ) " +
+                    "SELECT NEW." + ScraperStore.Show.Tagline.SHOW + ", " +
+                    TAGLINES_TABLE_NAME + "." + ScraperStore.Tagline.ID + " " +
+                    " FROM " + TAGLINES_TABLE_NAME +
+                    " WHERE " + ScraperStore.Tagline.NAME + " = NEW." + ScraperStore.Show.Tagline.NAME + "; " +
                     "END";
 
     private static final String SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER =
@@ -626,7 +726,30 @@ public final class ScraperTables {
                     "END";
 
 
+    private static final String TAGLINES_EPISODE_VIEW_CREATE =
+            "CREATE VIEW " + TAGLINES_EPISODE_VIEW_NAME + " AS SELECT " +
+                    TAGLINES_EPISODE_TABLE_NAME + "." +
+                    TAGLINES_EPISODE_ID_EPISODE + " AS " + ScraperStore.Episode.Tagline.EPISODE + ", " +
+                    TAGLINES_TABLE_NAME + "." +
+                    ScraperStore.Tagline.NAME + " AS " + ScraperStore.Episode.Tagline.NAME + ", " +
+                    TAGLINES_TABLE_NAME + "." +
+                    ScraperStore.Tagline.ID + " AS " + ScraperStore.Episode.Tagline.TAGLINE + " FROM " +
+                    TAGLINES_EPISODE_TABLE_NAME + " LEFT JOIN " + TAGLINES_TABLE_NAME +
+                    " ON (" + TAGLINES_EPISODE_TABLE_NAME + "." + TAGLINES_EPISODE_ID_TAGLINE +
+                    " = " + TAGLINES_TABLE_NAME + "." + ScraperStore.Tagline.ID + ")";
 
+    private static final String TAGLINES_EPISODE_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_taglines_episode INSTEAD OF INSERT ON " + TAGLINES_EPISODE_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + TAGLINES_TABLE_NAME + " ( " + ScraperStore.Tagline.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Episode.Tagline.NAME + "); " +
+                    "INSERT INTO " + TAGLINES_EPISODE_TABLE_NAME +
+                    " ( " + TAGLINES_EPISODE_ID_EPISODE + "," + TAGLINES_EPISODE_ID_TAGLINE + " ) " +
+                    "SELECT NEW." + ScraperStore.Episode.Tagline.EPISODE + ", " +
+                    TAGLINES_TABLE_NAME + "." + ScraperStore.Tagline.ID + " " +
+                    " FROM " + TAGLINES_TABLE_NAME +
+                    " WHERE " + ScraperStore.Tagline.NAME + " = NEW." + ScraperStore.Episode.Tagline.NAME + "; " +
+                    "END";
 
 
     private static final String PRODUCES_MOVIE_VIEW_CREATE =
@@ -751,6 +874,14 @@ public final class ScraperTables {
                     "LEFT JOIN writers_show ON writers_show.writer_writers=writer._id " +
                     "LEFT JOIN writers_episode ON writers_episode.writer_writers=writer._id " +
                     "WHERE coalesce(movie_writers, show_writers, episode_writers) IS NULL";
+
+    private static final String TAGLINE_DELETABLE_VIEW_CREATE =
+            "CREATE VIEW v_tagline_deletable AS " +
+                    "SELECT _id FROM tagline " +
+                    "LEFT JOIN taglines_movie ON taglines_movie.tagline_taglines=tagline._id " +
+                    "LEFT JOIN taglines_show ON taglines_show.tagline_taglines=tagline._id " +
+                    "LEFT JOIN taglines_episode ON taglines_episode.tagline_taglines=tagline._id " +
+                    "WHERE coalesce(movie_taglines, show_taglines, episode_taglines) IS NULL";
 
     private static final String SEASONPLOT_DELETABLE_VIEW_CREATE =
             "CREATE VIEW v_seasonplot_deletable AS " +
@@ -975,6 +1106,18 @@ public final class ScraperTables {
                     "     ORDER BY writers_show.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
+    public static final String VIEW_SHOW_TAGLINES = "v_show_taglines";
+    private static final String CREATE_VIEW_SHOW_TAGLINES =
+            "CREATE VIEW " + VIEW_SHOW_TAGLINES + " AS\n" +
+                    "SELECT _id, group_concat( name_tagline, ', ' ) AS taglines\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT show_taglines AS _id, name_tagline\n" +
+                    "      FROM taglines_show\n" +
+                    "           LEFT JOIN tagline\n" +
+                    "                  ON ( tagline_taglines = _id ) \n" +
+                    "     ORDER BY taglines_show.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
     public static final String VIEW_SHOW_SEASONPLOTS = "v_show_seasonplots";
     private static final String CREATE_VIEW_SHOW_SEASONPLOTS =
             "CREATE VIEW " + VIEW_SHOW_SEASONPLOTS + " AS\n" +
@@ -1009,6 +1152,32 @@ public final class ScraperTables {
                     "           LEFT JOIN writer\n" +
                     "                  ON ( writer_writers = _id ) \n" +
                     "     ORDER BY writers_movie.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+
+
+    public static final String VIEW_EPISODE_TAGLINES = "v_episode_taglines";
+    private static final String CREATE_VIEW_EPISODE_TAGLINES =
+            "CREATE VIEW " + VIEW_EPISODE_TAGLINES + " AS\n" +
+                    "SELECT _id, group_concat( name_tagline, ', ' ) AS taglines\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT episode_taglines AS _id, name_tagline\n" +
+                    "      FROM taglines_episode\n" +
+                    "           LEFT JOIN tagline\n" +
+                    "                  ON ( tagline_taglines = _id ) \n" +
+                    "     ORDER BY taglines_episode.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+    public static final String VIEW_MOVIE_TAGLINES = "v_movie_taglines";
+    private static final String CREATE_VIEW_MOVIE_TAGLINES =
+            "CREATE VIEW " + VIEW_MOVIE_TAGLINES + " AS\n" +
+                    "SELECT _id, group_concat( name_tagline, ', ' ) AS taglines\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT movie_taglines AS _id, name_tagline\n" +
+                    "      FROM taglines_movie\n" +
+                    "           LEFT JOIN tagline\n" +
+                    "                  ON ( tagline_taglines = _id ) \n" +
+                    "     ORDER BY taglines_movie.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
 
@@ -1439,33 +1608,65 @@ public final class ScraperTables {
             log.debug("upgradeTo: " + toVersion);
             db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.WRITERS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.WRITERS_FORMATTED + " TEXT DEFAULT ''");
-            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.SEASONPLOTS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.WRITERS_FORMATTED + " TEXT DEFAULT ''");
+
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.TAGLINES_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.TAGLINES_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.TAGLINES_FORMATTED + " TEXT DEFAULT ''");
+
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.SEASONPLOTS_FORMATTED + " TEXT DEFAULT ''");
+
             db.execSQL(WRITERS_TABLE_CREATE);
-            db.execSQL(SEASONPLOTS_TABLE_CREATE);
             db.execSQL(WRITERS_MOVIE_TABLE_CREATE);
             db.execSQL(WRITERS_EPISODE_TABLE_CREATE);
             db.execSQL(WRITERS_SHOW_TABLE_CREATE);
+
+            db.execSQL(TAGLINES_TABLE_CREATE);
+            db.execSQL(TAGLINES_MOVIE_TABLE_CREATE);
+            db.execSQL(TAGLINES_EPISODE_TABLE_CREATE);
+            db.execSQL(TAGLINES_SHOW_TABLE_CREATE);
+
+
+            db.execSQL(SEASONPLOTS_TABLE_CREATE);
             db.execSQL(SEASONPLOTS_SHOW_TABLE_CREATE);
+            db.execSQL(SEASONPLOTS_SHOW_VIEW_CREATE);
+            db.execSQL(SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER);
+            db.execSQL(SEASONPLOT_DELETABLE_VIEW_CREATE);
+            db.execSQL(CREATE_VIEW_SHOW_SEASONPLOTS);
+
             db.execSQL(WRITERS_MOVIE_VIEW_CREATE);
             db.execSQL(WRITERS_SHOW_VIEW_CREATE);
-            db.execSQL(SEASONPLOTS_SHOW_VIEW_CREATE);
             db.execSQL(WRITERS_EPISODE_VIEW_CREATE);
             db.execSQL(WRITERS_MOVIE_VIEW_INSERT_TRIGGER);
             db.execSQL(WRITERS_SHOW_VIEW_INSERT_TRIGGER);
-            db.execSQL(SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER);
             db.execSQL(WRITERS_EPISODE_VIEW_INSERT_TRIGGER);
             db.execSQL(WRITER_DELETABLE_VIEW_CREATE);
-            db.execSQL(SEASONPLOT_DELETABLE_VIEW_CREATE);
+
+            db.execSQL(TAGLINES_MOVIE_VIEW_CREATE);
+            db.execSQL(TAGLINES_SHOW_VIEW_CREATE);
+            db.execSQL(TAGLINES_EPISODE_VIEW_CREATE);
+            db.execSQL(TAGLINES_MOVIE_VIEW_INSERT_TRIGGER);
+            db.execSQL(TAGLINES_SHOW_VIEW_INSERT_TRIGGER);
+            db.execSQL(TAGLINES_EPISODE_VIEW_INSERT_TRIGGER);
+            db.execSQL(TAGLINE_DELETABLE_VIEW_CREATE);
+
             db.execSQL(CREATE_VIEW_SHOW_WRITERS);
-            db.execSQL(CREATE_VIEW_SHOW_SEASONPLOTS);
             db.execSQL(CREATE_VIEW_EPISODE_WRITERS);
             db.execSQL(CREATE_VIEW_MOVIE_WRITERS);
+
+            db.execSQL(CREATE_VIEW_SHOW_TAGLINES);
+            db.execSQL(CREATE_VIEW_EPISODE_TAGLINES);
+            db.execSQL(CREATE_VIEW_MOVIE_TAGLINES);
             log.debug("upgradeTo: creating indexes");
             // cf. v39 migration create indexes to speed up rescan in case of delete/renames
             db.execSQL("CREATE INDEX WRITERS_MOVIE_idx ON WRITERS_MOVIE(writer_writers)");
             db.execSQL("CREATE INDEX WRITERS_EPISODE_idx ON WRITERS_EPISODE(writer_writers)");
             db.execSQL("CREATE INDEX WRITERS_SHOW_idx ON WRITERS_SHOW(writer_writers)");
+
+            db.execSQL("CREATE INDEX TAGLINES_MOVIE_idx ON TAGLINES_MOVIE(tagline_taglines)");
+            db.execSQL("CREATE INDEX TAGLINES_EPISODE_idx ON TAGLINES_EPISODE(tagline_taglines)");
+            db.execSQL("CREATE INDEX TAGLINE_SHOW_idx ON TAGLINES_SHOW(tagline_taglines)");
+
             db.execSQL("CREATE INDEX SEASONPLOTS_SHOW_idx ON SEASONPLOTS_SHOW(seasonplot_seasonplots)");
         }
     }
