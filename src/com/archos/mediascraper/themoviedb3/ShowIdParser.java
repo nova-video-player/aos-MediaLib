@@ -163,7 +163,13 @@ public class ShowIdParser {
             result.addClearLogoFTV(mContext, enClearLogos.get(0));
         }
 
-        // setting multiple series tags using a single pipeline (tagline, type, status, vote_count, popularity)
+        // setting multiple series tags using a single pipeline (tagline, type, status, vote_count, popularity, runtime)
+        int runtime = 0;
+        if (serie.episode_run_time != null) {
+            for (int i = 0; i < serie.episode_run_time.size(); i++) {
+                runtime = serie.episode_run_time.get(0);
+            }
+        }
         String tmdbapikey = "?api_key=" + "0fd42d7cf783faf9a5eefeb78e1cc5c9";
         String baseTvUrl = "https://api.themoviedb.org/3/tv/";
         String lang = "&language=en-US";
@@ -171,7 +177,7 @@ public class ShowIdParser {
         try {
             JSONObject json = new JSONObject(readUrl(newUrl));
             String tagline = json.getString("tagline"); // tagline is not available from UweTrottmann-tmdb-java
-            String tvTag = tagline + "=&%#" + serie.type + "=&%#" + serie.status + "=&%#" + serie.vote_count + "=&%#" + serie.popularity;
+            String tvTag = tagline + "=&%#" + serie.type + "=&%#" + serie.status + "=&%#" + serie.vote_count + "=&%#" + serie.popularity + "=&%#" + runtime;
             result.addTaglineIfAbsent(tvTag);
         } catch (Exception e) {
             e.printStackTrace();
