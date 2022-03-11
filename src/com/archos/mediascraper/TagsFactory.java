@@ -165,6 +165,12 @@ public class TagsFactory {
             clearlogoSTUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
             clearlogoSId = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_ID);
 
+            studiologoSLFile = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_FILE);
+            studiologoSLUrl = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_URL);
+            studiologoSTFile = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_FILE);
+            studiologoSTUrl = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_URL);
+            studiologoSId = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_ID);
+
             collectionId = getCol(c, VideoColumns.SCRAPER_C_ID);
             collectionName = getCol(c, VideoColumns.SCRAPER_C_NAME);
             collectionDescription = getCol(c, VideoColumns.SCRAPER_C_DESCRIPTION);
@@ -246,6 +252,12 @@ public class TagsFactory {
         public final int clearlogoSTFile;
         public final int clearlogoSTUrl;
         public final int clearlogoSId;
+
+        public final int studiologoSLFile;
+        public final int studiologoSLUrl;
+        public final int studiologoSTFile;
+        public final int studiologoSTUrl;
+        public final int studiologoSId;
 
         public final int posterLFile;
         public final int posterLUrl;
@@ -447,6 +459,12 @@ public class TagsFactory {
             String clearlogoSLUrl = getStringCol(cur, cols.clearlogoSLUrl);
             String clearlogoSTFile = getStringCol(cur, cols.clearlogoSTFile);
             String clearlogoSTUrl = getStringCol(cur, cols.clearlogoSTUrl);
+
+            long studiologoSId = getLongCol(cur, cols.studiologoSId);
+            String studiologoSLFile = getStringCol(cur, cols.studiologoSLFile);
+            String studiologoSLUrl = getStringCol(cur, cols.studiologoSLUrl);
+            String studiologoSTFile = getStringCol(cur, cols.studiologoSTFile);
+            String studiologoSTUrl = getStringCol(cur, cols.studiologoSTUrl);
 
             long posterId = getLongCol(cur, cols.posterId);
             String posterLFile = getStringCol(cur, cols.posterLFile);
@@ -663,6 +681,17 @@ public class TagsFactory {
                         sTag.setClearLogos(image.asList());
                     }
 
+                    if (studiologoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_STUDIOLOGO, titleMS);
+                        image.setLargeFile(studiologoSLFile);
+                        image.setLargeUrl(studiologoSLUrl);
+                        image.setThumbFile(studiologoSTFile);
+                        image.setThumbUrl(studiologoSTUrl);
+                        image.setId(studiologoSId);
+                        image.setRemoteId(showId);
+                        sTag.setStudioLogos(image.asList());
+                    }
+
                     if (posterSId >0) {
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, titleMS);
                         image.setLargeFile(posterSLFile);
@@ -781,6 +810,9 @@ public class TagsFactory {
             String clearlogoSUrl = getStringCol(cur, ScraperStore.Show.CLEARLOGO_URL);
             String clearlogoSPath = getStringCol(cur, ScraperStore.Show.CLEARLOGO);
 
+            String studiologoSUrl = getStringCol(cur, ScraperStore.Show.STUDIOLOGO_URL);
+            String studiologoSPath = getStringCol(cur, ScraperStore.Show.STUDIOLOGO);
+
             ShowTags tag = tags.get(id);
             if(tag == null) {
                 tag = new ShowTags();
@@ -829,6 +861,12 @@ public class TagsFactory {
                 image.setLargeUrl(clearlogoSUrl);
                 image.setLargeFile(clearlogoSPath);
                 tag.setClearLogos(image.asList());
+            }
+            if(studiologoSUrl != null && studiologoSPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_STUDIOLOGO, null);
+                image.setLargeUrl(studiologoSUrl);
+                image.setLargeFile(studiologoSPath);
+                tag.setStudioLogos(image.asList());
             }
 
         } while(cur.moveToNext());
@@ -1204,8 +1242,9 @@ public class TagsFactory {
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.NETWORKLOGO_ID,          // 9
-                        ScraperStore.Show.ACTORPHOTO_ID,          // 9
-                        ScraperStore.Show.CLEARLOGO_ID,          // 9
+                        ScraperStore.Show.ACTORPHOTO_ID,          // 10
+                        ScraperStore.Show.CLEARLOGO_ID,          // 11
+                        ScraperStore.Show.STUDIOLOGO_ID,          // 12
                 }, null, null, null);
         return buildShowTagsFromCursor(context, c, showId);
     }
@@ -1227,8 +1266,9 @@ public class TagsFactory {
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.NETWORKLOGO_ID,          // 8
                         ScraperStore.Show.ACTORPHOTO_ID,          // 9
-                        ScraperStore.Show.CLEARLOGO_ID,          // 9
-                        ScraperStore.Show.ID,                   // 10
+                        ScraperStore.Show.CLEARLOGO_ID,          // 10
+                        ScraperStore.Show.STUDIOLOGO_ID,          // 11
+                        ScraperStore.Show.ID,                   // 12
                 }, null, null, null);
         if (c != null && c.moveToFirst())
             showId = c.getLong(9);
@@ -1242,6 +1282,7 @@ public class TagsFactory {
         long networklogoId = -1;
         long actorphotoId = -1;
         long clearlogoId = -1;
+        long studiologoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 showTags = new ShowTags();
@@ -1258,6 +1299,7 @@ public class TagsFactory {
                 networklogoId = c.getLong(9);
                 actorphotoId = c.getLong(10);
                 clearlogoId = c.getLong(11);
+                studiologoId = c.getLong(12);
             }
             c.close();
         }
@@ -1420,6 +1462,20 @@ public class TagsFactory {
                     allClearLogosSorted.addLast(image);
             }
             showTags.setClearLogos(allClearLogosSorted);
+
+            // studiologos
+            List<ScraperImage> allStudioLogosInDb = showTags.getAllStudioLogosInDb(context);
+            if (allStudioLogosInDb == null)
+                allStudioLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allStudioLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected studiologo and make it first in the list
+            for (ScraperImage image : allStudioLogosInDb) {
+                if (image.getId() == studiologoId)
+                    allStudioLogosSorted.addFirst(image);
+                else
+                    allStudioLogosSorted.addLast(image);
+            }
+            showTags.setStudioLogos(allStudioLogosSorted);
         }
         return showTags;
     }

@@ -241,6 +241,12 @@ public class ShowScraper4 extends BaseScraper2 {
                     // needs to be done after setClearLogos not to be erased
                     if (result.getClearLogoPath() != null)  showTags.addClearLogoFTV(mContext, result.getClearLogoPath());
 
+                    if (!searchImages.studiologos.isEmpty())
+                        showTags.setStudioLogos(searchImages.studiologos);
+                    else log.debug("getDetailsInternal: studiologos empty!");
+                    // needs to be done after setStudioLogos not to be erased
+                    if (result.getStudioLogoPath() != null)  showTags.addStudioLogoGITHUB(mContext, result.getStudioLogoPath());
+
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
@@ -253,9 +259,11 @@ public class ShowScraper4 extends BaseScraper2 {
                     showTags.downloadNetworkLogo(mContext);
                     showTags.downloadActorPhoto(mContext);
                     showTags.downloadClearLogo(mContext);
+                    showTags.downloadStudioLogo(mContext);
                     //showTags.downloadPosters(mContext);
                     //showTags.downloadBackdrops(mContext);
                     showTags.downloadNetworkLogos(mContext);
+                    showTags.downloadStudioLogos(mContext);
                     showTags.downloadActorPhotos(mContext);
                     //showTags.downloadClearLogos(mContext);
 

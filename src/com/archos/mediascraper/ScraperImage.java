@@ -68,7 +68,7 @@ public class ScraperImage {
     public final static String TMST = TMDB_IMAGE_URL + STILL_THUMB;
     public final static String TMSL = TMDB_IMAGE_URL + STILL_LARGE;
     // for network logos
-    public final static String GNL = GITHUB_STUDIO_NETWOK_LOGO_URL;
+    public final static String GSNL = GITHUB_STUDIO_NETWOK_LOGO_URL;
     // for actor photos
     public final static String AP = TMDB_CAST_IMAGE_URL;
 
@@ -118,6 +118,12 @@ public class ScraperImage {
                 ScraperStore.ShowClearLogos.THUMB_URL, ScraperStore.ShowClearLogos.THUMB_FILE,
                 ScraperStore.ShowClearLogos.LARGE_URL, ScraperStore.ShowClearLogos.LARGE_FILE,
                 null, ScraperStore.ShowClearLogos.URI.BASE, ScraperStore.ShowClearLogos.SHOW_ID,
+                ImageScaler.Type.SCALE_INSIDE
+        ),
+        SHOW_STUDIOLOGO(
+                ScraperStore.ShowStudioLogos.THUMB_URL, ScraperStore.ShowStudioLogos.THUMB_FILE,
+                ScraperStore.ShowStudioLogos.LARGE_URL, ScraperStore.ShowStudioLogos.LARGE_FILE,
+                null, ScraperStore.ShowStudioLogos.URI.BASE, ScraperStore.ShowStudioLogos.SHOW_ID,
                 ImageScaler.Type.SCALE_INSIDE
         ),
         EPISODE_POSTER(
@@ -377,16 +383,18 @@ public class ScraperImage {
             log.warn("getFileName: nameSeed is null! for url " +  url);
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
-        boolean logo;
-        boolean castphoto;
-        logo = mType == Type.SHOW_NETWORK;
-        castphoto = mType == Type.SHOW_ACTOR_PHOTO;
-        String name = null;
-        if (logo) {
+        boolean isNetworkLogo;
+        boolean isCastPhoto;
+        boolean isStudioLogo;
+        isNetworkLogo = mType == Type.SHOW_NETWORK;
+        isCastPhoto = mType == Type.SHOW_ACTOR_PHOTO;
+        isStudioLogo = mType == Type.SHOW_STUDIOLOGO;
+        String name;
+        if (isNetworkLogo || isStudioLogo) {
             assert url != null;
             name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
             return name;
-        } else if (castphoto){
+        } else if (isCastPhoto){
             assert url != null;
             name = url.replaceAll(TMDB_CAST_IMAGE_URL, "");
             return name;
@@ -422,6 +430,10 @@ public class ScraperImage {
             case SHOW_TITLE_CLEARLOGO:
                 ret = MediaScraper.getClearLogoDirectory(context);
                 log.trace("getDir: for clearlogo: " + ret.getPath());
+                break;
+            case SHOW_STUDIOLOGO:
+                ret = MediaScraper.getStudioLogoDirectory(context);
+                log.trace("getDir: for studiologo: " + ret.getPath());
                 break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropDirectory(context);
@@ -474,6 +486,10 @@ public class ScraperImage {
                 ret = MediaScraper.getClearLogoCacheDirectory(context);
                 log.trace("getCacheDir: for clearlogo " + ret.getPath());
                 break;
+            case SHOW_STUDIOLOGO:
+                ret = MediaScraper.getStudioLogoCacheDirectory(context);
+                log.trace("getCacheDir: for studiologo " + ret.getPath());
+                break;
             case COLLECTION_BACKDROP:
                 ret = MediaScraper.getBackdropCacheDirectory(context);
                 log.trace("getCacheDir: for collection_backdrop " + ret.getPath());
@@ -512,6 +528,8 @@ public class ScraperImage {
                 return MediaScraper.ACTORPHOTO_CACHE_TIMEOUT;
             case SHOW_TITLE_CLEARLOGO:
                 return MediaScraper.CLEARLOGO_CACHE_TIMEOUT;
+            case SHOW_STUDIOLOGO:
+                return MediaScraper.STUDIOLOGO_CACHE_TIMEOUT;
             case COLLECTION_BACKDROP:
                 return MediaScraper.BACKDROP_CACHE_TIMEOUT;
             default:
@@ -659,6 +677,17 @@ public class ScraperImage {
                 }
                 log.trace("saveSizedImage: target ClearLogo(" + maxWidth + "," + maxHeight + ")");
                 break;
+            case SHOW_STUDIOLOGO:
+                if (thumb) {
+                    maxWidth = thumbWidth;
+                    maxHeight = thumbHeight;
+                } else {
+                    DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+                    maxHeight = displayMetrics.heightPixels;
+                    maxWidth = displayMetrics.widthPixels;
+                }
+                log.trace("saveSizedImage: target StudioLogo(" + maxWidth + "," + maxHeight + ")");
+                break;
             case COLLECTION_BACKDROP:
                 if (thumb) {
                     maxWidth = thumbWidth;
@@ -778,6 +807,12 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Show.CLEARLOGO_ID, Long.valueOf(mId));
                 updateValues.put(ScraperStore.Show.CLEARLOGO_URL, mLargeUrl);
                 updateValues.put(ScraperStore.Show.CLEARLOGO, mLargeFile);
+                break;
+            case SHOW_STUDIOLOGO:
+                updateUri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, mRemoteId);
+                updateValues.put(ScraperStore.Show.STUDIOLOGO_ID, Long.valueOf(mId));
+                updateValues.put(ScraperStore.Show.STUDIOLOGO_URL, mLargeUrl);
+                updateValues.put(ScraperStore.Show.STUDIOLOGO, mLargeFile);
                 break;
             case MOVIE_POSTER:
                 if(mOnlineID>0) {

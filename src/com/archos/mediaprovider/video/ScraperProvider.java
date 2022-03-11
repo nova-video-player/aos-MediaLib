@@ -175,6 +175,10 @@ public class ScraperProvider extends ContentProvider {
     private static final int TAGLINE_EPISODE = SCRAPER_PROVIDER_OFFSET + 187;
     private static final int TAGLINE_NAME = SCRAPER_PROVIDER_OFFSET + 188;
 
+    private static final int SHOW_STUDIOLOGOS = SCRAPER_PROVIDER_OFFSET + 189;
+    private static final int SHOW_STUDIOLOGOS_ID = SCRAPER_PROVIDER_OFFSET + 190;
+    private static final int SHOW_STUDIOLOGOS_SHOW_ID = SCRAPER_PROVIDER_OFFSET + 191;
+
     private static UriMatcher sUriMatcher;
 
     /**
@@ -406,6 +410,14 @@ public class ScraperProvider extends ContentProvider {
                 SHOW_CLEARLOGOS_ID);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowClearLogos.URI.BY_SHOW_ID) + "/#",
                 SHOW_CLEARLOGOS_SHOW_ID);
+
+        // show studiologos
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowStudioLogos.URI.BASE),
+                SHOW_STUDIOLOGOS);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowStudioLogos.URI.BASE) + "/#",
+                SHOW_STUDIOLOGOS_ID);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowStudioLogos.URI.BY_SHOW_ID) + "/#",
+                SHOW_STUDIOLOGOS_SHOW_ID);
 
         // movie trailers
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieTrailers.URI.BASE),
@@ -861,6 +873,15 @@ public class ScraperProvider extends ContentProvider {
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.ShowClearLogos.URI.BASE, cr);
                 break;
+            case SHOW_STUDIOLOGOS:
+                rowId = db.insert(ScraperTables.SHOW_STUDIOLOGOS_TABLE_NAME,
+                        ScraperStore.ShowStudioLogos.ID, values);
+                if (rowId < 0) {
+                    rowId = findScraperImage(db, ScraperTables.SHOW_STUDIOLOGOS_TABLE_NAME,
+                            ScraperImage.Type.SHOW_STUDIOLOGO, values);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.ShowStudioLogos.URI.BASE, cr);
+                break;
             case MOVIE_COLLECTION:
                 // see MOVIE_POSTERS
                 rowId = db.insert(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
@@ -1279,6 +1300,16 @@ public class ScraperProvider extends ContentProvider {
             case SHOW_CLEARLOGOS:
                 qb.setTables(ScraperTables.SHOW_CLEARLOGOS_TABLE_NAME);
                 break;
+            case SHOW_STUDIOLOGOS_ID:
+                useId = true;
+                //$FALL-THROUGH$
+            case SHOW_STUDIOLOGOS_SHOW_ID:
+                qb.appendWhere(useId ? BaseColumns._ID  + "=" : ScraperStore.ShowStudioLogos.SHOW_ID + "=");
+                qb.appendWhereEscapeString(data);
+                //$FALL-THROUGH$
+            case SHOW_STUDIOLOGOS:
+                qb.setTables(ScraperTables.SHOW_STUDIOLOGOS_TABLE_NAME);
+                break;
             case MOVIE_TRAILERS_ID:
                 useId = true;
                 //$FALL-THROUGH$
@@ -1366,6 +1397,12 @@ public class ScraperProvider extends ContentProvider {
                 cols[0] = thumb ? ScraperStore.ShowClearLogos.THUMB_URL : ScraperStore.ShowClearLogos.LARGE_URL;
                 cols[1] = thumb ? ScraperStore.ShowClearLogos.THUMB_FILE : ScraperStore.ShowClearLogos.LARGE_FILE;
                 type = Type.SHOW_TITLE_CLEARLOGO;
+                break;
+            case SHOW_STUDIOLOGOS_ID:
+                table = ScraperTables.SHOW_STUDIOLOGOS_TABLE_NAME;
+                cols[0] = thumb ? ScraperStore.ShowStudioLogos.THUMB_URL : ScraperStore.ShowStudioLogos.LARGE_URL;
+                cols[1] = thumb ? ScraperStore.ShowStudioLogos.THUMB_FILE : ScraperStore.ShowStudioLogos.LARGE_FILE;
+                type = Type.SHOW_STUDIOLOGO;
                 break;
             default:
                 throw new FileNotFoundException("No files supported by provider at " + uri);
@@ -1502,6 +1539,9 @@ public class ScraperProvider extends ContentProvider {
                 break;
             case SHOW_CLEARLOGOS:
                 table = ScraperTables.SHOW_CLEARLOGOS_TABLE_NAME;
+                break;
+            case SHOW_STUDIOLOGOS:
+                table = ScraperTables.SHOW_STUDIOLOGOS_TABLE_NAME;
                 break;
             case SHOW_POSTERS:
                 table = ScraperTables.SHOW_POSTERS_TABLE_NAME;

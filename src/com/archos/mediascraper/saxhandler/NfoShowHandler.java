@@ -79,6 +79,7 @@ public class NfoShowHandler extends BasicHandler {
     private final ArrayList<String> mNetworkLogos = new ArrayList<String>();
     private final ArrayList<String> mActorPhotos = new ArrayList<String>();
     private final ArrayList<String> mClearLogos = new ArrayList<String>();
+    private final ArrayList<String> mStudioLogos = new ArrayList<String>();
     private boolean mCanParse;
 
     private String mActorName, mActorRole;
@@ -98,6 +99,7 @@ public class NfoShowHandler extends BasicHandler {
         mNetworkLogos.clear();
         mActorPhotos.clear();
         mClearLogos.clear();
+        mStudioLogos.clear();
         mCanParse = false;
         mActorName = null;
         mActorRole = null;
@@ -336,6 +338,21 @@ public class NfoShowHandler extends BasicHandler {
                 }
                 mResult.setClearLogos(images);
             }
+
+            if (!mStudioLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mStudioLogos.size());
+                for (String url : mStudioLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_STUDIOLOGO, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setStudioLogos(images);
+            }
+
             return mResult;
         }
         return null;
