@@ -87,9 +87,32 @@ public class ShowIdParser {
             for (TvSeason season : serie.seasons) {
                 String pattern = "MMMM dd, yyyy";
                 DateFormat df = new SimpleDateFormat(pattern);
-                Date date = season.air_date;
-                String dateAsString = df.format(date);
-                seasonPlot = season.season_number + "=&%#" + season.overview + "=&%#" + season.name + "=&%#" + dateAsString;
+                String airdate = "";
+                String overview = "";
+                String seasonNumber = "";
+                String name = "";
+                if (season.air_date != null){
+                    Date date = season.air_date;
+                    airdate = df.format(date);
+                } else{
+                    airdate = "No season air date";
+                }
+                if (season.overview != null){
+                    overview = season.overview;
+                } else{
+                    overview = "No season overview";
+                }
+                if (season.name != null){
+                    name = season.name;
+                } else{
+                    name = "No season name";
+                }
+                if (season.season_number != null){
+                    seasonNumber = String.valueOf(season.season_number);
+                } else{
+                    seasonNumber = "No season number";
+                }
+                seasonPlot = seasonNumber + "=&%#" + overview + "=&%#" + name + "=&%#" + airdate;
                 SeasonPlots.add(seasonPlot);
                 result.setSeasonPlots(SeasonPlots);
             }
