@@ -123,7 +123,7 @@ public final class MediaScraper {
     public static final long ACTORPHOTO_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
 
     /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
-    public static final long CLEARLOGO_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
+    public static final long CLEARLOGO_CACHE_TIMEOUT = HttpCache.ONE_SECOND * 2L;
 
     /** Timeout for {@link ScraperCache} - 2 hours */
     public static final int SCRAPER_CACHE_TIMEOUT_COUNT = 2;
