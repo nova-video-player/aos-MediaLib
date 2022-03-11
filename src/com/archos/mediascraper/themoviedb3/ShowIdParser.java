@@ -38,7 +38,10 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class ShowIdParser {
@@ -76,17 +79,17 @@ public class ShowIdParser {
         } else {
             log.warn("getResult: " + serie.name + " has no overview/plot");
         }
-        // setting season plots
+
+        // setting multiple season tags (season number, season  overview, season name, season air date)
         List<String> SeasonPlots = new ArrayList<>();
         String seasonPlot;
         if (serie.seasons != null) {
             for (TvSeason season : serie.seasons) {
-                assert season.overview != null;
-                if (!season.overview.isEmpty()) {
-                    seasonPlot = "SeasonNumber " + season.season_number + "=&%" + season.overview + "=&%" + season.name;
-                } else {
-                    seasonPlot = "SeasonNumber " + season.season_number + "=&%" + "Season plot is not available" + "=&%" + season.name;
-                }
+                String pattern = "MMMM dd, yyyy";
+                DateFormat df = new SimpleDateFormat(pattern);
+                Date date = season.air_date;
+                String dateAsString = df.format(date);
+                seasonPlot = season.season_number + "=&%#" + season.overview + "=&%#" + season.name + "=&%#" + dateAsString;
                 SeasonPlots.add(seasonPlot);
                 result.setSeasonPlots(SeasonPlots);
             }
