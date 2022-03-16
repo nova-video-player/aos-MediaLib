@@ -315,7 +315,7 @@ public class NfoShowHandler extends BasicHandler {
                 ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mActorPhotos.size());
                 for (String url : mActorPhotos) {
                     if (url != null && !url.isEmpty() && url.startsWith("http")) {
-                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_NETWORK, seed);
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_ACTOR_PHOTO, seed);
                         image.setLargeUrl(url);
                         image.setThumbUrl(rewriteUrl(url));
                         image.generateFileNames(context);
