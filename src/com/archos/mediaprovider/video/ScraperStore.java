@@ -42,6 +42,10 @@ public final class ScraperStore {
         public static final String BACKDROP_URL = "backdrop_url_movie";
         public static final String POSTER_ID = "m_poster_id";
         public static final String BACKDROP_ID = "m_backdrop_id";
+        public static final String ACTORPHOTO = "actorphoto_movie";
+        public static final String ACTORPHOTO_URL = "actorphoto_url_movie";
+        public static final String ACTORPHOTO_ID = "m_actorphoto_id";
+
         /** id in online db "1858" > http://www.themoviedb.org/movie/1858 */
         public static final String ONLINE_ID = "m_online_id";
         /** IMDb id "tt0285331" > http://www.imdb.com/title/tt0285331 */
@@ -453,6 +457,18 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviebackdrops");
             public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviebackdrops/byremote");
+        }
+    }
+    public static class MovieActorPhotos {
+        public static final String ID = "_id";
+        public static final String MOVIE_ID = "movie_id";
+        public static final String THUMB_URL = "m_ap_thumb_url";
+        public static final String THUMB_FILE = "m_ap_thumb_file";
+        public static final String LARGE_URL = "m_ap_large_url";
+        public static final String LARGE_FILE = "m_ap_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/movieactorphotos");
+            public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/movieactorphotos/byremote");
         }
     }
     public static class ShowPosters {

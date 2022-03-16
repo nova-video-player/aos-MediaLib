@@ -167,6 +167,8 @@ public class MovieScraper3 extends BaseScraper2 {
         tag.downloadPoster(mContext);
         // TODO MARC ?
         tag.downloadBackdrop(mContext);
+        tag.downloadActorPhoto(mContext);
+        tag.downloadActorPhotos(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
     }
 

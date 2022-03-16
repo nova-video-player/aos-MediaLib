@@ -99,6 +99,13 @@ public class NfoParser {
         return null;
     }
 
+    public static String getCustomMovieActorPhotoName(String showTitle) {
+        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
+        if (titleEncoded != null)
+            return titleEncoded + ACTORPHOTO_EXTENSION;
+        return null;
+    }
+
     public static String getCustomShowClearLogoName(String showTitle) {
         String titleEncoded = StringUtils.fileSystemEncode(showTitle);
         if (titleEncoded != null)
@@ -307,6 +314,12 @@ public class NfoParser {
                             movieTags.addDefaultBackdrop(context, backdrop, nfo.videoFile);
                         }
 
+                        // check if we can add local image to actorphotos
+                        Uri actorphoto = LocalImages.findActorPhoto(nfo.videoFile, null);
+                        if (backdrop != null) {
+                            movieTags.addDefaultActorPhoto(context, actorphoto, nfo.videoFile);
+                        }
+
                         tag.downloadPoster(context);
                         return tag;
                     }
@@ -412,7 +425,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show ActorPhoto
-                Uri actorphoto = LocalImages.findShowActorPhoto(videoFile, showTitle);
+                Uri actorphoto = LocalImages.findActorPhoto(videoFile, showTitle);
                 if (actorphoto != null) {
                     result.addDefaultActorPhoto(context, actorphoto);
                 }

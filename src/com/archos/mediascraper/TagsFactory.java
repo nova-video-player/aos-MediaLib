@@ -159,6 +159,12 @@ public class TagsFactory {
             actorphotoSTUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
             actorphotoSId = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_ID);
 
+            actorphotoMLFile = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_FILE);
+            actorphotoMLUrl = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_URL);
+            actorphotoMTFile = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_FILE);
+            actorphotoMTUrl = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_URL);
+            actorphotoMId = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_ID);
+
             clearlogoSLFile = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_FILE);
             clearlogoSLUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
             clearlogoSTFile = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_FILE);
@@ -246,6 +252,12 @@ public class TagsFactory {
         public final int actorphotoSTFile;
         public final int actorphotoSTUrl;
         public final int actorphotoSId;
+
+        public final int actorphotoMLFile;
+        public final int actorphotoMLUrl;
+        public final int actorphotoMTFile;
+        public final int actorphotoMTUrl;
+        public final int actorphotoMId;
 
         public final int clearlogoSLFile;
         public final int clearlogoSLUrl;
@@ -454,6 +466,12 @@ public class TagsFactory {
             String actorphotoSTFile = getStringCol(cur, cols.actorphotoSTFile);
             String actorphotoSTUrl = getStringCol(cur, cols.actorphotoSTUrl);
 
+            long actorphotoMId = getLongCol(cur, cols.actorphotoMId);
+            String actorphotoMLFile = getStringCol(cur, cols.actorphotoMLFile);
+            String actorphotoMLUrl = getStringCol(cur, cols.actorphotoMLUrl);
+            String actorphotoMTFile = getStringCol(cur, cols.actorphotoMTFile);
+            String actorphotoMTUrl = getStringCol(cur, cols.actorphotoMTUrl);
+
             long clearlogoSId = getLongCol(cur, cols.clearlogoSId);
             String clearlogoSLFile = getStringCol(cur, cols.clearlogoSLFile);
             String clearlogoSLUrl = getStringCol(cur, cols.clearlogoSLUrl);
@@ -521,6 +539,17 @@ public class TagsFactory {
                     image.setId(backdropId);
                     image.setRemoteId(scraperId);
                     tag.setBackdrops(image.asList());
+                }
+
+                if (actorphotoMId > 0) {
+                    ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_ACTORPHOTO, data);
+                    image.setLargeFile(actorphotoMLFile);
+                    image.setLargeUrl(actorphotoMLUrl);
+                    image.setThumbFile(actorphotoMTFile);
+                    image.setThumbUrl(actorphotoMTUrl);
+                    image.setId(actorphotoMId);
+                    image.setRemoteId(scraperId);
+                    tag.setActorPhotos(image.asList());
                 }
 
                 if (posterId > 0) {
@@ -738,6 +767,9 @@ public class TagsFactory {
             String backdropUrl = getStringCol(cur, ScraperStore.Movie.BACKDROP_URL);
             String backdropPath = getStringCol(cur, ScraperStore.Movie.BACKDROP);
 
+            String actorphotoMUrl = getStringCol(cur, ScraperStore.Movie.ACTORPHOTO_URL);
+            String actorphotoMPath = getStringCol(cur, ScraperStore.Movie.ACTORPHOTO);
+
             Integer collectionId = getIntCol(cur, ScraperStore.Movie.COLLECTION_ID);
 
             MovieTags tag = tags.get(id);
@@ -768,6 +800,13 @@ public class TagsFactory {
                 image.setLargeUrl(backdropUrl);
                 image.setLargeFile(backdropPath);
                 tag.setBackdrops(image.asList());
+            }
+
+            if(actorphotoMUrl != null && actorphotoMPath != null) {
+                ScraperImage image = new ScraperImage(Type.MOVIE_ACTORPHOTO, null);
+                image.setLargeUrl(actorphotoMUrl);
+                image.setLargeFile(actorphotoMPath);
+                tag.setActorPhotos(image.asList());
             }
 
             if (collectionId > 0)
@@ -953,13 +992,15 @@ public class TagsFactory {
                         VideoColumns.SCRAPER_C_BACKDROP_LARGE_FILE, // 22
                         VideoColumns.SCRAPER_C_BACKDROP_LARGE_URL,  // 23
                         VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE, // 24
-                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL   // 25
+                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL,   // 25
+                        VideoColumns.SCRAPER_M_ACTORPHOTO_ID       // 26
                 },
                 VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + "=?",
                 new String[] { String.valueOf(movieId) },
                 null);
         long posterId = -1;
         long backdropId = -1;
+        long actorphotoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 result = new MovieTags();
@@ -990,6 +1031,7 @@ public class TagsFactory {
                 result.setCollectionBackdropLargeUrl(c.getString(23));
                 result.setCollectionBackdropThumbFile(c.getString(24));
                 result.setCollectionBackdropThumbUrl(c.getString(25));
+                actorphotoId = c.getLong(26);
             }
             c.close();
         }
@@ -1097,6 +1139,21 @@ public class TagsFactory {
                     allBackdropsSorted.addLast(image);
             }
             result.setBackdrops(allBackdropsSorted);
+
+            // actorphotos
+            List<ScraperImage> allActorPhotosInDb = result.getAllActorPhotosInDb(context);
+            if (allActorPhotosInDb == null)
+                allActorPhotosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allActorPhotosSorted = new LinkedList<ScraperImage>();
+            // find the selected actorphoto and make it first in the list
+            for (ScraperImage image : allActorPhotosInDb) {
+                if (image.getId() == actorphotoId)
+                    allActorPhotosSorted.addFirst(image);
+                else
+                    allActorPhotosSorted.addLast(image);
+            }
+            result.setActorPhotos(allActorPhotosSorted);
+
         }
         return result;
     }

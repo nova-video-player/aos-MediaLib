@@ -133,6 +133,13 @@ public class MovieIdParser2 {
                         result.addWriterIfAbsent(crew.name);
                 }
         }
+        if (movie.credits != null) {
+            if (movie.credits.cast != null)
+                for (int j = 0; j < movie.credits.cast.size(); j++) {
+                    result.addDefaultActorPhotoTMDB(mContext, movie.credits.cast.get(j).profile_path);
+                }
+        } else log.debug("getResult: no actor_photo_path for " + movie.id);
+
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         if (movie.release_dates.results != null) {
             for (int i = 0; i < movie.release_dates.results.size(); i++) {
