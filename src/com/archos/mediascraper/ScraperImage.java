@@ -390,11 +390,11 @@ public class ScraperImage {
             seedHash = String.valueOf(System.currentTimeMillis()).hashCode();
         }
         boolean isNetworkLogo;
-        boolean isCastPhoto;
+        boolean isCastPhotoSeries;
         boolean isStudioLogo;
         boolean isCastPhotoMovie;
         isNetworkLogo = mType == Type.SHOW_NETWORK;
-        isCastPhoto = mType == Type.SHOW_ACTOR_PHOTO;
+        isCastPhotoSeries = mType == Type.SHOW_ACTOR_PHOTO;
         isStudioLogo = mType == Type.SHOW_STUDIOLOGO;
         isCastPhotoMovie = mType == Type.MOVIE_ACTORPHOTO;
         String name;
@@ -402,7 +402,7 @@ public class ScraperImage {
             assert url != null;
             name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
             return name;
-        } else if (isCastPhoto || isCastPhotoMovie){
+        } else if (isCastPhotoSeries || isCastPhotoMovie){
             assert url != null;
             name = url.replaceAll(TMDB_CAST_IMAGE_URL, "");
             return name;
