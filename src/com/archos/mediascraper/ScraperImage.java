@@ -392,15 +392,17 @@ public class ScraperImage {
         boolean isNetworkLogo;
         boolean isCastPhoto;
         boolean isStudioLogo;
+        boolean isCastPhotoMovie;
         isNetworkLogo = mType == Type.SHOW_NETWORK;
         isCastPhoto = mType == Type.SHOW_ACTOR_PHOTO;
         isStudioLogo = mType == Type.SHOW_STUDIOLOGO;
+        isCastPhotoMovie = mType == Type.MOVIE_ACTORPHOTO;
         String name;
         if (isNetworkLogo || isStudioLogo) {
             assert url != null;
             name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
             return name;
-        } else if (isCastPhoto){
+        } else if (isCastPhoto || isCastPhotoMovie){
             assert url != null;
             name = url.replaceAll(TMDB_CAST_IMAGE_URL, "");
             return name;

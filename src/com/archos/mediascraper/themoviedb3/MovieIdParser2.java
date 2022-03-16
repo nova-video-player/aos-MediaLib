@@ -119,7 +119,7 @@ public class MovieIdParser2 {
                     result.addActorIfAbsent(guestStar.name, guestStar.character);
             if (movie.credits.cast != null)
                 for (CastMember actor : movie.credits.cast)
-                    result.addActorIfAbsent(actor.name, actor.character);
+                    result.addActorIfAbsent(actor.name, actor.character + "=&%#" + actor.profile_path);
             if (movie.credits.crew != null)
                 for (CrewMember crew : movie.credits.crew) {
                     assert crew.job != null;
