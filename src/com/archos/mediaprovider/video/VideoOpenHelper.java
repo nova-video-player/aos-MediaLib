@@ -505,6 +505,8 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(sap.s_ap_large_file, actorphoto_show) AS s_ap_file,\n" +
                     "    coalesce(map.m_ap_large_url, actorphoto_url_movie) AS m_ap_url,\n" +
                     "    coalesce(map.m_ap_large_file, actorphoto_movie) AS m_ap_file,\n" +
+                    "    coalesce(msl.m_sl_large_url, studiologo_url_movie) AS m_sl_url,\n" +
+                    "    coalesce(msl.m_sl_large_file, studiologo_movie) AS m_sl_file,\n" +
 
                     "    coalesce(scl.s_cl_large_url, clearlogo_url_show) AS s_cl_url,\n" +
                     "    coalesce(scl.s_cl_large_file, clearlogo_show) AS s_cl_file,\n" +
@@ -538,6 +540,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    snl._id AS s_networklogo_id,\n" +
                     "    sap._id AS s_actorphoto_id,\n" +
                     "    map._id AS m_actorphoto_id,\n" +
+                    "    msl._id AS m_studiologo_id,\n" +
                     "    scl._id AS s_clearlogo_id,\n" +
                     "    ssl._id AS s_studiologo_id,\n" +
                     "    sb.s_bd_thumb_url,\n" +
@@ -571,6 +574,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "       LEFT JOIN movie_posters AS mp ON ( m.m_poster_id = mp._id ) \n" +
                     "       LEFT JOIN movie_backdrops AS mb ON ( m.m_backdrop_id = mb._id )\n" +
                     "       LEFT JOIN movie_actorphotos AS map ON ( m.m_actorphoto_id = map._id )\n" +
+                    "       LEFT JOIN movie_studiologos AS msl ON ( m.m_studiologo_id = msl._id )\n" +
                     "LEFT JOIN episode AS e ON (e.video_id = f._id)\n" +
                     "       LEFT JOIN show_posters AS ep ON ( e.e_poster_id = ep._id )\n" +
                     "   LEFT JOIN show AS s on (e.show_episode = s._id)\n" +
@@ -704,6 +708,8 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(sap.s_ap_large_file, actorphoto_show) AS s_ap_file,\n" +
                     "    coalesce(map.m_ap_large_url, actorphoto_url_movie) AS m_ap_url,\n" +
                     "    coalesce(map.m_ap_large_file, actorphoto_movie) AS m_ap_file,\n" +
+                    "    coalesce(msl.m_sl_large_url, studiologo_url_movie) AS m_sl_url,\n" +
+                    "    coalesce(msl.m_sl_large_file, studiologo_movie) AS m_sl_file,\n" +
 
                     "    coalesce(scl.s_cl_large_url, clearlogo_url_show) AS s_cl_url,\n" +
                     "    coalesce(scl.s_cl_large_file, clearlogo_show) AS s_cl_file,\n" +
@@ -737,6 +743,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    snl._id AS s_networklogo_id,\n" +
                     "    sap._id AS s_actorphoto_id,\n" +
                     "    map._id AS m_actorphoto_id,\n" +
+                    "    msl._id AS m_studiologo_id,\n" +
                     "    scl._id AS s_clearlogo_id,\n" +
                     "    ssl._id AS s_studiologo_id,\n" +
 					"    sb.s_bd_thumb_url,\n" +
@@ -771,6 +778,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"       LEFT JOIN movie_posters AS mp ON ( m.m_poster_id = mp._id ) \n" +
 					"       LEFT JOIN movie_backdrops AS mb ON ( m.m_backdrop_id = mb._id )\n" +
                     "       LEFT JOIN movie_actorphotos AS map ON ( m.m_actorphoto_id = map._id )\n" +
+                    "       LEFT JOIN movie_studiologos AS msl ON ( m.m_studiologo_id = msl._id )\n" +
 					"LEFT JOIN episode AS e ON (e.video_id = f._id)\n" +
 					"       LEFT JOIN show_posters AS ep ON ( e.e_poster_id = ep._id )\n" +
 					"   LEFT JOIN show AS s on (e.show_episode = s._id)\n" +
@@ -1103,6 +1111,8 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(sap.s_ap_large_file, actorphoto_show) AS s_ap_file,\n" +
                     "    coalesce(map.m_ap_large_url, actorphoto_url_movie) AS m_ap_url,\n" +
                     "    coalesce(map.m_ap_large_file, actorphoto_movie) AS m_ap_file,\n" +
+                    "    coalesce(msl.m_sl_large_url, studiologo_url_movie) AS m_sl_url,\n" +
+                    "    coalesce(msl.m_sl_large_file, studiologo_movie) AS m_sl_file,\n" +
 
                     "    coalesce(scl.s_cl_large_url, clearlogo_url_show) AS s_cl_url,\n" +
                     "    coalesce(scl.s_cl_large_file, clearlogo_show) AS s_cl_file,\n" +
@@ -1136,6 +1146,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    snl._id AS s_networklogo_id,\n" +
                     "    sap._id AS s_actorphoto_id,\n" +
                     "    map._id AS m_actorphoto_id,\n" +
+                    "    msl._id AS m_studiologo_id,\n" +
                     "    scl._id AS s_clearlogo_id,\n" +
                     "    ssl._id AS s_studiologo_id,\n" +
                     "    sb.s_bd_thumb_url,\n" +
@@ -1181,6 +1192,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "       LEFT JOIN movie_posters AS mp ON ( m.m_poster_id = mp._id ) \n" +
                     "       LEFT JOIN movie_backdrops AS mb ON ( m.m_backdrop_id = mb._id )\n" +
                     "       LEFT JOIN movie_actorphotos AS map ON ( m.m_actorphoto_id = map._id )\n" +
+                    "       LEFT JOIN movie_studiologos AS msl ON ( m.m_studiologo_id = msl._id )\n" +
                     "LEFT JOIN episode AS e ON (e.video_id = f._id)\n" +
                     "       LEFT JOIN show_posters AS ep ON ( e.e_poster_id = ep._id )\n" +
                     "   LEFT JOIN show AS s on (e.show_episode = s._id)\n" +

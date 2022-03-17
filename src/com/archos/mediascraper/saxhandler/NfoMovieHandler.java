@@ -118,6 +118,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private final ArrayList<String> mMoviePosterUrls = new ArrayList<String>();
     private final ArrayList<String> mMovieBackdropUrls = new ArrayList<String>();
     private final ArrayList<String> mActorPhotos = new ArrayList<String>();
+    private final ArrayList<String> mStudioLogos = new ArrayList<String>();
     private boolean mCanParse;
 
     private String mActorName, mActorRole;
@@ -138,6 +139,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         mMoviePosterUrls.clear();
         mMovieBackdropUrls.clear();
         mActorPhotos.clear();
+        mStudioLogos.clear();
         mCanParse = false;
         mActorName = null;
         mActorRole = null;
@@ -482,6 +484,20 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     }
                 }
                 mMovie.setActorPhotos(images);
+            }
+
+            if (!mStudioLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mStudioLogos.size());
+                for (String url : mStudioLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, movieFile.toString());
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(url);
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mMovie.setStudioLogos(images);
             }
 
             if (mMovie.getCollectionId() > 0)

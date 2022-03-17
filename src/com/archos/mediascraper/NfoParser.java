@@ -437,7 +437,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show StudioLogo
-                Uri studiologo = LocalImages.findShowStudioLogo(videoFile, showTitle);
+                Uri studiologo = LocalImages.findStudioLogo(videoFile, showTitle);
                 if (studiologo != null) {
                     result.addDefaultStudioLogo(context, studiologo);
                 }

@@ -183,6 +183,10 @@ public class ScraperProvider extends ContentProvider {
     private static final int MOVIE_ACTORPHOTOS_ID = SCRAPER_PROVIDER_OFFSET + 193;
     private static final int MOVIE_ACTORPHOTOS_MOVIE_ID = SCRAPER_PROVIDER_OFFSET + 194;
 
+    private static final int MOVIE_STUDIOLOGOS = SCRAPER_PROVIDER_OFFSET + 195;
+    private static final int MOVIE_STUDIOLOGOS_ID = SCRAPER_PROVIDER_OFFSET + 196;
+    private static final int MOVIE_STUDIOLOGOS_MOVIE_ID = SCRAPER_PROVIDER_OFFSET + 197;
+
     private static UriMatcher sUriMatcher;
 
     /**
@@ -414,6 +418,14 @@ public class ScraperProvider extends ContentProvider {
                 MOVIE_ACTORPHOTOS_ID);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieActorPhotos.URI.BY_MOVIE_ID) + "/#",
                 MOVIE_ACTORPHOTOS_MOVIE_ID);
+
+        // movie studiologos
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieStudioLogos.URI.BASE),
+                MOVIE_STUDIOLOGOS);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieStudioLogos.URI.BASE) + "/#",
+                MOVIE_STUDIOLOGOS_ID);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.MovieStudioLogos.URI.BY_MOVIE_ID) + "/#",
+                MOVIE_STUDIOLOGOS_MOVIE_ID);
 
         // show clearlogos
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.ShowClearLogos.URI.BASE),
@@ -885,6 +897,15 @@ public class ScraperProvider extends ContentProvider {
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.MovieActorPhotos.URI.BASE, cr);
                 break;
+            case MOVIE_STUDIOLOGOS:
+                rowId = db.insert(ScraperTables.MOVIE_STUDIOLOGOS_TABLE_NAME,
+                        ScraperStore.MovieStudioLogos.ID, values);
+                if (rowId < 0) {
+                    rowId = findScraperImage(db, ScraperTables.MOVIE_STUDIOLOGOS_TABLE_NAME,
+                            ScraperImage.Type.MOVIE_STUDIOLOGO, values);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.MovieStudioLogos.URI.BASE, cr);
+                break;
             case SHOW_CLEARLOGOS:
                 rowId = db.insert(ScraperTables.SHOW_CLEARLOGOS_TABLE_NAME,
                         ScraperStore.ShowClearLogos.ID, values);
@@ -1311,7 +1332,6 @@ public class ScraperProvider extends ContentProvider {
             case SHOW_ACTORPHOTOS:
                 qb.setTables(ScraperTables.SHOW_ACTORPHOTOS_TABLE_NAME);
                 break;
-
             case MOVIE_ACTORPHOTOS_ID:
                 useId = true;
                 //$FALL-THROUGH$
@@ -1321,6 +1341,16 @@ public class ScraperProvider extends ContentProvider {
                 //$FALL-THROUGH$
             case MOVIE_ACTORPHOTOS:
                 qb.setTables(ScraperTables.MOVIE_ACTORPHOTOS_TABLE_NAME);
+                break;
+            case MOVIE_STUDIOLOGOS_ID:
+                useId = true;
+                //$FALL-THROUGH$
+            case MOVIE_STUDIOLOGOS_MOVIE_ID:
+                qb.appendWhere(useId ? BaseColumns._ID  + "=" : ScraperStore.MovieStudioLogos.MOVIE_ID + "=");
+                qb.appendWhereEscapeString(data);
+                //$FALL-THROUGH$
+            case MOVIE_STUDIOLOGOS:
+                qb.setTables(ScraperTables.MOVIE_STUDIOLOGOS_TABLE_NAME);
                 break;
             case SHOW_CLEARLOGOS_ID:
                 useId = true;
@@ -1429,6 +1459,12 @@ public class ScraperProvider extends ContentProvider {
                 cols[0] = thumb ? ScraperStore.MovieActorPhotos.THUMB_URL : ScraperStore.MovieActorPhotos.LARGE_URL;
                 cols[1] = thumb ? ScraperStore.MovieActorPhotos.THUMB_FILE : ScraperStore.MovieActorPhotos.LARGE_FILE;
                 type = Type.MOVIE_ACTORPHOTO;
+                break;
+            case MOVIE_STUDIOLOGOS_ID:
+                table = ScraperTables.MOVIE_STUDIOLOGOS_TABLE_NAME;
+                cols[0] = thumb ? ScraperStore.MovieStudioLogos.THUMB_URL : ScraperStore.MovieStudioLogos.LARGE_URL;
+                cols[1] = thumb ? ScraperStore.MovieStudioLogos.THUMB_FILE : ScraperStore.MovieStudioLogos.LARGE_FILE;
+                type = Type.MOVIE_STUDIOLOGO;
                 break;
             case SHOW_CLEARLOGOS_ID:
                 table = ScraperTables.SHOW_CLEARLOGOS_TABLE_NAME;
@@ -1577,6 +1613,9 @@ public class ScraperProvider extends ContentProvider {
                 break;
             case MOVIE_ACTORPHOTOS:
                 table = ScraperTables.MOVIE_ACTORPHOTOS_TABLE_NAME;
+                break;
+            case MOVIE_STUDIOLOGOS:
+                table = ScraperTables.MOVIE_STUDIOLOGOS_TABLE_NAME;
                 break;
             case SHOW_CLEARLOGOS:
                 table = ScraperTables.SHOW_CLEARLOGOS_TABLE_NAME;

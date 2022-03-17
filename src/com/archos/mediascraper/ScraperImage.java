@@ -90,6 +90,12 @@ public class ScraperImage {
                 null, ScraperStore.MovieActorPhotos.URI.BASE, ScraperStore.MovieActorPhotos.MOVIE_ID,
                 ImageScaler.Type.SCALE_OUTSIDE
         ),
+        MOVIE_STUDIOLOGO(
+                ScraperStore.MovieStudioLogos.THUMB_URL, ScraperStore.MovieStudioLogos.THUMB_FILE,
+                ScraperStore.MovieStudioLogos.LARGE_URL, ScraperStore.MovieStudioLogos.LARGE_FILE,
+                null, ScraperStore.MovieStudioLogos.URI.BASE, ScraperStore.MovieStudioLogos.MOVIE_ID,
+                ImageScaler.Type.SCALE_OUTSIDE
+        ),
         MOVIE_POSTER(
                 ScraperStore.MoviePosters.THUMB_URL, ScraperStore.MoviePosters.THUMB_FILE,
                 ScraperStore.MoviePosters.LARGE_URL, ScraperStore.MoviePosters.LARGE_FILE,
@@ -391,14 +397,16 @@ public class ScraperImage {
         }
         boolean isNetworkLogo;
         boolean isCastPhotoSeries;
-        boolean isStudioLogo;
+        boolean isStudioLogoSeries;
+        boolean isStudioLogoMovie;
         boolean isCastPhotoMovie;
         isNetworkLogo = mType == Type.SHOW_NETWORK;
         isCastPhotoSeries = mType == Type.SHOW_ACTOR_PHOTO;
-        isStudioLogo = mType == Type.SHOW_STUDIOLOGO;
+        isStudioLogoSeries = mType == Type.SHOW_STUDIOLOGO;
         isCastPhotoMovie = mType == Type.MOVIE_ACTORPHOTO;
+        isStudioLogoMovie = mType == Type.MOVIE_STUDIOLOGO;
         String name;
-        if (isNetworkLogo || isStudioLogo) {
+        if (isNetworkLogo || isStudioLogoSeries || isStudioLogoMovie) {
             assert url != null;
             name = url.replaceAll(GITHUB_STUDIO_NETWOK_LOGO_URL, "").replaceAll("%20", " ");
             return name;
@@ -440,6 +448,7 @@ public class ScraperImage {
                 ret = MediaScraper.getClearLogoDirectory(context);
                 log.trace("getDir: for clearlogo: " + ret.getPath());
                 break;
+            case MOVIE_STUDIOLOGO:
             case SHOW_STUDIOLOGO:
                 ret = MediaScraper.getStudioLogoDirectory(context);
                 log.trace("getDir: for studiologo: " + ret.getPath());
@@ -496,6 +505,7 @@ public class ScraperImage {
                 ret = MediaScraper.getClearLogoCacheDirectory(context);
                 log.trace("getCacheDir: for clearlogo " + ret.getPath());
                 break;
+            case MOVIE_STUDIOLOGO:
             case SHOW_STUDIOLOGO:
                 ret = MediaScraper.getStudioLogoCacheDirectory(context);
                 log.trace("getCacheDir: for studiologo " + ret.getPath());
@@ -539,6 +549,7 @@ public class ScraperImage {
                 return MediaScraper.ACTORPHOTO_CACHE_TIMEOUT;
             case SHOW_TITLE_CLEARLOGO:
                 return MediaScraper.CLEARLOGO_CACHE_TIMEOUT;
+            case MOVIE_STUDIOLOGO:
             case SHOW_STUDIOLOGO:
                 return MediaScraper.STUDIOLOGO_CACHE_TIMEOUT;
             case COLLECTION_BACKDROP:
@@ -689,6 +700,7 @@ public class ScraperImage {
                 }
                 log.trace("saveSizedImage: target ClearLogo(" + maxWidth + "," + maxHeight + ")");
                 break;
+            case MOVIE_STUDIOLOGO:
             case SHOW_STUDIOLOGO:
                 if (thumb) {
                     maxWidth = thumbWidth;
@@ -825,6 +837,12 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Show.CLEARLOGO_ID, Long.valueOf(mId));
                 updateValues.put(ScraperStore.Show.CLEARLOGO_URL, mLargeUrl);
                 updateValues.put(ScraperStore.Show.CLEARLOGO, mLargeFile);
+                break;
+            case MOVIE_STUDIOLOGO:
+                updateUri = ContentUris.withAppendedId(ScraperStore.Movie.URI.ID, mRemoteId);
+                updateValues.put(ScraperStore.Movie.STUDIOLOGO_ID, Long.valueOf(mId));
+                updateValues.put(ScraperStore.Movie.STUDIOLOGO_URL, mLargeUrl);
+                updateValues.put(ScraperStore.Movie.STUDIOLOGO, mLargeFile);
                 break;
             case SHOW_STUDIOLOGO:
                 updateUri = ContentUris.withAppendedId(ScraperStore.Show.URI.ID, mRemoteId);

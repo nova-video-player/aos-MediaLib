@@ -160,6 +160,12 @@ public class MovieTags extends VideoTags {
             values.put(ScraperStore.Movie.ACTORPHOTO, actorphoto.getLargeUrl());
         }
 
+        ScraperImage studiologo = getDefaultStudioLogo();
+        if (studiologo != null) {
+            values.put(ScraperStore.Movie.STUDIOLOGO, studiologo.getLargeFile());
+            values.put(ScraperStore.Movie.STUDIOLOGO, studiologo.getLargeUrl());
+        }
+
         values.put(ScraperStore.Movie.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Movie.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Movie.WRITERS_FORMATTED, getWritersFormatted());
@@ -246,6 +252,7 @@ public class MovieTags extends VideoTags {
         int posterId = -1;
         int backdropId = -1;
         int actorphotoId = -1;
+        int studiologoId = -1;
         for (ScraperImage image : safeList(mPosters)) {
             if (posterId == -1)
                 posterId = allOperations.size();
@@ -259,6 +266,12 @@ public class MovieTags extends VideoTags {
         for (ScraperImage image : safeList(mActorPhotos)) {
             if (actorphotoId == -1)
                 actorphotoId = allOperations.size();
+            allOperations.add(image.getSaveOperationBackreferenced(0));
+        }
+
+        for (ScraperImage image : safeList(mStudioLogos)) {
+            if (studiologoId == -1)
+                studiologoId = allOperations.size();
             allOperations.add(image.getSaveOperationBackreferenced(0));
         }
 
@@ -278,6 +291,10 @@ public class MovieTags extends VideoTags {
         if (actorphotoId != -1) {
             if (backRef == null) backRef = new ContentValues();
             backRef.put(ScraperStore.Movie.ACTORPHOTO_ID, Integer.valueOf(actorphotoId));
+        }
+        if (studiologoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Movie.STUDIOLOGO_ID, Integer.valueOf(studiologoId));
         }
         if (backRef != null) {
             allOperations.add(
@@ -394,7 +411,16 @@ public class MovieTags extends VideoTags {
     @Override
     public List<ScraperImage> getAllStudioLogosInDb(Context context) {
         ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.MovieStudioLogos.URI.BY_MOVIE_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
         List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.MOVIE_STUDIOLOGO));
+            }
+            cursor.close();
+        }
         return result;
     }
 
@@ -445,6 +471,16 @@ public class MovieTags extends VideoTags {
         addDefaultActorPhoto(image);
     }
 
+    /** Add this (local) image as the default StudioLogo */
+    public void addDefaultStudioLogo(Context context, Uri localImage, Uri videoFile) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, videoFile.toString());
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultStudioLogo(image);
+    }
+
     public static boolean isCollectionAlreadyKnown(Integer collectionId, Context context) {
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(collectionId)};
@@ -490,5 +526,15 @@ public class MovieTags extends VideoTags {
         image.setThumbUrl(ScraperImage.AP + path);
         image.generateFileNames(context);
         addDefaultActorPhoto(image);
+    }
+
+    /** Add this url image as the default movie studiologos */
+    public void addDefaultStudioLogoGITHUB(Context context, String path) {
+        log.debug("addDefaultStudioLogoGITHUB: studiologo " + ScraperImage.GSNL + path);
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, mTitle);
+        image.setLargeUrl(ScraperImage.GSNL + path);
+        image.setThumbUrl(ScraperImage.GSNL + path);
+        image.generateFileNames(context);
+        addDefaultStudioLogo(image);
     }
 }

@@ -140,6 +140,13 @@ public class MovieIdParser2 {
                 }
         } else log.debug("getResult: no actor_photo_path for " + movie.id);
 
+        if (movie.production_companies != null) {
+            for (int i = 0; i < movie.production_companies.size(); i++) {
+                log.debug("getResult: " + movie.id + " has studiologo_path=" + ScraperImage.GSNL + movie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
+                result.addDefaultStudioLogoGITHUB(mContext, movie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
+            }
+        } else log.debug("getResult: no networklogo_path for " + movie.id);
+
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         if (movie.release_dates.results != null) {
             for (int i = 0; i < movie.release_dates.results.size(); i++) {
