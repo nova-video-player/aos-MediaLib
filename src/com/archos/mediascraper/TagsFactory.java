@@ -171,6 +171,12 @@ public class TagsFactory {
             clearlogoSTUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
             clearlogoSId = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_ID);
 
+            clearlogoMLFile = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_FILE);
+            clearlogoMLUrl = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_URL);
+            clearlogoMTFile = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_FILE);
+            clearlogoMTUrl = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_URL);
+            clearlogoMId = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_ID);
+
             studiologoSLFile = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_FILE);
             studiologoSLUrl = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_URL);
             studiologoSTFile = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_FILE);
@@ -270,6 +276,12 @@ public class TagsFactory {
         public final int clearlogoSTFile;
         public final int clearlogoSTUrl;
         public final int clearlogoSId;
+
+        public final int clearlogoMLFile;
+        public final int clearlogoMLUrl;
+        public final int clearlogoMTFile;
+        public final int clearlogoMTUrl;
+        public final int clearlogoMId;
 
         public final int studiologoSLFile;
         public final int studiologoSLUrl;
@@ -490,6 +502,12 @@ public class TagsFactory {
             String clearlogoSTFile = getStringCol(cur, cols.clearlogoSTFile);
             String clearlogoSTUrl = getStringCol(cur, cols.clearlogoSTUrl);
 
+            long clearlogoMId = getLongCol(cur, cols.clearlogoMId);
+            String clearlogoMLFile = getStringCol(cur, cols.clearlogoMLFile);
+            String clearlogoMLUrl = getStringCol(cur, cols.clearlogoMLUrl);
+            String clearlogoMTFile = getStringCol(cur, cols.clearlogoMTFile);
+            String clearlogoMTUrl = getStringCol(cur, cols.clearlogoMTUrl);
+
             long studiologoSId = getLongCol(cur, cols.studiologoSId);
             String studiologoSLFile = getStringCol(cur, cols.studiologoSLFile);
             String studiologoSLUrl = getStringCol(cur, cols.studiologoSLUrl);
@@ -579,6 +597,17 @@ public class TagsFactory {
                     image.setId(studiologoMId);
                     image.setRemoteId(scraperId);
                     tag.setStudioLogos(image.asList());
+                }
+
+                if (clearlogoMId > 0) {
+                    ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, data);
+                    image.setLargeFile(clearlogoMLFile);
+                    image.setLargeUrl(clearlogoMLUrl);
+                    image.setThumbFile(clearlogoMTFile);
+                    image.setThumbUrl(clearlogoMTUrl);
+                    image.setId(clearlogoMId);
+                    image.setRemoteId(scraperId);
+                    tag.setClearLogos(image.asList());
                 }
 
                 if (posterId > 0) {
@@ -802,6 +831,9 @@ public class TagsFactory {
             String studiologoMUrl = getStringCol(cur, ScraperStore.Movie.STUDIOLOGO_URL);
             String studiologoMPath = getStringCol(cur, ScraperStore.Movie.STUDIOLOGO);
 
+            String clearlogoMUrl = getStringCol(cur, ScraperStore.Movie.CLEARLOGO_URL);
+            String clearlogoMPath = getStringCol(cur, ScraperStore.Movie.CLEARLOGO);
+
             Integer collectionId = getIntCol(cur, ScraperStore.Movie.COLLECTION_ID);
 
             MovieTags tag = tags.get(id);
@@ -846,6 +878,13 @@ public class TagsFactory {
                 image.setLargeUrl(studiologoMUrl);
                 image.setLargeFile(studiologoMPath);
                 tag.setStudioLogos(image.asList());
+            }
+
+            if(clearlogoMUrl != null && clearlogoMPath != null) {
+                ScraperImage image = new ScraperImage(Type.MOVIE_CLEARLOGO, null);
+                image.setLargeUrl(clearlogoMUrl);
+                image.setLargeFile(clearlogoMPath);
+                tag.setClearLogos(image.asList());
             }
 
             if (collectionId > 0)
@@ -1033,7 +1072,8 @@ public class TagsFactory {
                         VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE, // 24
                         VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL,   // 25
                         VideoColumns.SCRAPER_M_ACTORPHOTO_ID,       // 26
-                        VideoColumns.SCRAPER_M_STUDIOLOGO_ID       // 27
+                        VideoColumns.SCRAPER_M_STUDIOLOGO_ID,       // 27
+                        VideoColumns.SCRAPER_M_CLEARLOGO_ID       // 28
                 },
                 VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + "=?",
                 new String[] { String.valueOf(movieId) },
@@ -1042,6 +1082,7 @@ public class TagsFactory {
         long backdropId = -1;
         long actorphotoId = -1;
         long studiologoId = -1;
+        long clearlogoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 result = new MovieTags();
@@ -1074,6 +1115,7 @@ public class TagsFactory {
                 result.setCollectionBackdropThumbUrl(c.getString(25));
                 actorphotoId = c.getLong(26);
                 studiologoId = c.getLong(27);
+                clearlogoId = c.getLong(28);
             }
             c.close();
         }
@@ -1209,6 +1251,20 @@ public class TagsFactory {
                     allStudioLogosSorted.addLast(image);
             }
             result.setStudioLogos(allStudioLogosSorted);
+
+            // clearlogos
+            List<ScraperImage> allClearLogosInDb = result.getAllClearLogosInDb(context);
+            if (allClearLogosInDb == null)
+                allClearLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allClearLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected clearlogo and make it first in the list
+            for (ScraperImage image : allClearLogosInDb) {
+                if (image.getId() == clearlogoId)
+                    allClearLogosSorted.addFirst(image);
+                else
+                    allClearLogosSorted.addLast(image);
+            }
+            result.setClearLogos(allClearLogosSorted);
 
         }
         return result;

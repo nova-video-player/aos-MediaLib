@@ -50,6 +50,10 @@ public final class ScraperStore {
         public static final String STUDIOLOGO_URL = "studiologo_url_movie";
         public static final String STUDIOLOGO_ID = "m_studiologo_id";
 
+        public static final String CLEARLOGO = "clearlogo_movie";
+        public static final String CLEARLOGO_URL = "clearlogo_url_movie";
+        public static final String CLEARLOGO_ID = "m_clearlogo_id";
+
         /** id in online db "1858" > http://www.themoviedb.org/movie/1858 */
         public static final String ONLINE_ID = "m_online_id";
         /** IMDb id "tt0285331" > http://www.imdb.com/title/tt0285331 */
@@ -485,6 +489,18 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviestudiologos");
             public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviestudiologos/byremote");
+        }
+    }
+    public static class MovieClearLogos {
+        public static final String ID = "_id";
+        public static final String MOVIE_ID = "movie_id";
+        public static final String THUMB_URL = "m_cl_thumb_url";
+        public static final String THUMB_FILE = "m_cl_thumb_file";
+        public static final String LARGE_URL = "m_cl_large_url";
+        public static final String LARGE_FILE = "m_cl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/movieclearlogos");
+            public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/movieclearlogos/byremote");
         }
     }
     public static class ShowPosters {

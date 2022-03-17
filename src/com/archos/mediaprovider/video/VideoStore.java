@@ -1374,6 +1374,7 @@ public final class VideoStore {
 
             public static final String SCRAPER_M_ACTORPHOTO_URL = "m_ap_url";
             public static final String SCRAPER_M_STUDIOLOGO_URL = "m_sl_url";
+            public static final String SCRAPER_M_CLEARLOGO_URL = "m_cl_url";
             /**
              * MediaScraper: Backdrop (Fanart) file (NOT PRESENT ATM)
              * <P>TYPE: <code>String</code>(path to file) or <code>null</code> if not present
@@ -1396,6 +1397,7 @@ public final class VideoStore {
 
             public static final String SCRAPER_M_ACTORPHOTO_FILE = "m_ap_file";
             public static final String SCRAPER_M_STUDIOLOGO_FILE = "m_sl_file";
+            public static final String SCRAPER_M_CLEARLOGO_FILE = "m_cl_file";
 
             /**
              * MediaScraper: Poster ID
@@ -1415,6 +1417,7 @@ public final class VideoStore {
 
             public static final String SCRAPER_M_ACTORPHOTO_ID = "m_actorphoto_id";
             public static final String SCRAPER_M_STUDIOLOGO_ID = "m_studiologo_id";
+            public static final String SCRAPER_M_CLEARLOGO_ID = "m_clearlogo_id";
             /**
              * MediaScraper: Poster (full resolution) - url to download from
              * <P>TYPE: <code>String</code> or <code>null</code>

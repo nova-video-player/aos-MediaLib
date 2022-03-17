@@ -99,13 +99,6 @@ public class NfoParser {
         return null;
     }
 
-    public static String getCustomMovieActorPhotoName(String showTitle) {
-        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
-        if (titleEncoded != null)
-            return titleEncoded + ACTORPHOTO_EXTENSION;
-        return null;
-    }
-
     public static String getCustomShowClearLogoName(String showTitle) {
         String titleEncoded = StringUtils.fileSystemEncode(showTitle);
         if (titleEncoded != null)
@@ -431,7 +424,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show ClearLogo
-                Uri clearlogo = LocalImages.findShowClearLogo(videoFile, showTitle);
+                Uri clearlogo = LocalImages.findClearLogo(videoFile, showTitle);
                 if (clearlogo != null) {
                     result.addDefaultClearLogo(context, clearlogo);
                 }

@@ -289,13 +289,13 @@ public class LocalImages {
     };
 
     /** %filename% + this */
-    private static final String[] MATCH_LIST_SCL_DYNAMIC = {
+    private static final String[] MATCH_LIST_CL_DYNAMIC = {
             NfoParser.CLEARLOGO_EXTENSION,
             "-clearlogo.jpg",
             "-clearlogo.png",
     };
     /** this as filename */
-    private static final String[] MATCH_LIST_SCL_STATIC = {
+    private static final String[] MATCH_LIST_CL_STATIC = {
             "clearlogo.png",
             "clearlogo.jpg",
     };
@@ -419,7 +419,7 @@ public class LocalImages {
         return result;
     }
 
-    public static Uri findShowClearLogo(Uri video, String videoTitle) {
+    public static Uri findClearLogo(Uri video, String videoTitle) {
         if (video == null)
             return null;
 
@@ -430,7 +430,7 @@ public class LocalImages {
         if (parent != null && nameNoExt != null) {
             boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
             String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
-            for (String extension : MATCH_LIST_SCL_DYNAMIC) {
+            for (String extension : MATCH_LIST_CL_DYNAMIC) {
                 if (testVideoTitle) {
                     result = getIfAvailable(parent, videoTitleSanitized + extension);
                     if (result != null)
@@ -440,7 +440,7 @@ public class LocalImages {
                 if (result != null)
                     return result;
             }
-            for (String extension : MATCH_LIST_SCL_STATIC) {
+            for (String extension : MATCH_LIST_CL_STATIC) {
                 result = getIfAvailable(parent, nameNoExt + extension);
                 if (result != null)
                     return result;

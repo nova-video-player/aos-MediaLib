@@ -171,6 +171,7 @@ public class MovieScraper3 extends BaseScraper2 {
         tag.downloadActorPhotos(mContext);
         tag.downloadStudioLogo(mContext);
         tag.downloadStudioLogos(mContext);
+        tag.downloadClearLogo(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
     }
 

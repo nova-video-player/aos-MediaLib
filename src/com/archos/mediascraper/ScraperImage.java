@@ -96,6 +96,12 @@ public class ScraperImage {
                 null, ScraperStore.MovieStudioLogos.URI.BASE, ScraperStore.MovieStudioLogos.MOVIE_ID,
                 ImageScaler.Type.SCALE_OUTSIDE
         ),
+        MOVIE_CLEARLOGO(
+                ScraperStore.MovieClearLogos.THUMB_URL, ScraperStore.MovieClearLogos.THUMB_FILE,
+                ScraperStore.MovieClearLogos.LARGE_URL, ScraperStore.MovieClearLogos.LARGE_FILE,
+                null, ScraperStore.MovieClearLogos.URI.BASE, ScraperStore.MovieClearLogos.MOVIE_ID,
+                ImageScaler.Type.SCALE_OUTSIDE
+        ),
         MOVIE_POSTER(
                 ScraperStore.MoviePosters.THUMB_URL, ScraperStore.MoviePosters.THUMB_FILE,
                 ScraperStore.MoviePosters.LARGE_URL, ScraperStore.MoviePosters.LARGE_FILE,
@@ -444,6 +450,7 @@ public class ScraperImage {
                 ret = MediaScraper.getActorPhotoDirectory(context);
                 log.trace("getDir: for actorphoto: " + ret.getPath());
                 break;
+            case MOVIE_CLEARLOGO:
             case SHOW_TITLE_CLEARLOGO:
                 ret = MediaScraper.getClearLogoDirectory(context);
                 log.trace("getDir: for clearlogo: " + ret.getPath());
@@ -501,6 +508,7 @@ public class ScraperImage {
                 ret = MediaScraper.getActorPhotoCacheDirectory(context);
                 log.trace("getCacheDir: for actorphoto " + ret.getPath());
                 break;
+            case MOVIE_CLEARLOGO:
             case SHOW_TITLE_CLEARLOGO:
                 ret = MediaScraper.getClearLogoCacheDirectory(context);
                 log.trace("getCacheDir: for clearlogo " + ret.getPath());
@@ -547,6 +555,7 @@ public class ScraperImage {
             case MOVIE_ACTORPHOTO:
             case SHOW_ACTOR_PHOTO:
                 return MediaScraper.ACTORPHOTO_CACHE_TIMEOUT;
+            case MOVIE_CLEARLOGO:
             case SHOW_TITLE_CLEARLOGO:
                 return MediaScraper.CLEARLOGO_CACHE_TIMEOUT;
             case MOVIE_STUDIOLOGO:
@@ -689,6 +698,7 @@ public class ScraperImage {
                 }
                 log.trace("saveSizedImage: target ActorPhoto(" + maxWidth + "," + maxHeight + ")");
                 break;
+            case MOVIE_CLEARLOGO:
             case SHOW_TITLE_CLEARLOGO:
                 if (thumb) {
                     maxWidth = thumbWidth;
@@ -837,6 +847,12 @@ public class ScraperImage {
                 updateValues.put(ScraperStore.Show.CLEARLOGO_ID, Long.valueOf(mId));
                 updateValues.put(ScraperStore.Show.CLEARLOGO_URL, mLargeUrl);
                 updateValues.put(ScraperStore.Show.CLEARLOGO, mLargeFile);
+                break;
+            case MOVIE_CLEARLOGO:
+                updateUri = ContentUris.withAppendedId(ScraperStore.Movie.URI.ID, mRemoteId);
+                updateValues.put(ScraperStore.Movie.CLEARLOGO_ID, Long.valueOf(mId));
+                updateValues.put(ScraperStore.Movie.CLEARLOGO_URL, mLargeUrl);
+                updateValues.put(ScraperStore.Movie.CLEARLOGO, mLargeFile);
                 break;
             case MOVIE_STUDIOLOGO:
                 updateUri = ContentUris.withAppendedId(ScraperStore.Movie.URI.ID, mRemoteId);

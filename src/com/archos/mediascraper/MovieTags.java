@@ -166,6 +166,12 @@ public class MovieTags extends VideoTags {
             values.put(ScraperStore.Movie.STUDIOLOGO, studiologo.getLargeUrl());
         }
 
+        ScraperImage clearlogo = getDefaultClearLogo();
+        if (clearlogo != null) {
+            values.put(ScraperStore.Movie.CLEARLOGO, clearlogo.getLargeFile());
+            values.put(ScraperStore.Movie.CLEARLOGO, clearlogo.getLargeUrl());
+        }
+
         values.put(ScraperStore.Movie.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Movie.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Movie.WRITERS_FORMATTED, getWritersFormatted());
@@ -253,6 +259,7 @@ public class MovieTags extends VideoTags {
         int backdropId = -1;
         int actorphotoId = -1;
         int studiologoId = -1;
+        int clearlogoId = -1;
         for (ScraperImage image : safeList(mPosters)) {
             if (posterId == -1)
                 posterId = allOperations.size();
@@ -272,6 +279,12 @@ public class MovieTags extends VideoTags {
         for (ScraperImage image : safeList(mStudioLogos)) {
             if (studiologoId == -1)
                 studiologoId = allOperations.size();
+            allOperations.add(image.getSaveOperationBackreferenced(0));
+        }
+
+        for (ScraperImage image : safeList(mClearLogos)) {
+            if (clearlogoId == -1)
+                clearlogoId = allOperations.size();
             allOperations.add(image.getSaveOperationBackreferenced(0));
         }
 
@@ -295,6 +308,10 @@ public class MovieTags extends VideoTags {
         if (studiologoId != -1) {
             if (backRef == null) backRef = new ContentValues();
             backRef.put(ScraperStore.Movie.STUDIOLOGO_ID, Integer.valueOf(studiologoId));
+        }
+        if (clearlogoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Movie.CLEARLOGO_ID, Integer.valueOf(clearlogoId));
         }
         if (backRef != null) {
             allOperations.add(
@@ -404,7 +421,16 @@ public class MovieTags extends VideoTags {
     @Override
     public List<ScraperImage> getAllClearLogosInDb(Context context) {
         ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.MovieClearLogos.URI.BY_MOVIE_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
         List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.MOVIE_CLEARLOGO));
+            }
+            cursor.close();
+        }
         return result;
     }
 
@@ -481,6 +507,16 @@ public class MovieTags extends VideoTags {
         addDefaultStudioLogo(image);
     }
 
+    /** Add this (local) image as the default ClearLogo */
+    public void addDefaultClearLogo(Context context, Uri localImage, Uri videoFile) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, videoFile.toString());
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultClearLogo(image);
+    }
+
     public static boolean isCollectionAlreadyKnown(Integer collectionId, Context context) {
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(collectionId)};
@@ -536,5 +572,14 @@ public class MovieTags extends VideoTags {
         image.setThumbUrl(ScraperImage.GSNL + path);
         image.generateFileNames(context);
         addDefaultStudioLogo(image);
+    }
+
+    /** Add this url image as the default movie ClearLogos */
+    public void addDefaultClearLogoFTV(Context context, String path) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, mTitle);
+        image.setLargeUrl(path);
+        image.setThumbUrl(path);
+        image.generateFileNames(context);
+        addDefaultClearLogo(image);
     }
 }

@@ -35,6 +35,7 @@ import com.uwetrottmann.tmdb2.entities.ReleaseDate;
 import com.uwetrottmann.tmdb2.entities.ReleaseDatesResult;
 import com.uwetrottmann.tmdb2.entities.Videos;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,6 +147,25 @@ public class MovieIdParser2 {
                 result.addDefaultStudioLogoGITHUB(mContext, movie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
             }
         } else log.debug("getResult: no networklogo_path for " + movie.id);
+
+        //set movie logo
+        String apikey = "ac6ed0ad315f924847ff24fa4f555571";
+        String url = "http://webservice.fanart.tv/v3/movies/" + movie.id + "?api_key=" + apikey;
+        List<String> enClearLogos = new ArrayList<>();
+        try {
+            JSONObject json = new JSONObject(readUrl(url));
+            JSONArray jsonArray = json.getJSONArray("hdmovielogo");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject movieObject = jsonArray.getJSONObject(i);
+                if (movieObject.getString("lang").equalsIgnoreCase("en"))
+                    enClearLogos.add(movieObject.getString("url"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < enClearLogos.size(); i++) {
+            result.addDefaultClearLogoFTV(mContext, enClearLogos.get(0));
+        }
 
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         if (movie.release_dates.results != null) {

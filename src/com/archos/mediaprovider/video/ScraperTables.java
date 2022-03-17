@@ -167,10 +167,13 @@ public final class ScraperTables {
                 ScraperStore.Movie.ACTORPHOTO + " TEXT," +
                 ScraperStore.Movie.STUDIOLOGO_URL + " TEXT," +
                 ScraperStore.Movie.STUDIOLOGO + " TEXT," +
+                ScraperStore.Movie.CLEARLOGO_URL + " TEXT," +
+                ScraperStore.Movie.CLEARLOGO + " TEXT," +
         "m_backdrop_id INTEGER,"  + // movie has backdrop + poster
         "m_poster_id INTEGER," +
                 "m_actorphoto_id INTEGER," +
                 "m_studiologo_id INTEGER," +
+                "m_clearlogo_id INTEGER," +
         "m_online_id INTEGER," + // also the id in the online db "1858" - http://www.themoviedb.org/movie/1858
         "m_imdb_id TEXT," + // and the imdb id e.g. "tt0285331" - http://www.imdb.com/title/tt0285331
         "m_content_rating TEXT," + // also content rating e.g. "PG-13"
@@ -1354,6 +1357,7 @@ public final class ScraperTables {
 
     public static final String MOVIE_ACTORPHOTOS_TABLE_NAME = "movie_actorphotos";
     public static final String MOVIE_STUDIOLOGOS_TABLE_NAME = "movie_studiologos";
+    public static final String MOVIE_CLEARLOGOS_TABLE_NAME = "movie_clearlogos";
 
     public static final String SHOW_CLEARLOGOS_TABLE_NAME = "show_clearlogos";
     public static final String SHOW_STUDIOLOGOS_TABLE_NAME = "show_studiologos";
@@ -1410,6 +1414,17 @@ public final class ScraperTables {
                     "    m_sl_thumb_file TEXT,\n" +
                     "    m_sl_large_url  TEXT,\n" +
                     "    m_sl_large_file TEXT \n" +
+                    ")";
+
+    private static final String CREATE_MOVIE_CLEARLOGOS_TABLE =
+            "CREATE TABLE " + MOVIE_CLEARLOGOS_TABLE_NAME + " ( \n" +
+                    "    _id             INTEGER PRIMARY KEY,\n" +
+                    "    movie_id         INTEGER REFERENCES movie ( _id ) ON DELETE CASCADE\n" +
+                    "                                                    ON UPDATE CASCADE,\n" +
+                    "    m_cl_thumb_url  TEXT,\n" +
+                    "    m_cl_thumb_file TEXT,\n" +
+                    "    m_cl_large_url  TEXT,\n" +
+                    "    m_cl_large_file TEXT \n" +
                     ")";
 
     private static final String CREATE_SHOW_CLEARLOGOS_TABLE =
@@ -1476,6 +1491,14 @@ public final class ScraperTables {
                     + "    INSERT INTO delete_files(name) VALUES ( OLD.m_sl_thumb_file );\n" +
                     "END";
 
+    private static final String CREATE_MOVIE_CLEARLOGOS_DELETE_TRIGGER =
+            "CREATE TRIGGER " + MOVIE_CLEARLOGOS_TABLE_NAME + "_delete\n" +
+                    "       AFTER DELETE ON " + MOVIE_CLEARLOGOS_TABLE_NAME + "\n" +
+                    "BEGIN\n" +
+                    "    INSERT INTO delete_files(name) VALUES ( OLD.m_cl_large_file );\n"
+                    + "    INSERT INTO delete_files(name) VALUES ( OLD.m_cl_thumb_file );\n" +
+                    "END";
+
     private static final String CREATE_SHOW_CLEARLOGOS_DELETE_TRIGGER =
             "CREATE TRIGGER " + SHOW_CLEARLOGOS_TABLE_NAME + "_delete\n" +
                     "       AFTER DELETE ON " + SHOW_CLEARLOGOS_TABLE_NAME + "\n" +
@@ -1507,6 +1530,9 @@ public final class ScraperTables {
 
     private static final String DROP_MOVIE_STUDIOLOGOS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + MOVIE_STUDIOLOGOS_TABLE_NAME + "_delete";
+
+    private static final String DROP_MOVIE_CLEARLOGOS_DELETE_TRIGGER =
+            "DROP TRIGGER IF EXISTS " + MOVIE_CLEARLOGOS_TABLE_NAME + "_delete";
 
     private static final String DROP_SHOW_CLEARLOGOS_DELETE_TRIGGER =
             "DROP TRIGGER IF EXISTS " + SHOW_CLEARLOGOS_TABLE_NAME + "_delete";
@@ -1618,6 +1644,8 @@ public final class ScraperTables {
         db.execSQL(CREATE_MOVIE_ACTORPHOTOS_DELETE_TRIGGER);
         db.execSQL(CREATE_MOVIE_STUDIOLOGOS_TABLE);
         db.execSQL(CREATE_MOVIE_STUDIOLOGOS_DELETE_TRIGGER);
+        db.execSQL(CREATE_MOVIE_CLEARLOGOS_TABLE);
+        db.execSQL(CREATE_MOVIE_CLEARLOGOS_DELETE_TRIGGER);
         db.execSQL(CREATE_SHOW_CLEARLOGOS_TABLE);
         db.execSQL(CREATE_SHOW_CLEARLOGOS_DELETE_TRIGGER);
         db.execSQL(CREATE_SHOW_STUDIOLOGOS_TABLE);
@@ -1654,6 +1682,7 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX show_actorphotos_idx ON show_actorphotos(show_id)");
             db.execSQL("CREATE INDEX movie_actorphotos_idx ON movie_actorphotos(movie_id)");
             db.execSQL("CREATE INDEX movie_studiologos_idx ON movie_studiologos(movie_id)");
+            db.execSQL("CREATE INDEX movie_clearlogos_idx ON movie_clearlogos(movie_id)");
             db.execSQL("CREATE INDEX show_clearlogos_idx ON show_clearlogos(show_id)");
             db.execSQL("CREATE INDEX show_studiologos_idx ON show_studiologos(show_id)");
             db.execSQL("CREATE INDEX show_posters_idx ON show_posters(show_id)");
