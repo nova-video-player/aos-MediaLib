@@ -36,6 +36,7 @@ import com.uwetrottmann.tmdb2.entities.ReleaseDatesResult;
 import com.uwetrottmann.tmdb2.entities.Videos;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,6 +210,26 @@ public class MovieIdParser2 {
         // backdrops
         List<ScraperImage> backdrops = new ArrayList<>();
         List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
+
+        // clearlogos
+        List<ScraperImage> clearlogos = new ArrayList<>();
+        List<String> tempClearLogos = new ArrayList<>();
+
+        //set series clearlogos
+        try {
+            JSONObject json = new JSONObject(readUrl(url));
+            JSONArray jsonArray = json.getJSONArray("hdmovielogo");
+            for(int j = 0; j < jsonArray.length(); j++){
+                JSONObject movieObject = jsonArray.getJSONObject(j);
+                tempClearLogos.add(movieObject.getString("url"));
+                clearlogos.add(genClearLogo(movie.title, movieObject.getString("url"),  context));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         if (movie.images != null) {
             if (movie.images.posters != null)
                 for (Image poster : movie.images.posters)
@@ -239,6 +260,7 @@ public class MovieIdParser2 {
             log.debug("getResult: setting posters and backdrops");
             result.setPosters(posters);
             result.setBackdrops(backdrops);
+            result.setClearLogos(clearlogos);
             log.debug("getResult: global " + movie.title + " poster " + movie.poster_path + ", backdrop " + movie.backdrop_path);
             // this must be done after setPosters/setBackdrops otherwise default is removed
             if (movie.poster_path != null) result.addDefaultPosterTMDB(mContext, movie.poster_path);
@@ -265,6 +287,14 @@ public class MovieIdParser2 {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         log.debug("genBackdrop: " + title + ", has backdrop " + image.getLargeUrl() + " path " + image.getLargeFile());
+        return image;
+    }
+
+    public static ScraperImage genClearLogo(String title, String path, Context context) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, title);
+        image.setLargeUrl(path);
+        image.setThumbUrl(path);
+        image.generateFileNames(context);
         return image;
     }
 
