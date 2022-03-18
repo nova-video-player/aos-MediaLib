@@ -459,9 +459,9 @@ public class EpisodeTags extends BaseTags {
 
     @Override
     public List<ScraperImage> getAllClearLogosInDb(Context context) {
-        ContentResolver cr = context.getContentResolver();
-        List<ScraperImage> result = null;
-        return result;
+        if (mShowTags != null)
+            return mShowTags.getAllClearLogosInDb(context);
+        return null;
     }
 
     @Override
