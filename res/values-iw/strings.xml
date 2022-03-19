@@ -13,10 +13,26 @@
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
     <string name="network_scan_msg">מקטלג קבצי מדיה</string>
-    <string name="network_unscan_msg">מסיר קבצי מדיה מהספריה</string>
+    <string name="network_unscan_msg">מסיר קבצי מדיה מהספרייה</string>
     <!-- .nfo export options -->
+    <string name="nfo_export_category">ייצוא מידע מדיה</string>
+    <string name="nfo_export_auto_title">ייצא באופן אוטומטי אחרי חיפוש</string>
+    <string name="nfo_export_manual_title">ייצא את כל קבצי הוידאו שיש להם פרטי מדיה</string>
+    <string name="nfo_export_auto_summary">ייצא קבצי NFO באופן אוטומאי אחרי חיפוש מוצלח ברשת</string>
+    <string name="nfo_export_manual_summary">ייצא קבצי NFO של כל קבצי הוידאו בעלי פרטי מדיה</string>
+    <string name="nfo_export_button">יצא NFO</string>
+    <string name="nfo_export_folder">ייצוא כל התיקייה הזו ל-NFO</string>
+    <string name="nfo_export_all">ייצוא כל הספרייה ל-NFO</string>
+    <string name="nfo_export_exporting">מייצא NFO</string>
     <string name="nfo_export_exporting_all">הכל</string>
+    <string name="nfo_export_in_progress">ייצוא NFO מתבצע</string>
+    <string name="rescrap_in_progress">סורק פרטי מדיה בכל הספרייה</string>
+    <string name="rescraping_collection">סורק פרטי מדיה של האוסף</string>
+    <string name="rescraping_collections">סורק פרטי מדיה של האוספים</string>
+    <string name="rescraping_noimage_collections">סורק פרטי מדיה של אוספים ללא תמונה</string>
+    <string name="rescrap_all_title">סרוק פרטי מדיה של הכל</string>
     <!-- trakt.tv -->
+    <string name="trakt_toast_syncing_error">אין אפשרות להסתנכרן עם Trakt</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">אין כרטיס SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -26,13 +42,13 @@
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
     <string name="sdcard_busy_message">סליחה, כרטיס ה- SD שלך עסוק.</string>
     <!-- Title of screen when there was an error accessing the sd card -->
-    <string name="sdcard_error_title">שגיאה בכטיס SD</string>
+    <string name="sdcard_error_title">שגיאה בכרטיס SD</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
     <string name="sdcard_error_message">אירעה שגיאה בכרטיס ה- SD שלך.</string>
     <!-- Title of screen when no storage is present -->
     <string name="storage_missing_title">אחסון פנימי אינו זמין</string>
     <!-- label underneath icon used to indicate that no storage is present -->
-    <string name="storage_missing_message">האחסון אפנימי של מכשירך אינו זמין.</string>
+    <string name="storage_missing_message">האחסון הפנימי של מכשירך אינו זמין.</string>
     <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
     <string name="storage_busy_title">אחסון פנימי אינו זמין</string>
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
@@ -41,10 +57,16 @@
     <string name="storage_error_title">שגיאת אחסון פנימי</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">אירעה שגיאה באחסון הפנימי שלך.</string>
+    <string name="scraper_no_settings">אין הגדרות זמינות עבור מקור זה.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:אפשר פאנארט</item>
+        <item>info_language:שפה</item>
+    </string-array>
     <string name="tv_show_genre_action">פעולה</string>
     <string name="tv_show_genre_adventure">הרפתקאות</string>
     <string name="tv_show_genre_animation">אנימציה</string>
     <string name="tv_show_genre_anime">אנימה</string>
+    <string name="tv_show_genre_awards_show">טקס פרסים</string>
     <string name="tv_show_genre_children">ילדים</string>
     <string name="tv_show_genre_comedy">קומדיה</string>
     <string name="tv_show_genre_crime">פשע</string>
@@ -56,6 +78,7 @@
     <string name="tv_show_genre_game_show">שעשועון</string>
     <string name="tv_show_genre_home_garden">בית וגינון</string>
     <string name="tv_show_genre_horror">אימה</string>
+    <string name="tv_show_genre_indie">אינדי</string>
     <string name="tv_show_genre_martial_arts">אומנויות לחימה</string>
     <string name="tv_show_genre_mini_series">מיני סדרה</string>
     <string name="tv_show_genre_musical">מוסיקה</string>
@@ -66,6 +89,7 @@
     <string name="tv_show_genre_romance">רומנטיקה</string>
     <string name="tv_show_genre_science_fiction">מדע בדיוני</string>
     <string name="tv_show_genre_soap">אופרת סבון</string>
+    <string name="tv_show_genre_special_interest">ענין מיוחד</string>
     <string name="tv_show_genre_sport">ספורט</string>
     <string name="tv_show_genre_suspense">מתח</string>
     <string name="tv_show_genre_talk_show">תוכנית אירוח</string>
@@ -83,11 +107,11 @@
     <string name="movie_genre_drama">דרמה</string>
     <string name="movie_family">משפחה</string>
     <string name="movie_genre_fantasy">פנטזיה</string>
-    <string name="movie_genre_history">הסטוריה</string>
+    <string name="movie_genre_history">היסטוריה</string>
     <string name="movie_genre_horror">אימה</string>
-    <string name="movie_genre_music">מוסיקה</string>
+    <string name="movie_genre_music">מוזיקה</string>
     <string name="movie_genre_mystery">מסתורין</string>
-    <string name="movie_genre_romance">רומנטי</string>
+    <string name="movie_genre_romance">רומנטיקה</string>
     <string name="movie_genre_science_fiction">מדע בדיוני</string>
     <string name="movie_genre_tv_movie">סרט טלויזיה</string>
     <string name="movie_genre_thriller">מותחן</string>
@@ -116,5 +140,8 @@
       BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
+    <string name="artist_label">אמן</string>
+    <string name="scraping_in_progress">סריקת פרטי מדיה מתבצעת</string>
+    <string name="remaining_videos_to_process">קבצי מדיה שיש לעבד:</string>
     <string name="video_store_import">מייבא קבצי מדיה מקומיים</string>
 </resources>
