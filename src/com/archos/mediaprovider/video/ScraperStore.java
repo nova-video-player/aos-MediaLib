@@ -42,6 +42,18 @@ public final class ScraperStore {
         public static final String BACKDROP_URL = "backdrop_url_movie";
         public static final String POSTER_ID = "m_poster_id";
         public static final String BACKDROP_ID = "m_backdrop_id";
+        public static final String ACTORPHOTO = "actorphoto_movie";
+        public static final String ACTORPHOTO_URL = "actorphoto_url_movie";
+        public static final String ACTORPHOTO_ID = "m_actorphoto_id";
+
+        public static final String STUDIOLOGO = "studiologo_movie";
+        public static final String STUDIOLOGO_URL = "studiologo_url_movie";
+        public static final String STUDIOLOGO_ID = "m_studiologo_id";
+
+        public static final String CLEARLOGO = "clearlogo_movie";
+        public static final String CLEARLOGO_URL = "clearlogo_url_movie";
+        public static final String CLEARLOGO_ID = "m_clearlogo_id";
+
         /** id in online db "1858" > http://www.themoviedb.org/movie/1858 */
         public static final String ONLINE_ID = "m_online_id";
         /** IMDb id "tt0285331" > http://www.imdb.com/title/tt0285331 */
@@ -54,6 +66,8 @@ public final class ScraperStore {
         public static final String DIRECTORS_FORMATTED = "m_directors";
         /** writers preformatted - usually empty, use episode instead */
         public static final String WRITERS_FORMATTED = "m_writers";
+        /** taglines preformatted - usually empty, use episode instead */
+        public static final String TAGLINES_FORMATTED = "m_taglines";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "m_genres";
         /** studios preformatted */
@@ -85,6 +99,12 @@ public final class ScraperStore {
             public static final String WRITER = "writer_v_writers_movie";
         }
 
+        public static class Tagline {
+            public static final String MOVIE = "movie_v_taglines_movie";
+            public static final String NAME = "name_v_taglines_movie";
+            public static final String TAGLINE = "tagline_v_taglines_movie";
+        }
+
         public static class Studio {
             public static final String MOVIE = "movie_v_produces_movie";
             public static final String NAME = "name_v_produces_movie";
@@ -113,6 +133,23 @@ public final class ScraperStore {
         public static final String BACKDROP_URL = "backdrop_url_show";
         public static final String POSTER_ID = "s_poster_id";
         public static final String BACKDROP_ID = "s_backdrop_id";
+
+        public static final String NETWORKLOGO = "networklogo_show";
+        public static final String NETWORKLOGO_URL = "networklogo_url_show";
+        public static final String NETWORKLOGO_ID = "s_networklogo_id";
+
+        public static final String ACTORPHOTO = "actorphoto_show";
+        public static final String ACTORPHOTO_URL = "actorphoto_url_show";
+        public static final String ACTORPHOTO_ID = "s_actorphoto_id";
+
+        public static final String CLEARLOGO = "clearlogo_show";
+        public static final String CLEARLOGO_URL = "clearlogo_url_show";
+        public static final String CLEARLOGO_ID = "s_clearlogo_id";
+
+        public static final String STUDIOLOGO = "studiologo_show";
+        public static final String STUDIOLOGO_URL = "studiologo_url_show";
+        public static final String STUDIOLOGO_ID = "s_studiologo_id";
+
         /** id in online db "73255" > http://thetvdb.com/?tab=series&id=73255 */
         public static final String ONLINE_ID = "s_online_id";
         /** IMDb id "tt0285331" > http://www.imdb.com/title/tt0285331 */
@@ -125,6 +162,10 @@ public final class ScraperStore {
         public static final String DIRECTORS_FORMATTED = "s_directors";
         /** writers preformatted - usually empty, use episode instead */
         public static final String WRITERS_FORMATTED = "s_writers";
+        /** taglines preformatted - usually empty, use episode instead */
+        public static final String TAGLINES_FORMATTED = "s_taglines";
+        /** seasonplots preformatted */
+        public static final String SEASONPLOTS_FORMATTED = "s_seasonplots";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "s_genres";
         /** studios preformatted */
@@ -156,6 +197,18 @@ public final class ScraperStore {
             public static final String SHOW = "show_v_writers_show";
             public static final String NAME = "name_v_writers_show";
             public static final String WRITER = "writer_v_writers_show";
+        }
+
+        public static class Tagline {
+            public static final String SHOW = "show_v_taglines_show";
+            public static final String NAME = "name_v_taglines_show";
+            public static final String TAGLINE = "tagline_v_taglines_show";
+        }
+
+        public static class SeasonPlot {
+            public static final String SHOW = "show_v_seasonplots_show";
+            public static final String NAME = "name_v_seasonplots_show";
+            public static final String SEASONPLOT = "seasonplot_v_seasonplots_show";
         }
 
         public static class Studio {
@@ -245,6 +298,8 @@ public final class ScraperStore {
         public static final String DIRECTORS_FORMATTED = "e_directors";
         /** writers preformatted */
         public static final String WRITERS_FORMATTED = "e_writers";
+        /** taglines preformatted */
+        public static final String TAGLINES_FORMATTED = "e_taglines";
 
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/episode");
@@ -271,6 +326,12 @@ public final class ScraperStore {
             public static final String EPISODE = "episode_v_writers_episode";
             public static final String NAME = "name_v_writers_episode";
             public static final String WRITER = "writer_v_writers_episode";
+        }
+
+        public static class Tagline {
+            public static final String EPISODE = "episode_v_taglines_episode";
+            public static final String NAME = "name_v_taglines_episode";
+            public static final String TAGLINE = "tagline_v_taglines_episode";
         }
     }
 
@@ -352,6 +413,36 @@ public final class ScraperStore {
         }
     }
 
+    public static class Tagline {
+        public static final String ID = "_id";
+        public static final String NAME = "name_tagline";
+        public static final String COUNT = "count_tagline";
+
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/id/");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/taglines");
+            public static final Uri MOVIE = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/movie/");
+            public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/show/");
+            public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/episode/");
+            public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/name/");
+        }
+    }
+
+    public static class SeasonPlot {
+        public static final String ID = "_id";
+        public static final String NAME = "name_seasonplot";
+        public static final String COUNT = "count_seasonplot";
+
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot/id/");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplots");
+            public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot/show/");
+            public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/seasonplot/name/");
+        }
+    }
+
     public static class MoviePosters {
         public static final String ID = "_id";
         public static final String MOVIE_ID = "movie_id";
@@ -374,6 +465,42 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviebackdrops");
             public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviebackdrops/byremote");
+        }
+    }
+    public static class MovieActorPhotos {
+        public static final String ID = "_id";
+        public static final String MOVIE_ID = "movie_id";
+        public static final String THUMB_URL = "m_ap_thumb_url";
+        public static final String THUMB_FILE = "m_ap_thumb_file";
+        public static final String LARGE_URL = "m_ap_large_url";
+        public static final String LARGE_FILE = "m_ap_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/movieactorphotos");
+            public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/movieactorphotos/byremote");
+        }
+    }
+    public static class MovieStudioLogos {
+        public static final String ID = "_id";
+        public static final String MOVIE_ID = "movie_id";
+        public static final String THUMB_URL = "m_sl_thumb_url";
+        public static final String THUMB_FILE = "m_sl_thumb_file";
+        public static final String LARGE_URL = "m_sl_large_url";
+        public static final String LARGE_FILE = "m_sl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/moviestudiologos");
+            public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/moviestudiologos/byremote");
+        }
+    }
+    public static class MovieClearLogos {
+        public static final String ID = "_id";
+        public static final String MOVIE_ID = "movie_id";
+        public static final String THUMB_URL = "m_cl_thumb_url";
+        public static final String THUMB_FILE = "m_cl_thumb_file";
+        public static final String LARGE_URL = "m_cl_large_url";
+        public static final String LARGE_FILE = "m_cl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/movieclearlogos");
+            public static final Uri BY_MOVIE_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/movieclearlogos/byremote");
         }
     }
     public static class ShowPosters {
@@ -399,6 +526,58 @@ public final class ScraperStore {
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/showbackdrops");
             public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/showbackdrops/byremote");
+        }
+    }
+
+    public static class ShowNetworkLogos {
+        public static final String ID = "_id";
+        public static final String SHOW_ID = "show_id";
+        public static final String THUMB_URL = "s_nl_thumb_url";
+        public static final String THUMB_FILE = "s_nl_thumb_file";
+        public static final String LARGE_URL = "s_nl_large_url";
+        public static final String LARGE_FILE = "s_nl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/shownetworklogos");
+            public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/shownetworklogos/byremote");
+        }
+    }
+
+    public static class ShowActorPhotos {
+        public static final String ID = "_id";
+        public static final String SHOW_ID = "show_id";
+        public static final String THUMB_URL = "s_ap_thumb_url";
+        public static final String THUMB_FILE = "s_ap_thumb_file";
+        public static final String LARGE_URL = "s_ap_large_url";
+        public static final String LARGE_FILE = "s_ap_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/showactorphotos");
+            public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/showactorphotos/byremote");
+        }
+    }
+
+    public static class ShowClearLogos {
+        public static final String ID = "_id";
+        public static final String SHOW_ID = "show_id";
+        public static final String THUMB_URL = "s_cl_thumb_url";
+        public static final String THUMB_FILE = "s_cl_thumb_file";
+        public static final String LARGE_URL = "s_cl_large_url";
+        public static final String LARGE_FILE = "s_cl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/showclearlogos");
+            public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/showclearlogos/byremote");
+        }
+    }
+
+    public static class ShowStudioLogos {
+        public static final String ID = "_id";
+        public static final String SHOW_ID = "show_id";
+        public static final String THUMB_URL = "s_sl_thumb_url";
+        public static final String THUMB_FILE = "s_sl_thumb_file";
+        public static final String LARGE_URL = "s_sl_large_url";
+        public static final String LARGE_FILE = "s_sl_large_file";
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/showstudiologos");
+            public static final Uri BY_SHOW_ID = Uri.parse(CONTENT_AUTHORITY + "/tags/showstudiologos/byremote");
         }
     }
 

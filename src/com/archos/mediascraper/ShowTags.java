@@ -83,11 +83,19 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.COVER,           // 1
         ScraperStore.Show.RATING,          // 2
         ScraperStore.Show.CONTENT_RATING,  // 3
-        ScraperStore.Show.BACKDROP,        // 4
+        ScraperStore.Show.BACKDROP,
+            ScraperStore.Show.NETWORKLOGO,
+            ScraperStore.Show.ACTORPHOTO,
+            ScraperStore.Show.CLEARLOGO,
+            ScraperStore.Show.STUDIOLOGO,
         ScraperStore.Show.IMDB_ID,         // 5
         ScraperStore.Show.ONLINE_ID,       // 6
         ScraperStore.Show.POSTER_ID,       // 7
-        ScraperStore.Show.BACKDROP_ID      // 8
+        ScraperStore.Show.BACKDROP_ID,
+            ScraperStore.Show.NETWORKLOGO_ID,
+            ScraperStore.Show.ACTORPHOTO_ID,
+            ScraperStore.Show.CLEARLOGO_ID,
+            ScraperStore.Show.STUDIOLOGO_ID
     };
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
@@ -99,10 +107,18 @@ public class ShowTags extends VideoTags {
     boolean baseInfoChanged = false;
     boolean updateCover = false;
     boolean updateBackdrop = false;
-    boolean postersChanged = false;
+    boolean updateNetworkLogo = false;
+        boolean updateActorPhoto = false;
+        boolean updateClearLogo = false;
+        boolean updateStudioLogo = false;
+        boolean postersChanged = false;
     boolean backdropsChanged = false;
+        boolean networklogosChanged = false;
+        boolean actorphotosChanged = false;
+        boolean clearlogosChanged = false;
+        boolean studiologosChanged = false;
     long showId = -1;
-    String newCover, newBackdrop;
+    String newCover, newBackdrop, newNetworkLogo, newActorPhoto, newClearLogo, newStudioLogo;
 
     @Override
     public long save(Context context, long videoId) {
@@ -114,6 +130,18 @@ public class ShowTags extends VideoTags {
         newBackdrop = backdrop == null ? null : backdrop.getLargeFile();
         String newBackdropUrl = backdrop == null ? null : backdrop.getLargeUrl();
         String finalTitle;
+        ScraperImage networklogo = getDefaultNetworkLogo();
+        newNetworkLogo = networklogo == null ? null : networklogo.getLargeFile();
+        String newNetworkLogoUrl = networklogo == null ? null : networklogo.getLargeUrl();
+        ScraperImage actorphoto = getDefaultActorPhoto();
+        newActorPhoto = actorphoto == null ? null : actorphoto.getLargeFile();
+        String newActorPhotoUrl = actorphoto == null ? null : actorphoto.getLargeUrl();
+        ScraperImage clearlogo = getDefaultClearLogo();
+        newClearLogo = clearlogo == null ? null : clearlogo.getLargeFile();
+        String newClearLogoUrl = clearlogo == null ? null : clearlogo.getLargeUrl();
+        ScraperImage studiologo = getDefaultStudioLogo();
+        newStudioLogo = studiologo == null ? null : studiologo.getLargeFile();
+        String newStudioLogoUrl = studiologo == null ? null : studiologo.getLargeUrl();
 
         ContentResolver cr = context.getContentResolver();
 
@@ -196,6 +224,8 @@ public class ShowTags extends VideoTags {
             values.put(ScraperStore.Show.ACTORS_FORMATTED, getActorsFormatted());
             values.put(ScraperStore.Show.DIRECTORS_FORMATTED, getDirectorsFormatted());
             values.put(ScraperStore.Show.WRITERS_FORMATTED, getWritersFormatted());
+            values.put(ScraperStore.Show.TAGLINES_FORMATTED, getTaglinesFormatted());
+            values.put(ScraperStore.Show.SEASONPLOTS_FORMATTED, getSeasonPlotsFormatted());
             values.put(ScraperStore.Show.GERNES_FORMATTED, getGenresFormatted());
             values.put(ScraperStore.Show.STUDIOS_FORMATTED, getStudiosFormatted());
 
@@ -205,6 +235,22 @@ public class ShowTags extends VideoTags {
             if (!showFound || updateBackdrop) {
                 values.put(ScraperStore.Show.BACKDROP, newBackdrop);
                 values.put(ScraperStore.Show.BACKDROP_URL, newBackdropUrl);
+            }
+            if (!showFound || updateNetworkLogo) {
+                values.put(ScraperStore.Show.NETWORKLOGO, newNetworkLogo);
+                values.put(ScraperStore.Show.NETWORKLOGO_URL, newNetworkLogoUrl);
+            }
+            if (!showFound || updateActorPhoto) {
+                values.put(ScraperStore.Show.ACTORPHOTO, newActorPhoto);
+                values.put(ScraperStore.Show.ACTORPHOTO_URL, newActorPhotoUrl);
+            }
+            if (!showFound || updateClearLogo) {
+                values.put(ScraperStore.Show.CLEARLOGO, newClearLogo);
+                values.put(ScraperStore.Show.CLEARLOGO_URL, newClearLogoUrl);
+            }
+            if (!showFound || updateStudioLogo) {
+                values.put(ScraperStore.Show.STUDIOLOGO, newStudioLogo);
+                values.put(ScraperStore.Show.STUDIOLOGO_URL, newStudioLogoUrl);
             }
             if (showFound) {
                 // update if it is already there
@@ -236,7 +282,7 @@ public class ShowTags extends VideoTags {
         // if show did not exist insert all the actors etc, updates here are not done.
         if (!showFound) {
             // We know our ID now so we can put everything into a single transaction
-            log.debug("Inserting studios, directors, writers, actors, genres.");
+            log.debug("Inserting studios, directors, writers, taglines, seasonplots, actors, genres.");
 
             for (String studio : mStudios) {
                 cop = ContentProviderOperation.newInsert(ScraperStore.Studio.URI.SHOW);
@@ -259,6 +305,20 @@ public class ShowTags extends VideoTags {
                 allOperations.add(cop.build());
             }
 
+            for (String tagline : mTaglines) {
+                cop = ContentProviderOperation.newInsert(ScraperStore.Tagline.URI.SHOW);
+                cop.withValue(ScraperStore.Show.Tagline.NAME, tagline);
+                cop.withValue(ScraperStore.Show.Tagline.SHOW, showIdString);
+                allOperations.add(cop.build());
+            }
+
+            for (String seasonplot : mSeasonPlots) {
+                cop = ContentProviderOperation.newInsert(ScraperStore.SeasonPlot.URI.SHOW);
+                cop.withValue(ScraperStore.Show.SeasonPlot.NAME, seasonplot);
+                cop.withValue(ScraperStore.Show.SeasonPlot.SHOW, showIdString);
+                allOperations.add(cop.build());
+            }
+
             for (String actorName : mActors.keySet()) {
                 cop = ContentProviderOperation.newInsert(ScraperStore.Actor.URI.SHOW);
                 cop.withValue(ScraperStore.Show.Actor.NAME, actorName);
@@ -277,6 +337,10 @@ public class ShowTags extends VideoTags {
         // backreferences to first poster / backdrop insert operation
         int posterId = -1;
         int backdropId = -1;
+        int networklogoId = -1;
+        int actorphotoId = -1;
+        int clearlogoId = -1;
+        int studiologoId = -1;
 
         // if new show or posters changed
         if (!showFound || postersChanged) {
@@ -299,6 +363,50 @@ public class ShowTags extends VideoTags {
             }
         }
 
+        // if new show or networklogos changed
+        if (!showFound || networklogosChanged) {
+            log.debug("Inserting networklogos.");
+            for (ScraperImage image : safeList(mNetworkLogos)) {
+                if (networklogoId == -1)
+                    networklogoId = allOperations.size();
+                // insert ignores networklogos that are already present
+                allOperations.add(image.getSaveOperation(showId));
+            }
+        }
+
+        // if new show or actorphotos changed
+        if (!showFound || actorphotosChanged) {
+            log.debug("Inserting actorphotos.");
+            for (ScraperImage image : safeList(mActorPhotos)) {
+                if (actorphotoId == -1)
+                    actorphotoId = allOperations.size();
+                // insert ignores actorphotos that are already present
+                allOperations.add(image.getSaveOperation(showId));
+            }
+        }
+
+        // if new show or clearlogos changed
+        if (!showFound || clearlogosChanged) {
+            log.debug("Inserting clearlogos.");
+            for (ScraperImage image : safeList(mClearLogos)) {
+                if (clearlogoId == -1)
+                    clearlogoId = allOperations.size();
+                // insert ignores clearlogos that are already present
+                allOperations.add(image.getSaveOperation(showId));
+            }
+        }
+
+        // if new show or studiologos changed
+        if (!showFound || studiologosChanged) {
+            log.debug("Inserting studiologos.");
+            for (ScraperImage image : safeList(mStudioLogos)) {
+                if (studiologoId == -1)
+                    studiologoId = allOperations.size();
+                // insert ignores studiologos that are already present
+                allOperations.add(image.getSaveOperation(showId));
+            }
+        }
+
         ContentValues backRef = null;
         if (posterId != -1) {
             backRef = new ContentValues();
@@ -309,9 +417,29 @@ public class ShowTags extends VideoTags {
             backRef.put(ScraperStore.Show.BACKDROP_ID, Integer.valueOf(backdropId));
         }
 
+        if (networklogoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Show.NETWORKLOGO_ID, Integer.valueOf(networklogoId));
+        }
+
+        if (actorphotoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Show.ACTORPHOTO_ID, Integer.valueOf(actorphotoId));
+        }
+
+        if (clearlogoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Show.CLEARLOGO_ID, Integer.valueOf(clearlogoId));
+        }
+
+        if (studiologoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Show.STUDIOLOGO_ID, Integer.valueOf(studiologoId));
+        }
+
         // set a default poster id if there was none
         if (!showFound && backRef != null) {
-            log.debug("Updating poster/backdrop id.");
+            log.debug("Updating poster/backdrop/networklogo/actorphoto/clearlogo/studiologo id.");
             allOperations.add(
                     ContentProviderOperation.newUpdate(ScraperStore.Show.URI.BASE)
                     .withValueBackReferences(backRef)
@@ -489,12 +617,92 @@ public class ShowTags extends VideoTags {
         return result;
     }
 
+    @Override
+    public List<ScraperImage> getAllNetworkLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.ShowNetworkLogos.URI.BY_SHOW_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.SHOW_NETWORK));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllActorPhotosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.ShowActorPhotos.URI.BY_SHOW_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.SHOW_ACTOR_PHOTO));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllClearLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.ShowClearLogos.URI.BY_SHOW_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.SHOW_TITLE_CLEARLOGO));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllStudioLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.ShowStudioLogos.URI.BY_SHOW_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.SHOW_STUDIOLOGO));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
     private static int storedPosterCount(long showId, ContentResolver cr) {
         return getCount(cr, ScraperStore.ShowPosters.URI.BY_SHOW_ID, showId);
     }
 
     private static int storedBackdropCount(long showId, ContentResolver cr) {
         return getCount(cr, ScraperStore.ShowBackdrops.URI.BY_SHOW_ID, showId);
+    }
+
+    private static int storedNetworkLogoCount(long showId, ContentResolver cr) {
+        return getCount(cr, ScraperStore.ShowNetworkLogos.URI.BY_SHOW_ID, showId);
+    }
+
+    private static int storedActorPhotoCount(long showId, ContentResolver cr) {
+        return getCount(cr, ScraperStore.ShowActorPhotos.URI.BY_SHOW_ID, showId);
+    }
+
+    private static int storedClearLogoCount(long showId, ContentResolver cr) {
+        return getCount(cr, ScraperStore.ShowClearLogos.URI.BY_SHOW_ID, showId);
+    }
+
+    private static int storedStudioLogoCount(long showId, ContentResolver cr) {
+        return getCount(cr, ScraperStore.ShowStudioLogos.URI.BY_SHOW_ID, showId);
     }
 
     private static final String[] PROJECTION_COUNT = { "count(*)" };
@@ -531,6 +739,46 @@ public class ShowTags extends VideoTags {
         addDefaultBackdrop(image);
     }
 
+    /** Add this (local) image as the default show networklogo */
+    public void addDefaultNetworkLogo(Context context, Uri localImage) {
+        ScraperImage image = new ScraperImage(Type.SHOW_NETWORK, mTitle);
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultNetworkLogo(image);
+    }
+
+    /** Add this (local) image as the default show actorphoto */
+    public void addDefaultActorPhoto(Context context, Uri localImage) {
+        ScraperImage image = new ScraperImage(Type.SHOW_ACTOR_PHOTO, mTitle);
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultActorPhoto(image);
+    }
+
+    /** Add this (local) image as the default show clearlogo */
+    public void addDefaultClearLogo(Context context, Uri localImage) {
+        ScraperImage image = new ScraperImage(Type.SHOW_TITLE_CLEARLOGO, mTitle);
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultClearLogo(image);
+    }
+
+    /** Add this (local) image as the default show networklogo */
+    public void addDefaultStudioLogo(Context context, Uri localImage) {
+        ScraperImage image = new ScraperImage(Type.SHOW_STUDIOLOGO, mTitle);
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultStudioLogo(image);
+    }
+
     /** Add this url as the default show poster */
     public void addDefaultPosterTMDB(Context context, String path) {
         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, mTitle);
@@ -547,6 +795,42 @@ public class ShowTags extends VideoTags {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
+    }
+
+    /** Add this url image as the show network logo */
+    public void addNetworkLogoGITHUB(Context context, String path) {
+        ScraperImage image = new ScraperImage(Type.SHOW_NETWORK, mTitle);
+        image.setLargeUrl(ScraperImage.GSNL + path);
+        image.setThumbUrl(ScraperImage.GSNL + path);
+        image.generateFileNames(context);
+        addDefaultNetworkLogo(image);
+    }
+
+    /** Add this url image as the show actor photo */
+    public void addActorPhotoTMDB(Context context, String path) {
+        ScraperImage image = new ScraperImage(Type.SHOW_ACTOR_PHOTO, mTitle);
+        image.setLargeUrl(ScraperImage.AP + path);
+        image.setThumbUrl(ScraperImage.AP + path);
+        image.generateFileNames(context);
+        addDefaultActorPhoto(image);
+    }
+
+    /** Add this url image as the show actor photo */
+    public void addClearLogoFTV(Context context, String path) {
+        ScraperImage image = new ScraperImage(Type.SHOW_TITLE_CLEARLOGO, mTitle);
+        image.setLargeUrl(path);
+        image.setThumbUrl(path);
+        image.generateFileNames(context);
+        addDefaultClearLogo(image);
+    }
+
+    /** Add this url image as the show network logo */
+    public void addStudioLogoGITHUB(Context context, String path) {
+        ScraperImage image = new ScraperImage(Type.SHOW_STUDIOLOGO, mTitle);
+        image.setLargeUrl(ScraperImage.GSNL + path);
+        image.setThumbUrl(ScraperImage.GSNL + path);
+        image.generateFileNames(context);
+        addDefaultStudioLogo(image);
     }
 
     private boolean isKnown(String [] projection, String selection, String [] selectionArgs, Context context) {
@@ -607,16 +891,25 @@ public class ShowTags extends VideoTags {
 
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
-
+                updateNetworkLogo = newStringIsNotEmpty(storedBD, newNetworkLogo);
+                updateActorPhoto = newStringIsNotEmpty(storedBD, newActorPhoto);
+                updateClearLogo = newStringIsNotEmpty(storedBD, newClearLogo);
+                updateStudioLogo = newStringIsNotEmpty(storedBD, newStudioLogo);
                 log.debug("updateInfo: show found in db: storedCover " + storedCover + ", newCover " + newCover);
                 log.debug("updateInfo: show found in db: storedBD " + storedBD + ", newBackdrop " + newBackdrop);
                 log.debug("updateInfo: show found in db: storedRating " + storedRating + ", mRating " + mRating);
                 log.debug("updateInfo: show found in db: storedCRating " + storedCRating + ", mContentRating " + mContentRating);
                 log.debug("updateInfo: show found in db: storedImdb " + storedImdb + ", mImdbId " + mImdbId);
                 log.debug("updateInfo: show found in db: storedOnlineId " + storedOnlineId + ", mOnlineId " + mOnlineId);
+                log.debug("updateInfo: show found in db: storedBD " + storedBD + ", newBackdrop " + newBackdrop);
+                log.debug("updateInfo: show found in db: storedNL " + storedBD + ", newNetworkLogo " + newNetworkLogo);
+                log.debug("updateInfo: show found in db: storedNL " + storedBD + ", newActorPhoto " + newActorPhoto);
+                log.debug("updateInfo: show found in db: storedNL " + storedBD + ", newClearLogo " + newClearLogo);
+                log.debug("updateInfo: show found in db: storedNL " + storedBD + ", newStudioLogo " + newStudioLogo);
+
                 // compare old vs new
                 baseInfoChanged =
-                        updateCover || updateBackdrop ||
+                        updateCover || updateBackdrop || updateNetworkLogo || updateActorPhoto || updateClearLogo || updateStudioLogo ||
                                 newFloatIsBetter(storedRating, mRating) ||
                                 newStringIsBetter(storedCRating, mContentRating) ||
                                 newStringIsBetter(storedImdb, mImdbId) ||
@@ -632,6 +925,22 @@ public class ShowTags extends VideoTags {
                 int storedBackdropCount = storedBackdropCount(showId, contentResolver);
                 int newBackdropCount = mBackdrops == null ? 0 : mBackdrops.size();
                 backdropsChanged = storedBackdropCount != newBackdropCount;
+
+                int storedNetworkLogoCount = storedNetworkLogoCount(showId, cr);
+                int newNetworkLogoCount = mNetworkLogos == null ? 0 : mNetworkLogos.size();
+                networklogosChanged = storedNetworkLogoCount != newNetworkLogoCount;
+
+                int storedActorPhotoCount = storedActorPhotoCount(showId, cr);
+                int newActorPhotoCount = mActorPhotos == null ? 0 : mActorPhotos.size();
+                actorphotosChanged = storedActorPhotoCount != newActorPhotoCount;
+
+                int storedClearLogoCount = storedClearLogoCount(showId, cr);
+                int newClearLogoCount = mClearLogos == null ? 0 : mClearLogos.size();
+                clearlogosChanged = storedClearLogoCount != newClearLogoCount;
+
+                int storedStudioLogoCount = storedStudioLogoCount(showId, cr);
+                int newStudioLogoCount = mStudioLogos == null ? 0 : mStudioLogos.size();
+                studiologosChanged = storedStudioLogoCount != newStudioLogoCount;
             }
             cursor.close();
         }

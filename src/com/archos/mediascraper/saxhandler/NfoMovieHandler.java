@@ -75,6 +75,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int BACKDROPLARGE = 31;
     private static final int BACKDROPTHUMB = 32;
     private static final int WRITER = 33;
+    private static final int TAGLINE = 34;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -88,6 +89,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("genre", GENRE);
         STRINGS.addKey("director", DIRECTOR);
         STRINGS.addKey("writer", WRITER);
+        STRINGS.addKey("tagline", TAGLINE);
         STRINGS.addKey("actor", ACTOR);
         STRINGS.addKey("name", NAME);
         STRINGS.addKey("role", ROLE);
@@ -115,6 +117,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private MovieTags mMovie;
     private final ArrayList<String> mMoviePosterUrls = new ArrayList<String>();
     private final ArrayList<String> mMovieBackdropUrls = new ArrayList<String>();
+    private final ArrayList<String> mActorPhotos = new ArrayList<String>();
+    private final ArrayList<String> mStudioLogos = new ArrayList<String>();
+    private final ArrayList<String> mClearLogos = new ArrayList<String>();
     private boolean mCanParse;
 
     private String mActorName, mActorRole;
@@ -134,6 +139,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         mMovie = null;
         mMoviePosterUrls.clear();
         mMovieBackdropUrls.clear();
+        mActorPhotos.clear();
+        mStudioLogos.clear();
+        mClearLogos.clear();
         mCanParse = false;
         mActorName = null;
         mActorRole = null;
@@ -198,6 +206,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case GENRE:
                     case DIRECTOR:
                     case WRITER:
+                    case TAGLINE:
                     case STUDIO:
                     case TMDBID:
                     case RUNTIME:
@@ -315,6 +324,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case WRITER:
                         mMovie.addWriterIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case TAGLINE:
+                        mMovie.addTaglineIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
                     case STUDIO:
                         mMovie.addStudioIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
@@ -460,6 +472,48 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     }
                 }
                 mMovie.setBackdrops(images);
+            }
+
+            if (!mActorPhotos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mActorPhotos.size());
+                for (String url : mActorPhotos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_ACTORPHOTO, movieFile.toString());
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(url);
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mMovie.setActorPhotos(images);
+            }
+
+            if (!mStudioLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mStudioLogos.size());
+                for (String url : mStudioLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, movieFile.toString());
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(url);
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mMovie.setStudioLogos(images);
+            }
+
+            if (!mClearLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mClearLogos.size());
+                for (String url : mClearLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, movieFile.toString());
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(url);
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mMovie.setClearLogos(images);
             }
 
             if (mMovie.getCollectionId() > 0)

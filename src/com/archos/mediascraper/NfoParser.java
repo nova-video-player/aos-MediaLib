@@ -65,6 +65,12 @@ public class NfoParser {
 
     /** showtitle / filename + this */
     public static final String POSTER_EXTENSION = "-poster.archos.jpg";
+
+    /** showtitle / filename + this */
+    public static final String NETWORKLOGO_EXTENSION = "-networklogo.archos.png";
+    public static final String ACTORPHOTO_EXTENSION = "-actorphoto.archos.png";
+    public static final String CLEARLOGO_EXTENSION = "-clearlogo.archos.png";
+    public static final String STUDIOLOGO_EXTENSION = "-studiologo.archos.png";
     public static String getCustomShowPosterName(String showTitle) {
         String titleEncoded = StringUtils.fileSystemEncode(showTitle);
         if (titleEncoded != null)
@@ -76,6 +82,34 @@ public class NfoParser {
         String titleEncoded = StringUtils.fileSystemEncode(showTitle);
         if (titleEncoded != null)
             return titleEncoded + BACKDROP_EXTENSION;
+        return null;
+    }
+
+    public static String getCustomShowNetworkLogoName(String showTitle) {
+        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
+        if (titleEncoded != null)
+            return titleEncoded + NETWORKLOGO_EXTENSION;
+        return null;
+    }
+
+    public static String getCustomShowActorPhotoName(String showTitle) {
+        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
+        if (titleEncoded != null)
+            return titleEncoded + ACTORPHOTO_EXTENSION;
+        return null;
+    }
+
+    public static String getCustomShowClearLogoName(String showTitle) {
+        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
+        if (titleEncoded != null)
+            return titleEncoded + CLEARLOGO_EXTENSION;
+        return null;
+    }
+
+    public static String getCustomShowStudioLogoName(String showTitle) {
+        String titleEncoded = StringUtils.fileSystemEncode(showTitle);
+        if (titleEncoded != null)
+            return titleEncoded + STUDIOLOGO_EXTENSION;
         return null;
     }
 
@@ -273,6 +307,12 @@ public class NfoParser {
                             movieTags.addDefaultBackdrop(context, backdrop, nfo.videoFile);
                         }
 
+                        // check if we can add local image to actorphotos
+                        Uri actorphoto = LocalImages.findActorPhoto(nfo.videoFile, null);
+                        if (backdrop != null) {
+                            movieTags.addDefaultActorPhoto(context, actorphoto, nfo.videoFile);
+                        }
+
                         tag.downloadPoster(context);
                         return tag;
                     }
@@ -369,6 +409,30 @@ public class NfoParser {
                 Uri backdrop = LocalImages.findBackdrop(videoFile, showTitle);
                 if (backdrop != null) {
                     result.addDefaultBackdrop(context, backdrop);
+                }
+
+                // check if we can add local image as show NetworkLogo
+                Uri networklogo = LocalImages.findShowNetworkLogo(videoFile, showTitle);
+                if (networklogo != null) {
+                    result.addDefaultNetworkLogo(context, networklogo);
+                }
+
+                // check if we can add local image as show ActorPhoto
+                Uri actorphoto = LocalImages.findActorPhoto(videoFile, showTitle);
+                if (actorphoto != null) {
+                    result.addDefaultActorPhoto(context, actorphoto);
+                }
+
+                // check if we can add local image as show ClearLogo
+                Uri clearlogo = LocalImages.findClearLogo(videoFile, showTitle);
+                if (clearlogo != null) {
+                    result.addDefaultClearLogo(context, clearlogo);
+                }
+
+                // check if we can add local image as show StudioLogo
+                Uri studiologo = LocalImages.findStudioLogo(videoFile, showTitle);
+                if (studiologo != null) {
+                    result.addDefaultStudioLogo(context, studiologo);
                 }
 
                 // store in cache

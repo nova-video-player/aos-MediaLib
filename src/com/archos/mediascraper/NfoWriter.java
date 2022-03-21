@@ -125,6 +125,8 @@ public class NfoWriter {
                 textTag(serializer, "director", director);
             for (String writer : tag.getWriters())
                 textTag(serializer, "writer", writer);
+            for (String tagline : tag.getTaglines())
+                textTag(serializer, "tagline", tagline);
             textTag(serializer, "id", tag.getImdbId());
             textTag(serializer, "tmdbid", tag.getOnlineId());
             for (String studio : tag.getStudios())
@@ -172,6 +174,42 @@ public class NfoWriter {
                 }
                 serializer.endTag("", "fanart");
             }
+            List<ScraperImage> actorphotos = tag.getActorPhotos();
+            if (actorphotos != null && !actorphotos.isEmpty()) {
+                serializer.startTag("", "actorphoto");
+                for (ScraperImage image : actorphotos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "actorphoto");
+            }
+            List<ScraperImage> studiologos = tag.getStudioLogos();
+            if (studiologos != null && !studiologos.isEmpty()) {
+                serializer.startTag("", "studiologo");
+                for (ScraperImage image : studiologos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "studiologo");
+            }
+            List<ScraperImage> clearlogos = tag.getClearLogos();
+            if (clearlogos != null && !clearlogos.isEmpty()) {
+                serializer.startTag("", "clearlogo");
+                for (ScraperImage image : clearlogos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "clearlogo");
+            }
         }
         serializer.endTag("", "movie");
 
@@ -209,6 +247,8 @@ public class NfoWriter {
                 textTag(serializer, "director", director);
             for (String writer : tag.getWriters())
                 textTag(serializer, "writer", writer);
+            for (String tagline : tag.getTaglines())
+                textTag(serializer, "tagline", tagline);
             for (Entry<String, String> entry : tag.getActors().entrySet()) {
                 serializer.startTag("", "actor");
                 {
@@ -241,6 +281,8 @@ public class NfoWriter {
                 textTag(serializer, "studio", studio);
             for (String genre : tag.getGenres())
                 textTag(serializer, "genre", genre);
+            for (String seasonposter : tag.getSeasonPlots())
+                textTag(serializer, "seasonposter", seasonposter);
             for (Entry<String, String> entry : tag.getActors().entrySet()) {
                 serializer.startTag("", "actor");
                 {
@@ -277,6 +319,54 @@ public class NfoWriter {
                 }
                 serializer.endTag("", "fanart");
             }
+            List<ScraperImage> networklogos = tag.getNetworkLogos();
+            if (networklogos != null && !networklogos.isEmpty()) {
+                serializer.startTag("", "networklogo");
+                for (ScraperImage image : networklogos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "networklogo");
+            }
+            List<ScraperImage> actorphotos = tag.getActorPhotos();
+            if (actorphotos != null && !actorphotos.isEmpty()) {
+                serializer.startTag("", "actorphoto");
+                for (ScraperImage image : actorphotos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "actorphoto");
+            }
+            List<ScraperImage> clearlogos = tag.getClearLogos();
+            if (clearlogos != null && !clearlogos.isEmpty()) {
+                serializer.startTag("", "clearlogo");
+                for (ScraperImage image : clearlogos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "clearlogo");
+            }
+            List<ScraperImage> studiologos = tag.getStudioLogos();
+            if (studiologos != null && !studiologos.isEmpty()) {
+                serializer.startTag("", "studiologo");
+                for (ScraperImage image : studiologos) {
+                    if (!image.isHttpImage()) continue;
+                    serializer.startTag("", "thumb");
+                    serializer.attribute("", "preview", image.getThumbUrl());
+                    serializer.text(image.getLargeUrl());
+                    serializer.endTag("", "thumb");
+                }
+                serializer.endTag("", "studiologo");
+            }
         }
         serializer.endTag("", "tvshow");
 
@@ -305,6 +395,9 @@ public class NfoWriter {
                 writer = null;
                 exportImage(tag.getDefaultPoster(), parent, videoName + NfoParser.POSTER_EXTENSION);
                 exportImage(tag.getDefaultBackdrop(), parent, videoName + NfoParser.BACKDROP_EXTENSION);
+                exportImage(tag.getDefaultActorPhoto(), parent, videoName + NfoParser.ACTORPHOTO_EXTENSION);
+                exportImage(tag.getDefaultStudioLogo(), parent, videoName + NfoParser.STUDIOLOGO_EXTENSION);
+                exportImage(tag.getDefaultClearLogo(), parent, videoName + NfoParser.CLEARLOGO_EXTENSION);
             } finally {
                 if (writer != null) {
                     // writer is only != null if writing nfo has thrown an exception
@@ -380,6 +473,10 @@ public class NfoWriter {
                 writer = null;
                 exportImage(tag.getDefaultPoster(), parent,  showTitle + NfoParser.POSTER_EXTENSION);
                 exportImage(tag.getDefaultBackdrop(), parent, showTitle + NfoParser.BACKDROP_EXTENSION);
+                exportImage(tag.getDefaultNetworkLogo(), parent, showTitle + NfoParser.NETWORKLOGO_EXTENSION);
+                exportImage(tag.getDefaultActorPhoto(), parent, showTitle + NfoParser.ACTORPHOTO_EXTENSION);
+                exportImage(tag.getDefaultClearLogo(), parent, showTitle + NfoParser.CLEARLOGO_EXTENSION);
+                exportImage(tag.getDefaultStudioLogo(), parent, showTitle + NfoParser.STUDIOLOGO_EXTENSION);
             } finally {
                 if (writer != null) {
                     // writer is only != null if writing nfo has thrown an exception

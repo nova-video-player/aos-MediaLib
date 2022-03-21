@@ -154,9 +154,28 @@ public class MovieTags extends VideoTags {
             values.put(ScraperStore.Movie.BACKDROP_URL, backdrop.getLargeUrl());
         }
 
+        ScraperImage actorphoto = getDefaultActorPhoto();
+        if (actorphoto != null) {
+            values.put(ScraperStore.Movie.ACTORPHOTO, actorphoto.getLargeFile());
+            values.put(ScraperStore.Movie.ACTORPHOTO, actorphoto.getLargeUrl());
+        }
+
+        ScraperImage studiologo = getDefaultStudioLogo();
+        if (studiologo != null) {
+            values.put(ScraperStore.Movie.STUDIOLOGO, studiologo.getLargeFile());
+            values.put(ScraperStore.Movie.STUDIOLOGO, studiologo.getLargeUrl());
+        }
+
+        ScraperImage clearlogo = getDefaultClearLogo();
+        if (clearlogo != null) {
+            values.put(ScraperStore.Movie.CLEARLOGO, clearlogo.getLargeFile());
+            values.put(ScraperStore.Movie.CLEARLOGO, clearlogo.getLargeUrl());
+        }
+
         values.put(ScraperStore.Movie.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Movie.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Movie.WRITERS_FORMATTED, getWritersFormatted());
+        values.put(ScraperStore.Movie.TAGLINES_FORMATTED, getTaglinesFormatted());
         values.put(ScraperStore.Movie.GERNES_FORMATTED, getGenresFormatted());
         values.put(ScraperStore.Movie.STUDIOS_FORMATTED, getStudiosFormatted());
 
@@ -187,6 +206,13 @@ public class MovieTags extends VideoTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Writer.URI.MOVIE);
             cop.withValue(ScraperStore.Movie.Writer.NAME, writer);
             cop.withValueBackReference(ScraperStore.Movie.Writer.MOVIE, 0);
+            allOperations.add(cop.build());
+        }
+
+        for(String tagline: mTaglines) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Tagline.URI.MOVIE);
+            cop.withValue(ScraperStore.Movie.Tagline.NAME, tagline);
+            cop.withValueBackReference(ScraperStore.Movie.Tagline.MOVIE, 0);
             allOperations.add(cop.build());
         }
 
@@ -231,6 +257,9 @@ public class MovieTags extends VideoTags {
         // the operation in "allOperations"
         int posterId = -1;
         int backdropId = -1;
+        int actorphotoId = -1;
+        int studiologoId = -1;
+        int clearlogoId = -1;
         for (ScraperImage image : safeList(mPosters)) {
             if (posterId == -1)
                 posterId = allOperations.size();
@@ -239,6 +268,23 @@ public class MovieTags extends VideoTags {
         for (ScraperImage image : safeList(mBackdrops)) {
             if (backdropId == -1)
                 backdropId = allOperations.size();
+            allOperations.add(image.getSaveOperationBackreferenced(0));
+        }
+        for (ScraperImage image : safeList(mActorPhotos)) {
+            if (actorphotoId == -1)
+                actorphotoId = allOperations.size();
+            allOperations.add(image.getSaveOperationBackreferenced(0));
+        }
+
+        for (ScraperImage image : safeList(mStudioLogos)) {
+            if (studiologoId == -1)
+                studiologoId = allOperations.size();
+            allOperations.add(image.getSaveOperationBackreferenced(0));
+        }
+
+        for (ScraperImage image : safeList(mClearLogos)) {
+            if (clearlogoId == -1)
+                clearlogoId = allOperations.size();
             allOperations.add(image.getSaveOperationBackreferenced(0));
         }
 
@@ -254,6 +300,18 @@ public class MovieTags extends VideoTags {
         if (backdropId != -1) {
             if (backRef == null) backRef = new ContentValues();
             backRef.put(ScraperStore.Movie.BACKDROP_ID, Integer.valueOf(backdropId));
+        }
+        if (actorphotoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Movie.ACTORPHOTO_ID, Integer.valueOf(actorphotoId));
+        }
+        if (studiologoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Movie.STUDIOLOGO_ID, Integer.valueOf(studiologoId));
+        }
+        if (clearlogoId != -1) {
+            if (backRef == null) backRef = new ContentValues();
+            backRef.put(ScraperStore.Movie.CLEARLOGO_ID, Integer.valueOf(clearlogoId));
         }
         if (backRef != null) {
             allOperations.add(
@@ -337,6 +395,61 @@ public class MovieTags extends VideoTags {
         return result;
     }
 
+    @Override
+    public List<ScraperImage> getAllNetworkLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllActorPhotosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.MovieActorPhotos.URI.BY_MOVIE_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.MOVIE_ACTORPHOTO));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllClearLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.MovieClearLogos.URI.BY_MOVIE_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.MOVIE_CLEARLOGO));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllStudioLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = ContentUris.withAppendedId(ScraperStore.MovieStudioLogos.URI.BY_MOVIE_ID, mId);
+        Cursor cursor = cr.query(uri, null, null, null, null);
+        List<ScraperImage> result = null;
+        if (cursor != null) {
+            result = new ArrayList<ScraperImage>(cursor.getCount());
+            while (cursor.moveToNext()) {
+                result.add(ScraperImage.fromCursor(cursor, Type.MOVIE_STUDIOLOGO));
+            }
+            cursor.close();
+        }
+        return result;
+    }
+
     public void setYear(int year) { mYear = year; }
 
     @Override
@@ -374,6 +487,36 @@ public class MovieTags extends VideoTags {
         addDefaultBackdrop(image);
     }
 
+    /** Add this (local) image as the default ActorPhoto */
+    public void addDefaultActorPhoto(Context context, Uri localImage, Uri videoFile) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_ACTORPHOTO, videoFile.toString());
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultActorPhoto(image);
+    }
+
+    /** Add this (local) image as the default StudioLogo */
+    public void addDefaultStudioLogo(Context context, Uri localImage, Uri videoFile) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, videoFile.toString());
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultStudioLogo(image);
+    }
+
+    /** Add this (local) image as the default ClearLogo */
+    public void addDefaultClearLogo(Context context, Uri localImage, Uri videoFile) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, videoFile.toString());
+        String imageUrl = localImage.toString();
+        image.setLargeUrl(imageUrl);
+        image.setThumbUrl(imageUrl);
+        image.generateFileNames(context);
+        addDefaultClearLogo(image);
+    }
+
     public static boolean isCollectionAlreadyKnown(Integer collectionId, Context context) {
         ContentResolver contentResolver = context.getContentResolver();
         String[] selectionArgs = {String.valueOf(collectionId)};
@@ -409,5 +552,34 @@ public class MovieTags extends VideoTags {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         addDefaultBackdrop(image);
+    }
+
+    /** Add this url image as the default movie actor photos */
+    public void addDefaultActorPhotoTMDB(Context context, String path) {
+        log.debug("addDefaultActorPhotoTMDB: actorphoto " + ScraperImage.AP + path);
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_ACTORPHOTO, mTitle);
+        image.setLargeUrl(ScraperImage.AP + path);
+        image.setThumbUrl(ScraperImage.AP + path);
+        image.generateFileNames(context);
+        addDefaultActorPhoto(image);
+    }
+
+    /** Add this url image as the default movie studiologos */
+    public void addDefaultStudioLogoGITHUB(Context context, String path) {
+        log.debug("addDefaultStudioLogoGITHUB: studiologo " + ScraperImage.GSNL + path);
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, mTitle);
+        image.setLargeUrl(ScraperImage.GSNL + path);
+        image.setThumbUrl(ScraperImage.GSNL + path);
+        image.generateFileNames(context);
+        addDefaultStudioLogo(image);
+    }
+
+    /** Add this url image as the default movie ClearLogos */
+    public void addDefaultClearLogoFTV(Context context, String path) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, mTitle);
+        image.setLargeUrl(path);
+        image.setThumbUrl(path);
+        image.generateFileNames(context);
+        addDefaultClearLogo(image);
     }
 }

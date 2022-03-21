@@ -28,6 +28,9 @@ import com.uwetrottmann.tmdb2.entities.TvSeason;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,23 @@ public class ShowIdEpisodes {
 
     private static final String DIRECTOR = "Director";
     private static final String WRITER = "Writer";
+    private static String readUrl(String urlString) throws Exception {
+        BufferedReader reader = null;
+        try {
+            URL url = new URL(urlString);
+            reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            StringBuffer buffer = new StringBuffer();
+            int read;
+            char[] chars = new char[1024];
+            while ((read = reader.read(chars)) != -1)
+                buffer.append(chars, 0, read);
+
+            return buffer.toString();
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
+    }
 
     public static Map<String, EpisodeTags> getEpisodes(int showId, List<TvEpisode> tvEpisodes, Map<Integer, TvSeason> tvSeasons, ShowTags showTags, String language,
                                                        final boolean adultScrape, MyTmdb tmdb, Context context) {
@@ -143,6 +163,11 @@ public class ShowIdEpisodes {
                             episodeTags.setTitle(globalEpisode.name);
                     }
                 }
+
+                // setting episode vote_count through tagline pipeline
+                String tvTag = String.valueOf(tvEpisode.vote_count);
+                episodeTags.addTaglineIfAbsent(tvTag);
+
                 episodes.put(tvEpisode.season_number + "|" + tvEpisode.episode_number, episodeTags);
             }
         }

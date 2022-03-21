@@ -26,11 +26,19 @@ public class ShowIdImagesResult {
     public List<ScraperImage> posters;
     public List<ScraperImage> backdrops;
     public List<ScraperImage> stills;
+    public List<ScraperImage> networklogos;
+    public List<ScraperImage> actorphotos;
+    public List<ScraperImage> clearlogos;
+    public List<ScraperImage> studiologos;
     public ScrapeStatus status;
     public Throwable reason;
     public ShowIdImagesResult() {
         this.posters = new LinkedList<>();
         this.backdrops = new LinkedList<>();
         this.stills = new LinkedList<>();
+        this.networklogos = new LinkedList<>();
+        this.actorphotos = new LinkedList<>();
+        this.clearlogos = new LinkedList<>();
+        this.studiologos = new LinkedList<>();
     }
 }

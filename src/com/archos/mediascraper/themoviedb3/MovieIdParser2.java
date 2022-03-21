@@ -35,9 +35,15 @@ import com.uwetrottmann.tmdb2.entities.ReleaseDate;
 import com.uwetrottmann.tmdb2.entities.ReleaseDatesResult;
 import com.uwetrottmann.tmdb2.entities.Videos;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -55,6 +61,23 @@ public class MovieIdParser2 {
 
     private static final String DIRECTOR = "Director";
     private static final String WRITER = "Writer";
+    private static String readUrl(String urlString) throws Exception {
+        BufferedReader reader = null;
+        try {
+            URL url = new URL(urlString);
+            reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            StringBuffer buffer = new StringBuffer();
+            int read;
+            char[] chars = new char[1024];
+            while ((read = reader.read(chars)) != -1)
+                buffer.append(chars, 0, read);
+
+            return buffer.toString();
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
+    }
 
     private final static int limitTrailers = 40; // limit number of trailers
 
@@ -98,7 +121,7 @@ public class MovieIdParser2 {
                     result.addActorIfAbsent(guestStar.name, guestStar.character);
             if (movie.credits.cast != null)
                 for (CastMember actor : movie.credits.cast)
-                    result.addActorIfAbsent(actor.name, actor.character);
+                    result.addActorIfAbsent(actor.name, actor.character + "=&%#" + actor.profile_path);
             if (movie.credits.crew != null)
                 for (CrewMember crew : movie.credits.crew) {
                     assert crew.job != null;
@@ -112,6 +135,39 @@ public class MovieIdParser2 {
                         result.addWriterIfAbsent(crew.name);
                 }
         }
+        if (movie.credits != null) {
+            if (movie.credits.cast != null)
+                for (int j = 0; j < movie.credits.cast.size(); j++) {
+                    result.addDefaultActorPhotoTMDB(mContext, movie.credits.cast.get(j).profile_path);
+                }
+        } else log.debug("getResult: no actor_photo_path for " + movie.id);
+
+        if (movie.production_companies != null) {
+            for (int i = 0; i < movie.production_companies.size(); i++) {
+                log.debug("getResult: " + movie.id + " has studiologo_path=" + ScraperImage.GSNL + movie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
+                result.addDefaultStudioLogoGITHUB(mContext, movie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
+            }
+        } else log.debug("getResult: no networklogo_path for " + movie.id);
+
+        //set movie logo
+        String apikey = "ac6ed0ad315f924847ff24fa4f555571";
+        String url = "http://webservice.fanart.tv/v3/movies/" + movie.id + "?api_key=" + apikey;
+        List<String> enClearLogos = new ArrayList<>();
+        try {
+            JSONObject json = new JSONObject(readUrl(url));
+            JSONArray jsonArray = json.getJSONArray("hdmovielogo");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject movieObject = jsonArray.getJSONObject(i);
+                if (movieObject.getString("lang").equalsIgnoreCase("en"))
+                    enClearLogos.add(movieObject.getString("url"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < enClearLogos.size(); i++) {
+            result.addDefaultClearLogoFTV(mContext, enClearLogos.get(0));
+        }
+
         // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         if (movie.release_dates.results != null) {
             for (int i = 0; i < movie.release_dates.results.size(); i++) {
@@ -124,6 +180,10 @@ public class MovieIdParser2 {
                 }
             }
         }
+
+        // setting multiple movie tags using a single pipeline (tagline, budget, revenue, runtime, vote_count, popularity)
+        String tvTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity;
+        result.addTaglineIfAbsent(tvTag);
 
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
@@ -150,6 +210,26 @@ public class MovieIdParser2 {
         // backdrops
         List<ScraperImage> backdrops = new ArrayList<>();
         List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
+
+        // clearlogos
+        List<ScraperImage> clearlogos = new ArrayList<>();
+        List<String> tempClearLogos = new ArrayList<>();
+
+        //set series clearlogos
+        try {
+            JSONObject json = new JSONObject(readUrl(url));
+            JSONArray jsonArray = json.getJSONArray("hdmovielogo");
+            for(int j = 0; j < jsonArray.length(); j++){
+                JSONObject movieObject = jsonArray.getJSONObject(j);
+                tempClearLogos.add(movieObject.getString("url"));
+                clearlogos.add(genClearLogo(movie.title, movieObject.getString("url"),  context));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         if (movie.images != null) {
             if (movie.images.posters != null)
                 for (Image poster : movie.images.posters)
@@ -180,6 +260,7 @@ public class MovieIdParser2 {
             log.debug("getResult: setting posters and backdrops");
             result.setPosters(posters);
             result.setBackdrops(backdrops);
+            result.setClearLogos(clearlogos);
             log.debug("getResult: global " + movie.title + " poster " + movie.poster_path + ", backdrop " + movie.backdrop_path);
             // this must be done after setPosters/setBackdrops otherwise default is removed
             if (movie.poster_path != null) result.addDefaultPosterTMDB(mContext, movie.poster_path);
@@ -206,6 +287,14 @@ public class MovieIdParser2 {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         log.debug("genBackdrop: " + title + ", has backdrop " + image.getLargeUrl() + " path " + image.getLargeFile());
+        return image;
+    }
+
+    public static ScraperImage genClearLogo(String title, String path, Context context) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, title);
+        image.setLargeUrl(path);
+        image.setThumbUrl(path);
+        image.generateFileNames(context);
         return image;
     }
 

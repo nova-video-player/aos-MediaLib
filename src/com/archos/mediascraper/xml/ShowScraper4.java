@@ -222,6 +222,31 @@ public class ShowScraper4 extends BaseScraper2 {
                     else log.debug("getDetailsInternal: backdrops empty!");
                     // needs to be done after setBackdrops not to be erased
                     if (result.getBackdropPath() != null)  showTags.addDefaultBackdropTMDB(mContext, result.getBackdropPath());
+
+                    if (!searchImages.networklogos.isEmpty())
+                        showTags.setNetworkLogos(searchImages.networklogos);
+                    else log.debug("getDetailsInternal: networklogos empty!");
+                    // needs to be done after setNetworkLogos not to be erased
+                    if (result.getNetworkLogoPath() != null)  showTags.addNetworkLogoGITHUB(mContext, result.getNetworkLogoPath());
+
+                    if (!searchImages.actorphotos.isEmpty())
+                        showTags.setActorPhotos(searchImages.actorphotos);
+                    else log.debug("getDetailsInternal: actorphotos empty!");
+                    // needs to be done after setActorPhotos not to be erased
+                    if (result.getActorPhotoPath() != null)  showTags.addActorPhotoTMDB(mContext, result.getActorPhotoPath());
+
+                    if (!searchImages.clearlogos.isEmpty())
+                        showTags.setClearLogos(searchImages.clearlogos);
+                    else log.debug("getDetailsInternal: clearlogos empty!");
+                    // needs to be done after setClearLogos not to be erased
+                    if (result.getClearLogoPath() != null)  showTags.addClearLogoFTV(mContext, result.getClearLogoPath());
+
+                    if (!searchImages.studiologos.isEmpty())
+                        showTags.setStudioLogos(searchImages.studiologos);
+                    else log.debug("getDetailsInternal: studiologos empty!");
+                    // needs to be done after setStudioLogos not to be erased
+                    if (result.getStudioLogoPath() != null)  showTags.addStudioLogoGITHUB(mContext, result.getStudioLogoPath());
+
                     if (!searchImages.posters.isEmpty())
                         showTags.setPosters(searchImages.posters);
                     else log.debug("getDetailsInternal: posters empty!");
@@ -231,8 +256,17 @@ public class ShowScraper4 extends BaseScraper2 {
                     // only downloads main backdrop/poster and not the entire collection (x8 in size)
                     showTags.downloadPoster(mContext);
                     showTags.downloadBackdrop(mContext);
+                    showTags.downloadNetworkLogo(mContext);
+                    showTags.downloadActorPhoto(mContext);
+                    showTags.downloadClearLogo(mContext);
+                    showTags.downloadStudioLogo(mContext);
                     //showTags.downloadPosters(mContext);
                     //showTags.downloadBackdrops(mContext);
+                    showTags.downloadNetworkLogos(mContext);
+                    showTags.downloadStudioLogos(mContext);
+                    showTags.downloadActorPhotos(mContext);
+                    //showTags.downloadClearLogos(mContext);
+
 
                 } else {
                     doRebuildShowTag = true;

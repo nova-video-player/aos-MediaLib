@@ -22,9 +22,15 @@ import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.entities.TvSeason;
 import com.uwetrottmann.tmdb2.entities.TvShow;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +39,23 @@ import java.util.List;
 public class ShowIdImagesParser {
 
     private static final Logger log = LoggerFactory.getLogger(ShowIdImagesParser.class);
+    private static String readUrl(String urlString) throws Exception {
+        BufferedReader reader = null;
+        try {
+            URL url = new URL(urlString);
+            reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            StringBuffer buffer = new StringBuffer();
+            int read;
+            char[] chars = new char[1024];
+            while ((read = reader.read(chars)) != -1)
+                buffer.append(chars, 0, read);
+
+            return buffer.toString();
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
+    }
 
     public static ShowIdImagesResult getResult(String showTitle, TvShow tvShow, String language, Context context) {
 
@@ -48,10 +71,15 @@ public class ShowIdImagesParser {
         List<ScraperImage> backdrops = new ArrayList<>();
         List<Pair<Image, String>> tempBackdrops = new ArrayList<>();
 
+        // clearlogos
+        List<ScraperImage> clearlogos = new ArrayList<>();
+        List<String> tempClearLogos = new ArrayList<>();
+
         log.debug("getResult: global " + showTitle + " poster " + tvShow.poster_path + ", backdrop " + tvShow.backdrop_path);
 
         posters.add(genPoster(showTitle, tvShow.poster_path, language, true, context));
         backdrops.add(genBackdrop(showTitle, tvShow.backdrop_path, language, context));
+
 
         int i = 0;
         for (TvSeason season : tvShow.seasons) {
@@ -69,6 +97,23 @@ public class ShowIdImagesParser {
         if (images.backdrops != null)
             for (Image backdrop : images.backdrops)
                 tempBackdrops.add(Pair.create(backdrop, backdrop.iso_639_1));
+
+        //set series clearlogos
+        String apikey = "ac6ed0ad315f924847ff24fa4f555571";
+        String url = "http://webservice.fanart.tv/v3/tv/" + tvShow.external_ids.tvdb_id + "?api_key=" + apikey;
+        try {
+            JSONObject json = new JSONObject(readUrl(url));
+            JSONArray resultsff = json.getJSONArray("hdtvlogo");
+            for(int j = 0; j < resultsff.length(); j++){
+                JSONObject movieObject = resultsff.getJSONObject(j);
+                tempClearLogos.add(movieObject.getString("url"));
+                clearlogos.add(genClearLogo(showTitle, movieObject.getString("url"),  context));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Collections.sort(tempPosters, new Comparator<Pair<Image, String>>() {
             @Override
@@ -96,6 +141,7 @@ public class ShowIdImagesParser {
 
         result.posters = posters;
         result.backdrops = backdrops;
+        result.clearlogos = clearlogos;
         return result;
     }
 
@@ -116,6 +162,14 @@ public class ShowIdImagesParser {
         image.setThumbUrl(ScraperImage.TMBT + path);
         image.generateFileNames(context);
         log.debug("genBackdrop: " + showTitle + ", has backdrop " + image.getLargeUrl() + " path " + image.getLargeFile());
+        return image;
+    }
+
+    public static ScraperImage genClearLogo(String showTitle, String path, Context context) {
+        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_TITLE_CLEARLOGO, showTitle);
+        image.setLargeUrl(path);
+        image.setThumbUrl(path);
+        image.generateFileNames(context);
         return image;
     }
 }

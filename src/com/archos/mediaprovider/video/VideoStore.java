@@ -1263,33 +1263,39 @@ public final class VideoStore {
              */
             public static final String SCRAPER_E_ACTORS = "e_actors";
             /**
-             * MediaScraper: Movie or Episode Directors, Writers
+             * MediaScraper: Movie or Episode Directors, Writers, Taglines
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_DIRECTORS = "directors";
             public static final String SCRAPER_WRITERS = "writers";
+            public static final String SCRAPER_TAGLINES = "taglines";
+            public static final String SCRAPER_SEASONPLOTS = "seasonplots";
             /**
-             * MediaScraper: Movie Directors, Writers
+             * MediaScraper: Movie Directors, Writers, Taglines
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_M_DIRECTORS = "m_directors";
             public static final String SCRAPER_M_WRITERS = "m_writers";
+            public static final String SCRAPER_M_TAGLINES = "m_taglines";
             /**
-             * MediaScraper: Episode Directors, Writers
+             * MediaScraper: Episode Directors, Writers, Taglines
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_E_DIRECTORS = "e_directors";
             public static final String SCRAPER_E_WRITERS = "e_writers";
+            public static final String SCRAPER_E_TAGLINES = "e_taglines";
             /**
-             * MediaScraper: Show Directors, Writers (seems to be unused)
+             * MediaScraper: Show Directors, Writers, Taglines (seems to be unused)
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
             public static final String SCRAPER_S_DIRECTORS = "s_directors";
             public static final String SCRAPER_S_WRITERS = "s_writers";
+            public static final String SCRAPER_S_TAGLINES = "s_taglines";
+            public static final String SCRAPER_S_SEASONPLOTS = "s_seasonplots";
             /**
              * MediaScraper: Movie / Show Genres
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
@@ -1361,6 +1367,14 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code>("http://..") or <code>null</code> if not a show / episode
              */
             public static final String SCRAPER_S_BACKDROP_URL = "s_bd_url";
+            public static final String SCRAPER_S_NETWORKLOGO_URL = "s_nl_url";
+            public static final String SCRAPER_S_ACTORPHOTO_URL = "s_ap_url";
+            public static final String SCRAPER_S_CLEARLOGO_URL = "s_cl_url";
+            public static final String SCRAPER_S_STUDIOLOGO_URL = "s_sl_url";
+
+            public static final String SCRAPER_M_ACTORPHOTO_URL = "m_ap_url";
+            public static final String SCRAPER_M_STUDIOLOGO_URL = "m_sl_url";
+            public static final String SCRAPER_M_CLEARLOGO_URL = "m_cl_url";
             /**
              * MediaScraper: Backdrop (Fanart) file (NOT PRESENT ATM)
              * <P>TYPE: <code>String</code>(path to file) or <code>null</code> if not present
@@ -1376,6 +1390,14 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code>(path to file) or <code>null</code> if not a show
              */
             public static final String SCRAPER_S_BACKDROP_FILE = "s_bd_file";
+            public static final String SCRAPER_S_NETWORKLOGO_FILE = "s_nl_file";
+            public static final String SCRAPER_S_ACTORPHOTO_FILE = "s_ap_file";
+            public static final String SCRAPER_S_CLEARLOGO_FILE = "s_cl_file";
+            public static final String SCRAPER_S_STUDIOLOGO_FILE = "s_sl_file";
+
+            public static final String SCRAPER_M_ACTORPHOTO_FILE = "m_ap_file";
+            public static final String SCRAPER_M_STUDIOLOGO_FILE = "m_sl_file";
+            public static final String SCRAPER_M_CLEARLOGO_FILE = "m_cl_file";
 
             /**
              * MediaScraper: Poster ID
@@ -1387,6 +1409,15 @@ public final class VideoStore {
              * <P>TYPE: <code>int</code> or <code>null</code>
              */
             public static final String SCRAPER_BACKDROP_ID = "backdrop_id";
+            public static final String SCRAPER_S_NETWORKLOGO_ID = "s_networklogo_id";
+            public static final String SCRAPER_S_ACTORPHOTO_ID = "s_actorphoto_id";
+            public static final String SCRAPER_S_CLEARLOGO_ID = "s_clearlogo_id";
+            public static final String SCRAPER_S_STUDIOLOGO_ID = "s_studiologo_id";
+
+
+            public static final String SCRAPER_M_ACTORPHOTO_ID = "m_actorphoto_id";
+            public static final String SCRAPER_M_STUDIOLOGO_ID = "m_studiologo_id";
+            public static final String SCRAPER_M_CLEARLOGO_ID = "m_clearlogo_id";
             /**
              * MediaScraper: Poster (full resolution) - url to download from
              * <P>TYPE: <code>String</code> or <code>null</code>

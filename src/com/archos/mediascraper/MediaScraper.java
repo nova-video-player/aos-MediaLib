@@ -70,9 +70,8 @@ public final class MediaScraper {
 
     // Backdrops stored on external storage = hdd for H devices.
     /**
-     * returns the backdrop storage directory in external context dir, e.g.<p>
-     * <code>/mnt/storage/Android/data/com.archos.mediacenter.video/files/backdrops</code><p>
-     * External cache is NOT cleared when using the clear cache button in system settings > apps
+     * returns the backdrop storage directory in context private dir, e.g.<p>
+     * <code>/data/data/com.archos.mediacenter.video/app_scraper_backdrops</code>
      */
     public static File getBackdropDirectory(Context context) {
         return context.getDir("scraper_backdrops", Context.MODE_PRIVATE);
@@ -86,6 +85,34 @@ public final class MediaScraper {
         return new File(context.getExternalCacheDir(), "backdrops");
     }
 
+
+    public static File getNetworkLogoDirectory(Context context) {
+        return context.getDir("scraper_networklogos", Context.MODE_PRIVATE);
+    }
+    public static File getActorPhotoDirectory(Context context) {
+        return context.getDir("scraper_actorphotos", Context.MODE_PRIVATE);
+    }
+    public static File getClearLogoDirectory(Context context) {
+        return context.getDir("scraper_clearlogos", Context.MODE_PRIVATE);
+    }
+    public static File getStudioLogoDirectory(Context context) {
+        return context.getDir("scraper_studiologos", Context.MODE_PRIVATE);
+    }
+    public static File getNetworkLogoCacheDirectory(Context context) {
+        return new File(context.getExternalCacheDir(), "networklogos");
+    }
+    public static File getActorPhotoCacheDirectory(Context context) {
+        return new File(context.getExternalCacheDir(), "actorphotos");
+    }
+    public static File getClearLogoCacheDirectory(Context context) {
+        return new File(context.getExternalCacheDir(), "clearlogos");
+    }
+    public static File getStudioLogoCacheDirectory(Context context) {
+        return new File(context.getExternalCacheDir(), "studiologos");
+    }
+
+
+
     /** Timeout for {@link HttpCache} - 1 day since xml responses are quite dynamic */
     public static final long XML_CACHE_TIMEOUT = HttpCache.ONE_DAY;
 
@@ -94,6 +121,18 @@ public final class MediaScraper {
 
     /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
     public static final long BACKDROP_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
+
+    /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
+    public static final long NETWORKLOGO_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
+
+    /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
+    public static final long ACTORPHOTO_CACHE_TIMEOUT = HttpCache.ONE_DAY * 2L;
+
+    /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
+    public static final long CLEARLOGO_CACHE_TIMEOUT = HttpCache.ONE_SECOND * 2L;
+
+    /** Timeout for {@link HttpCache} - 2 days since images are large and shall not take all the space */
+    public static final long STUDIOLOGO_CACHE_TIMEOUT = HttpCache.ONE_SECOND * 2L;
 
     /** Timeout for {@link ScraperCache} - 2 hours */
     public static final int SCRAPER_CACHE_TIMEOUT_COUNT = 2;

@@ -264,6 +264,54 @@ public class LocalImages {
         "-fanart.png",
     };
 
+    /** %filename% + this */
+    private static final String[] MATCH_LIST_SNL_DYNAMIC = {
+            NfoParser.NETWORKLOGO_EXTENSION,
+            "-networklogo.jpg",
+            "-networklogo.png",
+    };
+    /** this as filename */
+    private static final String[] MATCH_LIST_SNL_STATIC = {
+            "networklogo.png",
+            "networklogo.jpg",
+    };
+
+    /** %filename% + this */
+    private static final String[] MATCH_LIST_AP_DYNAMIC = {
+            NfoParser.ACTORPHOTO_EXTENSION,
+            "-actorphoto.jpg",
+            "-actorphoto.png",
+    };
+    /** this as filename */
+    private static final String[] MATCH_LIST_AP_STATIC = {
+            "actorphoto.png",
+            "actorphoto.jpg",
+    };
+
+    /** %filename% + this */
+    private static final String[] MATCH_LIST_CL_DYNAMIC = {
+            NfoParser.CLEARLOGO_EXTENSION,
+            "-clearlogo.jpg",
+            "-clearlogo.png",
+    };
+    /** this as filename */
+    private static final String[] MATCH_LIST_CL_STATIC = {
+            "clearlogo.png",
+            "clearlogo.jpg",
+    };
+
+    /** %filename% + this */
+    private static final String[] MATCH_LIST_SL_DYNAMIC = {
+            NfoParser.STUDIOLOGO_EXTENSION,
+            "-studiologo.jpg",
+            "-studiologo.png",
+    };
+    /** this as filename */
+    private static final String[] MATCH_LIST_SL_STATIC = {
+            "studiologo.png",
+            "studiologo.jpg",
+    };
+
     /** this as filename */
     private static final String[] MATCH_LIST_BD_STATIC = {
         "fanart.png",
@@ -303,6 +351,126 @@ public class LocalImages {
                     return result;
             }
             for (String extension : MATCH_LIST_BD_STATIC) {
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+        }
+        return result;
+    }
+
+    public static Uri findShowNetworkLogo(Uri video, String videoTitle) {
+        if (video == null)
+            return null;
+
+        Uri result = null;
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
+
+        if (parent != null && nameNoExt != null) {
+            boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
+            String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
+            for (String extension : MATCH_LIST_SNL_DYNAMIC) {
+                if (testVideoTitle) {
+                    result = getIfAvailable(parent, videoTitleSanitized + extension);
+                    if (result != null)
+                        return result;
+                }
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+            for (String extension : MATCH_LIST_SNL_STATIC) {
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+        }
+        return result;
+    }
+
+    public static Uri findActorPhoto(Uri video, String videoTitle) {
+        if (video == null)
+            return null;
+
+        Uri result = null;
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
+
+        if (parent != null && nameNoExt != null) {
+            boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
+            String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
+            for (String extension : MATCH_LIST_AP_DYNAMIC) {
+                if (testVideoTitle) {
+                    result = getIfAvailable(parent, videoTitleSanitized + extension);
+                    if (result != null)
+                        return result;
+                }
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+            for (String extension : MATCH_LIST_AP_STATIC) {
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+        }
+        return result;
+    }
+
+    public static Uri findClearLogo(Uri video, String videoTitle) {
+        if (video == null)
+            return null;
+
+        Uri result = null;
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
+
+        if (parent != null && nameNoExt != null) {
+            boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
+            String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
+            for (String extension : MATCH_LIST_CL_DYNAMIC) {
+                if (testVideoTitle) {
+                    result = getIfAvailable(parent, videoTitleSanitized + extension);
+                    if (result != null)
+                        return result;
+                }
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+            for (String extension : MATCH_LIST_CL_STATIC) {
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+        }
+        return result;
+    }
+
+    public static Uri findStudioLogo(Uri video, String videoTitle) {
+        if (video == null)
+            return null;
+
+        Uri result = null;
+        Uri parent = FileUtils.getParentUrl(FileUtils.relocateNfoJpgAppPublicDir(video));
+        String nameNoExt =  FileUtils.getFileNameWithoutExtension(video);
+
+        if (parent != null && nameNoExt != null) {
+            boolean testVideoTitle = !TextUtils.isEmpty(videoTitle);
+            String videoTitleSanitized = testVideoTitle ? StringUtils.fileSystemEncode(videoTitle) : "";
+            for (String extension : MATCH_LIST_SL_DYNAMIC) {
+                if (testVideoTitle) {
+                    result = getIfAvailable(parent, videoTitleSanitized + extension);
+                    if (result != null)
+                        return result;
+                }
+                result = getIfAvailable(parent, nameNoExt + extension);
+                if (result != null)
+                    return result;
+            }
+            for (String extension : MATCH_LIST_SL_STATIC) {
                 result = getIfAvailable(parent, nameNoExt + extension);
                 if (result != null)
                     return result;

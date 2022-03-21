@@ -143,6 +143,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Episode.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Episode.WRITERS_FORMATTED, getWritersFormatted());
+        values.put(ScraperStore.Episode.TAGLINES_FORMATTED, getTaglinesFormatted());
 
         File cover = getCover();
         String coverPath = (cover != null) ? cover.getPath() : null;
@@ -186,6 +187,14 @@ public class EpisodeTags extends BaseTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Writer.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Writer.NAME, writer);
             cop.withValueBackReference(ScraperStore.Episode.Writer.EPISODE, 0);
+            allOperations.add(cop.build());
+        }
+
+        // then taglines etc
+        for(String tagline: mTaglines) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Tagline.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Tagline.NAME, tagline);
+            cop.withValueBackReference(ScraperStore.Episode.Tagline.EPISODE, 0);
             allOperations.add(cop.build());
         }
 
@@ -245,6 +254,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.ACTORS_FORMATTED, getActorsFormatted());
         values.put(ScraperStore.Episode.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Episode.WRITERS_FORMATTED, getWritersFormatted());
+        values.put(ScraperStore.Episode.TAGLINES_FORMATTED, getTaglinesFormatted());
 
         ScraperImage pic = getEpisodePicture();
         if(pic!=null && pic.getLargeFile()!=null)
@@ -285,6 +295,14 @@ public class EpisodeTags extends BaseTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Writer.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Writer.NAME, writer);
             cop.withValueBackReference(ScraperStore.Episode.Writer.EPISODE, firstIndex);
+            list.add(cop.build());
+        }
+
+        // then taglines etc
+        for(String tagline: mTaglines) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Tagline.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Tagline.NAME, tagline);
+            cop.withValueBackReference(ScraperStore.Episode.Tagline.EPISODE, firstIndex);
             list.add(cop.build());
         }
 
@@ -424,6 +442,35 @@ public class EpisodeTags extends BaseTags {
             return mShowTags.getAllBackdropsInDb(context);
         return null;
     }
+
+    @Override
+    public List<ScraperImage> getAllNetworkLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllActorPhotosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
+    @Override
+    public List<ScraperImage> getAllClearLogosInDb(Context context) {
+        if (mShowTags != null)
+            return mShowTags.getAllClearLogosInDb(context);
+        return null;
+    }
+
+    @Override
+    public List<ScraperImage> getAllStudioLogosInDb(Context context) {
+        ContentResolver cr = context.getContentResolver();
+        List<ScraperImage> result = null;
+        return result;
+    }
+
 
     /** Add this (local) image as the default season poster */
     public void addDefaultPoster(Context context, Uri localImage, String showTitle) {

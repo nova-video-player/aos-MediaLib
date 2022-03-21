@@ -76,6 +76,10 @@ public class NfoShowHandler extends BasicHandler {
     private ShowTags mResult;
     private final LinkedHashMap<String, Integer> mPosters = new LinkedHashMap<String, Integer>();
     private final ArrayList<String> mBackdrops = new ArrayList<String>();
+    private final ArrayList<String> mNetworkLogos = new ArrayList<String>();
+    private final ArrayList<String> mActorPhotos = new ArrayList<String>();
+    private final ArrayList<String> mClearLogos = new ArrayList<String>();
+    private final ArrayList<String> mStudioLogos = new ArrayList<String>();
     private boolean mCanParse;
 
     private String mActorName, mActorRole;
@@ -92,6 +96,10 @@ public class NfoShowHandler extends BasicHandler {
         mResult = null;
         mPosters.clear();
         mBackdrops.clear();
+        mNetworkLogos.clear();
+        mActorPhotos.clear();
+        mClearLogos.clear();
+        mStudioLogos.clear();
         mCanParse = false;
         mActorName = null;
         mActorRole = null;
@@ -288,6 +296,63 @@ public class NfoShowHandler extends BasicHandler {
                 }
                 mResult.setBackdrops(images);
             }
+
+            if (!mNetworkLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mNetworkLogos.size());
+                for (String url : mNetworkLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_NETWORK, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setNetworkLogos(images);
+            }
+
+            if (!mActorPhotos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mActorPhotos.size());
+                for (String url : mActorPhotos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_ACTOR_PHOTO, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setActorPhotos(images);
+            }
+
+            if (!mClearLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mClearLogos.size());
+                for (String url : mClearLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_TITLE_CLEARLOGO, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setClearLogos(images);
+            }
+
+            if (!mStudioLogos.isEmpty()) {
+                ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mStudioLogos.size());
+                for (String url : mStudioLogos) {
+                    if (url != null && !url.isEmpty() && url.startsWith("http")) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_STUDIOLOGO, seed);
+                        image.setLargeUrl(url);
+                        image.setThumbUrl(rewriteUrl(url));
+                        image.generateFileNames(context);
+                        images.add(image);
+                    }
+                }
+                mResult.setStudioLogos(images);
+            }
+
             return mResult;
         }
         return null;

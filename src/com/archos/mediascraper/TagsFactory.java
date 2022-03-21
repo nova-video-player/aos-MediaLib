@@ -120,9 +120,12 @@ public class TagsFactory {
             actorsE = getCol(c, VideoColumns.SCRAPER_E_ACTORS);
             directorsME = getCol(c, VideoColumns.SCRAPER_DIRECTORS);
             writersME = getCol(c, VideoColumns.SCRAPER_WRITERS);
+            taglinesME = getCol(c, VideoColumns.SCRAPER_TAGLINES);
             // unused?
             directorsS = getCol(c, VideoColumns.SCRAPER_S_DIRECTORS);
             writersS = getCol(c, VideoColumns.SCRAPER_S_WRITERS);
+            taglinesS = getCol(c, VideoColumns.SCRAPER_S_TAGLINES);
+            seasonplotsS = getCol(c, VideoColumns.SCRAPER_S_SEASONPLOTS);
             genresMS = getCol(c, VideoColumns.SCRAPER_GENRES);
             studiosMS = getCol(c, VideoColumns.SCRAPER_STUDIOS);
             seasonE = getCol(c, VideoColumns.SCRAPER_E_SEASON);
@@ -143,6 +146,49 @@ public class TagsFactory {
             backdropTFile = getCol(c, VideoColumns.SCRAPER_BACKDROP_THUMB_FILE);
             backdropTUrl = getCol(c, VideoColumns.SCRAPER_BACKDROP_THUMB_URL);
             backdropId = getCol(c, VideoColumns.SCRAPER_BACKDROP_ID);
+
+            networklogoSLFile = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_FILE);
+            networklogoSLUrl = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_URL);
+            networklogoSTFile = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_FILE);
+            networklogoSTUrl = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_URL);
+            networklogoSId = getCol(c, VideoColumns.SCRAPER_S_NETWORKLOGO_ID);
+
+            actorphotoSLFile = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_FILE);
+            actorphotoSLUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
+            actorphotoSTFile = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_FILE);
+            actorphotoSTUrl = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_URL);
+            actorphotoSId = getCol(c, VideoColumns.SCRAPER_S_ACTORPHOTO_ID);
+
+            actorphotoMLFile = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_FILE);
+            actorphotoMLUrl = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_URL);
+            actorphotoMTFile = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_FILE);
+            actorphotoMTUrl = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_URL);
+            actorphotoMId = getCol(c, VideoColumns.SCRAPER_M_ACTORPHOTO_ID);
+
+            clearlogoSLFile = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_FILE);
+            clearlogoSLUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
+            clearlogoSTFile = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_FILE);
+            clearlogoSTUrl = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_URL);
+            clearlogoSId = getCol(c, VideoColumns.SCRAPER_S_CLEARLOGO_ID);
+
+            clearlogoMLFile = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_FILE);
+            clearlogoMLUrl = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_URL);
+            clearlogoMTFile = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_FILE);
+            clearlogoMTUrl = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_URL);
+            clearlogoMId = getCol(c, VideoColumns.SCRAPER_M_CLEARLOGO_ID);
+
+            studiologoSLFile = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_FILE);
+            studiologoSLUrl = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_URL);
+            studiologoSTFile = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_FILE);
+            studiologoSTUrl = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_URL);
+            studiologoSId = getCol(c, VideoColumns.SCRAPER_S_STUDIOLOGO_ID);
+
+            studiologoMLFile = getCol(c, VideoColumns.SCRAPER_M_STUDIOLOGO_FILE);
+            studiologoMLUrl = getCol(c, VideoColumns.SCRAPER_M_STUDIOLOGO_URL);
+            studiologoMTFile = getCol(c, VideoColumns.SCRAPER_M_STUDIOLOGO_FILE);
+            studiologoMTUrl = getCol(c, VideoColumns.SCRAPER_M_STUDIOLOGO_URL);
+            studiologoMId = getCol(c, VideoColumns.SCRAPER_M_STUDIOLOGO_ID);
+
             collectionId = getCol(c, VideoColumns.SCRAPER_C_ID);
             collectionName = getCol(c, VideoColumns.SCRAPER_C_NAME);
             collectionDescription = getCol(c, VideoColumns.SCRAPER_C_DESCRIPTION);
@@ -192,7 +238,10 @@ public class TagsFactory {
         public final int directorsME;
         public final int directorsS;
         public final int writersME;
+        public final int taglinesME;
         public final int writersS;
+        public final int taglinesS;
+        public final int seasonplotsS;
         public final int genresMS;
         public final int studiosMS;
         public final int seasonE;
@@ -203,6 +252,49 @@ public class TagsFactory {
         public final int backdropTFile;
         public final int backdropTUrl;
         public final int backdropId;
+
+        public final int networklogoSLFile;
+        public final int networklogoSLUrl;
+        public final int networklogoSTFile;
+        public final int networklogoSTUrl;
+        public final int networklogoSId;
+
+        public final int actorphotoSLFile;
+        public final int actorphotoSLUrl;
+        public final int actorphotoSTFile;
+        public final int actorphotoSTUrl;
+        public final int actorphotoSId;
+
+        public final int actorphotoMLFile;
+        public final int actorphotoMLUrl;
+        public final int actorphotoMTFile;
+        public final int actorphotoMTUrl;
+        public final int actorphotoMId;
+
+        public final int clearlogoSLFile;
+        public final int clearlogoSLUrl;
+        public final int clearlogoSTFile;
+        public final int clearlogoSTUrl;
+        public final int clearlogoSId;
+
+        public final int clearlogoMLFile;
+        public final int clearlogoMLUrl;
+        public final int clearlogoMTFile;
+        public final int clearlogoMTUrl;
+        public final int clearlogoMId;
+
+        public final int studiologoSLFile;
+        public final int studiologoSLUrl;
+        public final int studiologoSTFile;
+        public final int studiologoSTUrl;
+        public final int studiologoSId;
+
+        public final int studiologoMLFile;
+        public final int studiologoMLUrl;
+        public final int studiologoMTFile;
+        public final int studiologoMTUrl;
+        public final int studiologoMId;
+
         public final int posterLFile;
         public final int posterLUrl;
         public final int posterTFile;
@@ -252,8 +344,12 @@ public class TagsFactory {
         VideoColumns.SCRAPER_E_ACTORS,
         VideoColumns.SCRAPER_DIRECTORS,
         VideoColumns.SCRAPER_WRITERS,
+            VideoColumns.SCRAPER_TAGLINES,
+            VideoColumns.SCRAPER_SEASONPLOTS,
         VideoColumns.SCRAPER_S_DIRECTORS,
         VideoColumns.SCRAPER_S_WRITERS,
+            VideoColumns.SCRAPER_S_TAGLINES,
+            VideoColumns.SCRAPER_S_SEASONPLOTS,
         VideoColumns.SCRAPER_GENRES,
         VideoColumns.SCRAPER_STUDIOS,
         VideoColumns.SCRAPER_E_SEASON,
@@ -320,8 +416,10 @@ public class TagsFactory {
     VideoColumns.SCRAPER_E_ACTORS,
     VideoColumns.SCRAPER_DIRECTORS,
     VideoColumns.SCRAPER_WRITERS,
+     VideoColumns.SCRAPER_TAGLINES,
     VideoColumns.SCRAPER_S_DIRECTORS,
     VideoColumns.SCRAPER_S_WRITERS,
+     VideoColumns.SCRAPER_S_TAGLINES,
     VideoColumns.SCRAPER_GENRES,
     VideoColumns.SCRAPER_STUDIOS,
     VideoColumns.SCRAPER_E_SEASON,
@@ -371,6 +469,7 @@ public class TagsFactory {
             String actorsMS = getStringCol(cur, cols.actorsMS);
             String directorsME = getStringCol(cur, cols.directorsME);
             String writersME = getStringCol(cur, cols.writersME);
+            String taglinesME = getStringCol(cur, cols.taglinesME);
             String genresMS = getStringCol(cur, cols.genresMS);
             String studiosMS = getStringCol(cur, cols.studiosMS);
             long backdropId = getLongCol(cur, cols.backdropId);
@@ -378,6 +477,49 @@ public class TagsFactory {
             String backdropLUrl = getStringCol(cur, cols.backdropLUrl);
             String backdropTFile = getStringCol(cur, cols.backdropTFile);
             String backdropTUrl = getStringCol(cur, cols.backdropTUrl);
+
+            long networklogoSId = getLongCol(cur, cols.networklogoSId);
+            String networklogoSLFile = getStringCol(cur, cols.networklogoSLFile);
+            String networklogoSLUrl = getStringCol(cur, cols.networklogoSLUrl);
+            String networklogoSTFile = getStringCol(cur, cols.networklogoSTFile);
+            String networklogoSTUrl = getStringCol(cur, cols.networklogoSTUrl);
+
+            long actorphotoSId = getLongCol(cur, cols.actorphotoSId);
+            String actorphotoSLFile = getStringCol(cur, cols.actorphotoSLFile);
+            String actorphotoSLUrl = getStringCol(cur, cols.actorphotoSLUrl);
+            String actorphotoSTFile = getStringCol(cur, cols.actorphotoSTFile);
+            String actorphotoSTUrl = getStringCol(cur, cols.actorphotoSTUrl);
+
+            long actorphotoMId = getLongCol(cur, cols.actorphotoMId);
+            String actorphotoMLFile = getStringCol(cur, cols.actorphotoMLFile);
+            String actorphotoMLUrl = getStringCol(cur, cols.actorphotoMLUrl);
+            String actorphotoMTFile = getStringCol(cur, cols.actorphotoMTFile);
+            String actorphotoMTUrl = getStringCol(cur, cols.actorphotoMTUrl);
+
+            long clearlogoSId = getLongCol(cur, cols.clearlogoSId);
+            String clearlogoSLFile = getStringCol(cur, cols.clearlogoSLFile);
+            String clearlogoSLUrl = getStringCol(cur, cols.clearlogoSLUrl);
+            String clearlogoSTFile = getStringCol(cur, cols.clearlogoSTFile);
+            String clearlogoSTUrl = getStringCol(cur, cols.clearlogoSTUrl);
+
+            long clearlogoMId = getLongCol(cur, cols.clearlogoMId);
+            String clearlogoMLFile = getStringCol(cur, cols.clearlogoMLFile);
+            String clearlogoMLUrl = getStringCol(cur, cols.clearlogoMLUrl);
+            String clearlogoMTFile = getStringCol(cur, cols.clearlogoMTFile);
+            String clearlogoMTUrl = getStringCol(cur, cols.clearlogoMTUrl);
+
+            long studiologoSId = getLongCol(cur, cols.studiologoSId);
+            String studiologoSLFile = getStringCol(cur, cols.studiologoSLFile);
+            String studiologoSLUrl = getStringCol(cur, cols.studiologoSLUrl);
+            String studiologoSTFile = getStringCol(cur, cols.studiologoSTFile);
+            String studiologoSTUrl = getStringCol(cur, cols.studiologoSTUrl);
+
+            long studiologoMId = getLongCol(cur, cols.studiologoMId);
+            String studiologoMLFile = getStringCol(cur, cols.studiologoMLFile);
+            String studiologoMLUrl = getStringCol(cur, cols.studiologoMLUrl);
+            String studiologoMTFile = getStringCol(cur, cols.studiologoMTFile);
+            String studiologoMTUrl = getStringCol(cur, cols.studiologoMTUrl);
+
             long posterId = getLongCol(cur, cols.posterId);
             String posterLFile = getStringCol(cur, cols.posterLFile);
             String posterLUrl = getStringCol(cur, cols.posterLUrl);
@@ -414,6 +556,7 @@ public class TagsFactory {
                 tag.setActorsFormatted(actorsMS);
                 tag.setDirectorsFormatted(directorsME);
                 tag.setWritersFormatted(writersME);
+                tag.setTaglinesFormatted(taglinesME);
                 tag.setGenresFormatted(genresMS);
                 tag.setStudiosFormatted(studiosMS);
 
@@ -432,6 +575,39 @@ public class TagsFactory {
                     image.setId(backdropId);
                     image.setRemoteId(scraperId);
                     tag.setBackdrops(image.asList());
+                }
+
+                if (actorphotoMId > 0) {
+                    ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_ACTORPHOTO, data);
+                    image.setLargeFile(actorphotoMLFile);
+                    image.setLargeUrl(actorphotoMLUrl);
+                    image.setThumbFile(actorphotoMTFile);
+                    image.setThumbUrl(actorphotoMTUrl);
+                    image.setId(actorphotoMId);
+                    image.setRemoteId(scraperId);
+                    tag.setActorPhotos(image.asList());
+                }
+
+                if (studiologoMId > 0) {
+                    ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_STUDIOLOGO, data);
+                    image.setLargeFile(studiologoMLFile);
+                    image.setLargeUrl(studiologoMLUrl);
+                    image.setThumbFile(studiologoMTFile);
+                    image.setThumbUrl(studiologoMTUrl);
+                    image.setId(studiologoMId);
+                    image.setRemoteId(scraperId);
+                    tag.setStudioLogos(image.asList());
+                }
+
+                if (clearlogoMId > 0) {
+                    ScraperImage image = new ScraperImage(ScraperImage.Type.MOVIE_CLEARLOGO, data);
+                    image.setLargeFile(clearlogoMLFile);
+                    image.setLargeUrl(clearlogoMLUrl);
+                    image.setThumbFile(clearlogoMTFile);
+                    image.setThumbUrl(clearlogoMTUrl);
+                    image.setId(clearlogoMId);
+                    image.setRemoteId(scraperId);
+                    tag.setClearLogos(image.asList());
                 }
 
                 if (posterId > 0) {
@@ -489,6 +665,7 @@ public class TagsFactory {
                 epTag.setActorsFormatted(actorsE);
                 epTag.setDirectorsFormatted(directorsME);
                 epTag.setWritersFormatted(writersME);
+                epTag.setTaglinesFormatted(taglinesME);
 
                 if(coverME != null && posterId <= 0)
                     epTag.setCover(new File(coverME));
@@ -527,8 +704,10 @@ public class TagsFactory {
                     sTag.setActorsFormatted(actorsMS);
                     String directorsS =getStringCol(cur, cols.directorsS);
                     String writersS =getStringCol(cur, cols.writersS);
+                    String taglinesS =getStringCol(cur, cols.taglinesS);
+                    String seasonplotsS =getStringCol(cur, cols.seasonplotsS);
                     sTag.setDirectorsFormatted(directorsS);
-                    sTag.setWritersFormatted(writersS);
+                    sTag.setSeasonPlotsFormatted(seasonplotsS);
                     sTag.setGenresFormatted(genresMS);
                     sTag.setStudiosFormatted(studiosMS);
 
@@ -555,6 +734,51 @@ public class TagsFactory {
                         image.setRemoteId(showId);
                         sTag.setBackdrops(image.asList());
                     }
+
+                    if (networklogoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_NETWORK, titleMS);
+                        image.setLargeFile(networklogoSLFile);
+                        image.setLargeUrl(networklogoSLUrl);
+                        image.setThumbFile(networklogoSTFile);
+                        image.setThumbUrl(networklogoSTUrl);
+                        image.setId(networklogoSId);
+                        image.setRemoteId(showId);
+                        sTag.setNetworkLogos(image.asList());
+                    }
+
+                    if (actorphotoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_ACTOR_PHOTO, titleMS);
+                        image.setLargeFile(actorphotoSLFile);
+                        image.setLargeUrl(actorphotoSLUrl);
+                        image.setThumbFile(actorphotoSTFile);
+                        image.setThumbUrl(actorphotoSTUrl);
+                        image.setId(actorphotoSId);
+                        image.setRemoteId(showId);
+                        sTag.setActorPhotos(image.asList());
+                    }
+
+                    if (clearlogoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_TITLE_CLEARLOGO, titleMS);
+                        image.setLargeFile(clearlogoSLFile);
+                        image.setLargeUrl(clearlogoSLUrl);
+                        image.setThumbFile(clearlogoSTFile);
+                        image.setThumbUrl(clearlogoSTUrl);
+                        image.setId(clearlogoSId);
+                        image.setRemoteId(showId);
+                        sTag.setClearLogos(image.asList());
+                    }
+
+                    if (studiologoSId > 0) {
+                        ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_STUDIOLOGO, titleMS);
+                        image.setLargeFile(studiologoSLFile);
+                        image.setLargeUrl(studiologoSLUrl);
+                        image.setThumbFile(studiologoSTFile);
+                        image.setThumbUrl(studiologoSTUrl);
+                        image.setId(studiologoSId);
+                        image.setRemoteId(showId);
+                        sTag.setStudioLogos(image.asList());
+                    }
+
                     if (posterSId >0) {
                         ScraperImage image = new ScraperImage(ScraperImage.Type.SHOW_POSTER, titleMS);
                         image.setLargeFile(posterSLFile);
@@ -594,11 +818,21 @@ public class TagsFactory {
             String role = getStringCol(cur, ScraperStore.Movie.Actor.ROLE);
             String director = getStringCol(cur, ScraperStore.Movie.Director.NAME);
             String writer = getStringCol(cur, ScraperStore.Movie.Writer.NAME);
+            String tagline = getStringCol(cur, ScraperStore.Movie.Tagline.NAME);
             String genre = getStringCol(cur, ScraperStore.Movie.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Movie.Studio.NAME);
 
             String backdropUrl = getStringCol(cur, ScraperStore.Movie.BACKDROP_URL);
             String backdropPath = getStringCol(cur, ScraperStore.Movie.BACKDROP);
+
+            String actorphotoMUrl = getStringCol(cur, ScraperStore.Movie.ACTORPHOTO_URL);
+            String actorphotoMPath = getStringCol(cur, ScraperStore.Movie.ACTORPHOTO);
+
+            String studiologoMUrl = getStringCol(cur, ScraperStore.Movie.STUDIOLOGO_URL);
+            String studiologoMPath = getStringCol(cur, ScraperStore.Movie.STUDIOLOGO);
+
+            String clearlogoMUrl = getStringCol(cur, ScraperStore.Movie.CLEARLOGO_URL);
+            String clearlogoMPath = getStringCol(cur, ScraperStore.Movie.CLEARLOGO);
 
             Integer collectionId = getIntCol(cur, ScraperStore.Movie.COLLECTION_ID);
 
@@ -621,6 +855,7 @@ public class TagsFactory {
             tag.addActorIfAbsent(actorName, role);
             tag.addDirectorIfAbsent(director);
             tag.addWriterIfAbsent(writer);
+            tag.addTaglineIfAbsent(tagline);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
 
@@ -629,6 +864,27 @@ public class TagsFactory {
                 image.setLargeUrl(backdropUrl);
                 image.setLargeFile(backdropPath);
                 tag.setBackdrops(image.asList());
+            }
+
+            if(actorphotoMUrl != null && actorphotoMPath != null) {
+                ScraperImage image = new ScraperImage(Type.MOVIE_ACTORPHOTO, null);
+                image.setLargeUrl(actorphotoMUrl);
+                image.setLargeFile(actorphotoMPath);
+                tag.setActorPhotos(image.asList());
+            }
+
+            if(studiologoMUrl != null && studiologoMPath != null) {
+                ScraperImage image = new ScraperImage(Type.MOVIE_STUDIOLOGO, null);
+                image.setLargeUrl(studiologoMUrl);
+                image.setLargeFile(studiologoMPath);
+                tag.setStudioLogos(image.asList());
+            }
+
+            if(clearlogoMUrl != null && clearlogoMPath != null) {
+                ScraperImage image = new ScraperImage(Type.MOVIE_CLEARLOGO, null);
+                image.setLargeUrl(clearlogoMUrl);
+                image.setLargeFile(clearlogoMPath);
+                tag.setClearLogos(image.asList());
             }
 
             if (collectionId > 0)
@@ -654,11 +910,25 @@ public class TagsFactory {
             String role = getStringCol(cur, ScraperStore.Show.Actor.ROLE);
             String director = getStringCol(cur, ScraperStore.Show.Director.NAME);
             String writer = getStringCol(cur, ScraperStore.Show.Writer.NAME);
+            String tagline = getStringCol(cur, ScraperStore.Show.Tagline.NAME);
+            String seasonplot = getStringCol(cur, ScraperStore.Show.SeasonPlot.NAME);
             String genre = getStringCol(cur, ScraperStore.Show.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Show.Studio.NAME);
 
             String backdropUrl = getStringCol(cur, ScraperStore.Show.BACKDROP_URL);
             String backdropPath = getStringCol(cur, ScraperStore.Show.BACKDROP);
+
+            String networklogoUrl = getStringCol(cur, ScraperStore.Show.NETWORKLOGO_URL);
+            String networklogoPath = getStringCol(cur, ScraperStore.Show.NETWORKLOGO);
+
+            String actorphotoSUrl = getStringCol(cur, ScraperStore.Show.ACTORPHOTO_URL);
+            String actorphotoSPath = getStringCol(cur, ScraperStore.Show.ACTORPHOTO);
+
+            String clearlogoSUrl = getStringCol(cur, ScraperStore.Show.CLEARLOGO_URL);
+            String clearlogoSPath = getStringCol(cur, ScraperStore.Show.CLEARLOGO);
+
+            String studiologoSUrl = getStringCol(cur, ScraperStore.Show.STUDIOLOGO_URL);
+            String studiologoSPath = getStringCol(cur, ScraperStore.Show.STUDIOLOGO);
 
             ShowTags tag = tags.get(id);
             if(tag == null) {
@@ -679,6 +949,8 @@ public class TagsFactory {
             tag.addActorIfAbsent(actorName, role);
             tag.addDirectorIfAbsent(director);
             tag.addWriterIfAbsent(writer);
+            tag.addTaglineIfAbsent(tagline);
+            tag.addSeasonPlotIfAbsent(seasonplot);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
 
@@ -688,6 +960,32 @@ public class TagsFactory {
                 image.setLargeFile(backdropPath);
                 tag.setBackdrops(image.asList());
             }
+
+            if(networklogoUrl != null && networklogoPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_NETWORK, null);
+                image.setLargeUrl(networklogoUrl);
+                image.setLargeFile(networklogoPath);
+                tag.setNetworkLogos(image.asList());
+            }
+            if(actorphotoSUrl != null && actorphotoSPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_ACTOR_PHOTO, null);
+                image.setLargeUrl(actorphotoSUrl);
+                image.setLargeFile(actorphotoSPath);
+                tag.setActorPhotos(image.asList());
+            }
+            if(clearlogoSUrl != null && clearlogoSPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_TITLE_CLEARLOGO, null);
+                image.setLargeUrl(clearlogoSUrl);
+                image.setLargeFile(clearlogoSPath);
+                tag.setClearLogos(image.asList());
+            }
+            if(studiologoSUrl != null && studiologoSPath != null) {
+                ScraperImage image = new ScraperImage(Type.SHOW_STUDIOLOGO, null);
+                image.setLargeUrl(studiologoSUrl);
+                image.setLargeFile(studiologoSPath);
+                tag.setStudioLogos(image.asList());
+            }
+
         } while(cur.moveToNext());
         return new ArrayList<ShowTags>(tags.values());
     }
@@ -710,6 +1008,7 @@ public class TagsFactory {
             String role = getStringCol(cur, ScraperStore.Episode.Actor.ROLE);
             String director = getStringCol(cur, ScraperStore.Episode.Director.NAME);
             String writer = getStringCol(cur, ScraperStore.Episode.Writer.NAME);
+            String tagline = getStringCol(cur, ScraperStore.Episode.Tagline.NAME);
             String cover = getStringCol(cur, ScraperStore.Episode.COVER);
 
             EpisodeTags tag = tags.get(id);
@@ -730,6 +1029,7 @@ public class TagsFactory {
             tag.addActorIfAbsent(actorName, role);
             tag.addDirectorIfAbsent(director);
             tag.addWriterIfAbsent(writer);
+            tag.addTaglineIfAbsent(tagline);
 
             if(cover != null)
                 tag.setCover(new File(cover));
@@ -770,13 +1070,19 @@ public class TagsFactory {
                         VideoColumns.SCRAPER_C_BACKDROP_LARGE_FILE, // 22
                         VideoColumns.SCRAPER_C_BACKDROP_LARGE_URL,  // 23
                         VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE, // 24
-                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL   // 25
+                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL,   // 25
+                        VideoColumns.SCRAPER_M_ACTORPHOTO_ID,       // 26
+                        VideoColumns.SCRAPER_M_STUDIOLOGO_ID,       // 27
+                        VideoColumns.SCRAPER_M_CLEARLOGO_ID       // 28
                 },
                 VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + "=?",
                 new String[] { String.valueOf(movieId) },
                 null);
         long posterId = -1;
         long backdropId = -1;
+        long actorphotoId = -1;
+        long studiologoId = -1;
+        long clearlogoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 result = new MovieTags();
@@ -807,6 +1113,9 @@ public class TagsFactory {
                 result.setCollectionBackdropLargeUrl(c.getString(23));
                 result.setCollectionBackdropThumbFile(c.getString(24));
                 result.setCollectionBackdropThumbUrl(c.getString(25));
+                actorphotoId = c.getLong(26);
+                studiologoId = c.getLong(27);
+                clearlogoId = c.getLong(28);
             }
             c.close();
         }
@@ -847,6 +1156,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addWriterIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Taglines
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Tagline.URI.MOVIE, movieId),
+                    new String[] {
+                            ScraperStore.Movie.Tagline.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addTaglineIfAbsent(c.getString(0));
                 }
                 c.close();
             }
@@ -902,6 +1223,49 @@ public class TagsFactory {
                     allBackdropsSorted.addLast(image);
             }
             result.setBackdrops(allBackdropsSorted);
+
+            // actorphotos
+            List<ScraperImage> allActorPhotosInDb = result.getAllActorPhotosInDb(context);
+            if (allActorPhotosInDb == null)
+                allActorPhotosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allActorPhotosSorted = new LinkedList<ScraperImage>();
+            // find the selected actorphoto and make it first in the list
+            for (ScraperImage image : allActorPhotosInDb) {
+                if (image.getId() == actorphotoId)
+                    allActorPhotosSorted.addFirst(image);
+                else
+                    allActorPhotosSorted.addLast(image);
+            }
+            result.setActorPhotos(allActorPhotosSorted);
+
+            // studiologos
+            List<ScraperImage> allStudioLogosInDb = result.getAllStudioLogosInDb(context);
+            if (allStudioLogosInDb == null)
+                allStudioLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allStudioLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected studiologo and make it first in the list
+            for (ScraperImage image : allStudioLogosInDb) {
+                if (image.getId() == studiologoId)
+                    allStudioLogosSorted.addFirst(image);
+                else
+                    allStudioLogosSorted.addLast(image);
+            }
+            result.setStudioLogos(allStudioLogosSorted);
+
+            // clearlogos
+            List<ScraperImage> allClearLogosInDb = result.getAllClearLogosInDb(context);
+            if (allClearLogosInDb == null)
+                allClearLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allClearLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected clearlogo and make it first in the list
+            for (ScraperImage image : allClearLogosInDb) {
+                if (image.getId() == clearlogoId)
+                    allClearLogosSorted.addFirst(image);
+                else
+                    allClearLogosSorted.addLast(image);
+            }
+            result.setClearLogos(allClearLogosSorted);
+
         }
         return result;
     }
@@ -1001,6 +1365,18 @@ public class TagsFactory {
                 }
                 c.close();
             }
+            // Taglines
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Tagline.URI.EPISODE, episodeId),
+                    new String[] {
+                            ScraperStore.Episode.Tagline.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addTaglineIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
             ShowTags showTags = buildShowTags(context, result.getShowId());
             result.setShowTags(showTags);
             // posters -- need ShowTags
@@ -1034,6 +1410,10 @@ public class TagsFactory {
                         ScraperStore.Show.IMDB_ID,              // 6
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
+                        ScraperStore.Show.NETWORKLOGO_ID,          // 9
+                        ScraperStore.Show.ACTORPHOTO_ID,          // 10
+                        ScraperStore.Show.CLEARLOGO_ID,          // 11
+                        ScraperStore.Show.STUDIOLOGO_ID,          // 12
                 }, null, null, null);
         return buildShowTagsFromCursor(context, c, showId);
     }
@@ -1053,7 +1433,11 @@ public class TagsFactory {
                         ScraperStore.Show.IMDB_ID,              // 6
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
-                        ScraperStore.Show.ID,                   // 9
+                        ScraperStore.Show.NETWORKLOGO_ID,          // 8
+                        ScraperStore.Show.ACTORPHOTO_ID,          // 9
+                        ScraperStore.Show.CLEARLOGO_ID,          // 10
+                        ScraperStore.Show.STUDIOLOGO_ID,          // 11
+                        ScraperStore.Show.ID,                   // 12
                 }, null, null, null);
         if (c != null && c.moveToFirst())
             showId = c.getLong(9);
@@ -1064,6 +1448,10 @@ public class TagsFactory {
         ShowTags showTags = null;
         long posterId = -1;
         long backdropId = -1;
+        long networklogoId = -1;
+        long actorphotoId = -1;
+        long clearlogoId = -1;
+        long studiologoId = -1;
         if (c != null) {
             if (c.moveToFirst()) {
                 showTags = new ShowTags();
@@ -1077,6 +1465,10 @@ public class TagsFactory {
                 showTags.setImdbId(c.getString(6));
                 posterId = c.getLong(7);
                 backdropId = c.getLong(8);
+                networklogoId = c.getLong(9);
+                actorphotoId = c.getLong(10);
+                clearlogoId = c.getLong(11);
+                studiologoId = c.getLong(12);
             }
             c.close();
         }
@@ -1118,6 +1510,30 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     showTags.addWriterIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Taglines
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Tagline.URI.SHOW, showId),
+                    new String[] {
+                            ScraperStore.Show.Tagline.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    showTags.addTaglineIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // SeasonPlots
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.SeasonPlot.URI.SHOW, showId),
+                    new String[] {
+                            ScraperStore.Show.SeasonPlot.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    showTags.addSeasonPlotIfAbsent(c.getString(0));
                 }
                 c.close();
             }
@@ -1172,6 +1588,63 @@ public class TagsFactory {
                     allBackdropsSorted.addLast(image);
             }
             showTags.setBackdrops(allBackdropsSorted);
+
+
+            // networklogos
+            List<ScraperImage> allNetworkLogosInDb = showTags.getAllNetworkLogosInDb(context);
+            if (allNetworkLogosInDb == null)
+                allNetworkLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allNetworkLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected networklogo and make it first in the list
+            for (ScraperImage image : allNetworkLogosInDb) {
+                if (image.getId() == networklogoId)
+                    allNetworkLogosSorted.addFirst(image);
+                else
+                    allNetworkLogosSorted.addLast(image);
+            }
+            showTags.setNetworkLogos(allNetworkLogosSorted);
+
+            // actorphotos
+            List<ScraperImage> allActorPhotosInDb = showTags.getAllActorPhotosInDb(context);
+            if (allActorPhotosInDb == null)
+                allActorPhotosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allActorPhotosSorted = new LinkedList<ScraperImage>();
+            // find the selected actorphoto and make it first in the list
+            for (ScraperImage image : allActorPhotosInDb) {
+                if (image.getId() == actorphotoId)
+                    allActorPhotosSorted.addFirst(image);
+                else
+                    allActorPhotosSorted.addLast(image);
+            }
+            showTags.setActorPhotos(allActorPhotosSorted);
+
+            // clearlogos
+            List<ScraperImage> allClearLogosInDb = showTags.getAllClearLogosInDb(context);
+            if (allClearLogosInDb == null)
+                allClearLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allClearLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected clearlogo and make it first in the list
+            for (ScraperImage image : allClearLogosInDb) {
+                if (image.getId() == clearlogoId)
+                    allClearLogosSorted.addFirst(image);
+                else
+                    allClearLogosSorted.addLast(image);
+            }
+            showTags.setClearLogos(allClearLogosSorted);
+
+            // studiologos
+            List<ScraperImage> allStudioLogosInDb = showTags.getAllStudioLogosInDb(context);
+            if (allStudioLogosInDb == null)
+                allStudioLogosInDb = Collections.emptyList();
+            LinkedList<ScraperImage> allStudioLogosSorted = new LinkedList<ScraperImage>();
+            // find the selected studiologo and make it first in the list
+            for (ScraperImage image : allStudioLogosInDb) {
+                if (image.getId() == studiologoId)
+                    allStudioLogosSorted.addFirst(image);
+                else
+                    allStudioLogosSorted.addLast(image);
+            }
+            showTags.setStudioLogos(allStudioLogosSorted);
         }
         return showTags;
     }

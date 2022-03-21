@@ -44,13 +44,13 @@
     <dimen name="video_grid_poster_margin_right">2dip</dimen> <!-- margin to have background visible around the thumbnail when pressed -->
 
     <dimen name="video_details_item_height">178dip</dimen>
-    <dimen name="video_details_item_height_new">178dip</dimen>
+    <dimen name="video_details_item_height_new">850dip</dimen>
     <dimen name="video_details_poster_height">174dip</dimen>      <!-- (video_details_item_height - 2 - 2) for the top and bottom margin -->
     <dimen name="video_details_poster_width">116dip</dimen>       <!-- "video_details_poster_width" = 2 / 3 * video_details_poster_height -->
     <dimen name="video_details_poster_margin_top">2dip</dimen>    <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_details_poster_margin_bottom">2dip</dimen> <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_details_poster_margin_left">2dip</dimen>   <!-- margin to have background visible around the thumbnail when pressed -->
-    <dimen name="video_details_number_width">60dip</dimen>
+    <dimen name="video_details_number_width">30dip</dimen>
     <dimen name="video_show_details_item_height">180dip</dimen>
 
     <dimen name="video_list_item_height">64dip</dimen>
@@ -59,7 +59,7 @@
     <dimen name="video_list_thumbnail_margin_top">2dip</dimen>    <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_list_thumbnail_margin_bottom">2dip</dimen> <!-- margin to have background visible around the thumbnail when pressed -->
     <dimen name="video_list_thumbnail_margin_left">2dip</dimen>   <!-- margin to have background visible around the thumbnail when pressed -->
-    <dimen name="video_list_number_width">60dip</dimen>
+    <dimen name="video_list_number_width">30dip</dimen>
 
     <dimen name="video_trakt_library_margin_left">8dip</dimen>
     <dimen name="video_list_trakt_library_margin_left">3dip</dimen>
