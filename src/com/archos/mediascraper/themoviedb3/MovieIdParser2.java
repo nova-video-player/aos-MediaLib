@@ -130,10 +130,6 @@ public class MovieIdParser2 {
                         result.addDirectorIfAbsent(crew.name);
                     if (crew.job.equals(PRODUCER))
                         result.addProducerIfAbsent(crew.name);
-                }
-            if (movie.credits.crew != null)
-                for (CrewMember crew : movie.credits.crew) {
-                    assert crew.job != null;
                     if (crew.job.equals(WRITER))
                         result.addWriterIfAbsent(crew.name);
                 }
