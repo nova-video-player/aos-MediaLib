@@ -926,19 +926,19 @@ public class ShowTags extends VideoTags {
                 int newBackdropCount = mBackdrops == null ? 0 : mBackdrops.size();
                 backdropsChanged = storedBackdropCount != newBackdropCount;
 
-                int storedNetworkLogoCount = storedNetworkLogoCount(showId, cr);
+                int storedNetworkLogoCount = storedNetworkLogoCount(showId, contentResolver);
                 int newNetworkLogoCount = mNetworkLogos == null ? 0 : mNetworkLogos.size();
                 networklogosChanged = storedNetworkLogoCount != newNetworkLogoCount;
 
-                int storedActorPhotoCount = storedActorPhotoCount(showId, cr);
+                int storedActorPhotoCount = storedActorPhotoCount(showId, contentResolver);
                 int newActorPhotoCount = mActorPhotos == null ? 0 : mActorPhotos.size();
                 actorphotosChanged = storedActorPhotoCount != newActorPhotoCount;
 
-                int storedClearLogoCount = storedClearLogoCount(showId, cr);
+                int storedClearLogoCount = storedClearLogoCount(showId, contentResolver);
                 int newClearLogoCount = mClearLogos == null ? 0 : mClearLogos.size();
                 clearlogosChanged = storedClearLogoCount != newClearLogoCount;
 
-                int storedStudioLogoCount = storedStudioLogoCount(showId, cr);
+                int storedStudioLogoCount = storedStudioLogoCount(showId, contentResolver);
                 int newStudioLogoCount = mStudioLogos == null ? 0 : mStudioLogos.size();
                 studiologosChanged = storedStudioLogoCount != newStudioLogoCount;
             }
