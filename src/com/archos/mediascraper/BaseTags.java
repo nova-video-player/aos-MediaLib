@@ -77,10 +77,12 @@ public abstract class BaseTags implements Parcelable {
     protected List<String> mDirectors;
     protected List<String> mWriters;
     protected List<String> mTaglines;
+    protected List<String> mProducers;
     protected List<String> mSeasonPlots;
     protected String mDirectorsFormatted;
     protected String mWritersFormatted;
     protected String mTaglinesFormatted;
+    protected String mProducersFormatted;
     protected String mSeasonPlotsFormatted;
     protected Uri mFile;
     protected long mVideoId;
@@ -99,6 +101,7 @@ public abstract class BaseTags implements Parcelable {
         mDirectors = new LinkedList<String>();
         mWriters = new LinkedList<String>();
         mTaglines = new LinkedList<String>();
+        mProducers = new LinkedList<String>();
         mSeasonPlots = new LinkedList<String>();
         mActors = new LinkedHashMap<String, String>();
     }
@@ -123,6 +126,9 @@ public abstract class BaseTags implements Parcelable {
     public boolean taglineExists(String name) {
         return mTaglines.contains(name);
     }
+    public boolean producerExists(String name) {
+        return mProducers.contains(name);
+    }
     public boolean seasonplotExists(String seasonplot) {
         return mSeasonPlots.contains(seasonplot);
     }
@@ -132,6 +138,7 @@ public abstract class BaseTags implements Parcelable {
     public List<String> getDirectors() { return mDirectors; }
     public List<String> getWriters() { return mWriters; }
     public List<String> getTaglines() { return mTaglines; }
+    public List<String> getProducers() { return mProducers; }
     public List<String> getSeasonPlots() { return mSeasonPlots; }
     public Uri getFile() { return mFile; }
     public long getId() { return mId; }
@@ -180,6 +187,11 @@ public abstract class BaseTags implements Parcelable {
     public String getTaglinesFormatted() {
         ensureFormattedTaglines();
         return mTaglinesFormatted;
+    }
+
+    public String getProducersFormatted() {
+        ensureFormattedProducers();
+        return mProducersFormatted;
     }
 
     public String getSeasonPlotsFormatted() {
@@ -273,6 +285,13 @@ public abstract class BaseTags implements Parcelable {
     private void ensureFormattedTaglines() {
         if (mTaglinesFormatted == null && mTaglines != null && !mTaglines.isEmpty()) {
             mTaglinesFormatted = TextUtils.join(", ", mTaglines);
+        }
+    }
+
+    /** does nothing if mProducersFormatted is already set, otherwise builds from mProducers */
+    private void ensureFormattedProducers() {
+        if (mProducersFormatted == null && mProducers != null && !mProducers.isEmpty()) {
+            mProducersFormatted = TextUtils.join(", ", mProducers);
         }
     }
 
@@ -621,6 +640,9 @@ public abstract class BaseTags implements Parcelable {
     public void addTaglineIfAbsent(String tagline, char... splitCharacters) {
         addIfAbsentSplitNTrim(tagline, mTaglines, splitCharacters);
     }
+    public void addProducerIfAbsent(String producer, char... splitCharacters) {
+        addIfAbsentSplitNTrim(producer, mProducers, splitCharacters);
+    }
     public void addSeasonPlotIfAbsent(String seasonplot, char... splitCharacters) {
         addIfAbsentSplitNTrim(seasonplot, mSeasonPlots, splitCharacters);
     }
@@ -628,6 +650,7 @@ public abstract class BaseTags implements Parcelable {
     public void setDirectors(List<String> directors) { mDirectors = directors; }
     public void setWriters(List<String> writers) { mWriters = writers; }
     public void setTaglines(List<String> taglines) { mTaglines = taglines; }
+    public void setProducers(List<String> producers) { mProducers = producers; }
     public void setSeasonPlots(List<String> seasonplots) { mSeasonPlots = seasonplots; }
 
     public abstract void setCover(File file);
@@ -648,6 +671,7 @@ public abstract class BaseTags implements Parcelable {
     public void setDirectorsFormatted(String directors) { mDirectorsFormatted = directors; }
     public void setWritersFormatted(String writers) { mWritersFormatted = writers; }
     public void setTaglinesFormatted(String taglines) { mTaglinesFormatted = taglines; }
+    public void setProducersFormatted(String producers) { mProducersFormatted = producers; }
     public void setSeasonPlotsFormatted(String seasonplots) { mSeasonPlotsFormatted = seasonplots; }
     public void setContentRating(String contentRating) { mContentRating = contentRating; }
     public void setImdbId(String imdbId) { mImdbId = imdbId; }
@@ -689,7 +713,7 @@ public abstract class BaseTags implements Parcelable {
 
     @Override
     public String toString() {
-        return " TITLE=" + mTitle + " / RATING=" + mRating + " / DIRECTORS=" + mDirectors + " / WRITERS=" + mWriters + " / TAGLINES=" + mTaglines + " / PLOT=" + mPlot + " / SEASONPLOTS=" + mSeasonPlots +
+        return " TITLE=" + mTitle + " / RATING=" + mRating + " / DIRECTORS=" + mDirectors + " / WRITERS=" + mWriters + " / TAGLINES=" + mTaglines + " / PRODUCERS=" + mProducers + " / PLOT=" + mPlot + " / SEASONPLOTS=" + mSeasonPlots +
             " / ACTORS=" + mActors + " / COVER=" + getCover();
     }
 
@@ -706,6 +730,7 @@ public abstract class BaseTags implements Parcelable {
         in.readStringList(mDirectors);
         in.readStringList(mWriters);
         in.readStringList(mTaglines);
+        in.readStringList(mProducers);
         in.readStringList(mSeasonPlots);
         mFile = Uri.parse(in.readString());
     }
@@ -719,6 +744,7 @@ public abstract class BaseTags implements Parcelable {
         out.writeStringList(mDirectors);
         out.writeStringList(mWriters);
         out.writeStringList(mTaglines);
+        out.writeStringList(mProducers);
         out.writeStringList(mSeasonPlots);
         out.writeString(mFile!=null?mFile.toString():"");
     }

@@ -68,6 +68,8 @@ public final class ScraperStore {
         public static final String WRITERS_FORMATTED = "m_writers";
         /** taglines preformatted - usually empty, use episode instead */
         public static final String TAGLINES_FORMATTED = "m_taglines";
+        /** producers preformatted - usually empty, use episode instead */
+        public static final String PRODUCERS_FORMATTED = "m_producers";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "m_genres";
         /** studios preformatted */
@@ -103,6 +105,12 @@ public final class ScraperStore {
             public static final String MOVIE = "movie_v_taglines_movie";
             public static final String NAME = "name_v_taglines_movie";
             public static final String TAGLINE = "tagline_v_taglines_movie";
+        }
+
+        public static class Producer {
+            public static final String MOVIE = "movie_v_producers_movie";
+            public static final String NAME = "name_v_producers_movie";
+            public static final String PRODUCER = "producer_v_producers_movie";
         }
 
         public static class Studio {
@@ -164,6 +172,8 @@ public final class ScraperStore {
         public static final String WRITERS_FORMATTED = "s_writers";
         /** taglines preformatted - usually empty, use episode instead */
         public static final String TAGLINES_FORMATTED = "s_taglines";
+        /** producers preformatted - usually empty, use episode instead */
+        public static final String PRODUCERS_FORMATTED = "s_producers";
         /** seasonplots preformatted */
         public static final String SEASONPLOTS_FORMATTED = "s_seasonplots";
         /** genres preformatted */
@@ -203,6 +213,12 @@ public final class ScraperStore {
             public static final String SHOW = "show_v_taglines_show";
             public static final String NAME = "name_v_taglines_show";
             public static final String TAGLINE = "tagline_v_taglines_show";
+        }
+
+        public static class Producer {
+            public static final String SHOW = "show_v_producers_show";
+            public static final String NAME = "name_v_producers_show";
+            public static final String PRODUCER = "producer_v_producers_show";
         }
 
         public static class SeasonPlot {
@@ -300,6 +316,8 @@ public final class ScraperStore {
         public static final String WRITERS_FORMATTED = "e_writers";
         /** taglines preformatted */
         public static final String TAGLINES_FORMATTED = "e_taglines";
+        /** producers preformatted */
+        public static final String PRODUCERS_FORMATTED = "e_producers";
 
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/episode");
@@ -332,6 +350,11 @@ public final class ScraperStore {
             public static final String EPISODE = "episode_v_taglines_episode";
             public static final String NAME = "name_v_taglines_episode";
             public static final String TAGLINE = "tagline_v_taglines_episode";
+        }
+        public static class Producer {
+            public static final String EPISODE = "episode_v_producers_episode";
+            public static final String NAME = "name_v_producers_episode";
+            public static final String PRODUCER = "producer_v_producers_episode";
         }
     }
 
@@ -426,6 +449,22 @@ public final class ScraperStore {
             public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/show/");
             public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/episode/");
             public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/tagline/name/");
+        }
+    }
+
+    public static class Producer {
+        public static final String ID = "_id";
+        public static final String NAME = "name_producer";
+        public static final String COUNT = "count_producer";
+
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/producer");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/producer/id/");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/producers");
+            public static final Uri MOVIE = Uri.parse(CONTENT_AUTHORITY + "/tags/producer/movie/");
+            public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/producer/show/");
+            public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/producer/episode/");
+            public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/producer/name/");
         }
     }
 
