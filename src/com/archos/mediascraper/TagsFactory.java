@@ -720,6 +720,7 @@ public class TagsFactory {
                     String seasonplotsS =getStringCol(cur, cols.seasonplotsS);
                     sTag.setDirectorsFormatted(directorsS);
                     sTag.setSeasonPlotsFormatted(seasonplotsS);
+                    sTag.setProducersFormatted(producersS);
                     sTag.setGenresFormatted(genresMS);
                     sTag.setStudiosFormatted(studiosMS);
 

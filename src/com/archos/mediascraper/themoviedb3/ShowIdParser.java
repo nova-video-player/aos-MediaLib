@@ -241,10 +241,8 @@ public class ShowIdParser {
             if (serie.credits.crew != null)
                 for (CrewMember crew : serie.credits.crew) {
                     assert crew.job != null;
-                    if (crew.job.equals(DIRECTOR))
-                        result.addDirectorIfAbsent(crew.name);
                     if (crew.job.equals(PRODUCER))
-                        result.addDirectorIfAbsent(crew.name);
+                        result.addProducerIfAbsent(crew.name);
                 }
         } else {
             log.warn("getResult: credit is null for showId " + serie.name);

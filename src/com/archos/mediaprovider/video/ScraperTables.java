@@ -863,13 +863,6 @@ public final class ScraperTables {
                     " WHERE " + ScraperStore.Tagline.NAME + " = NEW." + ScraperStore.Episode.Tagline.NAME + "; " +
                     "END";
 
-
-
-
-
-
-
-
     private static final String PRODUCERS_EPISODE_VIEW_CREATE =
             "CREATE VIEW " + PRODUCERS_EPISODE_VIEW_NAME + " AS SELECT " +
                     PRODUCERS_EPISODE_TABLE_NAME + "." +
@@ -1361,7 +1354,7 @@ public final class ScraperTables {
     public static final String VIEW_MOVIE_PRODUCERS = "v_movie_producers";
     private static final String CREATE_VIEW_MOVIE_PRODUCERS =
             "CREATE VIEW " + VIEW_MOVIE_PRODUCERS + " AS\n" +
-                    "SELECT _id, group_concat( name_producer ', ' ) AS producers\n" +
+                    "SELECT _id, group_concat( name_producer, ', ' ) AS producers\n" +
                     "  FROM  ( \n" +
                     "    SELECT movie_producers AS _id, name_producer\n" +
                     "      FROM producers_movie\n" +
@@ -1982,11 +1975,11 @@ public final class ScraperTables {
 
             db.execSQL("CREATE INDEX TAGLINES_MOVIE_idx ON TAGLINES_MOVIE(tagline_taglines)");
             db.execSQL("CREATE INDEX TAGLINES_EPISODE_idx ON TAGLINES_EPISODE(tagline_taglines)");
-            db.execSQL("CREATE INDEX TAGLINE_SHOW_idx ON TAGLINES_SHOW(tagline_taglines)");
+            db.execSQL("CREATE INDEX TAGLINES_SHOW_idx ON TAGLINES_SHOW(tagline_taglines)");
 
             db.execSQL("CREATE INDEX PRODUCERS_MOVIE_idx ON PRODUCERS_MOVIE(producer_producers)");
             db.execSQL("CREATE INDEX PRODUCERS_EPISODE_idx ON PRODUCERS_EPISODE(producer_producers)");
-            db.execSQL("CREATE INDEX PRODUCER_SHOW_idx ON PRODUCERS_SHOW(producer_producers)");
+            db.execSQL("CREATE INDEX PRODUCERS_SHOW_idx ON PRODUCERS_SHOW(producer_producers)");
 
             db.execSQL("CREATE INDEX SEASONPLOTS_SHOW_idx ON SEASONPLOTS_SHOW(seasonplot_seasonplots)");
         }
