@@ -61,6 +61,7 @@ public class MovieIdParser2 {
 
     private static final String DIRECTOR = "Director";
     private static final String WRITER = "Writer";
+    private static final String PRODUCER = "Producer";
     private static String readUrl(String urlString) throws Exception {
         BufferedReader reader = null;
         try {
@@ -127,10 +128,8 @@ public class MovieIdParser2 {
                     assert crew.job != null;
                     if (crew.job.equals(DIRECTOR))
                         result.addDirectorIfAbsent(crew.name);
-                }
-            if (movie.credits.crew != null)
-                for (CrewMember crew : movie.credits.crew) {
-                    assert crew.job != null;
+                    if (crew.job.equals(PRODUCER))
+                        result.addProducerIfAbsent(crew.name);
                     if (crew.job.equals(WRITER))
                         result.addWriterIfAbsent(crew.name);
                 }

@@ -48,6 +48,7 @@ public class ShowIdParser {
     private static final Logger log = LoggerFactory.getLogger(ShowIdParser.class);
 
     private static final String DIRECTOR = "Director";
+    private static final String PRODUCER = "Producer";
     private static String readUrl(String urlString) throws Exception {
         BufferedReader reader = null;
         try {
@@ -238,9 +239,11 @@ public class ShowIdParser {
                 for (CastMember actor : serie.credits.cast)
                     result.addActorIfAbsent(actor.name, actor.character);
             if (serie.credits.crew != null)
-                for (CrewMember crew : serie.credits.crew)
-                    if (crew.job.equals(DIRECTOR))
-                        result.addDirectorIfAbsent(crew.name);
+                for (CrewMember crew : serie.credits.crew) {
+                    assert crew.job != null;
+                    if (crew.job.equals(PRODUCER))
+                        result.addProducerIfAbsent(crew.name);
+                }
         } else {
             log.warn("getResult: credit is null for showId " + serie.name);
         }

@@ -1093,6 +1093,12 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    m_taglines,\n" +
                     "    e_taglines,\n" +
                     "    s_taglines,\n" +
+
+                    "    coalesce(m_producers, e_producers) AS producers,\n" +
+                    "    m_producers,\n" +
+                    "    e_producers,\n" +
+                    "    s_producers,\n" +
+
                     "    coalesce(s_seasonplots, s_seasonplots) AS seasonplots,\n" +
                     "    s_seasonplots,\n" +
                     "    coalesce(m_genres, s_genres) AS genres,\n" +
