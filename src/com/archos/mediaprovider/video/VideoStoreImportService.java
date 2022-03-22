@@ -427,7 +427,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
         nm.notify(NOTIFICATION_ID, n);
 
-        if (! canManageExternalStorage()) {
+        if (! (canManageExternalStorage() ||
+                ContextCompat.checkSelfPermission(this,
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                        PackageManager.PERMISSION_GRANTED)) {
             log.debug("no read permission : stop import");
             return;
         } else
