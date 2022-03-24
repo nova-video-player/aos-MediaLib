@@ -55,7 +55,6 @@ public class ShowIdParser {
 
         log.debug("getResult: found title=" + serie.name);
 
-        // TODO MARC RATING NULL should parse content.rating
         if (serie.content_ratings.results != null)
             for (ContentRating results: serie.content_ratings.results)
                 if (results.iso_3166_1.equals("US"))

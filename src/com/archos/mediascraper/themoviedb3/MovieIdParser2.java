@@ -112,7 +112,6 @@ public class MovieIdParser2 {
                         result.addWriterIfAbsent(crew.name);
                 }
         }
-        // TODO: missing certification i.e. setContentRating that should rely no CertificationService
         if (movie.release_dates.results != null) {
             for (int i = 0; i < movie.release_dates.results.size(); i++) {
                 ReleaseDatesResult releaseDatesResult = movie.release_dates.results.get(i);
