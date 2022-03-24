@@ -62,6 +62,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
     private static final int TAGLINE = 31;
     private static final int PRODUCER = 32;
     private static final int SCREENPLAY = 33;
+    private static final int MUSICCOMPOSER = 34;
 
     static {
         STRINGS.addKey("episodedetails", ROOT);
@@ -79,6 +80,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
         STRINGS.addKey("tagline", TAGLINE);
         STRINGS.addKey("producer", PRODUCER);
         STRINGS.addKey("screenplay", SCREENPLAY);
+        STRINGS.addKey("musiccomposer", MUSICCOMPOSER);
         STRINGS.addKey("actor", ACTOR);
         STRINGS.addKey("name", NAME);
         STRINGS.addKey("role", ROLE);
@@ -161,6 +163,7 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                     case TAGLINE:
                     case PRODUCER:
                     case SCREENPLAY:
+                    case MUSICCOMPOSER:
                     case LASTPLAYED:
                     case BOOKMARK:
                     case RESUME:
@@ -250,6 +253,9 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                         break;
                     case SCREENPLAY:
                         mResult.addScreenplayIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case MUSICCOMPOSER:
+                        mResult.addMusiccomposerIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
                     case ACTOR:
                         mInActor = false;

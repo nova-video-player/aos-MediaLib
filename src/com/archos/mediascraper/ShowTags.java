@@ -227,6 +227,7 @@ public class ShowTags extends VideoTags {
             values.put(ScraperStore.Show.TAGLINES_FORMATTED, getTaglinesFormatted());
             values.put(ScraperStore.Show.PRODUCERS_FORMATTED, getProducersFormatted());
             values.put(ScraperStore.Show.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
+            values.put(ScraperStore.Show.MUSICCOMPOSERS_FORMATTED, getMusiccomposersFormatted());
             values.put(ScraperStore.Show.SEASONPLOTS_FORMATTED, getSeasonPlotsFormatted());
             values.put(ScraperStore.Show.GERNES_FORMATTED, getGenresFormatted());
             values.put(ScraperStore.Show.STUDIOS_FORMATTED, getStudiosFormatted());
@@ -284,7 +285,7 @@ public class ShowTags extends VideoTags {
         // if show did not exist insert all the actors etc, updates here are not done.
         if (!showFound) {
             // We know our ID now so we can put everything into a single transaction
-            log.debug("Inserting studios, directors, writers, taglines, producers, screenplays, seasonplots, actors, genres.");
+            log.debug("Inserting studios, directors, writers, taglines, producers, screenplays, musiccomposer, seasonplots, actors, genres.");
 
             for (String studio : mStudios) {
                 cop = ContentProviderOperation.newInsert(ScraperStore.Studio.URI.SHOW);
@@ -325,6 +326,13 @@ public class ShowTags extends VideoTags {
                 cop = ContentProviderOperation.newInsert(ScraperStore.Screenplay.URI.SHOW);
                 cop.withValue(ScraperStore.Show.Screenplay.NAME, screenplay);
                 cop.withValue(ScraperStore.Show.Screenplay.SHOW, showIdString);
+                allOperations.add(cop.build());
+            }
+
+            for (String musiccomposer : mMusiccomposers) {
+                cop = ContentProviderOperation.newInsert(ScraperStore.Musiccomposer.URI.SHOW);
+                cop.withValue(ScraperStore.Show.Musiccomposer.NAME, musiccomposer);
+                cop.withValue(ScraperStore.Show.Musiccomposer.SHOW, showIdString);
                 allOperations.add(cop.build());
             }
 

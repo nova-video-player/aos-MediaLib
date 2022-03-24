@@ -38,6 +38,7 @@ public final class ScraperTables {
     public static final String TAGLINES_TABLE_NAME = "TAGLINE";
     public static final String PRODUCERS_TABLE_NAME = "PRODUCER";
     public static final String SCREENPLAYS_TABLE_NAME = "SCREENPLAY";
+    public static final String MUSICCOMPOSERS_TABLE_NAME = "MUSICCOMPOSER";
     public static final String SEASONPLOTS_TABLE_NAME = "SEASONPLOT";
     public static final String STUDIOS_TABLE_NAME = "STUDIO";
     public static final String FILMS_MOVIE_TABLE_NAME = "FILMS_MOVIE";
@@ -45,17 +46,20 @@ public final class ScraperTables {
     public static final String TAGLINES_MOVIE_TABLE_NAME = "TAGLINES_MOVIE";
     public static final String PRODUCERS_MOVIE_TABLE_NAME = "PRODUCERS_MOVIE";
     public static final String SCREENPLAYS_MOVIE_TABLE_NAME = "SCREENPLAYS_MOVIE";
+    public static final String MUSICCOMPOSERS_MOVIE_TABLE_NAME = "MUSICCOMPOSERS_MOVIE";
     public static final String FILMS_SHOW_TABLE_NAME = "FILMS_SHOW";
     public static final String WRITERS_SHOW_TABLE_NAME = "WRITERS_SHOW";
     public static final String TAGLINES_SHOW_TABLE_NAME = "TAGLINES_SHOW";
     public static final String PRODUCERS_SHOW_TABLE_NAME = "PRODUCERS_SHOW";
     public static final String SCREENPLAYS_SHOW_TABLE_NAME = "SCREENPLAYS_SHOW";
+    public static final String MUSICCOMPOSERS_SHOW_TABLE_NAME = "MUSICCOMPOSERS_SHOW";
     public static final String SEASONPLOTS_SHOW_TABLE_NAME = "SEASONPLOTS_SHOW";
     public static final String FILMS_EPISODE_TABLE_NAME = "FILMS_EPISODE";
     public static final String WRITERS_EPISODE_TABLE_NAME = "WRITERS_EPISODE";
     public static final String TAGLINES_EPISODE_TABLE_NAME = "TAGLINES_EPISODE";
     public static final String PRODUCERS_EPISODE_TABLE_NAME = "PRODUCERS_EPISODE";
     public static final String SCREENPLAYS_EPISODE_TABLE_NAME = "SCREENPLAYS_EPISODE";
+    public static final String MUSICCOMPOSERS_EPISODE_TABLE_NAME = "MUSICCOMPOSERS_EPISODE";
     public static final String GUESTS_TABLE_NAME = "GUESTS";
     public static final String PRODUCES_MOVIE_TABLE_NAME = "PRODUCES_MOVIE";
     public static final String PRODUCES_SHOW_TABLE_NAME = "PRODUCES_SHOW";
@@ -90,6 +94,10 @@ public final class ScraperTables {
     public static final String SCREENPLAYS_SHOW_VIEW_NAME = "V_SCREENPLAYS_SHOW";
     public static final String SCREENPLAYS_EPISODE_VIEW_NAME = "V_SCREENPLAYS_EPISODE";
 
+    public static final String MUSICCOMPOSERS_MOVIE_VIEW_NAME = "V_MUSICCOMPOSERS_MOVIE";
+    public static final String MUSICCOMPOSERS_SHOW_VIEW_NAME = "V_MUSICCOMPOSERS_SHOW";
+    public static final String MUSICCOMPOSERS_EPISODE_VIEW_NAME = "V_MUSICCOMPOSERS_EPISODE";
+
     public static final String SEASONPLOTS_SHOW_VIEW_NAME = "V_SEASONPLOTS_SHOW";
 
     public static final String PRODUCES_MOVIE_VIEW_NAME = "V_PRODUCES_MOVIE";
@@ -105,6 +113,7 @@ public final class ScraperTables {
     public static final String TAGLINE_DELETABLE_VIEW_NAME = "v_tagline_deletable";
     public static final String PRODUCER_DELETABLE_VIEW_NAME = "v_producer_deletable";
     public static final String SCREENPLAY_DELETABLE_VIEW_NAME = "v_screenplay_deletable";
+    public static final String MUSICCOMPOSER_DELETABLE_VIEW_NAME = "v_musiccomposer_deletable";
     public static final String GENRE_DELETABLE_VIEW_NAME = "v_genre_deletable";
     public static final String STUDIO_DELETABLE_VIEW_NAME = "v_studio_deletable";
     /*
@@ -126,6 +135,9 @@ public final class ScraperTables {
     private static final String SCREENPLAYS_MOVIE_ID_MOVIE = "movie_screenplays";
     private static final String SCREENPLAYS_MOVIE_ID_SCREENPLAY = "screenplay_screenplays";
 
+    private static final String MUSICCOMPOSERS_MOVIE_ID_MOVIE = "movie_musiccomposers";
+    private static final String MUSICCOMPOSERS_MOVIE_ID_MUSICCOMPOSER = "musiccomposer_musiccomposers";
+
     private static final String FILMS_SHOW_ID_SHOW = "show_films";
     private static final String FILMS_SHOW_ID_DIRECTOR = "director_films";
 
@@ -140,6 +152,9 @@ public final class ScraperTables {
 
     private static final String SCREENPLAYS_SHOW_ID_SHOW = "show_screenplays";
     private static final String SCREENPLAYS_SHOW_ID_SCREENPLAY = "screenplay_screenplays";
+
+    private static final String MUSICCOMPOSERS_SHOW_ID_SHOW = "show_musiccomposers";
+    private static final String MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER = "musiccomposer_musiccomposers";
 
     private static final String SEASONPLOTS_SHOW_ID_SHOW = "show_seasonplots";
     private static final String SEASONPLOTS_SHOW_ID_SEASONPLOT = "seasonplot_seasonplots";
@@ -158,6 +173,9 @@ public final class ScraperTables {
 
     private static final String SCREENPLAYS_EPISODE_ID_SCREENPLAY = "screenplay_screenplays";
     private static final String SCREENPLAYS_EPISODE_ID_EPISODE = "episode_screenplays";
+
+    private static final String MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER = "musiccomposer_musiccomposers";
+    private static final String MUSICCOMPOSERS_EPISODE_ID_EPISODE = "episode_musiccomposers";
 
     private static final String PRODUCES_MOVIE_ID_MOVIE = "movie_produces";
     private static final String PRODUCES_MOVIE_ID_STUDIO = "studio_produces";
@@ -316,6 +334,12 @@ public final class ScraperTables {
                     ScraperStore.Screenplay.NAME + " TEXT UNIQUE," +
                     ScraperStore.Screenplay.COUNT + " INTEGER)";
 
+    private static final String MUSICCOMPOSERS_TABLE_CREATE =
+            "CREATE TABLE " + MUSICCOMPOSERS_TABLE_NAME + " (" +
+                    ScraperStore.Musiccomposer.ID + " INTEGER PRIMARY KEY NOT NULL," +
+                    ScraperStore.Musiccomposer.NAME + " TEXT UNIQUE," +
+                    ScraperStore.Musiccomposer.COUNT + " INTEGER)";
+
     private static final String SEASONPLOTS_TABLE_CREATE =
             "CREATE TABLE " + SEASONPLOTS_TABLE_NAME + " (" +
                     ScraperStore.SeasonPlot.ID + " INTEGER PRIMARY KEY NOT NULL," +
@@ -457,6 +481,30 @@ public final class ScraperTables {
                     SCREENPLAYS_EPISODE_ID_SCREENPLAY + " INTEGER REFERENCES " + SCREENPLAYS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
                     "PRIMARY KEY(" + SCREENPLAYS_EPISODE_ID_EPISODE + "," +
                     SCREENPLAYS_EPISODE_ID_SCREENPLAY + "))";
+
+    /*
+     *  Tables associating movie, show and episode tables with musiccomposers
+     */
+    private static final String MUSICCOMPOSERS_MOVIE_TABLE_CREATE =
+            "CREATE TABLE " + MUSICCOMPOSERS_MOVIE_TABLE_NAME + " (" +
+                    MUSICCOMPOSERS_MOVIE_ID_MOVIE + " INTEGER REFERENCES " + MOVIE_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    MUSICCOMPOSERS_MOVIE_ID_MUSICCOMPOSER + " INTEGER REFERENCES " + MUSICCOMPOSERS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + MUSICCOMPOSERS_MOVIE_ID_MOVIE + "," +
+                    MUSICCOMPOSERS_MOVIE_ID_MUSICCOMPOSER + "))";
+
+    private static final String MUSICCOMPOSERS_SHOW_TABLE_CREATE =
+            "CREATE TABLE " + MUSICCOMPOSERS_SHOW_TABLE_NAME + " (" +
+                    MUSICCOMPOSERS_SHOW_ID_SHOW + " INTEGER REFERENCES " + SHOW_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER + " INTEGER REFERENCES " + MUSICCOMPOSERS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + MUSICCOMPOSERS_SHOW_ID_SHOW + "," +
+                    MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER + "))";
+
+    private static final String MUSICCOMPOSERS_EPISODE_TABLE_CREATE =
+            "CREATE TABLE " + MUSICCOMPOSERS_EPISODE_TABLE_NAME + " (" +
+                    MUSICCOMPOSERS_EPISODE_ID_EPISODE + " INTEGER REFERENCES " + EPISODE_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER + " INTEGER REFERENCES " + MUSICCOMPOSERS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + MUSICCOMPOSERS_EPISODE_ID_EPISODE + "," +
+                    MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER + "))";
 
     /*
      * Tables associating movie and show tables to studios
@@ -735,6 +783,31 @@ public final class ScraperTables {
                     " WHERE " + ScraperStore.Screenplay.NAME + " = NEW." + ScraperStore.Movie.Screenplay.NAME + "; " +
                     "END";
 
+    private static final String MUSICCOMPOSERS_MOVIE_VIEW_CREATE =
+            "CREATE VIEW " + MUSICCOMPOSERS_MOVIE_VIEW_NAME + " AS SELECT " +
+                    MUSICCOMPOSERS_MOVIE_TABLE_NAME + "." +
+                    MUSICCOMPOSERS_MOVIE_ID_MOVIE + " AS " + ScraperStore.Movie.Musiccomposer.MOVIE + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." +
+                    ScraperStore.Musiccomposer.NAME + " AS " + ScraperStore.Movie.Musiccomposer.NAME + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." +
+                    ScraperStore.Musiccomposer.ID + " AS " + ScraperStore.Movie.Musiccomposer.MUSICCOMPOSER + " FROM " +
+                    MUSICCOMPOSERS_MOVIE_TABLE_NAME + " LEFT JOIN " + MUSICCOMPOSERS_TABLE_NAME +
+                    " ON (" + MUSICCOMPOSERS_MOVIE_TABLE_NAME + "." + MUSICCOMPOSERS_MOVIE_ID_MUSICCOMPOSER +
+                    " = " + MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + ")";
+
+    private static final String MUSICCOMPOSERS_MOVIE_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_musiccomposers_movie INSTEAD OF INSERT ON " + MUSICCOMPOSERS_MOVIE_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + MUSICCOMPOSERS_TABLE_NAME + " ( " + ScraperStore.Musiccomposer.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Movie.Musiccomposer.NAME + "); " +
+                    "INSERT INTO " + MUSICCOMPOSERS_MOVIE_TABLE_NAME +
+                    " ( " + MUSICCOMPOSERS_MOVIE_ID_MOVIE + "," + MUSICCOMPOSERS_MOVIE_ID_MUSICCOMPOSER + " ) " +
+                    "SELECT NEW." + ScraperStore.Movie.Musiccomposer.MOVIE + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + " " +
+                    " FROM " + MUSICCOMPOSERS_TABLE_NAME +
+                    " WHERE " + ScraperStore.Musiccomposer.NAME + " = NEW." + ScraperStore.Movie.Musiccomposer.NAME + "; " +
+                    "END";
+
     private static final String FILMS_SHOW_VIEW_CREATE =
         "CREATE VIEW " + FILMS_SHOW_VIEW_NAME + " AS SELECT " +
         FILMS_SHOW_TABLE_NAME + "." +
@@ -833,6 +906,18 @@ public final class ScraperTables {
                     " ON (" + SCREENPLAYS_SHOW_TABLE_NAME + "." + SCREENPLAYS_SHOW_ID_SCREENPLAY +
                     " = " + SCREENPLAYS_TABLE_NAME + "." + ScraperStore.Screenplay.ID + ")";
 
+    private static final String MUSICCOMPOSERS_SHOW_VIEW_CREATE =
+            "CREATE VIEW " + MUSICCOMPOSERS_SHOW_VIEW_NAME + " AS SELECT " +
+                    MUSICCOMPOSERS_SHOW_TABLE_NAME + "." +
+                    MUSICCOMPOSERS_SHOW_ID_SHOW + " AS " + ScraperStore.Show.Musiccomposer.SHOW + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." +
+                    ScraperStore.Musiccomposer.NAME + " AS " + ScraperStore.Show.Musiccomposer.NAME + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." +
+                    ScraperStore.Musiccomposer.ID + " AS " + ScraperStore.Show.Musiccomposer.MUSICCOMPOSER + " FROM " +
+                    MUSICCOMPOSERS_SHOW_TABLE_NAME + " LEFT JOIN " + MUSICCOMPOSERS_TABLE_NAME +
+                    " ON (" + MUSICCOMPOSERS_SHOW_TABLE_NAME + "." + MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER +
+                    " = " + MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + ")";
+
     private static final String SEASONPLOTS_SHOW_VIEW_CREATE =
             "CREATE VIEW " + SEASONPLOTS_SHOW_VIEW_NAME + " AS SELECT " +
                     SEASONPLOTS_SHOW_TABLE_NAME + "." +
@@ -895,6 +980,19 @@ public final class ScraperTables {
                     SCREENPLAYS_TABLE_NAME + "." + ScraperStore.Screenplay.ID + " " +
                     " FROM " + SCREENPLAYS_TABLE_NAME +
                     " WHERE " + ScraperStore.Screenplay.NAME + " = NEW." + ScraperStore.Show.Screenplay.NAME + "; " +
+                    "END";
+
+    private static final String MUSICCOMPOSERS_SHOW_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_musiccomposers_show INSTEAD OF INSERT ON " + MUSICCOMPOSERS_SHOW_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + MUSICCOMPOSERS_TABLE_NAME + " ( " + ScraperStore.Musiccomposer.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Show.Musiccomposer.NAME + "); " +
+                    "INSERT INTO " + MUSICCOMPOSERS_SHOW_TABLE_NAME +
+                    " ( " + MUSICCOMPOSERS_SHOW_ID_SHOW + "," + MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER + " ) " +
+                    "SELECT NEW." + ScraperStore.Show.Musiccomposer.SHOW + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + " " +
+                    " FROM " + MUSICCOMPOSERS_TABLE_NAME +
+                    " WHERE " + ScraperStore.Musiccomposer.NAME + " = NEW." + ScraperStore.Show.Musiccomposer.NAME + "; " +
                     "END";
 
     private static final String SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER =
@@ -1009,6 +1107,31 @@ public final class ScraperTables {
                     SCREENPLAYS_TABLE_NAME + "." + ScraperStore.Screenplay.ID + " " +
                     " FROM " + SCREENPLAYS_TABLE_NAME +
                     " WHERE " + ScraperStore.Screenplay.NAME + " = NEW." + ScraperStore.Episode.Screenplay.NAME + "; " +
+                    "END";
+
+    private static final String MUSICCOMPOSERS_EPISODE_VIEW_CREATE =
+            "CREATE VIEW " + MUSICCOMPOSERS_EPISODE_VIEW_NAME + " AS SELECT " +
+                    MUSICCOMPOSERS_EPISODE_TABLE_NAME + "." +
+                    MUSICCOMPOSERS_EPISODE_ID_EPISODE + " AS " + ScraperStore.Episode.Musiccomposer.EPISODE + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." +
+                    ScraperStore.Musiccomposer.NAME + " AS " + ScraperStore.Episode.Musiccomposer.NAME + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." +
+                    ScraperStore.Musiccomposer.ID + " AS " + ScraperStore.Episode.Musiccomposer.MUSICCOMPOSER + " FROM " +
+                    MUSICCOMPOSERS_EPISODE_TABLE_NAME + " LEFT JOIN " + MUSICCOMPOSERS_TABLE_NAME +
+                    " ON (" + MUSICCOMPOSERS_EPISODE_TABLE_NAME + "." + MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER +
+                    " = " + MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + ")";
+
+    private static final String MUSICCOMPOSERS_EPISODE_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_musiccomposers_episode INSTEAD OF INSERT ON " + MUSICCOMPOSERS_EPISODE_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + MUSICCOMPOSERS_TABLE_NAME + " ( " + ScraperStore.Musiccomposer.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Episode.Musiccomposer.NAME + "); " +
+                    "INSERT INTO " + MUSICCOMPOSERS_EPISODE_TABLE_NAME +
+                    " ( " + MUSICCOMPOSERS_EPISODE_ID_EPISODE + "," + MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER + " ) " +
+                    "SELECT NEW." + ScraperStore.Episode.Musiccomposer.EPISODE + ", " +
+                    MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + " " +
+                    " FROM " + MUSICCOMPOSERS_TABLE_NAME +
+                    " WHERE " + ScraperStore.Musiccomposer.NAME + " = NEW." + ScraperStore.Episode.Musiccomposer.NAME + "; " +
                     "END";
 
 
@@ -1158,6 +1281,14 @@ public final class ScraperTables {
                     "LEFT JOIN screenplays_show ON screenplays_show.screenplay_screenplays=screenplay._id " +
                     "LEFT JOIN screenplays_episode ON screenplays_episode.screenplay_screenplays=screenplay._id " +
                     "WHERE coalesce(movie_screenplays, show_screenplays, episode_screenplays) IS NULL";
+
+    private static final String MUSICCOMPOSER_DELETABLE_VIEW_CREATE =
+            "CREATE VIEW v_musiccomposer_deletable AS " +
+                    "SELECT _id FROM musiccomposer " +
+                    "LEFT JOIN musiccomposers_movie ON musiccomposers_movie.musiccomposer_musiccomposers=musiccomposer._id " +
+                    "LEFT JOIN musiccomposers_show ON musiccomposers_show.musiccomposer_musiccomposers=musiccomposer._id " +
+                    "LEFT JOIN musiccomposers_episode ON musiccomposers_episode.musiccomposer_musiccomposers=musiccomposer._id " +
+                    "WHERE coalesce(movie_musiccomposers, show_musiccomposers, episode_musiccomposers) IS NULL";
 
     private static final String SEASONPLOT_DELETABLE_VIEW_CREATE =
             "CREATE VIEW v_seasonplot_deletable AS " +
@@ -1418,6 +1549,19 @@ public final class ScraperTables {
                     "     ORDER BY screenplays_show.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
+
+    public static final String VIEW_SHOW_MUSICCOMPOSERS = "v_show_musiccomposers";
+    private static final String CREATE_VIEW_SHOW_MUSICCOMPOSERS =
+            "CREATE VIEW " + VIEW_SHOW_MUSICCOMPOSERS + " AS\n" +
+                    "SELECT _id, group_concat( name_musiccomposer, ', ' ) AS musiccomposers\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT show_musiccomposers AS _id, name_musiccomposer\n" +
+                    "      FROM musiccomposers_show\n" +
+                    "           LEFT JOIN musiccomposer\n" +
+                    "                  ON ( musiccomposer_musiccomposers = _id ) \n" +
+                    "     ORDER BY musiccomposers_show.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
     public static final String VIEW_SHOW_SEASONPLOTS = "v_show_seasonplots";
     private static final String CREATE_VIEW_SHOW_SEASONPLOTS =
             "CREATE VIEW " + VIEW_SHOW_SEASONPLOTS + " AS\n" +
@@ -1529,6 +1673,31 @@ public final class ScraperTables {
                     "           LEFT JOIN screenplay\n" +
                     "                  ON ( screenplay_screenplays = _id ) \n" +
                     "     ORDER BY screenplays_movie.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+
+    public static final String VIEW_EPISODE_MUSICCOMPOSERS = "v_episode_musiccomposers";
+    private static final String CREATE_VIEW_EPISODE_MUSICCOMPOSERS =
+            "CREATE VIEW " + VIEW_EPISODE_MUSICCOMPOSERS + " AS\n" +
+                    "SELECT _id, group_concat( name_musiccomposer, ', ' ) AS musiccomposers\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT episode_musiccomposers AS _id, name_musiccomposer\n" +
+                    "      FROM musiccomposers_episode\n" +
+                    "           LEFT JOIN musiccomposer\n" +
+                    "                  ON ( musiccomposer_musiccomposers = _id ) \n" +
+                    "     ORDER BY musiccomposers_episode.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+    public static final String VIEW_MOVIE_MUSICCOMPOSERS = "v_movie_musiccomposers";
+    private static final String CREATE_VIEW_MOVIE_MUSICCOMPOSERS =
+            "CREATE VIEW " + VIEW_MOVIE_MUSICCOMPOSERS + " AS\n" +
+                    "SELECT _id, group_concat( name_musiccomposer, ', ' ) AS musiccomposers\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT movie_musiccomposers AS _id, name_musiccomposer\n" +
+                    "      FROM musiccomposers_movie\n" +
+                    "           LEFT JOIN musiccomposer\n" +
+                    "                  ON ( musiccomposer_musiccomposers = _id ) \n" +
+                    "     ORDER BY musiccomposers_movie.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
 
@@ -2079,6 +2248,10 @@ public final class ScraperTables {
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.SCREENPLAYS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.SCREENPLAYS_FORMATTED + " TEXT DEFAULT ''");
 
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.MUSICCOMPOSERS_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.MUSICCOMPOSERS_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.MUSICCOMPOSERS_FORMATTED + " TEXT DEFAULT ''");
+
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.SEASONPLOTS_FORMATTED + " TEXT DEFAULT ''");
 
             db.execSQL(WRITERS_TABLE_CREATE);
@@ -2100,6 +2273,11 @@ public final class ScraperTables {
             db.execSQL(SCREENPLAYS_MOVIE_TABLE_CREATE);
             db.execSQL(SCREENPLAYS_EPISODE_TABLE_CREATE);
             db.execSQL(SCREENPLAYS_SHOW_TABLE_CREATE);
+
+            db.execSQL(MUSICCOMPOSERS_TABLE_CREATE);
+            db.execSQL(MUSICCOMPOSERS_MOVIE_TABLE_CREATE);
+            db.execSQL(MUSICCOMPOSERS_EPISODE_TABLE_CREATE);
+            db.execSQL(MUSICCOMPOSERS_SHOW_TABLE_CREATE);
 
 
             db.execSQL(SEASONPLOTS_TABLE_CREATE);
@@ -2141,6 +2319,14 @@ public final class ScraperTables {
             db.execSQL(SCREENPLAYS_EPISODE_VIEW_INSERT_TRIGGER);
             db.execSQL(SCREENPLAY_DELETABLE_VIEW_CREATE);
 
+            db.execSQL(MUSICCOMPOSERS_MOVIE_VIEW_CREATE);
+            db.execSQL(MUSICCOMPOSERS_SHOW_VIEW_CREATE);
+            db.execSQL(MUSICCOMPOSERS_EPISODE_VIEW_CREATE);
+            db.execSQL(MUSICCOMPOSERS_MOVIE_VIEW_INSERT_TRIGGER);
+            db.execSQL(MUSICCOMPOSERS_SHOW_VIEW_INSERT_TRIGGER);
+            db.execSQL(MUSICCOMPOSERS_EPISODE_VIEW_INSERT_TRIGGER);
+            db.execSQL(MUSICCOMPOSER_DELETABLE_VIEW_CREATE);
+
             db.execSQL(CREATE_VIEW_SHOW_WRITERS);
             db.execSQL(CREATE_VIEW_EPISODE_WRITERS);
             db.execSQL(CREATE_VIEW_MOVIE_WRITERS);
@@ -2156,6 +2342,10 @@ public final class ScraperTables {
             db.execSQL(CREATE_VIEW_SHOW_SCREENPLAYS);
             db.execSQL(CREATE_VIEW_EPISODE_SCREENPLAYS);
             db.execSQL(CREATE_VIEW_MOVIE_SCREENPLAYS);
+
+            db.execSQL(CREATE_VIEW_SHOW_MUSICCOMPOSERS);
+            db.execSQL(CREATE_VIEW_EPISODE_MUSICCOMPOSERS);
+            db.execSQL(CREATE_VIEW_MOVIE_MUSICCOMPOSERS);
 
             log.debug("upgradeTo: creating indexes");
             // cf. v39 migration create indexes to speed up rescan in case of delete/renames
@@ -2174,6 +2364,10 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX SCREENPLAYS_MOVIE_idx ON SCREENPLAYS_MOVIE(screenplay_screenplays)");
             db.execSQL("CREATE INDEX SCREENPLAYS_EPISODE_idx ON SCREENPLAYS_EPISODE(screenplay_screenplays)");
             db.execSQL("CREATE INDEX SCREENPLAYS_SHOW_idx ON SCREENPLAYS_SHOW(screenplay_screenplays)");
+
+            db.execSQL("CREATE INDEX MUSICCOMPOSERS_MOVIE_idx ON MUSICCOMPOSERS_MOVIE(musiccomposer_musiccomposers)");
+            db.execSQL("CREATE INDEX MUSICCOMPOSERS_EPISODE_idx ON MUSICCOMPOSERS_EPISODE(musiccomposer_musiccomposers)");
+            db.execSQL("CREATE INDEX MUSICCOMPOSERS_SHOW_idx ON MUSICCOMPOSERS_SHOW(musiccomposer_musiccomposers)");
 
             db.execSQL("CREATE INDEX SEASONPLOTS_SHOW_idx ON SEASONPLOTS_SHOW(seasonplot_seasonplots)");
         }

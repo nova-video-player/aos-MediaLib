@@ -79,12 +79,14 @@ public abstract class BaseTags implements Parcelable {
     protected List<String> mTaglines;
     protected List<String> mProducers;
     protected List<String> mScreenplays;
+    protected List<String> mMusiccomposers;
     protected List<String> mSeasonPlots;
     protected String mDirectorsFormatted;
     protected String mWritersFormatted;
     protected String mTaglinesFormatted;
     protected String mProducersFormatted;
     protected String mScreenplaysFormatted;
+    protected String mMusiccomposersFormatted;
     protected String mSeasonPlotsFormatted;
     protected Uri mFile;
     protected long mVideoId;
@@ -105,6 +107,7 @@ public abstract class BaseTags implements Parcelable {
         mTaglines = new LinkedList<String>();
         mProducers = new LinkedList<String>();
         mScreenplays = new LinkedList<String>();
+        mMusiccomposers = new LinkedList<String>();
         mSeasonPlots = new LinkedList<String>();
         mActors = new LinkedHashMap<String, String>();
     }
@@ -135,6 +138,9 @@ public abstract class BaseTags implements Parcelable {
     public boolean screenplayExists(String name) {
         return mScreenplays.contains(name);
     }
+    public boolean musiccomposerExists(String name) {
+        return mMusiccomposers.contains(name);
+    }
     public boolean seasonplotExists(String seasonplot) {
         return mSeasonPlots.contains(seasonplot);
     }
@@ -146,6 +152,7 @@ public abstract class BaseTags implements Parcelable {
     public List<String> getTaglines() { return mTaglines; }
     public List<String> getProducers() { return mProducers; }
     public List<String> getScreenplays() { return mScreenplays; }
+    public List<String> getMusiccomposers() { return mMusiccomposers; }
     public List<String> getSeasonPlots() { return mSeasonPlots; }
     public Uri getFile() { return mFile; }
     public long getId() { return mId; }
@@ -204,6 +211,11 @@ public abstract class BaseTags implements Parcelable {
     public String getScreenplaysFormatted() {
         ensureFormattedScreenplays();
         return mScreenplaysFormatted;
+    }
+
+    public String getMusiccomposersFormatted() {
+        ensureFormattedMusiccomposers();
+        return mMusiccomposersFormatted;
     }
 
     public String getSeasonPlotsFormatted() {
@@ -311,6 +323,13 @@ public abstract class BaseTags implements Parcelable {
     private void ensureFormattedScreenplays() {
         if (mScreenplaysFormatted == null && mScreenplays != null && !mScreenplays.isEmpty()) {
             mScreenplaysFormatted = TextUtils.join(", ", mScreenplays);
+        }
+    }
+
+    /** does nothing if mMusiccomposersFormatted is already set, otherwise builds from mMusiccomposers */
+    private void ensureFormattedMusiccomposers() {
+        if (mMusiccomposersFormatted == null && mMusiccomposers != null && !mMusiccomposers.isEmpty()) {
+            mMusiccomposersFormatted = TextUtils.join(", ", mMusiccomposers);
         }
     }
 
@@ -665,6 +684,9 @@ public abstract class BaseTags implements Parcelable {
     public void addScreenplayIfAbsent(String screenplay, char... splitCharacters) {
         addIfAbsentSplitNTrim(screenplay, mScreenplays, splitCharacters);
     }
+    public void addMusiccomposerIfAbsent(String musiccomposer, char... splitCharacters) {
+        addIfAbsentSplitNTrim(musiccomposer, mMusiccomposers, splitCharacters);
+    }
     public void addSeasonPlotIfAbsent(String seasonplot, char... splitCharacters) {
         addIfAbsentSplitNTrim(seasonplot, mSeasonPlots, splitCharacters);
     }
@@ -674,6 +696,7 @@ public abstract class BaseTags implements Parcelable {
     public void setTaglines(List<String> taglines) { mTaglines = taglines; }
     public void setProducers(List<String> producers) { mProducers = producers; }
     public void setScreenplays(List<String> screenplays) { mScreenplays = screenplays; }
+    public void setMusiccomposers(List<String> musiccomposers) { mMusiccomposers = musiccomposers; }
     public void setSeasonPlots(List<String> seasonplots) { mSeasonPlots = seasonplots; }
 
     public abstract void setCover(File file);
@@ -696,6 +719,7 @@ public abstract class BaseTags implements Parcelable {
     public void setTaglinesFormatted(String taglines) { mTaglinesFormatted = taglines; }
     public void setProducersFormatted(String producers) { mProducersFormatted = producers; }
     public void setScreenplaysFormatted(String screenplays) { mScreenplaysFormatted = screenplays; }
+    public void setMusiccomposersFormatted(String musiccomposers) { mMusiccomposersFormatted = musiccomposers; }
     public void setSeasonPlotsFormatted(String seasonplots) { mSeasonPlotsFormatted = seasonplots; }
     public void setContentRating(String contentRating) { mContentRating = contentRating; }
     public void setImdbId(String imdbId) { mImdbId = imdbId; }
@@ -737,7 +761,7 @@ public abstract class BaseTags implements Parcelable {
 
     @Override
     public String toString() {
-        return " TITLE=" + mTitle + " / RATING=" + mRating + " / DIRECTORS=" + mDirectors + " / WRITERS=" + mWriters + " / TAGLINES=" + mTaglines + " / PRODUCERS=" + mProducers + " / SCREENPLAYS=" + mScreenplays + " / PLOT=" + mPlot + " / SEASONPLOTS=" + mSeasonPlots +
+        return " TITLE=" + mTitle + " / RATING=" + mRating + " / DIRECTORS=" + mDirectors + " / WRITERS=" + mWriters + " / TAGLINES=" + mTaglines + " / PRODUCERS=" + mProducers + " / SCREENPLAYS=" + mScreenplays + " / MUSICCOMPOSERS=" + mMusiccomposers + " / PLOT=" + mPlot + " / SEASONPLOTS=" + mSeasonPlots +
             " / ACTORS=" + mActors + " / COVER=" + getCover();
     }
 
@@ -756,6 +780,7 @@ public abstract class BaseTags implements Parcelable {
         in.readStringList(mTaglines);
         in.readStringList(mProducers);
         in.readStringList(mScreenplays);
+        in.readStringList(mMusiccomposers);
         in.readStringList(mSeasonPlots);
         mFile = Uri.parse(in.readString());
     }
@@ -771,6 +796,7 @@ public abstract class BaseTags implements Parcelable {
         out.writeStringList(mTaglines);
         out.writeStringList(mProducers);
         out.writeStringList(mScreenplays);
+        out.writeStringList(mMusiccomposers);
         out.writeStringList(mSeasonPlots);
         out.writeString(mFile!=null?mFile.toString():"");
     }

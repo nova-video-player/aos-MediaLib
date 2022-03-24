@@ -178,6 +178,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.TAGLINES_FORMATTED, getTaglinesFormatted());
         values.put(ScraperStore.Movie.PRODUCERS_FORMATTED, getProducersFormatted());
         values.put(ScraperStore.Movie.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
+        values.put(ScraperStore.Movie.MUSICCOMPOSERS_FORMATTED, getMusiccomposersFormatted());
         values.put(ScraperStore.Movie.GERNES_FORMATTED, getGenresFormatted());
         values.put(ScraperStore.Movie.STUDIOS_FORMATTED, getStudiosFormatted());
 
@@ -229,6 +230,13 @@ public class MovieTags extends VideoTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Screenplay.URI.MOVIE);
             cop.withValue(ScraperStore.Movie.Screenplay.NAME, screenplay);
             cop.withValueBackReference(ScraperStore.Movie.Screenplay.MOVIE, 0);
+            allOperations.add(cop.build());
+        }
+
+        for(String musiccomposer: mMusiccomposers) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Musiccomposer.URI.MOVIE);
+            cop.withValue(ScraperStore.Movie.Musiccomposer.NAME, musiccomposer);
+            cop.withValueBackReference(ScraperStore.Movie.Musiccomposer.MOVIE, 0);
             allOperations.add(cop.build());
         }
 

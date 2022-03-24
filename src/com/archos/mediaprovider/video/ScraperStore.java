@@ -72,6 +72,8 @@ public final class ScraperStore {
         public static final String PRODUCERS_FORMATTED = "m_producers";
         /** screenplays preformatted - usually empty, use episode instead */
         public static final String SCREENPLAYS_FORMATTED = "m_screenplays";
+        /** musiccomposers preformatted - usually empty, use episode instead */
+        public static final String MUSICCOMPOSERS_FORMATTED = "m_musiccomposers";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "m_genres";
         /** studios preformatted */
@@ -119,6 +121,12 @@ public final class ScraperStore {
             public static final String MOVIE = "movie_v_screenplays_movie";
             public static final String NAME = "name_v_screenplays_movie";
             public static final String SCREENPLAY = "screenplay_v_screenplays_movie";
+        }
+
+        public static class Musiccomposer {
+            public static final String MOVIE = "movie_v_musiccomposers_movie";
+            public static final String NAME = "name_v_musiccomposers_movie";
+            public static final String MUSICCOMPOSER = "musiccomposer_v_musiccomposers_movie";
         }
 
         public static class Studio {
@@ -184,6 +192,8 @@ public final class ScraperStore {
         public static final String PRODUCERS_FORMATTED = "s_producers";
         /** screenplays preformatted - usually empty, use episode instead */
         public static final String SCREENPLAYS_FORMATTED = "s_screenplays";
+        /** musiccomposers preformatted - usually empty, use episode instead */
+        public static final String MUSICCOMPOSERS_FORMATTED = "s_musiccomposers";
         /** seasonplots preformatted */
         public static final String SEASONPLOTS_FORMATTED = "s_seasonplots";
         /** genres preformatted */
@@ -235,6 +245,12 @@ public final class ScraperStore {
             public static final String SHOW = "show_v_screenplays_show";
             public static final String NAME = "name_v_screenplays_show";
             public static final String SCREENPLAY = "screenplay_v_screenplays_show";
+        }
+
+        public static class Musiccomposer {
+            public static final String SHOW = "show_v_musiccomposers_show";
+            public static final String NAME = "name_v_musiccomposers_show";
+            public static final String MUSICCOMPOSER = "musiccomposer_v_musiccomposers_show";
         }
 
         public static class SeasonPlot {
@@ -336,6 +352,8 @@ public final class ScraperStore {
         public static final String PRODUCERS_FORMATTED = "e_producers";
         /** screenplays preformatted */
         public static final String SCREENPLAYS_FORMATTED = "e_screenplays";
+        /** musiccomposers preformatted */
+        public static final String MUSICCOMPOSERS_FORMATTED = "e_musiccomposers";
 
         public static class URI {
             public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/episode");
@@ -378,6 +396,11 @@ public final class ScraperStore {
             public static final String EPISODE = "episode_v_screenplays_episode";
             public static final String NAME = "name_v_screenplays_episode";
             public static final String SCREENPLAY = "screenplay_v_screenplays_episode";
+        }
+        public static class Musiccomposer {
+            public static final String EPISODE = "episode_v_musiccomposers_episode";
+            public static final String NAME = "name_v_musiccomposers_episode";
+            public static final String MUSICCOMPOSER = "musiccomposer_v_musiccomposers_episode";
         }
     }
 
@@ -504,6 +527,22 @@ public final class ScraperStore {
             public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/screenplay/show/");
             public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/screenplay/episode/");
             public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/screenplay/name/");
+        }
+    }
+
+    public static class Musiccomposer {
+        public static final String ID = "_id";
+        public static final String NAME = "name_musiccomposer";
+        public static final String COUNT = "count_musiccomposer";
+
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/id/");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposers");
+            public static final Uri MOVIE = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/movie/");
+            public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/show/");
+            public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/episode/");
+            public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/name/");
         }
     }
 

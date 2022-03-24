@@ -78,6 +78,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int TAGLINE = 34;
     private static final int PRODUCER = 35;
     private static final int SCREENPLAY = 36;
+    private static final int MUSICCOMPOSER = 37;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -94,6 +95,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("tagline", TAGLINE);
         STRINGS.addKey("producer", PRODUCER);
         STRINGS.addKey("screenplay", SCREENPLAY);
+        STRINGS.addKey("musiccomposer", MUSICCOMPOSER);
         STRINGS.addKey("actor", ACTOR);
         STRINGS.addKey("name", NAME);
         STRINGS.addKey("role", ROLE);
@@ -213,6 +215,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case TAGLINE:
                     case PRODUCER:
                     case SCREENPLAY:
+                    case MUSICCOMPOSER:
                     case STUDIO:
                     case TMDBID:
                     case RUNTIME:
@@ -339,6 +342,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case SCREENPLAY:
                         mMovie.addScreenplayIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case MUSICCOMPOSER:
+                        mMovie.addMusiccomposerIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
                     case STUDIO:
                         mMovie.addStudioIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
