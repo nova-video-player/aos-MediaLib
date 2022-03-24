@@ -44,10 +44,13 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -180,9 +183,13 @@ public class MovieIdParser2 {
             }
         }
 
-        // setting multiple movie tags using a single pipeline (tagline, budget, revenue, runtime, vote_count, popularity)
-        String tvTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity;
-        result.addTaglineIfAbsent(tvTag);
+        // setting multiple movie tags using a single pipeline (tagline, budget, revenue, runtime, vote_count, popularity, release date)
+        String pattern = "MMMM dd, yyyy";
+        Date date = movie.release_date;
+        DateFormat df = new SimpleDateFormat(pattern);
+        String releaseDate = df.format(date);
+        String movieTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity + "=&%#" + releaseDate;
+        result.addTaglineIfAbsent(movieTag);
 
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
