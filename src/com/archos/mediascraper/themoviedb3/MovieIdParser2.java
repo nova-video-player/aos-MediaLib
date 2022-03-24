@@ -188,9 +188,12 @@ public class MovieIdParser2 {
 
         // setting multiple movie tags using a single pipeline (tagline, budget, revenue, runtime, vote_count, popularity, release date)
         String pattern = "MMMM dd, yyyy";
-        Date date = movie.release_date;
-        DateFormat df = new SimpleDateFormat(pattern);
-        String releaseDate = df.format(date);
+        String releaseDate = "";
+        if (movie.release_date != null) {
+            Date date = movie.release_date;
+            DateFormat df = new SimpleDateFormat(pattern);
+            releaseDate = df.format(date);
+        }
         String movieTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity + "=&%#" + releaseDate;
         result.addTaglineIfAbsent(movieTag);
 
