@@ -1735,7 +1735,7 @@ public class TagsFactory {
             }
             // Countries
             c = cr.query(
-                    ContentUris.withAppendedId(ScraperStore.Country.URI.MOVIE, showId),
+                    ContentUris.withAppendedId(ScraperStore.Country.URI.SHOW, showId),
                     new String[] {
                             ScraperStore.Show.Country.NAME,            // 0
                     }, null, null, null);
