@@ -25,6 +25,7 @@ import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ScraperTrailer;
 import com.uwetrottmann.tmdb2.entities.BaseCompany;
 import com.uwetrottmann.tmdb2.entities.CastMember;
+import com.uwetrottmann.tmdb2.entities.Country;
 import com.uwetrottmann.tmdb2.entities.Credits;
 import com.uwetrottmann.tmdb2.entities.CrewMember;
 import com.uwetrottmann.tmdb2.entities.Genre;
@@ -103,6 +104,9 @@ public class MovieIdParser2 {
         if (movie.production_companies != null)
             for (BaseCompany productionCompany: movie.production_companies)
                 result.addStudioIfAbsent(productionCompany.name);
+        if (movie.production_countries != null)
+            for (Country country: movie.production_countries)
+                result.addCountryIfAbsent(country.iso_3166_1);
         if (movie.release_date != null) {
             Calendar cal = Calendar.getInstance();
             cal.setTime(movie.release_date);

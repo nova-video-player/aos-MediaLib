@@ -179,6 +179,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.PRODUCERS_FORMATTED, getProducersFormatted());
         values.put(ScraperStore.Movie.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
         values.put(ScraperStore.Movie.MUSICCOMPOSERS_FORMATTED, getMusiccomposersFormatted());
+        values.put(ScraperStore.Movie.COUNTRIES_FORMATTED, getCountriesFormatted());
         values.put(ScraperStore.Movie.GERNES_FORMATTED, getGenresFormatted());
         values.put(ScraperStore.Movie.STUDIOS_FORMATTED, getStudiosFormatted());
 
@@ -237,6 +238,13 @@ public class MovieTags extends VideoTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Musiccomposer.URI.MOVIE);
             cop.withValue(ScraperStore.Movie.Musiccomposer.NAME, musiccomposer);
             cop.withValueBackReference(ScraperStore.Movie.Musiccomposer.MOVIE, 0);
+            allOperations.add(cop.build());
+        }
+
+        for(String country: mCountries) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Country.URI.MOVIE);
+            cop.withValue(ScraperStore.Movie.Country.NAME, country);
+            cop.withValueBackReference(ScraperStore.Movie.Country.MOVIE, 0);
             allOperations.add(cop.build());
         }
 

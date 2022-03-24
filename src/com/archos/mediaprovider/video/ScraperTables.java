@@ -39,6 +39,7 @@ public final class ScraperTables {
     public static final String PRODUCERS_TABLE_NAME = "PRODUCER";
     public static final String SCREENPLAYS_TABLE_NAME = "SCREENPLAY";
     public static final String MUSICCOMPOSERS_TABLE_NAME = "MUSICCOMPOSER";
+    public static final String COUNTRIES_TABLE_NAME = "COUNTRY";
     public static final String SEASONPLOTS_TABLE_NAME = "SEASONPLOT";
     public static final String STUDIOS_TABLE_NAME = "STUDIO";
     public static final String FILMS_MOVIE_TABLE_NAME = "FILMS_MOVIE";
@@ -47,12 +48,14 @@ public final class ScraperTables {
     public static final String PRODUCERS_MOVIE_TABLE_NAME = "PRODUCERS_MOVIE";
     public static final String SCREENPLAYS_MOVIE_TABLE_NAME = "SCREENPLAYS_MOVIE";
     public static final String MUSICCOMPOSERS_MOVIE_TABLE_NAME = "MUSICCOMPOSERS_MOVIE";
+    public static final String COUNTRIES_MOVIE_TABLE_NAME = "COUNTRIES_MOVIE";
     public static final String FILMS_SHOW_TABLE_NAME = "FILMS_SHOW";
     public static final String WRITERS_SHOW_TABLE_NAME = "WRITERS_SHOW";
     public static final String TAGLINES_SHOW_TABLE_NAME = "TAGLINES_SHOW";
     public static final String PRODUCERS_SHOW_TABLE_NAME = "PRODUCERS_SHOW";
     public static final String SCREENPLAYS_SHOW_TABLE_NAME = "SCREENPLAYS_SHOW";
     public static final String MUSICCOMPOSERS_SHOW_TABLE_NAME = "MUSICCOMPOSERS_SHOW";
+    public static final String COUNTRIES_SHOW_TABLE_NAME = "COUNTRIES_SHOW";
     public static final String SEASONPLOTS_SHOW_TABLE_NAME = "SEASONPLOTS_SHOW";
     public static final String FILMS_EPISODE_TABLE_NAME = "FILMS_EPISODE";
     public static final String WRITERS_EPISODE_TABLE_NAME = "WRITERS_EPISODE";
@@ -60,6 +63,7 @@ public final class ScraperTables {
     public static final String PRODUCERS_EPISODE_TABLE_NAME = "PRODUCERS_EPISODE";
     public static final String SCREENPLAYS_EPISODE_TABLE_NAME = "SCREENPLAYS_EPISODE";
     public static final String MUSICCOMPOSERS_EPISODE_TABLE_NAME = "MUSICCOMPOSERS_EPISODE";
+    public static final String COUNTRIES_EPISODE_TABLE_NAME = "COUNTRIES_EPISODE";
     public static final String GUESTS_TABLE_NAME = "GUESTS";
     public static final String PRODUCES_MOVIE_TABLE_NAME = "PRODUCES_MOVIE";
     public static final String PRODUCES_SHOW_TABLE_NAME = "PRODUCES_SHOW";
@@ -98,6 +102,10 @@ public final class ScraperTables {
     public static final String MUSICCOMPOSERS_SHOW_VIEW_NAME = "V_MUSICCOMPOSERS_SHOW";
     public static final String MUSICCOMPOSERS_EPISODE_VIEW_NAME = "V_MUSICCOMPOSERS_EPISODE";
 
+    public static final String COUNTRIES_MOVIE_VIEW_NAME = "V_COUNTRIES_MOVIE";
+    public static final String COUNTRIES_SHOW_VIEW_NAME = "V_COUNTRIES_SHOW";
+    public static final String COUNTRIES_EPISODE_VIEW_NAME = "V_COUNTRIES_EPISODE";
+
     public static final String SEASONPLOTS_SHOW_VIEW_NAME = "V_SEASONPLOTS_SHOW";
 
     public static final String PRODUCES_MOVIE_VIEW_NAME = "V_PRODUCES_MOVIE";
@@ -114,6 +122,7 @@ public final class ScraperTables {
     public static final String PRODUCER_DELETABLE_VIEW_NAME = "v_producer_deletable";
     public static final String SCREENPLAY_DELETABLE_VIEW_NAME = "v_screenplay_deletable";
     public static final String MUSICCOMPOSER_DELETABLE_VIEW_NAME = "v_musiccomposer_deletable";
+    public static final String COUNTRY_DELETABLE_VIEW_NAME = "v_country_deletable";
     public static final String GENRE_DELETABLE_VIEW_NAME = "v_genre_deletable";
     public static final String STUDIO_DELETABLE_VIEW_NAME = "v_studio_deletable";
     /*
@@ -138,6 +147,9 @@ public final class ScraperTables {
     private static final String MUSICCOMPOSERS_MOVIE_ID_MOVIE = "movie_musiccomposers";
     private static final String MUSICCOMPOSERS_MOVIE_ID_MUSICCOMPOSER = "musiccomposer_musiccomposers";
 
+    private static final String COUNTRIES_MOVIE_ID_MOVIE = "movie_countries";
+    private static final String COUNTRIES_MOVIE_ID_COUNTRY = "country_countries";
+
     private static final String FILMS_SHOW_ID_SHOW = "show_films";
     private static final String FILMS_SHOW_ID_DIRECTOR = "director_films";
 
@@ -155,6 +167,9 @@ public final class ScraperTables {
 
     private static final String MUSICCOMPOSERS_SHOW_ID_SHOW = "show_musiccomposers";
     private static final String MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER = "musiccomposer_musiccomposers";
+
+    private static final String COUNTRIES_SHOW_ID_SHOW = "show_countries";
+    private static final String COUNTRIES_SHOW_ID_COUNTRY = "country_countries";
 
     private static final String SEASONPLOTS_SHOW_ID_SHOW = "show_seasonplots";
     private static final String SEASONPLOTS_SHOW_ID_SEASONPLOT = "seasonplot_seasonplots";
@@ -176,6 +191,9 @@ public final class ScraperTables {
 
     private static final String MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER = "musiccomposer_musiccomposers";
     private static final String MUSICCOMPOSERS_EPISODE_ID_EPISODE = "episode_musiccomposers";
+
+    private static final String COUNTRIES_EPISODE_ID_COUNTRY = "country_countries";
+    private static final String COUNTRIES_EPISODE_ID_EPISODE = "episode_countries";
 
     private static final String PRODUCES_MOVIE_ID_MOVIE = "movie_produces";
     private static final String PRODUCES_MOVIE_ID_STUDIO = "studio_produces";
@@ -339,6 +357,12 @@ public final class ScraperTables {
                     ScraperStore.Musiccomposer.ID + " INTEGER PRIMARY KEY NOT NULL," +
                     ScraperStore.Musiccomposer.NAME + " TEXT UNIQUE," +
                     ScraperStore.Musiccomposer.COUNT + " INTEGER)";
+
+    private static final String COUNTRIES_TABLE_CREATE =
+            "CREATE TABLE " + COUNTRIES_TABLE_NAME + " (" +
+                    ScraperStore.Country.ID + " INTEGER PRIMARY KEY NOT NULL," +
+                    ScraperStore.Country.NAME + " TEXT UNIQUE," +
+                    ScraperStore.Country.COUNT + " INTEGER)";
 
     private static final String SEASONPLOTS_TABLE_CREATE =
             "CREATE TABLE " + SEASONPLOTS_TABLE_NAME + " (" +
@@ -505,6 +529,30 @@ public final class ScraperTables {
                     MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER + " INTEGER REFERENCES " + MUSICCOMPOSERS_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
                     "PRIMARY KEY(" + MUSICCOMPOSERS_EPISODE_ID_EPISODE + "," +
                     MUSICCOMPOSERS_EPISODE_ID_MUSICCOMPOSER + "))";
+
+    /*
+     *  Tables associating movie, show and episode tables with countries
+     */
+    private static final String COUNTRIES_MOVIE_TABLE_CREATE =
+            "CREATE TABLE " + COUNTRIES_MOVIE_TABLE_NAME + " (" +
+                    COUNTRIES_MOVIE_ID_MOVIE + " INTEGER REFERENCES " + MOVIE_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    COUNTRIES_MOVIE_ID_COUNTRY + " INTEGER REFERENCES " + COUNTRIES_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + COUNTRIES_MOVIE_ID_MOVIE + "," +
+                    COUNTRIES_MOVIE_ID_COUNTRY + "))";
+
+    private static final String COUNTRIES_SHOW_TABLE_CREATE =
+            "CREATE TABLE " + COUNTRIES_SHOW_TABLE_NAME + " (" +
+                    COUNTRIES_SHOW_ID_SHOW + " INTEGER REFERENCES " + SHOW_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    COUNTRIES_SHOW_ID_COUNTRY + " INTEGER REFERENCES " + COUNTRIES_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + COUNTRIES_SHOW_ID_SHOW + "," +
+                    COUNTRIES_SHOW_ID_COUNTRY + "))";
+
+    private static final String COUNTRIES_EPISODE_TABLE_CREATE =
+            "CREATE TABLE " + COUNTRIES_EPISODE_TABLE_NAME + " (" +
+                    COUNTRIES_EPISODE_ID_EPISODE + " INTEGER REFERENCES " + EPISODE_TABLE_NAME + " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    COUNTRIES_EPISODE_ID_COUNTRY + " INTEGER REFERENCES " + COUNTRIES_TABLE_NAME + " ON DELETE RESTRICT ON UPDATE CASCADE," +
+                    "PRIMARY KEY(" + COUNTRIES_EPISODE_ID_EPISODE + "," +
+                    COUNTRIES_EPISODE_ID_COUNTRY + "))";
 
     /*
      * Tables associating movie and show tables to studios
@@ -808,6 +856,33 @@ public final class ScraperTables {
                     " WHERE " + ScraperStore.Musiccomposer.NAME + " = NEW." + ScraperStore.Movie.Musiccomposer.NAME + "; " +
                     "END";
 
+
+
+    private static final String COUNTRIES_MOVIE_VIEW_CREATE =
+            "CREATE VIEW " + COUNTRIES_MOVIE_VIEW_NAME + " AS SELECT " +
+                    COUNTRIES_MOVIE_TABLE_NAME + "." +
+                    COUNTRIES_MOVIE_ID_MOVIE + " AS " + ScraperStore.Movie.Country.MOVIE + ", " +
+                    COUNTRIES_TABLE_NAME + "." +
+                    ScraperStore.Country.NAME + " AS " + ScraperStore.Movie.Country.NAME + ", " +
+                    COUNTRIES_TABLE_NAME + "." +
+                    ScraperStore.Country.ID + " AS " + ScraperStore.Movie.Country.COUNTRY + " FROM " +
+                    COUNTRIES_MOVIE_TABLE_NAME + " LEFT JOIN " + COUNTRIES_TABLE_NAME +
+                    " ON (" + COUNTRIES_MOVIE_TABLE_NAME + "." + COUNTRIES_MOVIE_ID_COUNTRY +
+                    " = " + COUNTRIES_TABLE_NAME + "." + ScraperStore.Country.ID + ")";
+
+    private static final String COUNTRIES_MOVIE_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_countries_movie INSTEAD OF INSERT ON " + COUNTRIES_MOVIE_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + COUNTRIES_TABLE_NAME + " ( " + ScraperStore.Country.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Movie.Country.NAME + "); " +
+                    "INSERT INTO " + COUNTRIES_MOVIE_TABLE_NAME +
+                    " ( " + COUNTRIES_MOVIE_ID_MOVIE + "," + COUNTRIES_MOVIE_ID_COUNTRY + " ) " +
+                    "SELECT NEW." + ScraperStore.Movie.Country.MOVIE + ", " +
+                    COUNTRIES_TABLE_NAME + "." + ScraperStore.Country.ID + " " +
+                    " FROM " + COUNTRIES_TABLE_NAME +
+                    " WHERE " + ScraperStore.Country.NAME + " = NEW." + ScraperStore.Movie.Country.NAME + "; " +
+                    "END";
+
     private static final String FILMS_SHOW_VIEW_CREATE =
         "CREATE VIEW " + FILMS_SHOW_VIEW_NAME + " AS SELECT " +
         FILMS_SHOW_TABLE_NAME + "." +
@@ -918,6 +993,18 @@ public final class ScraperTables {
                     " ON (" + MUSICCOMPOSERS_SHOW_TABLE_NAME + "." + MUSICCOMPOSERS_SHOW_ID_MUSICCOMPOSER +
                     " = " + MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + ")";
 
+    private static final String COUNTRIES_SHOW_VIEW_CREATE =
+            "CREATE VIEW " + COUNTRIES_SHOW_VIEW_NAME + " AS SELECT " +
+                    COUNTRIES_SHOW_TABLE_NAME + "." +
+                    COUNTRIES_SHOW_ID_SHOW + " AS " + ScraperStore.Show.Country.SHOW + ", " +
+                    COUNTRIES_TABLE_NAME + "." +
+                    ScraperStore.Country.NAME + " AS " + ScraperStore.Show.Country.NAME + ", " +
+                    COUNTRIES_TABLE_NAME + "." +
+                    ScraperStore.Country.ID + " AS " + ScraperStore.Show.Country.COUNTRY + " FROM " +
+                    COUNTRIES_SHOW_TABLE_NAME + " LEFT JOIN " + COUNTRIES_TABLE_NAME +
+                    " ON (" + COUNTRIES_SHOW_TABLE_NAME + "." + COUNTRIES_SHOW_ID_COUNTRY +
+                    " = " + COUNTRIES_TABLE_NAME + "." + ScraperStore.Country.ID + ")";
+
     private static final String SEASONPLOTS_SHOW_VIEW_CREATE =
             "CREATE VIEW " + SEASONPLOTS_SHOW_VIEW_NAME + " AS SELECT " +
                     SEASONPLOTS_SHOW_TABLE_NAME + "." +
@@ -993,6 +1080,19 @@ public final class ScraperTables {
                     MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + " " +
                     " FROM " + MUSICCOMPOSERS_TABLE_NAME +
                     " WHERE " + ScraperStore.Musiccomposer.NAME + " = NEW." + ScraperStore.Show.Musiccomposer.NAME + "; " +
+                    "END";
+
+    private static final String COUNTRIES_SHOW_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_countries_show INSTEAD OF INSERT ON " + COUNTRIES_SHOW_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + COUNTRIES_TABLE_NAME + " ( " + ScraperStore.Country.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Show.Country.NAME + "); " +
+                    "INSERT INTO " + COUNTRIES_SHOW_TABLE_NAME +
+                    " ( " + COUNTRIES_SHOW_ID_SHOW + "," + COUNTRIES_SHOW_ID_COUNTRY + " ) " +
+                    "SELECT NEW." + ScraperStore.Show.Country.SHOW + ", " +
+                    COUNTRIES_TABLE_NAME + "." + ScraperStore.Country.ID + " " +
+                    " FROM " + COUNTRIES_TABLE_NAME +
+                    " WHERE " + ScraperStore.Country.NAME + " = NEW." + ScraperStore.Show.Country.NAME + "; " +
                     "END";
 
     private static final String SEASONPLOTS_SHOW_VIEW_INSERT_TRIGGER =
@@ -1132,6 +1232,31 @@ public final class ScraperTables {
                     MUSICCOMPOSERS_TABLE_NAME + "." + ScraperStore.Musiccomposer.ID + " " +
                     " FROM " + MUSICCOMPOSERS_TABLE_NAME +
                     " WHERE " + ScraperStore.Musiccomposer.NAME + " = NEW." + ScraperStore.Episode.Musiccomposer.NAME + "; " +
+                    "END";
+
+    private static final String COUNTRIES_EPISODE_VIEW_CREATE =
+            "CREATE VIEW " + COUNTRIES_EPISODE_VIEW_NAME + " AS SELECT " +
+                    COUNTRIES_EPISODE_TABLE_NAME + "." +
+                    COUNTRIES_EPISODE_ID_EPISODE + " AS " + ScraperStore.Episode.Country.EPISODE + ", " +
+                    COUNTRIES_TABLE_NAME + "." +
+                    ScraperStore.Country.NAME + " AS " + ScraperStore.Episode.Country.NAME + ", " +
+                    COUNTRIES_TABLE_NAME + "." +
+                    ScraperStore.Country.ID + " AS " + ScraperStore.Episode.Country.COUNTRY + " FROM " +
+                    COUNTRIES_EPISODE_TABLE_NAME + " LEFT JOIN " + COUNTRIES_TABLE_NAME +
+                    " ON (" + COUNTRIES_EPISODE_TABLE_NAME + "." + COUNTRIES_EPISODE_ID_COUNTRY +
+                    " = " + COUNTRIES_TABLE_NAME + "." + ScraperStore.Country.ID + ")";
+
+    private static final String COUNTRIES_EPISODE_VIEW_INSERT_TRIGGER =
+            "CREATE TRIGGER insert_countries_episode INSTEAD OF INSERT ON " + COUNTRIES_EPISODE_VIEW_NAME +
+                    " BEGIN " +
+                    "INSERT OR IGNORE INTO " + COUNTRIES_TABLE_NAME + " ( " + ScraperStore.Country.NAME + " ) " +
+                    "VALUES (NEW." + ScraperStore.Episode.Country.NAME + "); " +
+                    "INSERT INTO " + COUNTRIES_EPISODE_TABLE_NAME +
+                    " ( " + COUNTRIES_EPISODE_ID_EPISODE + "," + COUNTRIES_EPISODE_ID_COUNTRY + " ) " +
+                    "SELECT NEW." + ScraperStore.Episode.Country.EPISODE + ", " +
+                    COUNTRIES_TABLE_NAME + "." + ScraperStore.Country.ID + " " +
+                    " FROM " + COUNTRIES_TABLE_NAME +
+                    " WHERE " + ScraperStore.Country.NAME + " = NEW." + ScraperStore.Episode.Country.NAME + "; " +
                     "END";
 
 
@@ -1289,6 +1414,14 @@ public final class ScraperTables {
                     "LEFT JOIN musiccomposers_show ON musiccomposers_show.musiccomposer_musiccomposers=musiccomposer._id " +
                     "LEFT JOIN musiccomposers_episode ON musiccomposers_episode.musiccomposer_musiccomposers=musiccomposer._id " +
                     "WHERE coalesce(movie_musiccomposers, show_musiccomposers, episode_musiccomposers) IS NULL";
+
+    private static final String COUNTRY_DELETABLE_VIEW_CREATE =
+            "CREATE VIEW v_country_deletable AS " +
+                    "SELECT _id FROM country " +
+                    "LEFT JOIN countries_movie ON countries_movie.country_countries=country._id " +
+                    "LEFT JOIN countries_show ON countries_show.country_countries=country._id " +
+                    "LEFT JOIN countries_episode ON countries_episode.country_countries=country._id " +
+                    "WHERE coalesce(movie_countries, show_countries, episode_countries) IS NULL";
 
     private static final String SEASONPLOT_DELETABLE_VIEW_CREATE =
             "CREATE VIEW v_seasonplot_deletable AS " +
@@ -1562,6 +1695,20 @@ public final class ScraperTables {
                     "     ORDER BY musiccomposers_show.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
+
+    public static final String VIEW_SHOW_COUNTRIES = "v_show_countries";
+    private static final String CREATE_VIEW_SHOW_COUNTRIES =
+            "CREATE VIEW " + VIEW_SHOW_COUNTRIES + " AS\n" +
+                    "SELECT _id, group_concat( name_country, ', ' ) AS countries\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT show_countries AS _id, name_country\n" +
+                    "      FROM countries_show\n" +
+                    "           LEFT JOIN country\n" +
+                    "                  ON ( country_countries = _id ) \n" +
+                    "     ORDER BY countries_show.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+
     public static final String VIEW_SHOW_SEASONPLOTS = "v_show_seasonplots";
     private static final String CREATE_VIEW_SHOW_SEASONPLOTS =
             "CREATE VIEW " + VIEW_SHOW_SEASONPLOTS + " AS\n" +
@@ -1698,6 +1845,31 @@ public final class ScraperTables {
                     "           LEFT JOIN musiccomposer\n" +
                     "                  ON ( musiccomposer_musiccomposers = _id ) \n" +
                     "     ORDER BY musiccomposers_movie.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+
+    public static final String VIEW_EPISODE_COUNTRIES = "v_episode_countries";
+    private static final String CREATE_VIEW_EPISODE_COUNTRIES =
+            "CREATE VIEW " + VIEW_EPISODE_COUNTRIES + " AS\n" +
+                    "SELECT _id, group_concat( name_country, ', ' ) AS countries\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT episode_countries AS _id, name_country\n" +
+                    "      FROM countries_episode\n" +
+                    "           LEFT JOIN country\n" +
+                    "                  ON ( country_countries = _id ) \n" +
+                    "     ORDER BY countries_episode.ROWID \n" +
+                    ") \n" +
+                    " GROUP BY _id";
+    public static final String VIEW_MOVIE_COUNTRIES = "v_movie_countries";
+    private static final String CREATE_VIEW_MOVIE_COUNTRIES =
+            "CREATE VIEW " + VIEW_MOVIE_COUNTRIES + " AS\n" +
+                    "SELECT _id, group_concat( name_country, ', ' ) AS countries\n" +
+                    "  FROM  ( \n" +
+                    "    SELECT movie_countries AS _id, name_country\n" +
+                    "      FROM countries_movie\n" +
+                    "           LEFT JOIN country\n" +
+                    "                  ON ( country_countries = _id ) \n" +
+                    "     ORDER BY countries_movie.ROWID \n" +
                     ") \n" +
                     " GROUP BY _id";
 
@@ -2252,6 +2424,10 @@ public final class ScraperTables {
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.MUSICCOMPOSERS_FORMATTED + " TEXT DEFAULT ''");
             db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.MUSICCOMPOSERS_FORMATTED + " TEXT DEFAULT ''");
 
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Movie.COUNTRIES_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.COUNTRIES_FORMATTED + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + EPISODE_TABLE_NAME + " ADD COLUMN " + ScraperStore.Episode.COUNTRIES_FORMATTED + " TEXT DEFAULT ''");
+
             db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " + ScraperStore.Show.SEASONPLOTS_FORMATTED + " TEXT DEFAULT ''");
 
             db.execSQL(WRITERS_TABLE_CREATE);
@@ -2279,6 +2455,10 @@ public final class ScraperTables {
             db.execSQL(MUSICCOMPOSERS_EPISODE_TABLE_CREATE);
             db.execSQL(MUSICCOMPOSERS_SHOW_TABLE_CREATE);
 
+            db.execSQL(COUNTRIES_TABLE_CREATE);
+            db.execSQL(COUNTRIES_MOVIE_TABLE_CREATE);
+            db.execSQL(COUNTRIES_EPISODE_TABLE_CREATE);
+            db.execSQL(COUNTRIES_SHOW_TABLE_CREATE);
 
             db.execSQL(SEASONPLOTS_TABLE_CREATE);
             db.execSQL(SEASONPLOTS_SHOW_TABLE_CREATE);
@@ -2327,6 +2507,14 @@ public final class ScraperTables {
             db.execSQL(MUSICCOMPOSERS_EPISODE_VIEW_INSERT_TRIGGER);
             db.execSQL(MUSICCOMPOSER_DELETABLE_VIEW_CREATE);
 
+            db.execSQL(COUNTRIES_MOVIE_VIEW_CREATE);
+            db.execSQL(COUNTRIES_SHOW_VIEW_CREATE);
+            db.execSQL(COUNTRIES_EPISODE_VIEW_CREATE);
+            db.execSQL(COUNTRIES_MOVIE_VIEW_INSERT_TRIGGER);
+            db.execSQL(COUNTRIES_SHOW_VIEW_INSERT_TRIGGER);
+            db.execSQL(COUNTRIES_EPISODE_VIEW_INSERT_TRIGGER);
+            db.execSQL(COUNTRY_DELETABLE_VIEW_CREATE);
+
             db.execSQL(CREATE_VIEW_SHOW_WRITERS);
             db.execSQL(CREATE_VIEW_EPISODE_WRITERS);
             db.execSQL(CREATE_VIEW_MOVIE_WRITERS);
@@ -2346,6 +2534,10 @@ public final class ScraperTables {
             db.execSQL(CREATE_VIEW_SHOW_MUSICCOMPOSERS);
             db.execSQL(CREATE_VIEW_EPISODE_MUSICCOMPOSERS);
             db.execSQL(CREATE_VIEW_MOVIE_MUSICCOMPOSERS);
+
+            db.execSQL(CREATE_VIEW_SHOW_COUNTRIES);
+            db.execSQL(CREATE_VIEW_EPISODE_COUNTRIES);
+            db.execSQL(CREATE_VIEW_MOVIE_COUNTRIES);
 
             log.debug("upgradeTo: creating indexes");
             // cf. v39 migration create indexes to speed up rescan in case of delete/renames
@@ -2368,6 +2560,10 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX MUSICCOMPOSERS_MOVIE_idx ON MUSICCOMPOSERS_MOVIE(musiccomposer_musiccomposers)");
             db.execSQL("CREATE INDEX MUSICCOMPOSERS_EPISODE_idx ON MUSICCOMPOSERS_EPISODE(musiccomposer_musiccomposers)");
             db.execSQL("CREATE INDEX MUSICCOMPOSERS_SHOW_idx ON MUSICCOMPOSERS_SHOW(musiccomposer_musiccomposers)");
+
+            db.execSQL("CREATE INDEX COUNTRIES_MOVIE_idx ON COUNTRIES_MOVIE(country_countries)");
+            db.execSQL("CREATE INDEX COUNTRIES_EPISODE_idx ON COUNTRIES_EPISODE(country_countries)");
+            db.execSQL("CREATE INDEX COUNTRIES_SHOW_idx ON COUNTRIES_SHOW(country_countries)");
 
             db.execSQL("CREATE INDEX SEASONPLOTS_SHOW_idx ON SEASONPLOTS_SHOW(seasonplot_seasonplots)");
         }

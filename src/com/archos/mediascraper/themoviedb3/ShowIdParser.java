@@ -226,6 +226,13 @@ public class ShowIdParser {
             }
         } else log.debug("getResult: no networklogo_path for " + serie.id);
 
+
+        if (serie.origin_country != null) {
+            for (int i = 0; i < serie.origin_country.size(); i++) {
+                result.addCountryIfAbsent(serie.origin_country.get(i));
+            }
+        } else log.debug("getResult: no origin_country for " + serie.id);
+
         if (serie.credits != null) {
             if (serie.credits.cast != null)
                     for (int i = 0; i < serie.credits.cast.size(); i++) {

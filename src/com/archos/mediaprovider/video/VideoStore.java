@@ -1263,7 +1263,7 @@ public final class VideoStore {
              */
             public static final String SCRAPER_E_ACTORS = "e_actors";
             /**
-             * MediaScraper: Movie or Episode Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer
+             * MediaScraper: Movie or Episode Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer, Countries
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
@@ -1273,9 +1273,10 @@ public final class VideoStore {
             public static final String SCRAPER_PRODUCERS = "producers";
             public static final String SCRAPER_SCREENPLAYS = "screenplays";
             public static final String SCRAPER_MUSICCOMPOSERS = "musiccomposers";
+            public static final String SCRAPER_COUNTRIES = "countries";
             public static final String SCRAPER_SEASONPLOTS = "seasonplots";
             /**
-             * MediaScraper: Movie Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer
+             * MediaScraper: Movie Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer, Countries
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
@@ -1285,8 +1286,9 @@ public final class VideoStore {
             public static final String SCRAPER_M_PRODUCERS = "m_producers";
             public static final String SCRAPER_M_SCREENPLAYS = "m_screenplays";
             public static final String SCRAPER_M_MUSICCOMPOSERS = "m_musiccomposers";
+            public static final String SCRAPER_M_COUNTRIES = "m_countries";
             /**
-             * MediaScraper: Episode Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer
+             * MediaScraper: Episode Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer, Countries
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
@@ -1296,8 +1298,9 @@ public final class VideoStore {
             public static final String SCRAPER_E_PRODUCERS = "e_producers";
             public static final String SCRAPER_E_SCREENPLAYS = "e_screenplays";
             public static final String SCRAPER_E_MUSICCOMPOSERS = "e_musiccomposers";
+            public static final String SCRAPER_E_COUNTRIES = "e_countries";
             /**
-             * MediaScraper: Show Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer (seems to be unused)
+             * MediaScraper: Show Directors, Writers, Taglines, Producers, Screenplays, Musiccomposer, Countries (seems to be unused)
              * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
              * <P>FORMAT: "Clint Eastwood, Roland Emmerich, ..."
              */
@@ -1307,6 +1310,7 @@ public final class VideoStore {
             public static final String SCRAPER_S_PRODUCERS = "s_producers";
             public static final String SCRAPER_S_SCREENPLAYS = "s_screenplays";
             public static final String SCRAPER_S_MUSICCOMPOSERS = "s_musiccomposers";
+            public static final String SCRAPER_S_COUNTRIES = "s_countries";
             public static final String SCRAPER_S_SEASONPLOTS = "s_seasonplots";
             /**
              * MediaScraper: Movie / Show Genres
