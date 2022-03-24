@@ -199,6 +199,14 @@ public class ScraperProvider extends ContentProvider {
     private static final int PRODUCER_EPISODE = SCRAPER_PROVIDER_OFFSET + 206;
     private static final int PRODUCER_NAME = SCRAPER_PROVIDER_OFFSET + 207;
 
+    private static final int SCREENPLAY = SCRAPER_PROVIDER_OFFSET + 208;
+    private static final int SCREENPLAY_ID = SCRAPER_PROVIDER_OFFSET + 209;
+    private static final int SCREENPLAY_ALL = SCRAPER_PROVIDER_OFFSET + 210;
+    private static final int SCREENPLAY_MOVIE = SCRAPER_PROVIDER_OFFSET + 211;
+    private static final int SCREENPLAY_SHOW = SCRAPER_PROVIDER_OFFSET + 212;
+    private static final int SCREENPLAY_EPISODE = SCRAPER_PROVIDER_OFFSET + 213;
+    private static final int SCREENPLAY_NAME = SCRAPER_PROVIDER_OFFSET + 214;
+
     private static UriMatcher sUriMatcher;
 
     /**
@@ -315,6 +323,29 @@ public class ScraperProvider extends ContentProvider {
                 PRODUCER_EPISODE);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Producer.URI.NAME) + "*",
                 PRODUCER_NAME);
+
+
+
+
+
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.BASE),
+                SCREENPLAY);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.ALL),
+                SCREENPLAY_ALL);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.MOVIE),
+                SCREENPLAY_MOVIE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.MOVIE) + "#",
+                SCREENPLAY_MOVIE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.SHOW),
+                SCREENPLAY_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.SHOW) + "#",
+                SCREENPLAY_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.EPISODE),
+                SCREENPLAY_EPISODE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.EPISODE) + "#",
+                SCREENPLAY_EPISODE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Screenplay.URI.NAME) + "*",
+                SCREENPLAY_NAME);
 
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.SeasonPlot.URI.BASE),
                 SEASONPLOT);
@@ -668,6 +699,11 @@ public class ScraperProvider extends ContentProvider {
                         ScraperStore.Producer.ID, values);
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Producer.URI.ID, cr);
                 break;
+            case SCREENPLAY:
+                rowId = db.insert(ScraperTables.SCREENPLAYS_TABLE_NAME,
+                        ScraperStore.Screenplay.ID, values);
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Screenplay.URI.ID, cr);
+                break;
             case SEASONPLOT:
                 rowId = db.insert(ScraperTables.SEASONPLOTS_TABLE_NAME,
                         ScraperStore.SeasonPlot.ID, values);
@@ -728,6 +764,16 @@ public class ScraperProvider extends ContentProvider {
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Producer.URI.ID, cr);
                 break;
+            case SCREENPLAY_MOVIE:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SCREENPLAYS_MOVIE_VIEW_NAME,
+                            ScraperStore.Movie.Screenplay.MOVIE, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Screenplay.URI.ID, cr);
+                break;
             case DIRECTOR_SHOW:
                 try {
                     rowId = db.insertOrThrow(ScraperTables.FILMS_SHOW_VIEW_NAME,
@@ -767,6 +813,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Producer.URI.ID, cr);
+                break;
+            case SCREENPLAY_SHOW:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SCREENPLAYS_SHOW_VIEW_NAME,
+                            ScraperStore.Show.Screenplay.SHOW, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Screenplay.URI.ID, cr);
                 break;
             case SEASONPLOT_SHOW:
                 try {
@@ -817,6 +873,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Producer.URI.ID, cr);
+                break;
+            case SCREENPLAY_EPISODE:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SCREENPLAYS_EPISODE_VIEW_NAME,
+                            ScraperStore.Episode.Screenplay.EPISODE, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Screenplay.URI.ID, cr);
                 break;
             case ACTOR_MOVIE:
                 try {
@@ -1310,6 +1376,40 @@ public class ScraperProvider extends ContentProvider {
             case PRODUCER_NAME:
                 qb.setTables(ScraperTables.PRODUCERS_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Producer.NAME + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SCREENPLAY_ID:
+                qb.setTables(ScraperTables.SCREENPLAYS_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Screenplay.ID + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SCREENPLAY_ALL:
+                qb.setTables(ScraperTables.SCREENPLAYS_TABLE_NAME);
+                break;
+
+            case SCREENPLAY_MOVIE:
+                qb.setTables(ScraperTables.SCREENPLAYS_MOVIE_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Movie.Screenplay.MOVIE + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SCREENPLAY_SHOW:
+                qb.setTables(ScraperTables.SCREENPLAYS_SHOW_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Show.Screenplay.SHOW + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SCREENPLAY_EPISODE:
+                qb.setTables(ScraperTables.SCREENPLAYS_EPISODE_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Episode.Screenplay.EPISODE + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SCREENPLAY_NAME:
+                qb.setTables(ScraperTables.SCREENPLAYS_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Screenplay.NAME + " = ");
                 qb.appendWhereEscapeString(data);
                 break;
 
@@ -1822,6 +1922,11 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Episode.ID + " = " +
                 ScraperTables.PRODUCERS_EPISODE_VIEW_NAME + "." +
                 ScraperStore.Episode.Producer.EPISODE + ") " +
+                " LEFT JOIN " + ScraperTables.SCREENPLAYS_EPISODE_VIEW_NAME + " ON (" +
+                ScraperTables.EPISODE_TABLE_NAME + "." +
+                ScraperStore.Episode.ID + " = " +
+                ScraperTables.SCREENPLAYS_EPISODE_VIEW_NAME + "." +
+                ScraperStore.Episode.Screenplay.EPISODE + ") " +
                 "LEFT JOIN " + ScraperTables.GUESTS_VIEW_NAME + " ON (" +
                 ScraperTables.EPISODE_TABLE_NAME + "." +
                 ScraperStore.Episode.ID + " = " + 
@@ -1853,6 +1958,11 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Movie.ID + " = " +
                 ScraperTables.PRODUCERS_MOVIE_VIEW_NAME + "." +
                 ScraperStore.Movie.Producer.MOVIE + ") " +
+                " LEFT JOIN " + ScraperTables.SCREENPLAYS_MOVIE_VIEW_NAME + " ON (" +
+                ScraperTables.MOVIE_TABLE_NAME + "." +
+                ScraperStore.Movie.ID + " = " +
+                ScraperTables.SCREENPLAYS_MOVIE_VIEW_NAME + "." +
+                ScraperStore.Movie.Screenplay.MOVIE + ") " +
                 "LEFT JOIN " + ScraperTables.PLAYS_MOVIE_VIEW_NAME + " ON (" +
                 ScraperTables.MOVIE_TABLE_NAME + "." +
                 ScraperStore.Movie.ID + " = " + 
@@ -1898,6 +2008,12 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Show.ID + " = " +
                 ScraperTables.PRODUCERS_SHOW_VIEW_NAME + "." +
                 ScraperStore.Show.Producer.SHOW + ") " +
+                " LEFT JOIN " +
+                ScraperTables.SCREENPLAYS_SHOW_VIEW_NAME + " ON (" +
+                ScraperTables.SHOW_TABLE_NAME + "." +
+                ScraperStore.Show.ID + " = " +
+                ScraperTables.SCREENPLAYS_SHOW_VIEW_NAME + "." +
+                ScraperStore.Show.Screenplay.SHOW + ") " +
                 " LEFT JOIN " +
                 ScraperTables.SEASONPLOTS_SHOW_VIEW_NAME + " ON (" +
                 ScraperTables.SHOW_TABLE_NAME + "." +

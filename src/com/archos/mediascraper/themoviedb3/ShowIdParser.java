@@ -49,6 +49,7 @@ public class ShowIdParser {
 
     private static final String DIRECTOR = "Director";
     private static final String PRODUCER = "Producer";
+    private static final String SCREENPLAY = "Screenplay";
     private static String readUrl(String urlString) throws Exception {
         BufferedReader reader = null;
         try {
@@ -243,6 +244,8 @@ public class ShowIdParser {
                     assert crew.job != null;
                     if (crew.job.equals(PRODUCER))
                         result.addProducerIfAbsent(crew.name);
+                    if (crew.job.equals(SCREENPLAY))
+                        result.addScreenplayIfAbsent(crew.name);
                 }
         } else {
             log.warn("getResult: credit is null for showId " + serie.name);

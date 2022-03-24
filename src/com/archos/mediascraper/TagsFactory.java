@@ -122,11 +122,13 @@ public class TagsFactory {
             writersME = getCol(c, VideoColumns.SCRAPER_WRITERS);
             taglinesME = getCol(c, VideoColumns.SCRAPER_TAGLINES);
             producersME = getCol(c, VideoColumns.SCRAPER_PRODUCERS);
+            screenplaysME = getCol(c, VideoColumns.SCRAPER_SCREENPLAYS);
             // unused?
             directorsS = getCol(c, VideoColumns.SCRAPER_S_DIRECTORS);
             writersS = getCol(c, VideoColumns.SCRAPER_S_WRITERS);
             taglinesS = getCol(c, VideoColumns.SCRAPER_S_TAGLINES);
             producersS = getCol(c, VideoColumns.SCRAPER_S_PRODUCERS);
+            screenplaysS = getCol(c, VideoColumns.SCRAPER_S_SCREENPLAYS);
             seasonplotsS = getCol(c, VideoColumns.SCRAPER_S_SEASONPLOTS);
             genresMS = getCol(c, VideoColumns.SCRAPER_GENRES);
             studiosMS = getCol(c, VideoColumns.SCRAPER_STUDIOS);
@@ -242,9 +244,11 @@ public class TagsFactory {
         public final int writersME;
         public final int taglinesME;
         public final int producersME;
+        public final int screenplaysME;
         public final int writersS;
         public final int taglinesS;
         public final int producersS;
+        public final int screenplaysS;
         public final int seasonplotsS;
         public final int genresMS;
         public final int studiosMS;
@@ -350,11 +354,13 @@ public class TagsFactory {
         VideoColumns.SCRAPER_WRITERS,
             VideoColumns.SCRAPER_TAGLINES,
             VideoColumns.SCRAPER_PRODUCERS,
+            VideoColumns.SCRAPER_SCREENPLAYS,
             VideoColumns.SCRAPER_SEASONPLOTS,
         VideoColumns.SCRAPER_S_DIRECTORS,
         VideoColumns.SCRAPER_S_WRITERS,
             VideoColumns.SCRAPER_S_TAGLINES,
             VideoColumns.SCRAPER_S_PRODUCERS,
+            VideoColumns.SCRAPER_S_SCREENPLAYS,
             VideoColumns.SCRAPER_S_SEASONPLOTS,
         VideoColumns.SCRAPER_GENRES,
         VideoColumns.SCRAPER_STUDIOS,
@@ -424,10 +430,12 @@ public class TagsFactory {
     VideoColumns.SCRAPER_WRITERS,
      VideoColumns.SCRAPER_TAGLINES,
      VideoColumns.SCRAPER_PRODUCERS,
+     VideoColumns.SCRAPER_SCREENPLAYS,
     VideoColumns.SCRAPER_S_DIRECTORS,
     VideoColumns.SCRAPER_S_WRITERS,
      VideoColumns.SCRAPER_S_TAGLINES,
      VideoColumns.SCRAPER_S_PRODUCERS,
+     VideoColumns.SCRAPER_S_SCREENPLAYS,
     VideoColumns.SCRAPER_GENRES,
     VideoColumns.SCRAPER_STUDIOS,
     VideoColumns.SCRAPER_E_SEASON,
@@ -479,6 +487,7 @@ public class TagsFactory {
             String writersME = getStringCol(cur, cols.writersME);
             String taglinesME = getStringCol(cur, cols.taglinesME);
             String producersME = getStringCol(cur, cols.producersME);
+            String screenplaysME = getStringCol(cur, cols.screenplaysME);
             String genresMS = getStringCol(cur, cols.genresMS);
             String studiosMS = getStringCol(cur, cols.studiosMS);
             long backdropId = getLongCol(cur, cols.backdropId);
@@ -567,6 +576,7 @@ public class TagsFactory {
                 tag.setWritersFormatted(writersME);
                 tag.setTaglinesFormatted(taglinesME);
                 tag.setProducersFormatted(producersME);
+                tag.setScreenplaysFormatted(screenplaysME);
                 tag.setGenresFormatted(genresMS);
                 tag.setStudiosFormatted(studiosMS);
 
@@ -677,6 +687,7 @@ public class TagsFactory {
                 epTag.setWritersFormatted(writersME);
                 epTag.setTaglinesFormatted(taglinesME);
                 epTag.setProducersFormatted(producersME);
+                epTag.setScreenplaysFormatted(screenplaysME);
 
                 if(coverME != null && posterId <= 0)
                     epTag.setCover(new File(coverME));
@@ -717,10 +728,12 @@ public class TagsFactory {
                     String writersS =getStringCol(cur, cols.writersS);
                     String taglinesS =getStringCol(cur, cols.taglinesS);
                     String producersS =getStringCol(cur, cols.producersS);
+                    String screenplaysS =getStringCol(cur, cols.screenplaysS);
                     String seasonplotsS =getStringCol(cur, cols.seasonplotsS);
                     sTag.setDirectorsFormatted(directorsS);
                     sTag.setSeasonPlotsFormatted(seasonplotsS);
                     sTag.setProducersFormatted(producersS);
+                    sTag.setScreenplaysFormatted(screenplaysS);
                     sTag.setGenresFormatted(genresMS);
                     sTag.setStudiosFormatted(studiosMS);
 
@@ -833,6 +846,7 @@ public class TagsFactory {
             String writer = getStringCol(cur, ScraperStore.Movie.Writer.NAME);
             String tagline = getStringCol(cur, ScraperStore.Movie.Tagline.NAME);
             String producer = getStringCol(cur, ScraperStore.Movie.Producer.NAME);
+            String screenplay = getStringCol(cur, ScraperStore.Movie.Screenplay.NAME);
             String genre = getStringCol(cur, ScraperStore.Movie.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Movie.Studio.NAME);
 
@@ -871,6 +885,7 @@ public class TagsFactory {
             tag.addWriterIfAbsent(writer);
             tag.addTaglineIfAbsent(tagline);
             tag.addProducerIfAbsent(producer);
+            tag.addScreenplayIfAbsent(screenplay);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
 
@@ -927,6 +942,7 @@ public class TagsFactory {
             String writer = getStringCol(cur, ScraperStore.Show.Writer.NAME);
             String tagline = getStringCol(cur, ScraperStore.Show.Tagline.NAME);
             String producer = getStringCol(cur, ScraperStore.Show.Producer.NAME);
+            String screenplay = getStringCol(cur, ScraperStore.Show.Screenplay.NAME);
             String seasonplot = getStringCol(cur, ScraperStore.Show.SeasonPlot.NAME);
             String genre = getStringCol(cur, ScraperStore.Show.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Show.Studio.NAME);
@@ -967,6 +983,7 @@ public class TagsFactory {
             tag.addWriterIfAbsent(writer);
             tag.addTaglineIfAbsent(tagline);
             tag.addProducerIfAbsent(producer);
+            tag.addScreenplayIfAbsent(screenplay);
             tag.addSeasonPlotIfAbsent(seasonplot);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
@@ -1027,6 +1044,7 @@ public class TagsFactory {
             String writer = getStringCol(cur, ScraperStore.Episode.Writer.NAME);
             String tagline = getStringCol(cur, ScraperStore.Episode.Tagline.NAME);
             String producer = getStringCol(cur, ScraperStore.Episode.Producer.NAME);
+            String screenplay = getStringCol(cur, ScraperStore.Episode.Screenplay.NAME);
             String cover = getStringCol(cur, ScraperStore.Episode.COVER);
 
             EpisodeTags tag = tags.get(id);
@@ -1049,6 +1067,7 @@ public class TagsFactory {
             tag.addWriterIfAbsent(writer);
             tag.addTaglineIfAbsent(tagline);
             tag.addProducerIfAbsent(producer);
+            tag.addScreenplayIfAbsent(screenplay);
 
             if(cover != null)
                 tag.setCover(new File(cover));
@@ -1199,6 +1218,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addProducerIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Screenplays
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Screenplay.URI.MOVIE, movieId),
+                    new String[] {
+                            ScraperStore.Movie.Screenplay.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addScreenplayIfAbsent(c.getString(0));
                 }
                 c.close();
             }
@@ -1420,6 +1451,18 @@ public class TagsFactory {
                 }
                 c.close();
             }
+            // Screenplays
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Screenplay.URI.EPISODE, episodeId),
+                    new String[] {
+                            ScraperStore.Episode.Screenplay.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addScreenplayIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
             ShowTags showTags = buildShowTags(context, result.getShowId());
             result.setShowTags(showTags);
             // posters -- need ShowTags
@@ -1577,6 +1620,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     showTags.addProducerIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Screenplays
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Screenplay.URI.SHOW, showId),
+                    new String[] {
+                            ScraperStore.Show.Screenplay.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    showTags.addScreenplayIfAbsent(c.getString(0));
                 }
                 c.close();
             }

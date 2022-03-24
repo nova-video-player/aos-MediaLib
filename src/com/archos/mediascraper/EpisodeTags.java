@@ -145,6 +145,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.WRITERS_FORMATTED, getWritersFormatted());
         values.put(ScraperStore.Episode.TAGLINES_FORMATTED, getTaglinesFormatted());
         values.put(ScraperStore.Episode.PRODUCERS_FORMATTED, getProducersFormatted());
+        values.put(ScraperStore.Episode.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
 
         File cover = getCover();
         String coverPath = (cover != null) ? cover.getPath() : null;
@@ -207,6 +208,14 @@ public class EpisodeTags extends BaseTags {
             allOperations.add(cop.build());
         }
 
+        // then screenplays etc
+        for(String screenplay: mScreenplays) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Screenplay.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Screenplay.NAME, screenplay);
+            cop.withValueBackReference(ScraperStore.Episode.Screenplay.EPISODE, 0);
+            allOperations.add(cop.build());
+        }
+
         for(String actorName: mActors.keySet()) {
             cop = ContentProviderOperation.newInsert(ScraperStore.Actor.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Actor.NAME, actorName);
@@ -265,6 +274,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.WRITERS_FORMATTED, getWritersFormatted());
         values.put(ScraperStore.Episode.TAGLINES_FORMATTED, getTaglinesFormatted());
         values.put(ScraperStore.Episode.PRODUCERS_FORMATTED, getProducersFormatted());
+        values.put(ScraperStore.Episode.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
 
         ScraperImage pic = getEpisodePicture();
         if(pic!=null && pic.getLargeFile()!=null)
@@ -321,6 +331,14 @@ public class EpisodeTags extends BaseTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Producer.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Producer.NAME, producer);
             cop.withValueBackReference(ScraperStore.Episode.Producer.EPISODE, firstIndex);
+            list.add(cop.build());
+        }
+
+        // then screenplays etc
+        for(String screenplay: mScreenplays) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Screenplay.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Screenplay.NAME, screenplay);
+            cop.withValueBackReference(ScraperStore.Episode.Screenplay.EPISODE, firstIndex);
             list.add(cop.build());
         }
 

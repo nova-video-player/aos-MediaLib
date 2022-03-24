@@ -65,6 +65,7 @@ public class MovieIdParser2 {
     private static final String DIRECTOR = "Director";
     private static final String WRITER = "Writer";
     private static final String PRODUCER = "Producer";
+    private static final String SCREENPLAY = "Screenplay";
     private static String readUrl(String urlString) throws Exception {
         BufferedReader reader = null;
         try {
@@ -135,6 +136,8 @@ public class MovieIdParser2 {
                         result.addProducerIfAbsent(crew.name);
                     if (crew.job.equals(WRITER))
                         result.addWriterIfAbsent(crew.name);
+                    if (crew.job.equals(SCREENPLAY))
+                        result.addScreenplayIfAbsent(crew.name);
                 }
         }
         if (movie.credits != null) {

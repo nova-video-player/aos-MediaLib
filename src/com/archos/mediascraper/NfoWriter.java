@@ -129,6 +129,8 @@ public class NfoWriter {
                 textTag(serializer, "tagline", tagline);
             for (String producer : tag.getProducers())
                 textTag(serializer, "producer", producer);
+            for (String screenplay : tag.getScreenplays())
+                textTag(serializer, "screenplay", screenplay);
             textTag(serializer, "id", tag.getImdbId());
             textTag(serializer, "tmdbid", tag.getOnlineId());
             for (String studio : tag.getStudios())
@@ -253,6 +255,8 @@ public class NfoWriter {
                 textTag(serializer, "tagline", tagline);
             for (String producer : tag.getProducers())
                 textTag(serializer, "producer", producer);
+            for (String screenplay : tag.getScreenplays())
+                textTag(serializer, "screenplay", screenplay);
             for (Entry<String, String> entry : tag.getActors().entrySet()) {
                 serializer.startTag("", "actor");
                 {
