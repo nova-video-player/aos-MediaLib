@@ -192,7 +192,7 @@ public class ShowIdParser {
             result.addClearLogoFTV(mContext, enClearLogos.get(0));
         }
 
-        // setting multiple series tags using a single pipeline (tagline, type, status, vote_count, popularity, runtime)
+        // setting multiple series tags using a single pipeline (tagline, type, status, vote_count, popularity, runtime, original language)
         int runtime = 0;
         if (serie.episode_run_time != null) {
             for (int i = 0; i < serie.episode_run_time.size(); i++) {
@@ -206,7 +206,7 @@ public class ShowIdParser {
         try {
             JSONObject json = new JSONObject(readUrl(newUrl));
             String tagline = json.getString("tagline"); // tagline is not available from UweTrottmann-tmdb-java
-            String tvTag = tagline + "=&%#" + serie.type + "=&%#" + serie.status + "=&%#" + serie.vote_count + "=&%#" + serie.popularity + "=&%#" + runtime;
+            String tvTag = tagline + "=&%#" + serie.type + "=&%#" + serie.status + "=&%#" + serie.vote_count + "=&%#" + serie.popularity + "=&%#" + runtime + "=&%#" + serie.original_language;
             result.addTaglineIfAbsent(tvTag);
         } catch (Exception e) {
             e.printStackTrace();

@@ -189,7 +189,7 @@ public class MovieIdParser2 {
             }
         }
 
-        // setting multiple movie tags using a single pipeline (tagline, budget, revenue, runtime, vote_count, popularity, release date)
+        // setting multiple movie tags using a single pipeline (tagline, budget, revenue, runtime, vote_count, popularity, release date, original language)
         String pattern = "MMMM dd, yyyy";
         String releaseDate = "";
         if (movie.release_date != null) {
@@ -197,7 +197,7 @@ public class MovieIdParser2 {
             DateFormat df = new SimpleDateFormat(pattern);
             releaseDate = df.format(date);
         }
-        String movieTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity + "=&%#" + releaseDate;
+        String movieTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity + "=&%#" + releaseDate + "=&%#" + movie.original_language;
         result.addTaglineIfAbsent(movieTag);
 
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
