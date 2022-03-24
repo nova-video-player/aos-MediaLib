@@ -45,6 +45,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -348,7 +349,14 @@ public abstract class BaseTags implements Parcelable {
     /** does nothing if mCountriesFormatted is already set, otherwise builds from mCountries */
     private void ensureFormattedCountries() {
         if (mCountriesFormatted == null && mCountries != null && !mCountries.isEmpty()) {
-            mCountriesFormatted = TextUtils.join(", ", mCountries);
+            String countries = "";
+            for (int i = 0; i <mCountries.size(); i++) {
+                String countryCode = mCountries.get(i);
+                Locale locale = new Locale("", countryCode);
+                String country = locale.getDisplayCountry();
+                countries = countries + country + ", ";
+                mCountriesFormatted = countries.substring(0, countries.length() - 2);
+            }
         }
     }
 
