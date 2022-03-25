@@ -767,6 +767,8 @@ public class TagsFactory {
                     String countriesS =getStringCol(cur, cols.countriesS);
                     String seasonplotsS =getStringCol(cur, cols.seasonplotsS);
                     sTag.setDirectorsFormatted(directorsS);
+                    sTag.setWritersFormatted(writersS);
+                    sTag.setTaglinesFormatted(taglinesS);
                     sTag.setSeasonPlotsFormatted(seasonplotsS);
                     sTag.setProducersFormatted(producersS);
                     sTag.setScreenplaysFormatted(screenplaysS);
