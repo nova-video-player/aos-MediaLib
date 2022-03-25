@@ -211,13 +211,13 @@ public class ShowIdParser {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // using Screenplay to scrape spoken languages
+        // set Spoken languages
         try {
             JSONObject json = new JSONObject(readUrl(newUrl));
             JSONArray jsonArray = json.getJSONArray("spoken_languages");
             for (int i = 0; i < jsonArray.length(); i++) {
                 String languageCode = jsonArray.getJSONObject(i).getString("iso_639_1");
-                result.addScreenplayIfAbsent(languageCode);
+                result.addSpokenlanguageIfAbsent(languageCode);
             }
         } catch (Exception e) {
             e.printStackTrace();

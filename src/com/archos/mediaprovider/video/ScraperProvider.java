@@ -223,6 +223,14 @@ public class ScraperProvider extends ContentProvider {
     private static final int COUNTRY_EPISODE = SCRAPER_PROVIDER_OFFSET + 227;
     private static final int COUNTRY_NAME = SCRAPER_PROVIDER_OFFSET + 228;
 
+    private static final int SPOKENLANGUAGE = SCRAPER_PROVIDER_OFFSET + 229;
+    private static final int SPOKENLANGUAGE_ID = SCRAPER_PROVIDER_OFFSET + 230;
+    private static final int SPOKENLANGUAGE_ALL = SCRAPER_PROVIDER_OFFSET + 231;
+    private static final int SPOKENLANGUAGE_MOVIE = SCRAPER_PROVIDER_OFFSET + 232;
+    private static final int SPOKENLANGUAGE_SHOW = SCRAPER_PROVIDER_OFFSET + 233;
+    private static final int SPOKENLANGUAGE_EPISODE = SCRAPER_PROVIDER_OFFSET + 234;
+    private static final int SPOKENLANGUAGE_NAME = SCRAPER_PROVIDER_OFFSET + 235;
+
     private static UriMatcher sUriMatcher;
 
     /**
@@ -377,6 +385,25 @@ public class ScraperProvider extends ContentProvider {
                 MUSICCOMPOSER_EPISODE);
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Musiccomposer.URI.NAME) + "*",
                 MUSICCOMPOSER_NAME);
+
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.BASE),
+                SPOKENLANGUAGE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.ALL),
+                SPOKENLANGUAGE_ALL);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.MOVIE),
+                SPOKENLANGUAGE_MOVIE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.MOVIE) + "#",
+                SPOKENLANGUAGE_MOVIE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.SHOW),
+                SPOKENLANGUAGE_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.SHOW) + "#",
+                SPOKENLANGUAGE_SHOW);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.EPISODE),
+                SPOKENLANGUAGE_EPISODE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.EPISODE) + "#",
+                SPOKENLANGUAGE_EPISODE);
+        sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Spokenlanguage.URI.NAME) + "*",
+                SPOKENLANGUAGE_NAME);
 
         sUriMatcher.addURI(ScraperStore.AUTHORITY, getPath(ScraperStore.Country.URI.BASE),
                 COUNTRY);
@@ -759,6 +786,11 @@ public class ScraperProvider extends ContentProvider {
                         ScraperStore.Musiccomposer.ID, values);
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Musiccomposer.URI.ID, cr);
                 break;
+            case SPOKENLANGUAGE:
+                rowId = db.insert(ScraperTables.SPOKENLANGUAGES_TABLE_NAME,
+                        ScraperStore.Spokenlanguage.ID, values);
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Spokenlanguage.URI.ID, cr);
+                break;
             case COUNTRY:
                 rowId = db.insert(ScraperTables.COUNTRIES_TABLE_NAME,
                         ScraperStore.Country.ID, values);
@@ -844,6 +876,16 @@ public class ScraperProvider extends ContentProvider {
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Musiccomposer.URI.ID, cr);
                 break;
+            case SPOKENLANGUAGE_MOVIE:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SPOKENLANGUAGES_MOVIE_VIEW_NAME,
+                            ScraperStore.Movie.Spokenlanguage.MOVIE, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Spokenlanguage.URI.ID, cr);
+                break;
             case COUNTRY_MOVIE:
                 try {
                     rowId = db.insertOrThrow(ScraperTables.COUNTRIES_MOVIE_VIEW_NAME,
@@ -913,6 +955,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Musiccomposer.URI.ID, cr);
+                break;
+            case SPOKENLANGUAGE_SHOW:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SPOKENLANGUAGES_SHOW_VIEW_NAME,
+                            ScraperStore.Show.Spokenlanguage.SHOW, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Spokenlanguage.URI.ID, cr);
                 break;
             case COUNTRY_SHOW:
                 try {
@@ -993,6 +1045,16 @@ public class ScraperProvider extends ContentProvider {
                     Log.d(TAG, "Exception: ", e);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Musiccomposer.URI.ID, cr);
+                break;
+            case SPOKENLANGUAGE_EPISODE:
+                try {
+                    rowId = db.insertOrThrow(ScraperTables.SPOKENLANGUAGES_EPISODE_VIEW_NAME,
+                            ScraperStore.Episode.Spokenlanguage.EPISODE, values);
+                    rowId = 1; // inserting into views will not return a row
+                } catch (SQLException e) {
+                    Log.d(TAG, "Exception: ", e);
+                }
+                noteUri = createUriAndNotify(rowId, db, ScraperStore.Spokenlanguage.URI.ID, cr);
                 break;
             case COUNTRY_EPISODE:
                 try {
@@ -1567,6 +1629,40 @@ public class ScraperProvider extends ContentProvider {
                 qb.appendWhereEscapeString(data);
                 break;
 
+            case SPOKENLANGUAGE_ID:
+                qb.setTables(ScraperTables.SPOKENLANGUAGES_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Spokenlanguage.ID + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SPOKENLANGUAGE_ALL:
+                qb.setTables(ScraperTables.SPOKENLANGUAGES_TABLE_NAME);
+                break;
+
+            case SPOKENLANGUAGE_MOVIE:
+                qb.setTables(ScraperTables.SPOKENLANGUAGES_MOVIE_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Movie.Spokenlanguage.MOVIE + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SPOKENLANGUAGE_SHOW:
+                qb.setTables(ScraperTables.SPOKENLANGUAGES_SHOW_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Show.Spokenlanguage.SHOW + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SPOKENLANGUAGE_EPISODE:
+                qb.setTables(ScraperTables.SPOKENLANGUAGES_EPISODE_VIEW_NAME);
+                qb.appendWhere(ScraperStore.Episode.Spokenlanguage.EPISODE + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
+            case SPOKENLANGUAGE_NAME:
+                qb.setTables(ScraperTables.SPOKENLANGUAGES_TABLE_NAME);
+                qb.appendWhere(ScraperStore.Spokenlanguage.NAME + " = ");
+                qb.appendWhereEscapeString(data);
+                break;
+
             case COUNTRY_ID:
                 qb.setTables(ScraperTables.COUNTRIES_TABLE_NAME);
                 qb.appendWhere(ScraperStore.Country.ID + " = ");
@@ -2120,6 +2216,11 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Episode.ID + " = " +
                 ScraperTables.MUSICCOMPOSERS_EPISODE_VIEW_NAME + "." +
                 ScraperStore.Episode.Musiccomposer.EPISODE + ") " +
+                " LEFT JOIN " + ScraperTables.SPOKENLANGUAGES_EPISODE_VIEW_NAME + " ON (" +
+                ScraperTables.EPISODE_TABLE_NAME + "." +
+                ScraperStore.Episode.ID + " = " +
+                ScraperTables.SPOKENLANGUAGES_EPISODE_VIEW_NAME + "." +
+                ScraperStore.Episode.Spokenlanguage.EPISODE + ") " +
                 " LEFT JOIN " + ScraperTables.COUNTRIES_EPISODE_VIEW_NAME + " ON (" +
                 ScraperTables.EPISODE_TABLE_NAME + "." +
                 ScraperStore.Episode.ID + " = " +
@@ -2166,6 +2267,11 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Movie.ID + " = " +
                 ScraperTables.MUSICCOMPOSERS_MOVIE_VIEW_NAME + "." +
                 ScraperStore.Movie.Musiccomposer.MOVIE + ") " +
+                " LEFT JOIN " + ScraperTables.SPOKENLANGUAGES_MOVIE_VIEW_NAME + " ON (" +
+                ScraperTables.MOVIE_TABLE_NAME + "." +
+                ScraperStore.Movie.ID + " = " +
+                ScraperTables.SPOKENLANGUAGES_MOVIE_VIEW_NAME + "." +
+                ScraperStore.Movie.Spokenlanguage.MOVIE + ") " +
                 " LEFT JOIN " + ScraperTables.COUNTRIES_MOVIE_VIEW_NAME + " ON (" +
                 ScraperTables.MOVIE_TABLE_NAME + "." +
                 ScraperStore.Movie.ID + " = " +
@@ -2228,6 +2334,12 @@ public class ScraperProvider extends ContentProvider {
                 ScraperStore.Show.ID + " = " +
                 ScraperTables.MUSICCOMPOSERS_SHOW_VIEW_NAME + "." +
                 ScraperStore.Show.Musiccomposer.SHOW + ") " +
+                " LEFT JOIN " +
+                ScraperTables.SPOKENLANGUAGES_SHOW_VIEW_NAME + " ON (" +
+                ScraperTables.SHOW_TABLE_NAME + "." +
+                ScraperStore.Show.ID + " = " +
+                ScraperTables.SPOKENLANGUAGES_SHOW_VIEW_NAME + "." +
+                ScraperStore.Show.Spokenlanguage.SHOW + ") " +
                 " LEFT JOIN " +
                 ScraperTables.COUNTRIES_SHOW_VIEW_NAME + " ON (" +
                 ScraperTables.SHOW_TABLE_NAME + "." +

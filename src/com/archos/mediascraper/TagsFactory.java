@@ -124,6 +124,7 @@ public class TagsFactory {
             producersME = getCol(c, VideoColumns.SCRAPER_PRODUCERS);
             screenplaysME = getCol(c, VideoColumns.SCRAPER_SCREENPLAYS);
             musiccomposersME = getCol(c, VideoColumns.SCRAPER_MUSICCOMPOSERS);
+            spokenlanguagesME = getCol(c, VideoColumns.SCRAPER_SPOKENLANGUAGES);
             countriesME = getCol(c, VideoColumns.SCRAPER_COUNTRIES);
             // unused?
             directorsS = getCol(c, VideoColumns.SCRAPER_S_DIRECTORS);
@@ -132,6 +133,7 @@ public class TagsFactory {
             producersS = getCol(c, VideoColumns.SCRAPER_S_PRODUCERS);
             screenplaysS = getCol(c, VideoColumns.SCRAPER_S_SCREENPLAYS);
             musiccomposersS = getCol(c, VideoColumns.SCRAPER_S_MUSICCOMPOSERS);
+            spokenlanguagesS = getCol(c, VideoColumns.SCRAPER_S_SPOKENLANGUAGES);
             countriesS = getCol(c, VideoColumns.SCRAPER_S_COUNTRIES);
             seasonplotsS = getCol(c, VideoColumns.SCRAPER_S_SEASONPLOTS);
             genresMS = getCol(c, VideoColumns.SCRAPER_GENRES);
@@ -250,12 +252,14 @@ public class TagsFactory {
         public final int producersME;
         public final int screenplaysME;
         public final int musiccomposersME;
+        public final int spokenlanguagesME;
         public final int countriesME;
         public final int writersS;
         public final int taglinesS;
         public final int producersS;
         public final int screenplaysS;
         public final int musiccomposersS;
+        public final int spokenlanguagesS;
         public final int countriesS;
         public final int seasonplotsS;
         public final int genresMS;
@@ -364,6 +368,7 @@ public class TagsFactory {
             VideoColumns.SCRAPER_PRODUCERS,
             VideoColumns.SCRAPER_SCREENPLAYS,
             VideoColumns.SCRAPER_MUSICCOMPOSERS,
+            VideoColumns.SCRAPER_SPOKENLANGUAGES,
             VideoColumns.SCRAPER_COUNTRIES,
             VideoColumns.SCRAPER_SEASONPLOTS,
         VideoColumns.SCRAPER_S_DIRECTORS,
@@ -372,6 +377,7 @@ public class TagsFactory {
             VideoColumns.SCRAPER_S_PRODUCERS,
             VideoColumns.SCRAPER_S_SCREENPLAYS,
             VideoColumns.SCRAPER_S_MUSICCOMPOSERS,
+            VideoColumns.SCRAPER_S_SPOKENLANGUAGES,
             VideoColumns.SCRAPER_S_COUNTRIES,
             VideoColumns.SCRAPER_S_SEASONPLOTS,
         VideoColumns.SCRAPER_GENRES,
@@ -444,6 +450,7 @@ public class TagsFactory {
      VideoColumns.SCRAPER_PRODUCERS,
      VideoColumns.SCRAPER_SCREENPLAYS,
      VideoColumns.SCRAPER_MUSICCOMPOSERS,
+     VideoColumns.SCRAPER_SPOKENLANGUAGES,
      VideoColumns.SCRAPER_COUNTRIES,
     VideoColumns.SCRAPER_S_DIRECTORS,
     VideoColumns.SCRAPER_S_WRITERS,
@@ -451,6 +458,7 @@ public class TagsFactory {
      VideoColumns.SCRAPER_S_PRODUCERS,
      VideoColumns.SCRAPER_S_SCREENPLAYS,
      VideoColumns.SCRAPER_S_MUSICCOMPOSERS,
+     VideoColumns.SCRAPER_S_SPOKENLANGUAGES,
      VideoColumns.SCRAPER_S_COUNTRIES,
     VideoColumns.SCRAPER_GENRES,
     VideoColumns.SCRAPER_STUDIOS,
@@ -505,6 +513,7 @@ public class TagsFactory {
             String producersME = getStringCol(cur, cols.producersME);
             String screenplaysME = getStringCol(cur, cols.screenplaysME);
             String musiccomposersME = getStringCol(cur, cols.musiccomposersME);
+            String spokenlanguagesME = getStringCol(cur, cols.spokenlanguagesME);
             String countriesME = getStringCol(cur, cols.countriesME);
             String genresMS = getStringCol(cur, cols.genresMS);
             String studiosMS = getStringCol(cur, cols.studiosMS);
@@ -596,6 +605,7 @@ public class TagsFactory {
                 tag.setProducersFormatted(producersME);
                 tag.setScreenplaysFormatted(screenplaysME);
                 tag.setMusiccomposersFormatted(musiccomposersME);
+                tag.setSpokenlanguagesFormatted(spokenlanguagesME);
                 tag.setCountriesFormatted(countriesME);
                 tag.setGenresFormatted(genresMS);
                 tag.setStudiosFormatted(studiosMS);
@@ -709,6 +719,7 @@ public class TagsFactory {
                 epTag.setProducersFormatted(producersME);
                 epTag.setScreenplaysFormatted(screenplaysME);
                 epTag.setMusiccomposersFormatted(musiccomposersME);
+                epTag.setSpokenlanguagesFormatted(spokenlanguagesME);
                 epTag.setCountriesFormatted(countriesME);
 
                 if(coverME != null && posterId <= 0)
@@ -752,6 +763,7 @@ public class TagsFactory {
                     String producersS =getStringCol(cur, cols.producersS);
                     String screenplaysS =getStringCol(cur, cols.screenplaysS);
                     String musiccomposersS =getStringCol(cur, cols.musiccomposersS);
+                    String spokenlanguagesS =getStringCol(cur, cols.spokenlanguagesS);
                     String countriesS =getStringCol(cur, cols.countriesS);
                     String seasonplotsS =getStringCol(cur, cols.seasonplotsS);
                     sTag.setDirectorsFormatted(directorsS);
@@ -759,6 +771,7 @@ public class TagsFactory {
                     sTag.setProducersFormatted(producersS);
                     sTag.setScreenplaysFormatted(screenplaysS);
                     sTag.setMusiccomposersFormatted(musiccomposersS);
+                    sTag.setSpokenlanguagesFormatted(spokenlanguagesS);
                     sTag.setCountriesFormatted(countriesS);
                     sTag.setGenresFormatted(genresMS);
                     sTag.setStudiosFormatted(studiosMS);
@@ -874,6 +887,7 @@ public class TagsFactory {
             String producer = getStringCol(cur, ScraperStore.Movie.Producer.NAME);
             String screenplay = getStringCol(cur, ScraperStore.Movie.Screenplay.NAME);
             String musiccomposer = getStringCol(cur, ScraperStore.Movie.Musiccomposer.NAME);
+            String spokenlanguage = getStringCol(cur, ScraperStore.Movie.Spokenlanguage.NAME);
             String country = getStringCol(cur, ScraperStore.Movie.Country.NAME);
             String genre = getStringCol(cur, ScraperStore.Movie.Genre.NAME);
             String studio = getStringCol(cur, ScraperStore.Movie.Studio.NAME);
@@ -915,6 +929,7 @@ public class TagsFactory {
             tag.addProducerIfAbsent(producer);
             tag.addScreenplayIfAbsent(screenplay);
             tag.addMusiccomposerIfAbsent(musiccomposer);
+            tag.addSpokenlanguageIfAbsent(spokenlanguage);
             tag.addCountryIfAbsent(country);
             tag.addGenreIfAbsent(genre);
             tag.addStudioIfAbsent(studio);
@@ -974,6 +989,7 @@ public class TagsFactory {
             String producer = getStringCol(cur, ScraperStore.Show.Producer.NAME);
             String screenplay = getStringCol(cur, ScraperStore.Show.Screenplay.NAME);
             String musiccomposer = getStringCol(cur, ScraperStore.Show.Musiccomposer.NAME);
+            String spokenlanguage = getStringCol(cur, ScraperStore.Show.Spokenlanguage.NAME);
             String country = getStringCol(cur, ScraperStore.Show.Country.NAME);
             String seasonplot = getStringCol(cur, ScraperStore.Show.SeasonPlot.NAME);
             String genre = getStringCol(cur, ScraperStore.Show.Genre.NAME);
@@ -1017,6 +1033,7 @@ public class TagsFactory {
             tag.addProducerIfAbsent(producer);
             tag.addScreenplayIfAbsent(screenplay);
             tag.addMusiccomposerIfAbsent(musiccomposer);
+            tag.addSpokenlanguageIfAbsent(spokenlanguage);
             tag.addCountryIfAbsent(country);
             tag.addSeasonPlotIfAbsent(seasonplot);
             tag.addGenreIfAbsent(genre);
@@ -1080,6 +1097,7 @@ public class TagsFactory {
             String producer = getStringCol(cur, ScraperStore.Episode.Producer.NAME);
             String screenplay = getStringCol(cur, ScraperStore.Episode.Screenplay.NAME);
             String musiccomposer = getStringCol(cur, ScraperStore.Episode.Musiccomposer.NAME);
+            String spokenlanguage = getStringCol(cur, ScraperStore.Episode.Spokenlanguage.NAME);
             String country = getStringCol(cur, ScraperStore.Episode.Country.NAME);
             String cover = getStringCol(cur, ScraperStore.Episode.COVER);
 
@@ -1105,6 +1123,7 @@ public class TagsFactory {
             tag.addProducerIfAbsent(producer);
             tag.addScreenplayIfAbsent(screenplay);
             tag.addMusiccomposerIfAbsent(musiccomposer);
+            tag.addSpokenlanguageIfAbsent(spokenlanguage);
             tag.addCountryIfAbsent(country);
 
             if(cover != null)
@@ -1280,6 +1299,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     result.addMusiccomposerIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Spokenlanguages
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Spokenlanguage.URI.MOVIE, movieId),
+                    new String[] {
+                            ScraperStore.Movie.Spokenlanguage.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addSpokenlanguageIfAbsent(c.getString(0));
                 }
                 c.close();
             }
@@ -1537,6 +1568,18 @@ public class TagsFactory {
                 }
                 c.close();
             }
+            // Spokenlanguages
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Spokenlanguage.URI.EPISODE, episodeId),
+                    new String[] {
+                            ScraperStore.Episode.Spokenlanguage.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    result.addSpokenlanguageIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
             // Countries
             c = cr.query(
                     ContentUris.withAppendedId(ScraperStore.Country.URI.EPISODE, episodeId),
@@ -1730,6 +1773,18 @@ public class TagsFactory {
             if (c != null) {
                 while (c.moveToNext()) {
                     showTags.addMusiccomposerIfAbsent(c.getString(0));
+                }
+                c.close();
+            }
+            // Spokenlanguages
+            c = cr.query(
+                    ContentUris.withAppendedId(ScraperStore.Spokenlanguage.URI.SHOW, showId),
+                    new String[] {
+                            ScraperStore.Show.Spokenlanguage.NAME,            // 0
+                    }, null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    showTags.addSpokenlanguageIfAbsent(c.getString(0));
                 }
                 c.close();
             }

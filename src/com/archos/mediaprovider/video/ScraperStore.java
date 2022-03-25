@@ -74,6 +74,8 @@ public final class ScraperStore {
         public static final String SCREENPLAYS_FORMATTED = "m_screenplays";
         /** musiccomposers preformatted - usually empty, use episode instead */
         public static final String MUSICCOMPOSERS_FORMATTED = "m_musiccomposers";
+        /** spokenlanguages preformatted - usually empty, use episode instead */
+        public static final String SPOKENLANGUAGES_FORMATTED = "m_spokenlanguages";
         /** countries preformatted - usually empty, use episode instead */
         public static final String COUNTRIES_FORMATTED = "m_countries";
         /** genres preformatted */
@@ -129,6 +131,12 @@ public final class ScraperStore {
             public static final String MOVIE = "movie_v_musiccomposers_movie";
             public static final String NAME = "name_v_musiccomposers_movie";
             public static final String MUSICCOMPOSER = "musiccomposer_v_musiccomposers_movie";
+        }
+
+        public static class Spokenlanguage {
+            public static final String MOVIE = "movie_v_spokenlanguages_movie";
+            public static final String NAME = "name_v_spokenlanguages_movie";
+            public static final String SPOKENLANGUAGE = "spokenlanguage_v_spokenlanguages_movie";
         }
 
         public static class Country {
@@ -202,6 +210,8 @@ public final class ScraperStore {
         public static final String SCREENPLAYS_FORMATTED = "s_screenplays";
         /** musiccomposers preformatted - usually empty, use episode instead */
         public static final String MUSICCOMPOSERS_FORMATTED = "s_musiccomposers";
+        /** spokenlanguages preformatted - usually empty, use episode instead */
+        public static final String SPOKENLANGUAGES_FORMATTED = "s_spokenlanguages";
         /** countries preformatted - usually empty, use episode instead */
         public static final String COUNTRIES_FORMATTED = "s_countries";
         /** seasonplots preformatted */
@@ -261,6 +271,12 @@ public final class ScraperStore {
             public static final String SHOW = "show_v_musiccomposers_show";
             public static final String NAME = "name_v_musiccomposers_show";
             public static final String MUSICCOMPOSER = "musiccomposer_v_musiccomposers_show";
+        }
+
+        public static class Spokenlanguage {
+            public static final String SHOW = "show_v_spokenlanguages_show";
+            public static final String NAME = "name_v_spokenlanguages_show";
+            public static final String SPOKENLANGUAGE = "spokenlanguage_v_spokenlanguages_show";
         }
 
         public static class Country {
@@ -370,6 +386,8 @@ public final class ScraperStore {
         public static final String SCREENPLAYS_FORMATTED = "e_screenplays";
         /** musiccomposers preformatted */
         public static final String MUSICCOMPOSERS_FORMATTED = "e_musiccomposers";
+        /** spokenlanguages preformatted */
+        public static final String SPOKENLANGUAGES_FORMATTED = "e_spokenlanguages";
         /** countries preformatted */
         public static final String COUNTRIES_FORMATTED = "e_countries";
 
@@ -419,6 +437,11 @@ public final class ScraperStore {
             public static final String EPISODE = "episode_v_musiccomposers_episode";
             public static final String NAME = "name_v_musiccomposers_episode";
             public static final String MUSICCOMPOSER = "musiccomposer_v_musiccomposers_episode";
+        }
+        public static class Spokenlanguage {
+            public static final String EPISODE = "episode_v_spokenlanguages_episode";
+            public static final String NAME = "name_v_spokenlanguages_episode";
+            public static final String SPOKENLANGUAGE = "spokenlanguage_v_spokenlanguages_episode";
         }
         public static class Country {
             public static final String EPISODE = "episode_v_countries_episode";
@@ -566,6 +589,22 @@ public final class ScraperStore {
             public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/show/");
             public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/episode/");
             public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/musiccomposer/name/");
+        }
+    }
+
+    public static class Spokenlanguage {
+        public static final String ID = "_id";
+        public static final String NAME = "name_spokenlanguage";
+        public static final String COUNT = "count_spokenlanguage";
+
+        public static class URI {
+            public static final Uri BASE = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguage");
+            public static final Uri ID = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguage/id/");
+            public static final Uri ALL = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguages");
+            public static final Uri MOVIE = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguage/movie/");
+            public static final Uri SHOW = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguage/show/");
+            public static final Uri EPISODE = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguage/episode/");
+            public static final Uri NAME = Uri.parse(CONTENT_AUTHORITY + "/tags/spokenlanguage/name/");
         }
     }
 

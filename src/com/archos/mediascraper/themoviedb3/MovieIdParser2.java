@@ -205,10 +205,10 @@ public class MovieIdParser2 {
         String movieTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity + "=&%#" + releaseDate + "=&%#" + movie.original_language;
         result.addTaglineIfAbsent(movieTag);
 
-        // using seasonplot to scrape spoken languages
+        // set Spoken languages
         if (movie.spoken_languages != null){
             for (SpokenLanguage spokenLanguage : movie.spoken_languages)
-                result.addSeasonPlotIfAbsent(spokenLanguage.iso_639_1);
+                result.addSpokenlanguageIfAbsent(spokenLanguage.iso_639_1);
         }
 
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);

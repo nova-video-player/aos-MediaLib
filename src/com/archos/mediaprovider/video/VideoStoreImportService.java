@@ -473,7 +473,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
         try {
-            // tidy up the accumulated actor director writer tagline producer screenplay musiccomposer country seasonplot studio genre piled up in v_.*_deletable tables in one shot during deletes
+            // tidy up the accumulated actor director writer tagline producer screenplay musiccomposer spokenlanguage country seasonplot studio genre piled up in v_.*_deletable tables in one shot during deletes
             // it has been moved from scraperTables triggers here to gain in efficiency
             db.execSQL("delete from actor where _id in (select _id from v_actor_deletable)");
             db.execSQL("delete from director where _id in (select _id from v_director_deletable)");
@@ -482,6 +482,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             db.execSQL("delete from producer where _id in (select _id from v_producer_deletable)");
             db.execSQL("delete from screenplay where _id in (select _id from v_screenplay_deletable)");
             db.execSQL("delete from musiccomposer where _id in (select _id from v_musiccomposer_deletable)");
+            db.execSQL("delete from spokenlanguage where _id in (select _id from v_spokenlanguage_deletable)");
             db.execSQL("delete from country where _id in (select _id from v_country_deletable)");
             db.execSQL("delete from studio where _id in (select _id from v_studio_deletable)");
             db.execSQL("delete from genre where _id in (select _id from v_genre_deletable)");

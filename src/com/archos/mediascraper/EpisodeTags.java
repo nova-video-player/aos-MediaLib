@@ -147,6 +147,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.PRODUCERS_FORMATTED, getProducersFormatted());
         values.put(ScraperStore.Episode.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
         values.put(ScraperStore.Episode.MUSICCOMPOSERS_FORMATTED, getMusiccomposersFormatted());
+        values.put(ScraperStore.Episode.SPOKENLANGUAGES_FORMATTED, getSpokenlanguagesFormatted());
         values.put(ScraperStore.Episode.COUNTRIES_FORMATTED, getCountriesFormatted());
 
         File cover = getCover();
@@ -226,6 +227,14 @@ public class EpisodeTags extends BaseTags {
             allOperations.add(cop.build());
         }
 
+        // then spokenlanguages etc
+        for(String spokenlanguage: mSpokenlanguages) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Spokenlanguage.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Spokenlanguage.NAME, spokenlanguage);
+            cop.withValueBackReference(ScraperStore.Episode.Spokenlanguage.EPISODE, 0);
+            allOperations.add(cop.build());
+        }
+
         // then countries etc
         for(String country: mCountries) {
             cop = ContentProviderOperation.newInsert(ScraperStore.Country.URI.EPISODE);
@@ -294,6 +303,7 @@ public class EpisodeTags extends BaseTags {
         values.put(ScraperStore.Episode.PRODUCERS_FORMATTED, getProducersFormatted());
         values.put(ScraperStore.Episode.SCREENPLAYS_FORMATTED, getScreenplaysFormatted());
         values.put(ScraperStore.Episode.MUSICCOMPOSERS_FORMATTED, getMusiccomposersFormatted());
+        values.put(ScraperStore.Episode.SPOKENLANGUAGES_FORMATTED, getSpokenlanguagesFormatted());
         values.put(ScraperStore.Episode.COUNTRIES_FORMATTED, getCountriesFormatted());
 
         ScraperImage pic = getEpisodePicture();
@@ -367,6 +377,14 @@ public class EpisodeTags extends BaseTags {
             cop = ContentProviderOperation.newInsert(ScraperStore.Musiccomposer.URI.EPISODE);
             cop.withValue(ScraperStore.Episode.Musiccomposer.NAME, musiccomposer);
             cop.withValueBackReference(ScraperStore.Episode.Musiccomposer.EPISODE, firstIndex);
+            list.add(cop.build());
+        }
+
+        // then spokenlanguages etc
+        for(String spokenlanguage: mSpokenlanguages) {
+            cop = ContentProviderOperation.newInsert(ScraperStore.Spokenlanguage.URI.EPISODE);
+            cop.withValue(ScraperStore.Episode.Spokenlanguage.NAME, spokenlanguage);
+            cop.withValueBackReference(ScraperStore.Episode.Spokenlanguage.EPISODE, firstIndex);
             list.add(cop.build());
         }
 

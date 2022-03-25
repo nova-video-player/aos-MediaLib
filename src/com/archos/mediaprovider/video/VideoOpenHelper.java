@@ -1109,6 +1109,11 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    e_musiccomposers,\n" +
                     "    s_musiccomposers,\n" +
 
+                    "    coalesce(m_spokenlanguages, e_spokenlanguages) AS spokenlanguages,\n" +
+                    "    m_spokenlanguages,\n" +
+                    "    e_spokenlanguages,\n" +
+                    "    s_spokenlanguages,\n" +
+
                     "    coalesce(m_countries, e_countries) AS countries,\n" +
                     "    m_countries,\n" +
                     "    e_countries,\n" +

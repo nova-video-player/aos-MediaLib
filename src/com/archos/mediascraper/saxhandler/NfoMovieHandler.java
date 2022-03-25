@@ -80,6 +80,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int SCREENPLAY = 36;
     private static final int MUSICCOMPOSER = 37;
     private static final int COUNTRY = 38;
+    private static final int SPOKENLANGUAGE = 39;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -97,6 +98,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("producer", PRODUCER);
         STRINGS.addKey("screenplay", SCREENPLAY);
         STRINGS.addKey("musiccomposer", MUSICCOMPOSER);
+        STRINGS.addKey("spokenlanguag", SPOKENLANGUAGE);
         STRINGS.addKey("country", COUNTRY);
         STRINGS.addKey("actor", ACTOR);
         STRINGS.addKey("name", NAME);
@@ -218,6 +220,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case PRODUCER:
                     case SCREENPLAY:
                     case MUSICCOMPOSER:
+                    case SPOKENLANGUAGE:
                     case COUNTRY:
                     case STUDIO:
                     case TMDBID:
@@ -348,6 +351,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case MUSICCOMPOSER:
                         mMovie.addMusiccomposerIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case SPOKENLANGUAGE:
+                        mMovie.addSpokenlanguageIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
                     case COUNTRY:
                         mMovie.addCountryIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
