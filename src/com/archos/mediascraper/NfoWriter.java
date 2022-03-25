@@ -267,8 +267,8 @@ public class NfoWriter {
                 textTag(serializer, "musiccomposer", musiccomposer);
             for (String spokenlanguage : tag.getSpokenlanguages())
                 textTag(serializer, "spokenlanguage", spokenlanguage);
-            for (String musiccomposer : tag.getMusiccomposers())
-                textTag(serializer, "musiccomposer", musiccomposer);
+            for (String country : tag.getCountries())
+                textTag(serializer, "country", country);
             for (Entry<String, String> entry : tag.getActors().entrySet()) {
                 serializer.startTag("", "actor");
                 {
