@@ -211,6 +211,18 @@ public class ShowIdParser {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        // using Screenplay to scrape spoken languages
+        try {
+            JSONObject json = new JSONObject(readUrl(newUrl));
+            JSONArray jsonArray = json.getJSONArray("spoken_languages");
+            for (int i = 0; i < jsonArray.length(); i++) {
+                String languageCode = jsonArray.getJSONObject(i).getString("iso_639_1");
+                result.addScreenplayIfAbsent(languageCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         if (serie.networks != null) {
                 for (int i = 0; i < serie.networks.size(); i++) {

@@ -34,6 +34,7 @@ import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.entities.ReleaseDate;
 import com.uwetrottmann.tmdb2.entities.ReleaseDatesResult;
+import com.uwetrottmann.tmdb2.entities.SpokenLanguage;
 import com.uwetrottmann.tmdb2.entities.Videos;
 
 import org.json.JSONArray;
@@ -203,6 +204,12 @@ public class MovieIdParser2 {
         }
         String movieTag = movie.tagline + "=&%#" + movie.budget + "=&%#" + movie.revenue + "=&%#" + movie.runtime + "=&%#" + movie.vote_count + "=&%#" + movie.popularity + "=&%#" + releaseDate + "=&%#" + movie.original_language;
         result.addTaglineIfAbsent(movieTag);
+
+        // using seasonplot to scrape spoken languages
+        if (movie.spoken_languages != null){
+            for (SpokenLanguage spokenLanguage : movie.spoken_languages)
+                result.addSeasonPlotIfAbsent(spokenLanguage.iso_639_1);
+        }
 
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
