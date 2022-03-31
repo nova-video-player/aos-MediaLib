@@ -82,5 +82,6 @@
     <color name="help_overlay_button_pressed">#ffabc8db</color>
 
     <color name="transparent_grey">#AA37474F</color>
+    <color name="selected_episode">#ffff00</color>
 </resources>
 
