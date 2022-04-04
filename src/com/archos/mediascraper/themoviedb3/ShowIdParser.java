@@ -115,7 +115,7 @@ public class ShowIdParser {
                 } else{
                     seasonNumber = "No season number";
                 }
-                seasonPlot = seasonNumber + "=&%#" + overview + "=&%#" + name + "=&%#" + airdate;
+                seasonPlot = seasonNumber + "=&%#" + overview + "=&%#" + name + "=&%#" + airdate + "&&&&####";
                 SeasonPlots.add(seasonPlot);
                 result.setSeasonPlots(SeasonPlots);
             }
