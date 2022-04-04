@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -976,19 +975,4 @@ public abstract class BaseTags implements Parcelable {
         return result;
     }
 
-    public List<SeasonData> getSeasonTags() {
-        List <SeasonData>  seasonTags = new ArrayList<>();
-        for (int i = 0; i < getSeasonPlots().size(); i++) {
-            String seasonTag = getSeasonPlots().get(i);
-            List <String>  seasonTagsFormatted;
-            seasonTagsFormatted = Arrays.asList(seasonTag.split("\\s*=&%#\\s*"));
-            SeasonData seasonData = new SeasonData();
-            seasonData.setSeasonNumber(seasonTagsFormatted.get(0));
-            seasonData.setSeasonPlot(seasonTagsFormatted.get(1));
-            seasonData.setSeasonName(seasonTagsFormatted.get(2));
-            seasonData.setSeasonAirdate(seasonTagsFormatted.get(3));
-            seasonTags.add(seasonData);
-        }
-        return seasonTags;
-    }
 }
