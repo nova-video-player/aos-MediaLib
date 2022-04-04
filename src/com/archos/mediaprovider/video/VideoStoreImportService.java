@@ -14,7 +14,7 @@
 
 package com.archos.mediaprovider.video;
 
-import static com.archos.filecorelibrary.FileUtils.canManageExternalStorage;
+import static com.archos.filecorelibrary.FileUtils.canReadExternalStorage;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -25,7 +25,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -47,7 +46,6 @@ import androidx.core.content.ContextCompat;
 import com.archos.environment.ArchosUtils;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
-import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.DeleteFileCallback;
 import com.archos.mediaprovider.ImportState;
@@ -427,10 +425,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
         nm.notify(NOTIFICATION_ID, n);
 
-        if (! (canManageExternalStorage() ||
-                ContextCompat.checkSelfPermission(this,
-                        android.Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                        PackageManager.PERMISSION_GRANTED)) {
+        if (! canReadExternalStorage(this)) {
             log.debug("no read permission : stop import");
             return;
         } else

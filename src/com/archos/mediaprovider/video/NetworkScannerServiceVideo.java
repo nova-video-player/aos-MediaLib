@@ -448,7 +448,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                     if(upnpUri!=null&&!item._data.startsWith(upnpUri)) { // if this isn't in folder about to be listed, we won't need to delete it
                         item.needsDelete = false;
                     }
-                    log.debug("doScan: prescan item " + item);
+                    log.debug("doScan: prescan item._data " + item._data);
                     if(item.unique_id!=null && !item.unique_id.isEmpty())
                         prescanItemsMap.put(item.unique_id, item);
                     else
