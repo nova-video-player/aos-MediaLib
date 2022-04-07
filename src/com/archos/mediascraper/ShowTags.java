@@ -581,9 +581,11 @@ public class ShowTags extends VideoTags {
     }
 
     public int getPremieredYear() {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(mPremiered);
-        return cal.get(Calendar.YEAR);
+        if (mPremiered != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(mPremiered);
+            return cal.get(Calendar.YEAR);
+        } else return 0;
     }
 
     private void updateInfo(String selection, String[] selectionArgs, ContentResolver contentResolver) {
