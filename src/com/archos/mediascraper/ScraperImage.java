@@ -41,8 +41,8 @@ public class ScraperImage {
     private static final Logger log = LoggerFactory.getLogger(ScraperImage.class);
 
     // ratio is 1.5, match poster width of TMDB: there is no rescaling if image size lower or equal to defined dimension for posters and screen size for backdrops
-    public static int POSTER_WIDTH = 342; //240
-    public static int POSTER_HEIGHT = 513; // 360
+    public static int POSTER_WIDTH = 780; //240
+    public static int POSTER_HEIGHT = 1170; // 360
 
     // 780x439 64K or 300x169 16K or 185x104 8K or 92x52 4K
     public static int PICTURE_WIDTH = 780;
@@ -53,7 +53,7 @@ public class ScraperImage {
     final static String TMDB_CAST_IMAGE_URL = "https://image.tmdb.org/t/p/w154";
     final static String GITHUB_STUDIO_NETWOK_LOGO_URL = "https://raw.githubusercontent.com/bronnel/resource.images.studios.coloured/master/resources/";
     final static String POSTER_THUMB = "w154";
-    final static String POSTER_LARGE = "w342";
+    final static String POSTER_LARGE = "w780";
     final static String BACKDROP_THUMB = "w300";
     final static String BACKDROP_LARGE = "w1280";
     final static String STILL_THUMB = "w154"; // w780
