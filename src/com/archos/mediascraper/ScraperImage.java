@@ -45,8 +45,8 @@ public class ScraperImage {
     public static int POSTER_HEIGHT = 513; // 360
 
     // 780x439 64K or 300x169 16K or 185x104 8K or 92x52 4K
-    public static int PICTURE_WIDTH = 300;
-    public static int PICTURE_HEIGHT = 169;
+    public static int PICTURE_WIDTH = 780;
+    public static int PICTURE_HEIGHT = 439;
 
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
@@ -57,7 +57,7 @@ public class ScraperImage {
     final static String BACKDROP_THUMB = "w300";
     final static String BACKDROP_LARGE = "w1280";
     final static String STILL_THUMB = "w154"; // w780
-    final static String STILL_LARGE = "w342"; // w780
+    final static String STILL_LARGE = "w780"; // w780
     // for poster
     public final static String TMPT = TMDB_IMAGE_URL + POSTER_THUMB;
     public final static String TMPL = TMDB_IMAGE_URL + POSTER_LARGE;
