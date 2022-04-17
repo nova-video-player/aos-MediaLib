@@ -58,6 +58,8 @@ import com.archos.mediascraper.Scraper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.sentry.SentryLevel;
+
 public class VideoStoreImportService extends Service implements Handler.Callback {
     private static final Logger log = LoggerFactory.getLogger(VideoStoreImportService.class);
 
@@ -126,6 +128,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 serviceIntent.putExtras(broadcast.getExtras()); //in case we have an extra... such as "recordLogExtra"
             if (AppState.isForeGround()) {
                 log.debug("startIfHandles: apps is foreground startForegroundService and pass intent to self");
+                ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startIfHandles", "apps is foreground startForegroundService and pass intent to self");
                 ContextCompat.startForegroundService(context, serviceIntent);
             }
             return true;
@@ -157,6 +160,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public void onCreate() {
         log.debug("onCreate");
         n = createNotification();
+        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
         startForeground(NOTIFICATION_ID, n);
         log.debug("onCreate: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
 
@@ -271,6 +275,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // intents are delivered here.
         log.debug("onStartCommand:" + intent + " flags:" + flags + " startId:" + startId + ((intent != null) ? ", getAction " + intent.getAction() : " getAction null"));
 
+        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
         log.debug("onStartCommand: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
         startForeground(NOTIFICATION_ID, n);
 
@@ -337,7 +342,13 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         mContext = context;
         Intent intent = new Intent(context, VideoStoreImportService.class);
         if (AppState.isForeGround()) {
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in foreground calling ContextCompat.startForegroundService");
             ContextCompat.startForegroundService(context, intent);
+            log.debug("startService: app in foreground calling ContextCompat.startForegroundService");
+
+        } else {
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in background NOT calling ContextCompat.startForegroundService");
+            log.debug("startService: app in background NOT calling ContextCompat.startForegroundService");
         }
         // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }
@@ -623,7 +634,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 Intent intent = new Intent(mContext, VideoStoreImportService.class);
                 intent.setAction(ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR);
                 if (AppState.isForeGround()) {
+                    ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onChange", "app in foreground calling ContextCompat.startForegroundService");
+                    log.debug("onChange: app in foreground calling ContextCompat.startForegroundService");
                     ContextCompat.startForegroundService(mContext, intent);
+                } else {
+                    ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onChange", "app in background NOT calling ContextCompat.startForegroundService");
+                    log.debug("onChange: app in background NOT calling ContextCompat.startForegroundService");
                 }
             }
         }
