@@ -47,6 +47,10 @@
         <item name="android:windowBackground">@drawable/background_2014</item>
     </style>
 
+    <style name="DarkBlueTheme" parent="ArchosTheme">
+        <item name="android:windowBackground">@drawable/dark_mode</item>
+    </style>
+
     <style name="Theme.AlertDialog" parent="Theme.AppCompat.Dialog.Alert">
         <item name="colorPrimary">@color/lightblue500</item>
         <item name="colorPrimaryDark">#002642</item>
