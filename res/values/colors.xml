@@ -87,7 +87,7 @@
     <color name="unselected_episode_picture">#404040</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="fab_dark_blue">#11324C</color>
+    <color name="fab_dark_blue">#002139</color>
     <color name="deep_dark_blue">#000A12</color>
     <color name="deep_dark_blue_transparent">#AA000A12</color>
 </resources>
