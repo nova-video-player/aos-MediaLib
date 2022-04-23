@@ -63,7 +63,7 @@
 
     <color name="transparent_white">#33ffffff</color>
     <color name="transparent_white_25">#25ffffff</color>
-    <color name="transparent_white_list_divider">#22ffffff</color>
+    <color name="transparent_white_list_divider">#FFC107</color>
 
     <!-- Background color for currently dragged item in playlist edit mode. -->
     <color name="dragndrop_background">@color/my_holo_blue_very_dark</color>
