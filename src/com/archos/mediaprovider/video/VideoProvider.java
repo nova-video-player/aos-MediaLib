@@ -43,6 +43,7 @@ import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
 
+import com.archos.environment.ArchosUtils;
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
@@ -77,6 +78,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Random;
+
+import io.sentry.SentryLevel;
 
 public class VideoProvider extends ContentProvider {
     private static final Logger log = LoggerFactory.getLogger(VideoProvider.class);
@@ -133,8 +136,10 @@ public class VideoProvider extends ContentProvider {
         };
         PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(mPreferencechChangeListener);
 
+        // TODO MARC do it only if foreground?
         try {
-            log.debug("onCreate: try to VideoStoreImportService.start");
+            log.trace("onCreate: try to VideoStoreImportService.start");
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoProvider.onCreate", "start VideoStoreImportService");
             VideoStoreImportService.startService(context);
         }catch(java.lang.IllegalStateException e){
             log.warn("onCreate: VideoStoreImportService.startService failed!");
@@ -1372,11 +1377,13 @@ public class VideoProvider extends ContentProvider {
 
     // TODO should it be done at each foreground? probably
     private final AppState.OnForeGroundListener mForeGroundListener = (applicationContext, foreground) -> {
-        if(foreground) {
-            log.debug("mForeGroundListener: VideoStoreImportService.startService");
+        if (foreground) {
+            log.trace("mForeGroundListener: app is foreground VideoStoreImportService.startService");
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoProvider.mForeGroundListener", "app is foreground VideoStoreImportService.startService");
             VideoStoreImportService.startService(applicationContext);
         }  else {
-            log.debug("mForeGroundListener: VideoStoreImportService.stopService");
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoProvider.mForeGroundListener", "app is background VideoStoreImportService.stopService");
+            log.trace("mForeGroundListener: app is background VideoStoreImportService.stopService");
             VideoStoreImportService.stopService(applicationContext);
         }
         handleForeGround(foreground);

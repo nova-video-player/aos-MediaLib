@@ -345,7 +345,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in foreground calling ContextCompat.startForegroundService");
             ContextCompat.startForegroundService(context, intent);
             log.debug("startService: app in foreground calling ContextCompat.startForegroundService");
-
         } else {
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in background NOT calling ContextCompat.startForegroundService");
             log.debug("startService: app in background NOT calling ContextCompat.startForegroundService");
