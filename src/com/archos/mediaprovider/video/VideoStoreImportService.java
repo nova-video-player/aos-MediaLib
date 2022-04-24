@@ -251,11 +251,13 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // hide notification
         if (AppState.isForeGround()) {
             log.debug("onDestroy: app is in foreground stopForeground");
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onDestroy", "app is in foreground stopForeground");
             nm.cancel(NOTIFICATION_ID);
             stopForeground(true);
         } else {
-            log.debug("onDestroy: app is in background stopSelf");
+                log.debug("onDestroy: app is in background stopSelf");
             // if app goes in background do not remove notif use stopSelf
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onDestroy", "app is in background stopSelf");
             stopSelf();
         }
     }
@@ -326,6 +328,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             Message m = mHandler.obtainMessage(MESSAGE_UPDATE_METADATA, startId, flags, intent.getData());
             m.sendToTarget();
         } else {
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "intent not treated, cancelling notification and stopForeground");
             log.warn("onStartCommand: intent not treated, cancelling notification and stopForeground");
             nm.cancel(NOTIFICATION_ID);
             stopForeground(true);
@@ -378,17 +381,20 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         log.debug("handleMessage:" + msg + " what:" + msg.what + " startid:" + msg.arg1);
         switch (msg.what) {
             case MESSAGE_KILL:
-                log.debug("handleMessage: MESSAGE_KILL");
+                log.debug("handleMessage: MESSAGE_KILL: stopForeground");
                 nm.cancel(NOTIFICATION_ID);
                 if (ImportState.VIDEO.isInitialImport()) ImportState.VIDEO.setState(State.IDLE);
+                ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.handleMessage", "MESSAGE_KILL: stopForeground");
                 stopForeground(true);
                 // this service used to be created through bind. So it couldn't be killed with stopself unless it was unbind
                 // (which wasn't done). To have the same behavior, do not stop service for now
                 if (msg.arg1 != DONT_KILL_SELF){
                     log.debug("stopSelf");
+                    ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.handleMessage", "MESSAGE_KILL: stopSelf");
                     stopSelf(msg.arg1);
                 } else {
-                    log.debug("do not stopSelf");
+                    ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.handleMessage", "MESSAGE_KILL: do not stopSelf");
+                    log.debug("handleMessage: MESSAGE_KILL: do not stopSelf");
                 }
                 break;
             case MESSAGE_IMPORT_INCR:
