@@ -354,6 +354,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     public static void stopService(Context context) {
         log.debug("stopService");
+        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.stopService", "stopping service");
         Intent intent = new Intent(context, VideoStoreImportService.class);
         intent.setAction(Intent.ACTION_SHUTDOWN);
         context.stopService(intent);
