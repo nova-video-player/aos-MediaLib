@@ -50,7 +50,7 @@ public class ScraperImage {
 
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
-    final static String TMDB_CAST_IMAGE_URL = "https://image.tmdb.org/t/p/w154";
+    final static String TMDB_CAST_IMAGE_URL = "https://image.tmdb.org/t/p/h632";
     final static String GITHUB_STUDIO_NETWOK_LOGO_URL = "https://raw.githubusercontent.com/bronnel/resource.images.studios.coloured/master/resources/";
     final static String POSTER_THUMB = "w154";
     final static String POSTER_LARGE = "w780";
