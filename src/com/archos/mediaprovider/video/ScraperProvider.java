@@ -454,11 +454,16 @@ public class ScraperProvider extends ContentProvider {
     }
 
     private static final String[] ID_PROJ = { BaseColumns._ID };
+    private static final String[] ID_PROJ_COLLECTION = { ScraperStore.MovieCollections.ID };
     private final static long findScraperImage(SQLiteDatabase db, String table, ScraperImage.Type type, ContentValues cv) {
         String selection = type.largeFileColumn + "=?";
         String[] selectionArgs = { cv.getAsString(type.largeFileColumn) };
         long result = -1;
-        Cursor cursor = db.query(table, ID_PROJ, selection, selectionArgs, null, null, null);
+        Cursor cursor;
+        if (table.equals(ScraperTables.MOVIE_COLLECTION_TABLE_NAME)) // movie collection table has different base id...
+            cursor = db.query(table, ID_PROJ_COLLECTION, selection, selectionArgs, null, null, null);
+        else
+            cursor = db.query(table, ID_PROJ, selection, selectionArgs, null, null, null);
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 result = cursor.getLong(0);
