@@ -352,15 +352,15 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
             if (sec >= 3600) {
                 long m = (sec % 3600) / 60;
                 // %Hh%m'
-                res = String.valueOf(sec / 3600) + "h" + (m < 10 ? "0" + String.valueOf(m) : String.valueOf(m)) + "'";
+                res = String.valueOf(sec / 3600) + "h " + (m < 10 ? "0" + String.valueOf(m) : String.valueOf(m)) + "m";
             }
-            else if (ms < 60)
+            else if (ms < 60000)
                 // %s''
-                res = String.valueOf(sec % 60) + "''";
+                res = String.valueOf(sec % 60) + "s";
             else {
                 long s = sec % 60;
                 // %m'%s''
-                res = String.valueOf((sec % 3600) / 60) + "'" + (s < 10 ? "0" + String.valueOf(s) : String.valueOf(s)) + "''";
+                res = String.valueOf((sec % 3600) / 60) + "m " + (s < 10 ? "0" + String.valueOf(s) : String.valueOf(s)) + "s";
             }
         }
         return res;
