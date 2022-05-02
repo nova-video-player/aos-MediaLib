@@ -487,7 +487,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(m_studios, s_studios) AS studios,\n" +
                     "    m_studios,\n" +
                     "    s_studios,\n" +
-                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, sp.s_po_large_file, cover_episode, cover_show) AS cover,\n" +
+                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, cover_episode, sp.s_po_large_file, cover_show) AS cover,\n" +
                     "    coalesce(mp.m_po_large_file, cover_movie) AS m_cover,\n" +
                     "    coalesce(ep.s_po_large_file, cover_episode) AS e_cover,\n" +
                     "    coalesce(sp.s_po_large_file, cover_show) AS s_cover,\n" +
@@ -694,7 +694,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 					"    coalesce(m_studios, s_studios) AS studios,\n" +
 					"    m_studios,\n" +
 					"    s_studios,\n" +
-					"    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, sp.s_po_large_file, cover_episode, cover_show) AS cover,\n" +
+                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, cover_episode, sp.s_po_large_file, cover_show) AS cover,\n" +
 					"    coalesce(mp.m_po_large_file, cover_movie) AS m_cover,\n" +
 					"    coalesce(ep.s_po_large_file, cover_episode) AS e_cover,\n" +
 					"    coalesce(sp.s_po_large_file, cover_show) AS s_cover,\n" +
@@ -903,7 +903,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(m_studios, s_studios) AS studios,\n" +
                     "    m_studios,\n" +
                     "    s_studios,\n" +
-                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, sp.s_po_large_file, cover_episode, cover_show) AS cover,\n" +
+                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, cover_episode, sp.s_po_large_file, cover_show) AS cover,\n" +
                     "    coalesce(mp.m_po_large_file, cover_movie) AS m_cover,\n" +
                     "    coalesce(ep.s_po_large_file, cover_episode) AS e_cover,\n" +
                     "    coalesce(sp.s_po_large_file, cover_show) AS s_cover,\n" +
@@ -1127,7 +1127,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(m_studios, s_studios) AS studios,\n" +
                     "    m_studios,\n" +
                     "    s_studios,\n" +
-                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, sp.s_po_large_file, cover_episode, cover_show) AS cover,\n" +
+                    "    coalesce(mp.m_po_large_file, cover_movie, ep.s_po_large_file, cover_episode, sp.s_po_large_file, cover_show) AS cover,\n" +
                     "    coalesce(mp.m_po_large_file, cover_movie) AS m_cover,\n" +
                     "    coalesce(ep.s_po_large_file, cover_episode) AS e_cover,\n" +
                     "    coalesce(sp.s_po_large_file, cover_show) AS s_cover,\n" +
