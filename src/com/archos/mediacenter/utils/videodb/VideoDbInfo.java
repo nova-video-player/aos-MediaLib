@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
+import android.provider.MediaStore;
 
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.BaseTags;
@@ -81,6 +82,8 @@ public class VideoDbInfo implements Parcelable {
     public int videoStereo = -1;
     public int videoDefinition = -1;
     public int scraperCollectionID = -1;
+    public int mCalculatedHeight = -1;
+    public int mCalculatedWidth = -1;
 
     public static final Uri URI = VideoStore.Video.Media.EXTERNAL_CONTENT_URI;
     public static final String SELECTION_ID = BaseColumns._ID + "=?";
@@ -115,6 +118,8 @@ public class VideoDbInfo implements Parcelable {
             VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 24
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 25
             VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 26
+            MediaStore.Video.VideoColumns.HEIGHT,
+            MediaStore.Video.VideoColumns.WIDTH,
     };
 
     public static final int IDX_ID =                     0;
@@ -144,6 +149,8 @@ public class VideoDbInfo implements Parcelable {
     public static final int IDX_SCRAPER_E_ONLINE_ID =   24;
     public static final int IDX_SCRAPER_ID =            25;
     public static final int IDX_SCRAPER_M_COLLECTION_ID = 26;
+    public static final int IDX_HEIGHT =                27;
+    public static final int IDX_WIDTH =                 28;
     public static VideoDbInfo fromId(ContentResolver cr, long id) {
         if (id >= 0) {
             String[] selectionArgs = { String.valueOf(id) };
@@ -224,6 +231,8 @@ public class VideoDbInfo implements Parcelable {
             result.scraperShowId = c.getString(IDX_SCRAPER_S_ONLINE_ID);
             result.scraperEpisodeId = c.getString(IDX_SCRAPER_E_ONLINE_ID);
             result.scraperCollectionID = c.getInt(IDX_SCRAPER_M_COLLECTION_ID);
+            result.mCalculatedHeight = c.getInt(IDX_HEIGHT);
+            result.mCalculatedWidth = c.getInt(IDX_WIDTH);
         }
         return result;
     }
@@ -330,6 +339,8 @@ public class VideoDbInfo implements Parcelable {
         videoStereo = another.videoStereo;
         videoDefinition = another.videoDefinition;
         scraperCollectionID = another.scraperCollectionID;
+        mCalculatedHeight = another.mCalculatedHeight;
+        mCalculatedWidth = another.mCalculatedWidth;
     }
 
     public VideoDbInfo(Parcel in) {
@@ -363,6 +374,8 @@ public class VideoDbInfo implements Parcelable {
         videoStereo = in.readInt();
         videoDefinition = in.readInt();
         scraperCollectionID = in.readInt();
+        mCalculatedHeight = in.readInt();
+        mCalculatedWidth = in.readInt();
     }
 
     @Override
@@ -401,6 +414,8 @@ public class VideoDbInfo implements Parcelable {
         dest.writeInt(videoStereo);
         dest.writeInt(videoDefinition);
         dest.writeInt(scraperCollectionID);
+        dest.writeInt(mCalculatedHeight);
+        dest.writeInt(mCalculatedWidth);
     }
 
     public static final Parcelable.Creator<VideoDbInfo> CREATOR = new Parcelable.Creator<VideoDbInfo>() {
