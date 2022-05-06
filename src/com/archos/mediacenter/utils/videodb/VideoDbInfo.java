@@ -87,6 +87,7 @@ public class VideoDbInfo implements Parcelable {
     public String mContentRating = null;
     public String mMovieYear = null;
     public String mEpisodeAirDate = null;
+    public String mRating = null;
 
     public static final Uri URI = VideoStore.Video.Media.EXTERNAL_CONTENT_URI;
     public static final String SELECTION_ID = BaseColumns._ID + "=?";
@@ -126,6 +127,7 @@ public class VideoDbInfo implements Parcelable {
             VideoStore.Video.VideoColumns.SCRAPER_CONTENT_RATING,
             VideoStore.Video.VideoColumns.SCRAPER_M_YEAR,
             VideoStore.Video.VideoColumns.SCRAPER_E_AIRED,
+            VideoStore.Video.VideoColumns.SCRAPER_RATING,
     };
 
     public static final int IDX_ID =                     0;
@@ -160,6 +162,7 @@ public class VideoDbInfo implements Parcelable {
     public static final int IDX_CONTENT_RATING =        29;
     public static final int IDX_SCRAPER_M_YEAR =        30;
     public static final int IDX_SCRAPER_E_AIRED =       31;
+    public static final int IDX_SCRAPER_RATING =        32;
     public static VideoDbInfo fromId(ContentResolver cr, long id) {
         if (id >= 0) {
             String[] selectionArgs = { String.valueOf(id) };
@@ -245,6 +248,7 @@ public class VideoDbInfo implements Parcelable {
             result.mContentRating = c.getString(IDX_CONTENT_RATING);
             result.mMovieYear = c.getString(IDX_SCRAPER_M_YEAR);
             result.mEpisodeAirDate = c.getString(IDX_SCRAPER_E_AIRED);
+            result.mRating = c.getString(IDX_SCRAPER_RATING);
         }
         return result;
     }
@@ -356,6 +360,7 @@ public class VideoDbInfo implements Parcelable {
         mContentRating = another.mContentRating;
         mMovieYear = another.mMovieYear;
         mEpisodeAirDate = another.mEpisodeAirDate;
+        mRating = another.mRating;
     }
 
     public VideoDbInfo(Parcel in) {
@@ -394,6 +399,7 @@ public class VideoDbInfo implements Parcelable {
         mContentRating = in.readString();
         mMovieYear = in.readString();
         mEpisodeAirDate = in.readString();
+        mRating = in.readString();
     }
 
     @Override
@@ -437,6 +443,7 @@ public class VideoDbInfo implements Parcelable {
         dest.writeString(mContentRating);
         dest.writeString(mMovieYear);
         dest.writeString(mEpisodeAirDate);
+        dest.writeString(mRating);
     }
 
     public static final Parcelable.Creator<VideoDbInfo> CREATOR = new Parcelable.Creator<VideoDbInfo>() {
