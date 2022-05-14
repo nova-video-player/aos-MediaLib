@@ -93,10 +93,16 @@ public class NetworkAutoRefresh extends BroadcastReceiver {
             List<Uri> toUpdate = new ArrayList<>();
             if (cursor.getCount() > 0) {
                 int pathKey = cursor.getColumnIndex(ShortcutDbAdapter.KEY_PATH);
+                int rescanKey = cursor.getColumnIndex(ShortcutDbAdapter.KEY_RESCAN);
                 cursor.moveToFirst();
                 do {
                     Uri uri = Uri.parse(cursor.getString(pathKey));
-                    toUpdate.add(uri);
+                    int rescan = cursor.getInt(rescanKey);
+                    // if this uri is to be rescan automatically, add it to the list
+                    if (rescan == 1) {
+                        log.debug("onReceive: add to scan list " + uri);
+                        toUpdate.add(uri);
+                    }
                 }
                 while (cursor.moveToNext());
             }

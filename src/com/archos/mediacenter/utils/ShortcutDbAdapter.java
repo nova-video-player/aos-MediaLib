@@ -33,17 +33,19 @@ import java.util.List;
 
 public enum ShortcutDbAdapter {
 
-    VIDEO(ShortcutDbAdapter.DATABASE_VIDEO_TABLE, ShortcutDbAdapter.DATABASE_CREATE_VIDEO);
+    VIDEO(ShortcutDbAdapter.DATABASE_VIDEO_TABLE, ShortcutDbAdapter.DATABASE_CREATE_VIDEO5);
 
     private static final String TAG = "ShortcutDbAdapter";
-    protected final static boolean DBG = false;
+    protected final static boolean DBG = true;
 
     // To be incremented each time the architecture of the database is changed
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     public static final String KEY_PATH = "path";
     public static final String KEY_IPPATH = "ippath";
     public static final String KEY_FRIENDLY_URI= "friendly_url";
+    // indicates if a folder needs to be rescanned automatically
+    public static final String KEY_RESCAN= "rescan";
 
     public static final String KEY_NAME = "name";
     public static final String KEY_ROWID = "_id";
@@ -54,8 +56,17 @@ public enum ShortcutDbAdapter {
     private static final String DATABASE_CREATE_VIDEO =
         "create table shortcuts_table_video (_id integer primary key autoincrement, " + KEY_PATH + " text not null, " +  KEY_NAME + " text not null, " + KEY_IPPATH + " text" + ", "+KEY_FRIENDLY_URI+" text);";
 
+    private static final String DATABASE_CREATE_VIDEO5 =
+            "create table shortcuts_table_video (_id integer primary key autoincrement, "
+                    + KEY_PATH + " text not null, "
+                    + KEY_NAME + " text not null, "
+                    + KEY_IPPATH + " text" + ", "
+                    + KEY_FRIENDLY_URI + " text" + ", "
+                    + KEY_RESCAN + " INTEGER DEFAULT (1)" +
+                    ");";
 
-    private static final String[] SHORTCUT_COLS = { KEY_ROWID, KEY_PATH, KEY_IPPATH, KEY_NAME, KEY_FRIENDLY_URI };
+
+    private static final String[] SHORTCUT_COLS = { KEY_ROWID, KEY_PATH, KEY_IPPATH, KEY_NAME, KEY_FRIENDLY_URI, KEY_RESCAN };
 
     private DatabaseHelper mDbHelper;
     // The path is the only info the other classes need to know.
@@ -110,6 +121,7 @@ public enum ShortcutDbAdapter {
         private final String mUri;
         private final String mFriendlyUri;
         private Long mId;
+        private boolean mRescan;
 
         public String getUri() {
             return mUri;
@@ -117,6 +129,10 @@ public enum ShortcutDbAdapter {
         public String getName() {
             return mName;
         }
+        public boolean getRescan() {
+            return mRescan;
+        }
+
         public Long getID() {
             return mId;
         }
@@ -130,6 +146,7 @@ public enum ShortcutDbAdapter {
             mName = name;
             mUri = uri;
             mId = Long.valueOf(-1);
+            mRescan = true;
             if(friendlyUri!=null&&!friendlyUri.isEmpty())
                 mFriendlyUri = friendlyUri;
             else
@@ -201,6 +218,7 @@ public enum ShortcutDbAdapter {
         val.put(KEY_PATH, shortcut.getUri());
         val.put(KEY_IPPATH, shortcut.getUri()); // no need for specific IpPath, just using the regular one...
         val.put(KEY_NAME, shortcut.getName());
+        val.put(KEY_RESCAN, shortcut.getRescan());
         val.put(KEY_FRIENDLY_URI, shortcut.getFriendlyUri());
         long id = db.insert(mDatabaseTable, null, val);
         boolean success = (id != -1);
@@ -246,27 +264,20 @@ public enum ShortcutDbAdapter {
         return id;
     }
 
-
-
-
     public boolean deleteShortcut(Context context, String uri) {
-
         // Delete the shortcut stored in the provided row
         boolean ret;
         String [] where = {
                 uri, uri
         };
-            open(context);
-            ret = mDb.delete(mDatabaseTable, KEY_PATH + " = ? OR "+KEY_IPPATH +" = ?", where) > 0;
-            close();
-
+        open(context);
+        ret = mDb.delete(mDatabaseTable, KEY_PATH + " = ? OR "+KEY_IPPATH +" = ?", where) > 0;
+        close();
         return ret;
     }
 
-
     public Cursor getAllShortcuts(Context context, String where, String [] whereArgs) {
         try {
-
             open(context);
             return mDb.query(mDatabaseTable,
                     SHORTCUT_COLS,
@@ -282,6 +293,16 @@ public enum ShortcutDbAdapter {
             return null;
         }
     }
+
+    public void setRescanShortcut(Context context, boolean toRescan, String shortcutName) {
+        // mark shortcut to be considered for automatic/global rescan
+        open(context);
+        ContentValues cv = new ContentValues(1);
+        cv.put(KEY_RESCAN, toRescan ? 1 : 0);
+        mDb.update(mDatabaseTable, cv, KEY_NAME + " = ?", new String[]{shortcutName});
+        close();
+    }
+
     public List<Shortcut> cursorToShortcutList(Cursor cursor){
         List<Shortcut>shortcuts = new ArrayList<>();
         if(cursor.getCount()>0){
@@ -313,23 +334,25 @@ public enum ShortcutDbAdapter {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
+            if (DBG) Log.d(TAG, "onCreate: creating db " + DATABASE_VIDEO_TABLE);
             // This method is only called once when the database is created for the first time
-            db.execSQL(DATABASE_CREATE_VIDEO);
+            db.execSQL(DATABASE_CREATE_VIDEO5);
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            Log.d(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
+            Log.d(TAG, "onUpgrade: upgrading database from version " + oldVersion + " to " + newVersion);
             if (oldVersion < 2) {
-                    db.execSQL("ALTER TABLE "+DATABASE_VIDEO_TABLE+" ADD COLUMN " + KEY_IPPATH + " TEXT");
+                db.execSQL("ALTER TABLE "+DATABASE_VIDEO_TABLE+" ADD COLUMN " + KEY_IPPATH + " TEXT");
             }
             if (oldVersion < 3) {
-
                 db.execSQL("ALTER TABLE "+DATABASE_VIDEO_TABLE+" ADD COLUMN " + KEY_NAME + " TEXT");
             }
             if (oldVersion < 4) {
-
                 db.execSQL("ALTER TABLE "+DATABASE_VIDEO_TABLE+" ADD COLUMN " + KEY_FRIENDLY_URI + " TEXT");
+            }
+            if (oldVersion < 5) {
+                db.execSQL("ALTER TABLE "+DATABASE_VIDEO_TABLE+" ADD COLUMN " + KEY_RESCAN + " INTEGER DEFAULT (1)");
             }
         }
     }
