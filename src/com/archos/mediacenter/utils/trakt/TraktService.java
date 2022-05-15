@@ -381,7 +381,8 @@ public class TraktService extends Service {
     private static final String MOVIE_ONLINE_ID_PROJECTION[] = new String[] {
             BaseColumns._ID,
             VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID,
-            VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED };
+            VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED
+    };
 
     private static final String SHOW_ONLINE_ID_PROJECTION[] = new String[] {
             BaseColumns._ID,
@@ -389,10 +390,13 @@ public class TraktService extends Service {
             VideoStore.Video.VideoColumns.SCRAPER_E_SEASON,
             VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE,
             VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,
-            VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED };
+            VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED
+    };
+
     private static final String SYNC_PROGRESS_PROJECTION[] = new String[] {
             BaseColumns._ID,
     };
+
     private static final String getVideoToMarkSelection(String library, int scraperType, boolean toMark) {
         if (library.equals(Trakt.LIBRARY_WATCHED)) {
             if (toMark)
@@ -505,48 +509,62 @@ public class TraktService extends Service {
         return Trakt.Status.SUCCESS;
     }
 
+    // only sync playback status on last 50 entries i.e. Trakt.PLAYBACK_HISTORY_SIZE
     private Trakt.Status syncPlaybackStatus(){
-        if (DBG) Log.d(TAG, "syncPlaybackStatus");
+        if (DBG) Log.d(TAG, "syncPlaybackStatus start");
 
         final ContentResolver cr = getContentResolver();
         Trakt.Result resultTrakt = mTrakt.getPlaybackStatus();
-        java.util.List<GenericProgress> movies = null;
+        java.util.List<GenericProgress> videos = null;
         if (resultTrakt.status == Trakt.Status.SUCCESS &&
                 resultTrakt.objType == Trakt.Result.ObjectType.MOVIES) {
-            movies = (java.util.List<GenericProgress>) resultTrakt.obj;
+            videos = (java.util.List<GenericProgress>) resultTrakt.obj;
         }
+        if (DBG) Log.d(TAG, "syncPlaybackStatus: processing batch of " + videos.size());
         //from db to trakt
 
         Cursor c1= cr.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, VideoDbInfo.COLUMNS, VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME +" < 0", null, null);
-
         if (c1 != null) {
             if (c1.getCount() > 0) {
                 c1.moveToFirst();
                 do {
                     VideoDbInfo videoInfo = VideoDbInfo.fromCursor(c1, false);
-                    if(videoInfo!=null&&videoInfo.scraperMovieId!=null&&videoInfo.traktResume<0){
+                    if (videoInfo != null &&
+                            (videoInfo.scraperMovieId != null || videoInfo.scraperEpisodeId != null) &&
+                            videoInfo.traktResume < 0) {
                         boolean send = true;
                         GenericProgress gprog = null;
-                        if(movies != null)
-                            for (GenericProgress movie : movies) {
+                        if (videos != null)
+                            for (GenericProgress video : videos) {
                                 // this value hasn't been sync yet
                                 // we should check if videoInfo.watched_at more recent
-                                if (movie.movie != null
-                                        && movie.movie.ids != null
-                                        && movie.movie.ids.tmdb == Integer.valueOf(videoInfo.scraperMovieId)
-                                        && movie.progress > -videoInfo.traktResume) {
+                                if ((video.movie != null
+                                        && video.movie.ids != null
+                                        && videoInfo.scraperMovieId != null
+                                        && video.movie.ids.tmdb == Integer.valueOf(videoInfo.scraperMovieId)
+                                        && video.progress > -videoInfo.traktResume) ||
+                                        (video.episode != null
+                                                && video.episode.ids != null
+                                                && videoInfo.scraperEpisodeId != null
+                                                && video.episode.ids.tmdb == Integer.valueOf(videoInfo.scraperEpisodeId)
+                                                && video.progress > -videoInfo.traktResume)) {
                                     //trakt mark is more advanced, we don't send anything
                                     send = false;
-
-                                    gprog = movie;
+                                    gprog = video;
                                     break;
                                 }
                             }
                         if(send){
+                            if (DBG) {
+                                if (videoInfo.isShow)
+                                    Log.d(TAG, "syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle + ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr);
+                                else
+                                    Log.d(TAG, "syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle);
+                            }
                             ContentValues values = new ContentValues();
                             Trakt.Result result;
 
-                            if(Trakt.shouldMarkAsSeen(Math.abs(videoInfo.traktResume))){
+                            if (Trakt.shouldMarkAsSeen(Math.abs(videoInfo.traktResume))) {
                                 result = mTrakt.markAs(Trakt.ACTION_SEEN, videoInfo);
                                 if (result.status == Trakt.Status.SUCCESS || result.status == Trakt.Status.SUCCESS_ALREADY) {
                                     videoInfo.traktSeen = 1;
@@ -565,10 +583,8 @@ public class TraktService extends Service {
                                         values, VideoStore.Video.VideoColumns._ID + " = " + videoInfo.id, null);
                             }
                         }
-
                     }
-
-                }while (c1.moveToNext());
+                } while (c1.moveToNext());
             }
             c1.close();
         }
@@ -576,19 +592,18 @@ public class TraktService extends Service {
         //from trakt to db
         //Trakt.Result result1 = mTrakt.getAllMovies(Trakt.LIBRARY_COLLECTION, true);
 
-        if (movies!=null&&movies.size() > 0) {
+        if (videos != null && videos.size() > 0) {
             String whereR;
-            for (GenericProgress movie : movies){
-                if (movie.movie != null) {
+            for (GenericProgress video : videos){
+                if (video.movie != null) { // it is a movie
                     whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
-                            "SELECT video_id FROM movie where " + VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID +"= "+movie.movie.ids.tmdb+")";
-                }
-                else {
+                            "SELECT video_id FROM movie where " + VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID + "= " + video.movie.ids.tmdb+")";
+                } else { // it is an episode
                     whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
-                            "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID +"= "+movie.episode.ids.tmdb+")";
+                            "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID + "= " + video.episode.ids.tmdb+")";
                 }
 
-                //final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
+                // final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
                 ContentResolver resolver = getContentResolver();
                 Cursor c= resolver.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
 
@@ -600,11 +615,15 @@ public class TraktService extends Service {
                             int id = c.getInt(idIdx);
                             VideoDbInfo i = VideoDbInfo.fromId(cr, id);
                             if (i != null) {
-
-                                int newResumePercent = (int) Math.round(movie.progress);
+                                int newResumePercent = (int) Math.round(video.progress);
                                 int newResume = (int) ((float)newResumePercent/100.0*i.duration);
                                 if(Math.abs(i.traktResume)!=newResumePercent&&i.traktSeen!=1&&newResume>i.resume&&i.resume!=-2){//i.resume = -2 is file end
-
+                                    if (DBG) {
+                                        if (i.isShow)
+                                            Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle + ", s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr + ", resume=" + newResumePercent + "%");
+                                        else
+                                            Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle + ", resume=" + newResumePercent + "%");
+                                    }
                                     i.traktResume = newResumePercent;
                                     i.resume =newResume;
                                     ContentValues values = new ContentValues();
@@ -622,8 +641,8 @@ public class TraktService extends Service {
                 }
             }
         }
+        if (DBG) Log.d(TAG, "syncPlaybackStatus complete");
         return Trakt.Status.SUCCESS;
-
     }
 
     private Trakt.Status syncMoviesToDb(String library) {
@@ -662,7 +681,6 @@ public class TraktService extends Service {
         if (result.status == Trakt.Status.SUCCESS &&
                 result.objType == Trakt.Result.ObjectType.SHOWS_PER_SEASON) {
             java.util.List<BaseShow> shows = (java.util.List<BaseShow> ) result.obj;
-
             if (shows.size() > 0) {
                 for (BaseShow show : shows) {
                     for (BaseSeason season : show.seasons) {
@@ -1189,8 +1207,6 @@ public class TraktService extends Service {
             }
         }
         cursor.close();
-
-
     }
 
     private void showToast(final CharSequence text) {
