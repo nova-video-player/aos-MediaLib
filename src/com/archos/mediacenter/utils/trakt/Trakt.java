@@ -78,8 +78,8 @@ public class Trakt {
     private static String API_SECRET;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
     public static final int SCROBBLE_THRESHOLD = 90;
-    // TODO: question do we want more?
-    public static final int LIMIT_RESPONSES = 10000;
+    // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
+    public static final int PLAYBACK_HISTORY_SIZE = 50;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";
@@ -541,9 +541,9 @@ public class Trakt {
     }
 
     public Result getAllShows(String library) {
-
         return getAllShows(library, 0);
     }
+
     private Result getAllShows(String library, int trial){
         Log.d(TAG, "getAllShows");
         List<BaseShow> ret = null;
@@ -561,11 +561,12 @@ public class Trakt {
     }
 
     public Result getPlaybackStatus(int trial){
-        List<PlaybackResponse> list = exec(mTraktV2.sync().getPlayback(LIMIT_RESPONSES));
+        List<PlaybackResponse> list = exec(mTraktV2.sync().getPlayback(PLAYBACK_HISTORY_SIZE));
         if(list == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, list, ObjectType.MOVIES);
     }
+
     public Result getPlaybackStatus() {
         return getPlaybackStatus(0);
 	}
