@@ -316,7 +316,7 @@ public class Trakt {
                 result = new Result(Status.SUCCESS, object, objectType);
         }
         if (lock != null){
-        	lock.notify(result);
+            lock.notify(result);
         }
         else if (mListener != null)
             mListener.onResult(result);
@@ -331,7 +331,7 @@ public class Trakt {
         long millisecondsOffset = millisecondsGmtRawOffset - millisecondsLocaleRawOffset;
         return currentTimeSecond > 0 ? DATE_FORMAT.format(new Date(currentTimeSecond * 1000L + millisecondsOffset)) : null;
     }
-   
+
     public Result markAs(final String action, final SyncItems param, final boolean isShow, final int trial){
         if (DBG) Log.d(TAG, "markAs "+action+" "+trial);
         //TraktAPI.Response response = null;
@@ -362,7 +362,7 @@ public class Trakt {
                 ei.tmdb = Integer.valueOf(videoInfo.scraperEpisodeId);
                 se.id(ei);
                 if(videoInfo.lastTimePlayed>0)
-                	se.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
+                    se.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 SyncItems sitems = new SyncItems();
                 sitems.episodes(se);
 
@@ -372,7 +372,7 @@ public class Trakt {
                 MovieIds mi = new MovieIds();
                 mi.tmdb = Integer.valueOf(videoInfo.scraperMovieId);
                 if(videoInfo.lastTimePlayed>0)
-                	sm.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
+                    sm.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 sm.id(mi);
                 SyncItems sitems = new SyncItems();
                 sitems.movies(sm);
@@ -423,7 +423,7 @@ public class Trakt {
     }
 
     public Result postWatching(VideoDbInfo videoInfo, float progress){
-    	return  postWatching("start", videoInfo, progress, 0);
+        return  postWatching("start", videoInfo, progress, 0);
     }
 
     public Result postWatching(final String action,final VideoDbInfo videoInfo, final float progress, final int trial) {
@@ -569,7 +569,7 @@ public class Trakt {
 
     public Result getPlaybackStatus() {
         return getPlaybackStatus(0);
-	}
+    }
 
     public Result getAllMovies(String library, boolean sync) {
         return getAllMovies(library, 0);
@@ -722,7 +722,7 @@ public class Trakt {
     }
 
     public Result getLastActivity() {
-    	return getLastActivity(0);
+        return getLastActivity(0);
     }
 
     public static String getXmlName(String action) {
@@ -748,7 +748,7 @@ public class Trakt {
         }
         editor.commit();
     }
-    
+
     public static void setAccessToken(SharedPreferences pref, String accessToken) {
         Editor editor = pref.edit();
         if (accessToken != null) {
@@ -833,5 +833,5 @@ public class Trakt {
     public static boolean shouldMarkAsSeen(float progress) {
         return progress >= SCROBBLE_THRESHOLD;
     }
-	
+
 }
