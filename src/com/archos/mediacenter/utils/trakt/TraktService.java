@@ -53,10 +53,16 @@ import com.uwetrottmann.trakt5.entities.GenericProgress;
 import com.uwetrottmann.trakt5.entities.LastActivities;
 import com.uwetrottmann.trakt5.entities.ListEntry;
 import com.uwetrottmann.trakt5.entities.MovieIds;
+import com.uwetrottmann.trakt5.entities.PlaybackResponse;
 import com.uwetrottmann.trakt5.entities.SyncEpisode;
 import com.uwetrottmann.trakt5.entities.SyncItems;
 import com.uwetrottmann.trakt5.entities.SyncMovie;
 import com.uwetrottmann.trakt5.entities.TraktList;
+
+import org.threeten.bp.DayOfWeek;
+import org.threeten.bp.OffsetDateTime;
+import org.threeten.bp.format.DateTimeFormatter;
+import org.threeten.bp.temporal.TemporalAdjusters;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -120,7 +126,6 @@ public class TraktService extends Service {
 
     private NetworkState networkState = null;
     private PropertyChangeListener propertyChangeListener = null;
-
     public class TraktBinder extends Binder {
         TraktService getService() {
             return TraktService.this;
@@ -515,10 +520,11 @@ public class TraktService extends Service {
 
         final ContentResolver cr = getContentResolver();
         Trakt.Result resultTrakt = mTrakt.getPlaybackStatus();
-        java.util.List<GenericProgress> videos = null;
+        java.util.List<PlaybackResponse> videos = null;
+        // MOVIES here is either MOVIE or EPISODE
         if (resultTrakt.status == Trakt.Status.SUCCESS &&
                 resultTrakt.objType == Trakt.Result.ObjectType.MOVIES) {
-            videos = (java.util.List<GenericProgress>) resultTrakt.obj;
+            videos = (java.util.List<PlaybackResponse>) resultTrakt.obj;
         }
         if (DBG) Log.d(TAG, "syncPlaybackStatus: processing batch of " + videos.size());
         //from db to trakt
@@ -535,7 +541,7 @@ public class TraktService extends Service {
                         boolean send = true;
                         GenericProgress gprog = null;
                         if (videos != null)
-                            for (GenericProgress video : videos) {
+                            for (PlaybackResponse video : videos) {
                                 // this value hasn't been sync yet
                                 // we should check if videoInfo.watched_at more recent
                                 if ((video.movie != null
@@ -590,11 +596,10 @@ public class TraktService extends Service {
         }
 
         //from trakt to db
-        //Trakt.Result result1 = mTrakt.getAllMovies(Trakt.LIBRARY_COLLECTION, true);
 
         if (videos != null && videos.size() > 0) {
             String whereR;
-            for (GenericProgress video : videos){
+            for (PlaybackResponse video : videos){
                 if (video.movie != null) { // it is a movie
                     whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
                             "SELECT video_id FROM movie where " + VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID + "= " + video.movie.ids.tmdb+")";
@@ -603,11 +608,12 @@ public class TraktService extends Service {
                             "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID + "= " + video.episode.ids.tmdb+")";
                 }
 
-                // final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
                 ContentResolver resolver = getContentResolver();
                 Cursor c= resolver.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
 
+                if (DBG && c == null) Log.d(TAG, "syncPlaybackStatus: trakt->db cursor null!");
                 if (c != null) {
+                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db cursor size to process " + c.getCount());
                     if (c.getCount() > 0) {
                         final int idIdx = c.getColumnIndex(BaseColumns._ID);
 
@@ -617,20 +623,49 @@ public class TraktService extends Service {
                             if (i != null) {
                                 int newResumePercent = (int) Math.round(video.progress);
                                 int newResume = (int) ((float)newResumePercent/100.0*i.duration);
-                                if(Math.abs(i.traktResume)!=newResumePercent&&i.traktSeen!=1&&newResume>i.resume&&i.resume!=-2){//i.resume = -2 is file end
-                                    if (DBG) {
-                                        if (i.isShow)
-                                            Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle + ", s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr + ", resume=" + newResumePercent + "%");
-                                        else
-                                            Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle + ", resume=" + newResumePercent + "%");
-                                    }
-                                    i.traktResume = newResumePercent;
-                                    i.resume =newResume;
-                                    ContentValues values = new ContentValues();
-                                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, i.traktResume );
-                                    values.put(VideoStore.Video.VideoColumns.BOOKMARK, i.resume );
-                                    if(i.lastTimePlayed <=0 )
-                                        values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, 1); //will need to be updated with trakt watched time (last paused is null...)
+                                long lastWatched = 1; // 1st second of 1970 by default
+                                OffsetDateTime lastWatchedOffsetDateTime = video.paused_at;
+                                if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db collected_at " + lastWatchedOffsetDateTime);
+                                String lastPlayedDateString = "1";
+                                if (lastWatchedOffsetDateTime != null) {
+                                    lastWatched = lastWatchedOffsetDateTime.toEpochSecond();
+                                    lastPlayedDateString = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").format(lastWatchedOffsetDateTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY)));
+                                }
+                                if (i.isShow) {
+                                    if (DBG)
+                                        Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle +
+                                                ", s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr +
+                                                ", resume=" + newResumePercent + "%" +
+                                                ", lastWatched=" + lastPlayedDateString);
+                                } else {
+                                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle + ", " +
+                                            "resume=" + newResumePercent + "%" +
+                                            ", lastWatched=" + lastPlayedDateString);
+                                }
+                                boolean toConsider = false;
+                                if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db db traktResume=" + i.traktResume + "%" +
+                                        ", traktSeen=" + i.traktSeen +
+                                        ", resume " + i.resume + ", lastTimePlayed " + i.lastTimePlayed +
+                                                "; trakt resume=" + newResumePercent + "%" +
+                                        ", resume " + newResume + ", lastTimePlayed " + lastWatched);
+                                ContentValues values = new ContentValues();
+                                if (i.lastTimePlayed < lastWatched) { // trakt lastTimePlayed > db lastTimePlayed: in this case update archos last time played since trakt was the latest compared to db
+                                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db update Archos last time played by trakt which is the latest " + lastPlayedDateString);
+                                    toConsider = true;
+                                    values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, lastWatched);
+                                }
+                                if (i.lastTimePlayed < lastWatched || // trakt lastTimePlayed > db lastTimePlayed
+                                        (Math.abs(i.traktResume) != newResumePercent && // trakt resume % != db resume %
+                                                i.traktSeen != 1 &&
+                                                newResume > i.resume && // trakt resume time > db resume time
+                                                i.resume != -2)) { //i.resume = -2 is file end
+                                    // trakt resume time is ahead of device one: only update device one in this case
+                                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db trakt has the latest bookmark " + newResumePercent + "%, use this one");
+                                    toConsider = true;
+                                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, newResumePercent);
+                                    values.put(VideoStore.Video.VideoColumns.BOOKMARK, newResume);
+                                }
+                                if (toConsider) {
                                     cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
                                             values, VideoStore.Video.VideoColumns._ID+" = '"+i.id+"'", null);
                                 }
