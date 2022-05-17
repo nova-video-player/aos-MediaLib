@@ -33,7 +33,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.archos.mediacenter.utils.AppState;
@@ -59,8 +58,14 @@ import com.uwetrottmann.trakt5.entities.SyncItems;
 import com.uwetrottmann.trakt5.entities.SyncMovie;
 import com.uwetrottmann.trakt5.entities.TraktList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.threeten.bp.DayOfWeek;
+import org.threeten.bp.Instant;
+import org.threeten.bp.LocalDateTime;
 import org.threeten.bp.OffsetDateTime;
+import org.threeten.bp.ZoneId;
+import org.threeten.bp.ZoneOffset;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.temporal.TemporalAdjusters;
 
@@ -68,13 +73,14 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 public class TraktService extends Service {
+
+    private static final Logger log = LoggerFactory.getLogger(TraktService.class);
     private static final String TAG = "TraktService";
-    private static final boolean DBG = false;
-    private static final boolean DBG_LISTENER = false;
-    private static final boolean DBG_NET = false;
 
     private SharedPreferences mPreferences;
 
@@ -149,7 +155,7 @@ public class TraktService extends Service {
 
         @Override
         public void handleMessage(Message msg) {
-            if (DBG) Log.d(TAG, "handleMessage msg=" + msg.toString());
+            log.debug("handleMessage msg=" + msg.toString());
             if (msg.what == MSG_INTENT) {
                 Intent intent = (Intent) msg.obj;
                 String action = intent.getAction();
@@ -172,7 +178,7 @@ public class TraktService extends Service {
                 if (mTrakt != null) {
                     if (action.equals(INTENT_ACTION_WATCHING)) {
                         final float progress = intent.getFloatExtra("progress", -1);
-                        if (DBG) Log.d(TAG, "postWatching progress=" + progress);
+                        log.debug("postWatching progress=" + progress);
                         if (videoInfo == null && videoID >= 0)
                             videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
@@ -186,7 +192,7 @@ public class TraktService extends Service {
                                         values, VideoStore.Video.VideoColumns._ID + " = " + videoInfo.id, null);
 
                             }
-                            if (DBG) Log.d(TAG, "postWatching, result: " + result.status);
+                            log.debug("postWatching, result: " + result.status);
                             if (result.status != Status.ERROR) {
                                 // continue the service even in case of network error
                                 mBusy = true;
@@ -194,7 +200,7 @@ public class TraktService extends Service {
                         }
                     } else if (action.equals(INTENT_ACTION_WATCHING_STOP)) {
                         final float progress = intent.getFloatExtra("progress", -1);
-                        if (DBG) Log.d(TAG, "postWatchingStop progress=" + progress);
+                        log.debug("postWatchingStop progress=" + progress);
                         if (videoInfo == null && videoID >= 0)
                             videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
@@ -218,12 +224,12 @@ public class TraktService extends Service {
 
                                 }
                             }
-                            if (DBG) Log.d(TAG, "postWatchingStop, result: " + result.status);
+                            log.debug("postWatchingStop, result: " + result.status);
                             mBusy = false;
                         }
                     } else if (action.equals(INTENT_ACTION_WATCHING_PAUSE)) {
                         final float progress = intent.getFloatExtra("progress", -1);
-                        if (DBG) Log.d(TAG, "postWatchingPause progress=" + progress);
+                        log.debug("postWatchingPause progress=" + progress);
                         if (videoInfo == null && videoID >= 0)
                             videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
@@ -247,13 +253,13 @@ public class TraktService extends Service {
 
                                 }
                             }
-                            if (DBG) Log.d(TAG, "postWatchingPause, result: " + result.status);
+                            log.debug("postWatchingPause, result: " + result.status);
                             mBusy = false;
                         }
                     } else if (action.equals(INTENT_ACTION_MARK_AS)) {
                         // get last activity before doing some activity on trakt
                         traktAction = intent.getStringExtra("action");
-                        if (DBG) Log.d(TAG, "markAs: " + traktAction);
+                        log.debug("markAs: " + traktAction);
 
                         if (traktAction != null && videoInfo != null) {
                             final boolean wasBusy = mBusy;
@@ -272,7 +278,8 @@ public class TraktService extends Service {
                     } else if (action.equals(INTENT_ACTION_SYNC)) {
                         int flag = intent.getIntExtra("flag_sync", 0);
                         result = sync(flag);
-
+                        // store last successful trakt sync time
+                        if (result.status == Status.SUCCESS) mPreferences.edit().putLong("trakt_last_sync", System.currentTimeMillis() / 1000L).apply();
                     }
                 }
                 // action that can be run with a null mTrakt
@@ -286,8 +293,7 @@ public class TraktService extends Service {
                     result = Trakt.Result.getError();
                 if (traktAction != null && videoInfo != null) {
                     final Status status = result.status;
-                    if (DBG)
-                        Log.d(TAG, "markAs: Trakt.Status: " + status + ", scrapeStatus: " + videoInfo.scrapeStatus);
+                    log.debug("markAs: Trakt.Status: " + status + ", scrapeStatus: " + videoInfo.scrapeStatus);
                     if (status == Status.SUCCESS || status == Status.SUCCESS_ALREADY) {
                         if (lastActivityFlag == 0) {
                             // last activity is us
@@ -325,7 +331,7 @@ public class TraktService extends Service {
                 }
             } else if (msg.what == MSG_NETWORK_ON) {
                 if (mTrakt != null) {
-                    if (DBG) Log.d(TAG, "MSG_NETWORK_ON: sync");
+                    log.debug("MSG_NETWORK_ON: sync");
                     sync(FLAG_SYNC_AUTO);
                 }
             }
@@ -365,7 +371,7 @@ public class TraktService extends Service {
             videoInfo.traktLibrary = action.equals(Trakt.ACTION_LIBRARY) ? 1 : 0;
 
         if (videoInfo.id != -1) {
-            if (DBG) Log.d(TAG, "saveTraktStatus, id: "+videoInfo.id);
+            log.debug("saveTraktStatus, id: "+videoInfo.id);
             final String where = VideoStore.Video.VideoColumns._ID + " = " + videoInfo.id;
             ContentResolver resolver = getContentResolver();
             ContentValues values = new ContentValues(1);
@@ -516,7 +522,7 @@ public class TraktService extends Service {
 
     // only sync playback status on last 50 entries i.e. Trakt.PLAYBACK_HISTORY_SIZE
     private Trakt.Status syncPlaybackStatus(){
-        if (DBG) Log.d(TAG, "syncPlaybackStatus start");
+        log.debug("syncPlaybackStatus start");
 
         final ContentResolver cr = getContentResolver();
         Trakt.Result resultTrakt = mTrakt.getPlaybackStatus();
@@ -526,7 +532,7 @@ public class TraktService extends Service {
                 resultTrakt.objType == Trakt.Result.ObjectType.MOVIES) {
             videos = (java.util.List<PlaybackResponse>) resultTrakt.obj;
         }
-        if (DBG) Log.d(TAG, "syncPlaybackStatus: processing batch of " + videos.size());
+        log.debug("syncPlaybackStatus: processing batch of " + videos.size());
         //from db to trakt
 
         Cursor c1= cr.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, VideoDbInfo.COLUMNS, VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME +" < 0", null, null);
@@ -561,11 +567,11 @@ public class TraktService extends Service {
                                 }
                             }
                         if(send){
-                            if (DBG) {
+                            if (log.isDebugEnabled()) {
                                 if (videoInfo.isShow)
-                                    Log.d(TAG, "syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle + ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr);
+                                    log.debug("syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle + ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr);
                                 else
-                                    Log.d(TAG, "syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle);
+                                    log.debug("syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle);
                             }
                             ContentValues values = new ContentValues();
                             Trakt.Result result;
@@ -611,9 +617,8 @@ public class TraktService extends Service {
                 ContentResolver resolver = getContentResolver();
                 Cursor c= resolver.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
 
-                if (DBG && c == null) Log.d(TAG, "syncPlaybackStatus: trakt->db cursor null!");
+                if (c == null) log.debug("syncPlaybackStatus: trakt->db cursor null!");
                 if (c != null) {
-                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db cursor size to process " + c.getCount());
                     if (c.getCount() > 0) {
                         final int idIdx = c.getColumnIndex(BaseColumns._ID);
 
@@ -622,48 +627,44 @@ public class TraktService extends Service {
                             VideoDbInfo i = VideoDbInfo.fromId(cr, id);
                             if (i != null) {
                                 int newResumePercent = (int) Math.round(video.progress);
-                                int newResume = (int) ((float)newResumePercent/100.0*i.duration);
+                                int newResume = (int) (video.progress/100.0*i.duration);
                                 long lastWatched = 1; // 1st second of 1970 by default
                                 OffsetDateTime lastWatchedOffsetDateTime = video.paused_at;
-                                if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db collected_at " + lastWatchedOffsetDateTime);
                                 String lastPlayedDateString = "1";
                                 if (lastWatchedOffsetDateTime != null) {
                                     lastWatched = lastWatchedOffsetDateTime.toEpochSecond();
-                                    lastPlayedDateString = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").format(lastWatchedOffsetDateTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY)));
+                                    lastPlayedDateString = LocalDateTime.ofEpochSecond(lastWatched, 0, ZoneOffset.UTC).toString();
                                 }
-                                if (i.isShow) {
-                                    if (DBG)
-                                        Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle +
-                                                ", s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr +
-                                                ", resume=" + newResumePercent + "%" +
-                                                ", lastWatched=" + lastPlayedDateString);
-                                } else {
-                                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db " + i.scraperTitle + ", " +
-                                            "resume=" + newResumePercent + "%" +
-                                            ", lastWatched=" + lastPlayedDateString);
-                                }
-                                boolean toConsider = false;
-                                if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db db traktResume=" + i.traktResume + "%" +
-                                        ", traktSeen=" + i.traktSeen +
+                                log.debug("syncPlaybackStatus: trakt->db db traktResume=" + i.scraperTitle +
+                                        (i.isShow ? "s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "") +
+                                        i.traktResume + "%" + ", traktSeen=" + i.traktSeen +
                                         ", resume " + i.resume + ", lastTimePlayed " + i.lastTimePlayed +
-                                                "; trakt resume=" + newResumePercent + "%" +
-                                        ", resume " + newResume + ", lastTimePlayed " + lastWatched);
+                                        "; trakt resume=" + newResumePercent + "%" +
+                                        ", resume " + newResume + ", lastTimePlayed " + lastWatched +
+                                        ", lastWatched=" + lastPlayedDateString);
+                                boolean toConsider = false;
                                 ContentValues values = new ContentValues();
-                                if (i.lastTimePlayed < lastWatched) { // trakt lastTimePlayed > db lastTimePlayed: in this case update archos last time played since trakt was the latest compared to db
-                                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db update Archos last time played by trakt which is the latest " + lastPlayedDateString);
+                                if (i.lastTimePlayed < lastWatched && newResumePercent > 0) {
+                                    // trakt lastTimePlayed > db lastTimePlayed: in this case update archos last time played since trakt was the latest compared to db
+                                    // exclude null newResumePercent since some other players use this to store library (e.g. infuse) and avoid pollution
+                                    log.debug("syncPlaybackStatus: trakt->db update Archos last time played by trakt which is the latest " + lastPlayedDateString);
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, lastWatched);
                                 }
-                                if (i.lastTimePlayed < lastWatched || // trakt lastTimePlayed > db lastTimePlayed
-                                        (Math.abs(i.traktResume) != newResumePercent && // trakt resume % != db resume %
-                                                i.traktSeen != 1 &&
+                                if (Math.abs(i.traktResume) != newResumePercent && // trakt resume % != db resume %
+                                                i.traktSeen != 1 && // marked not watched on trakt (even if replayed)
                                                 newResume > i.resume && // trakt resume time > db resume time
-                                                i.resume != -2)) { //i.resume = -2 is file end
+                                                i.resume != -2) { //not end of file (i.resume = -2 is file end)
                                     // trakt resume time is ahead of device one: only update device one in this case
-                                    if (DBG) Log.d(TAG, "syncPlaybackStatus: trakt->db trakt has the latest bookmark " + newResumePercent + "%, use this one");
+                                    log.debug("syncPlaybackStatus: trakt->db trakt has the latest bookmark " + newResumePercent + "%, use this one");
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, newResumePercent);
                                     values.put(VideoStore.Video.VideoColumns.BOOKMARK, newResume);
+                                    if (newResumePercent > Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
+                                        log.debug("syncPlaybackStatus: trakt->db trakt video has been completed on trakt, mark it viewed");
+                                        values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 99); // resume%
+                                        values.put(VideoStore.Video.VideoColumns.BOOKMARK, -2); // file end
+                                    }
                                 }
                                 if (toConsider) {
                                     cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
@@ -676,7 +677,7 @@ public class TraktService extends Service {
                 }
             }
         }
-        if (DBG) Log.d(TAG, "syncPlaybackStatus complete");
+        log.debug("syncPlaybackStatus complete");
         return Trakt.Status.SUCCESS;
     }
 
@@ -694,7 +695,7 @@ public class TraktService extends Service {
                 InBuilder inBuilder = new InBuilder(VideoStore.Video.VideoColumns.SCRAPER_M_ONLINE_ID);
                 for (BaseMovie movie : movies){
                     inBuilder.addParam(movie.movie.ids.tmdb);
-                    if (DBG) Log.d(TAG, "syncMoviesToDb: marking " + movie.movie.title);
+                    log.debug("syncMoviesToDb: marking " + movie.movie.title);
                 }
                 final String inSelection = inBuilder.get();
                 if (inSelection != null) {
@@ -721,7 +722,7 @@ public class TraktService extends Service {
                     for (BaseSeason season : show.seasons) {
                         InBuilder inBuilder = new InBuilder("number_episode");
                         for (BaseEpisode episode : season.episodes) {
-                            if (DBG) Log.d(TAG, "syncShowsToDb: marking " + show.show.title + " s" + season.number + "e" + episode.number);
+                            log.debug("syncShowsToDb: marking " + show.show.title + " s" + season.number + "e" + episode.number);
                             inBuilder.addParam(episode.number);
                         }
                         final String inSelection = inBuilder.get();
@@ -781,7 +782,6 @@ public class TraktService extends Service {
                         ids.tmdb =  Integer.valueOf(m.tmdb_id);
                         se.id(ids);
                         eps.add(se);
-
                     }
                     SyncItems si = new SyncItems();
                     si.movies(eps);
@@ -875,23 +875,22 @@ public class TraktService extends Service {
 
     private int getFlagsFromTraktLastActivity(Trakt.Result result, long movieTime, long showTime) {
         int flag = 0;
-        if (DBG) Log.d(TAG, "getFlagsFromTraktLastActivity: getLastActivity input is flag=" + flag + ", movieTime=" + movieTime + ", showTime=" + showTime);
+        log.debug("getFlagsFromTraktLastActivity: getLastActivity input is flag=" + flag + ", movieTime=" + movieTime + ", showTime=" + showTime);
         if (result != null && result.status == Trakt.Status.SUCCESS &&
                 result.objType == Trakt.Result.ObjectType.LAST_ACTIVITY) {
             LastActivities lastActivity = (LastActivities) result.obj;
-            if (DBG) Log.d(TAG, "lastActivity: movie: " + lastActivity.movies.watched_at.toEpochSecond() + " vs " + movieTime);
+            log.debug("lastActivity: movie: " + lastActivity.movies.watched_at.toEpochSecond() + " vs " + movieTime);
             if (lastActivity.movies.watched_at.toEpochSecond()> movieTime) {
-                if (DBG) Log.d(TAG, "getFlagsFromTraktLastActivity: new activity watched on movies on trakt side detected");
+                log.debug("getFlagsFromTraktLastActivity: new activity watched on movies on trakt side detected");
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_MOVIES;
             }
-            if (DBG) Log.d(TAG, "lastActivity: show: " + lastActivity.episodes.watched_at.toEpochSecond() + " vs " + showTime);
+            log.debug("lastActivity: show: " + lastActivity.episodes.watched_at.toEpochSecond() + " vs " + showTime);
             if (lastActivity.episodes.watched_at.toEpochSecond()>showTime) {
-                if (DBG) Log.d(TAG, "getFlagsFromTraktLastActivity: new activity watched on shows on trakt side detected");
+                log.debug("getFlagsFromTraktLastActivity: new activity watched on shows on trakt side detected");
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_SHOWS;
             }
             if (lastActivity.movies.paused_at.toEpochSecond()>movieTime||lastActivity.episodes.paused_at.toEpochSecond()>showTime) {
-                if (DBG)
-                    Log.d(TAG, "getFlagsFromTraktLastActivity: new activity on progress on trakt side detected either for movie or show");
+                log.debug("getFlagsFromTraktLastActivity: new activity on progress on trakt side detected either for movie or show");
                 flag |= FLAG_SYNC_PROGRESS;
             }
         }
@@ -912,8 +911,8 @@ public class TraktService extends Service {
                 //try to be more precise
                 if(details!=null)
                     errorMessage +=" "+details;
-                if (DBG) showToast(errorMessage);
-                Log.d(TAG, errorMessage);
+                if (log.isDebugEnabled()) showToast(errorMessage);
+                log.warn(errorMessage);
                 break;
             case SUCCESS:
                 if ((flag & FLAG_SYNC_TO_TRAKT_WATCHED) != 0 || (flag & FLAG_SYNC_TO_DB_WATCHED) != 0) {
@@ -937,7 +936,7 @@ public class TraktService extends Service {
          *  for items removed from trakt
          */
 
-        if (DBG) Log.d(TAG, "sync with flag=" + flag);
+        log.debug("sync with flag=" + flag);
         /*
         if ((flag & FLAG_SYNC_NOW) != 0)
             removeListener();
@@ -951,16 +950,16 @@ public class TraktService extends Service {
         long movieTime = Trakt.getLastTimeMovieWatched(mPreferences);
         long showTime = Trakt.getLastTimeShowWatched(mPreferences);
 
-        if (DBG) Log.d(TAG, "sync: last sync time is movieTime=" + movieTime + ", showTime=" + showTime);
+        log.debug("sync: last sync time is movieTime=" + movieTime + ", showTime=" + showTime);
 
         if (showTime == 0 && movieTime == 0) {
-            if (DBG) Log.d(TAG, "sync: first time syncing: full sync");
+            log.debug("sync: first time syncing: full sync");
             flag |= FLAG_SYNC_FULL;
         }
 
         if ((flag & FLAG_SYNC_LAST_ACTIVITY_VETO) == 0 && (flag & FLAG_SYNC_TO_DB_WATCHED) == 0) {
             // if we don't sync from trakt to db, get last activity to check if we have to.
-            if (DBG) Log.d(TAG, "get lastactivity");
+            log.debug("get lastactivity");
 
             Trakt.Result result = mTrakt.getLastActivity();
             if (result.status == Trakt.Status.ERROR_NETWORK)
@@ -990,11 +989,11 @@ public class TraktService extends Service {
                     continue;
                 // for markAs and unMarkAs
                 for (boolean toMark : new boolean[]{ true, false } ) {
-                    if (DBG) Log.d(TAG, "syncing movies("+toMark+") " + library + " from DB to trakt.tv");
+                    log.debug("syncing movies("+toMark+") " + library + " from DB to trakt.tv");
                     Trakt.Status status = syncMoviesToTrakt(library, toMark);
                     if (status == Trakt.Status.ERROR_NETWORK)
                         return handleSyncStatus(status, flag, "syncMoviesToTrakt");
-                    if (DBG) Log.d(TAG, "syncing shows("+toMark+") " + library + " from DB to trakt.tv");
+                    log.debug("syncing shows("+toMark+") " + library + " from DB to trakt.tv");
                     status = syncShowsToTrakt(library, toMark);
                     if (status == Trakt.Status.ERROR_NETWORK)
                         return handleSyncStatus(status, flag, "syncShowsToTrakt");
@@ -1011,7 +1010,7 @@ public class TraktService extends Service {
         syncLists();
 
         if (!syncShowsFromTrakt && !syncMoviesFromTrakt) {
-            if (DBG) Log.d(TAG, "sync: no movie/show flag, abort");
+            log.debug("sync: no movie/show flag, abort");
             return Trakt.Result.getSuccess();
         }
 
@@ -1031,16 +1030,16 @@ public class TraktService extends Service {
             for (String library : libraries) {
 
                 if (syncMoviesFromTrakt) {
-                    if (DBG) Log.d(TAG, "syncing movies " + library + " from trakt.tv to DB");
+                    log.debug("syncing movies " + library + " from trakt.tv to DB");
                     Trakt.Status status = syncMoviesToDb(library);
-                    if (DBG) Log.d(TAG, "syncing movies " + library + " from trakt.tv to DB finished : "+status);
+                    log.debug("syncing movies " + library + " from trakt.tv to DB finished : "+status);
                     if (status == Trakt.Status.ERROR_NETWORK)
                         return handleSyncStatus(status, flag, "syncMoviesToDb");
                 }
                 if (syncShowsFromTrakt) {
-                    if (DBG) Log.d(TAG, "syncing shows " + library + " from trakt.tv to DB");
+                    log.debug("syncing shows " + library + " from trakt.tv to DB");
                     Trakt.Status status = syncShowsToDb(library);
-                    if (DBG) Log.d(TAG, "syncing shows " + library + " from trakt.tv to DB finished : "+status);
+                    log.debug("syncing shows " + library + " from trakt.tv to DB finished : "+status);
                     if (status == Trakt.Status.ERROR_NETWORK)
                         return handleSyncStatus(status, flag, "syncShowsToDb");
                 }
@@ -1052,7 +1051,7 @@ public class TraktService extends Service {
     }
 
     private void syncLists() {
-        Log.d(TAG, "syncLists");
+        log.debug("syncLists");
         Cursor cursor = getContentResolver().query(VideoStore.List.LIST_CONTENT_URI,VideoStore.List.Columns.COLUMNS, null, null, null);
         List<VideoStore.List.ListObj> localLists = new ArrayList<>();
         if(cursor.getCount() > 0){
@@ -1092,7 +1091,7 @@ public class TraktService extends Service {
 
             if(!isIn){
                 //add to DB
-                Log.d(TAG, "add new list to DB "+list.name);
+                log.debug("add new list to DB "+list.name);
                 VideoStore.List.ListObj item = new VideoStore.List.ListObj(list.name, list.ids.trakt, VideoStore.List.SyncStatus.STATUS_OK);
                 localLists.add(item);
                 getContentResolver().insert(VideoStore.List.LIST_CONTENT_URI, item.toContentValues());
@@ -1105,7 +1104,7 @@ public class TraktService extends Service {
             if(wasLocallyDeleted){
                 //delete remote + remove from DB
                 Trakt.Result result1 = mTrakt.deleteList(0, String.valueOf(list.ids.trakt));
-                Log.d(TAG, "delete remote list "+list.name);
+                log.debug("delete remote list "+list.name);
                 if(result1.status == Status.SUCCESS){
                     getContentResolver().delete(VideoStore.List.LIST_CONTENT_URI, VideoStore.List.Columns.TRAKT_ID +"= ?", new String[]{String.valueOf(list.ids.trakt)});
                 }
@@ -1125,21 +1124,19 @@ public class TraktService extends Service {
                 //might not have been deleted, just new
                 if(localList.syncStatus==VideoStore.List.SyncStatus.STATUS_NOT_SYNC){
                     //add to trakt
-                    Log.d(TAG," add List To Trakt "+localList.title);
+                    log.debug(" add List To Trakt "+localList.title);
                     Trakt.Result result1 = mTrakt.addList(0,localList.title);
                     if(result1.status==Status.SUCCESS){
-                        Log.d(TAG," add List To Trakt Status.SUCCESS");
+                        log.debug(" add List To Trakt Status.SUCCESS");
 
                         TraktList list = (TraktList) result1.obj;
                         localList.syncStatus = VideoStore.List.SyncStatus.STATUS_OK;
                         localList.traktId = list.ids.trakt;
                         getContentResolver().update(VideoStore.List.LIST_CONTENT_URI, localList.toContentValues(), VideoStore.List.Columns.ID +"= ?", new String[]{String.valueOf(localList.id)});
-
                     }
                 } else{
                     //was deleted
-                    Log.d(TAG," deleting list from DB "+localList.title);
-
+                    log.debug(" deleting list from DB "+localList.title);
                     getContentResolver().delete(VideoStore.List.LIST_CONTENT_URI, VideoStore.List.Columns.TRAKT_ID +"= ?", new String[]{String.valueOf(localList.traktId)});
                 }
             }
@@ -1282,7 +1279,7 @@ public class TraktService extends Service {
 
     @Override
     public void onDestroy() {
-        if (DBG) Log.d(TAG, "onDestroy");
+        log.debug("onDestroy");
         removeListener();
         mBackgroundHandler.removeCallbacksAndMessages(null);
         if (mBackgroundHandlerThread.quit()) {
@@ -1299,15 +1296,14 @@ public class TraktService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (DBG) Log.d(TAG, "Received start id " + startId + ": " + intent);
+        log.debug("Received start id " + startId + ": " + intent);
         networkState = NetworkState.instance(getApplicationContext());
         if (propertyChangeListener == null)
             propertyChangeListener = new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getOldValue() != evt.getNewValue()) {
-                        if (DBG)
-                            Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                        log.debug("NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
                         if (mNetworkState == null) mNetworkState = NetworkState.instance(getApplicationContext());
                         if (mNetworkState.isConnected()) { // network state has changed and we are connected now
                             // anti flood mechanism
@@ -1395,12 +1391,12 @@ public class TraktService extends Service {
             return intent;
         }
         public void watching(long videoID, float progress) {
-            if (DBG) Log.d(TAG, "watching: send INTENT_ACTION_WATCHING");
+            log.debug("watching: send INTENT_ACTION_WATCHING");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoID, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watchingStop(long videoID, float progress) {
-            if (DBG) Log.d(TAG, "watchingStop: send INTENT_ACTION_WATCHING_STOP");
+            log.debug("watchingStop: send INTENT_ACTION_WATCHING_STOP");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoID, progress, null);
             // do not check if isForeGround in this specific case in order to allow posting watch status when exiting
             // video playback with home button to save state
@@ -1408,17 +1404,17 @@ public class TraktService extends Service {
             mContext.startService(intent);
         }
         public void watchingPause(long videoID, float progress) {
-            if (DBG) Log.d(TAG, "watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
+            log.debug("watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_PAUSE, videoID, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watching(VideoDbInfo videoInfo, float progress) {
-            if (DBG) Log.d(TAG, "watching: send INTENT_ACTION_WATCHING");
+            log.debug("watching: send INTENT_ACTION_WATCHING");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoInfo, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void watchingStop(VideoDbInfo videoInfo, float progress) {
-            if (DBG) Log.d(TAG, "watchingStop: send INTENT_ACTION_WATCHING_STOP");
+            log.debug("watchingStop: send INTENT_ACTION_WATCHING_STOP");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoInfo, progress, null);
             // do not check if isForeGround in this specific case in order to allow posting watch status when exiting
             // video playback with home button to save state
@@ -1426,33 +1422,33 @@ public class TraktService extends Service {
             mContext.startService(intent);
         }
         public void watchingPause(VideoDbInfo videoInfo, float progress) {
-            if (DBG) Log.d(TAG, "watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
+            log.debug("watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_PAUSE, videoInfo, progress, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void markAs(VideoDbInfo videoInfo, String traktAction) {
-            if (DBG) Log.d(TAG, "markAs: send INTENT_ACTION_MARK_AS");
+            log.debug("markAs: send INTENT_ACTION_MARK_AS");
             Intent intent = prepareIntent(INTENT_ACTION_MARK_AS, videoInfo, -1, traktAction);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void wipe() {
-            if (DBG) Log.d(TAG, "wipe: send INTENT_ACTION_WIPE");
+            log.debug("wipe: send INTENT_ACTION_WIPE");
             Intent intent = prepareIntent(INTENT_ACTION_WIPE, null, -1, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void wipeCollection() {
-            if (DBG) Log.d(TAG, "wipeCollection: send INTENT_ACTION_WIPE_COLLECTION");
+            log.debug("wipeCollection: send INTENT_ACTION_WIPE_COLLECTION");
             Intent intent = prepareIntent(INTENT_ACTION_WIPE_COLLECTION, null, -1, null);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void fullSync() {
-            if (DBG) Log.d(TAG, "fullSync: send INTENT_ACTION_SYNC");
+            log.debug("fullSync: send INTENT_ACTION_SYNC");
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", FLAG_SYNC_FULL);
             if (AppState.isForeGround()) mContext.startService(intent);
         }
         public void sync(int flag) {
-            if (DBG) Log.d(TAG, "sync: send INTENT_ACTION_SYNC");
+            log.debug("sync: send INTENT_ACTION_SYNC");
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", flag);
             if (AppState.isForeGround()) mContext.startService(intent);
@@ -1487,9 +1483,9 @@ public class TraktService extends Service {
         @Override
         public void onForeGroundState(Context applicationContext, boolean foreground) {
             if(foreground) {
-                if (DBG) Log.d(TAG, "mForeGroundListener: foreground");
+                log.debug("mForeGroundListener: foreground");
             }  else {
-                if (DBG) Log.d(TAG, "mForeGroundListener: background");
+                log.debug("mForeGroundListener: background");
             }
             handleForeGround(foreground);
         }
@@ -1497,11 +1493,11 @@ public class TraktService extends Service {
 
     protected void handleForeGround(boolean foreground) {
         if (foreground) {
-            if (DBG_NET) Log.d(TAG, "handleForeGround: app now in ForeGround");
+            log.debug("handleForeGround: app now in ForeGround");
             //addListener(false);
             addListener();
         } else {
-            if (DBG_NET) Log.d(TAG, "handleForeGround: app now in BackGround");
+            log.debug("handleForeGround: app now in BackGround");
             removeListener();
         }
     }
@@ -1509,7 +1505,7 @@ public class TraktService extends Service {
     private void addListener() {
         if (networkState == null) networkState = NetworkState.instance(getApplicationContext());
         if (!mNetworkStateListenerAdded && propertyChangeListener != null) {
-            if (DBG_LISTENER) Log.d(TAG, "addNetworkListener: networkState.addPropertyChangeListener");
+            log.debug("addNetworkListener: networkState.addPropertyChangeListener");
             networkState.addPropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = true;
         }
@@ -1518,7 +1514,7 @@ public class TraktService extends Service {
     private void removeListener() {
         if (networkState == null) networkState = NetworkState.instance(getApplicationContext());
         if (mNetworkStateListenerAdded && propertyChangeListener != null) {
-            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            log.debug("removeListener: networkState.removePropertyChangeListener");
             networkState.removePropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = false;
         }

@@ -51,6 +51,8 @@ import com.uwetrottmann.trakt5.enums.ListPrivacy;
 
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.threeten.bp.OffsetDateTime;
 
 import java.io.IOException;
@@ -67,19 +69,18 @@ import okhttp3.logging.HttpLoggingInterceptor;
 
 
 public class Trakt {
-    private static final String TAG = "Trakt";
-    private static final boolean DBG = false;
-    private final static boolean DBG_RETROFIT = false;
+    private static final Logger log = LoggerFactory.getLogger(Trakt.class);
+
     public static final long ASK_RELOG_FREQUENCY = 1000 * 60 * 60 * 6; // every 6 hours
     public static long sLastTraktRefreshToken = 0; //will be set by activities, representing last time a user has been asked to log again in trakt;
     public static final String TRAKT_ISSUE_REFRESH_TOKEN = "TRAKT_ISSUE_REFRESH_TOKEN";
     private static final String API_URL = "https://api.trakt.tv";
     private static String API_KEY;
     private static String API_SECRET;
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
     public static final int SCROBBLE_THRESHOLD = 90;
     // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
-    public static final int PLAYBACK_HISTORY_SIZE = 50;
+    public static final int PLAYBACK_HISTORY_SIZE = 100;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";
@@ -131,7 +132,7 @@ public class Trakt {
         @Override
         protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
             super.setOkHttpClientDefaults(builder);
-            if (DBG_RETROFIT) {
+            if (log.isTraceEnabled()) {
                 HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                 logging.setLevel(HttpLoggingInterceptor.Level.BODY);
                 builder.addNetworkInterceptor(logging).addInterceptor(logging);
@@ -280,7 +281,7 @@ public class Trakt {
             mAccessToken.refresh_token = response.body().refresh_token;
             return mAccessToken;
         } catch (IOException e) {
-            Log.e(TAG, "getAccessToken: caught IoException ", e);
+            log.error("getAccessToken: caught IoException ", e);
         }
         return null;
     }
@@ -323,18 +324,18 @@ public class Trakt {
         return result;
     }
 
-    public static String getDateFormat(long currentTimeSecond) {
-        // all currentTimeSecond are computed as since January 1, 1970, 00:00:00 GMT
+    public static String getDateFormat(long currentTimeSecond) { // return GMT time based on local time TZ epoch
+        // all currentTimeSecond are computed as since January 1, 1970, 00:00:00 GMT, reminder UTC=GMT
         // need to align on current timeZone i.e. adjust by the difference with current timezone and GMT
-        int millisecondsGmtRawOffset = TimeZone.getTimeZone("GMT").getRawOffset();
-        int millisecondsLocaleRawOffset = TimeZone.getDefault().getRawOffset();
-        long millisecondsOffset = millisecondsGmtRawOffset - millisecondsLocaleRawOffset;
+        int millisecondsGmtRawOffset = TimeZone.getTimeZone("GMT").getRawOffset(); // compared to UTC
+        int millisecondsLocaleRawOffset = TimeZone.getDefault().getRawOffset(); // compared to UTC
+        long millisecondsOffset = millisecondsGmtRawOffset - millisecondsLocaleRawOffset; // realign local TZ to GMT
         return currentTimeSecond > 0 ? DATE_FORMAT.format(new Date(currentTimeSecond * 1000L + millisecondsOffset)) : null;
     }
 
+
     public Result markAs(final String action, final SyncItems param, final boolean isShow, final int trial){
-        if (DBG) Log.d(TAG, "markAs "+action+" "+trial);
-        //TraktAPI.Response response = null;
+        log.debug("markAs "+action+" "+trial);
         SyncResponse response = null;
         if (action.equals(Trakt.ACTION_SEEN)) {
             response = exec(mTraktV2.sync().addItemsToWatchedHistory(param));
@@ -362,6 +363,7 @@ public class Trakt {
                 ei.tmdb = Integer.valueOf(videoInfo.scraperEpisodeId);
                 se.id(ei);
                 if(videoInfo.lastTimePlayed>0)
+                    // TODO MARC this is a GMT date and not UTC as required by trakt
                     se.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 SyncItems sitems = new SyncItems();
                 sitems.episodes(se);
@@ -372,6 +374,7 @@ public class Trakt {
                 MovieIds mi = new MovieIds();
                 mi.tmdb = Integer.valueOf(videoInfo.scraperMovieId);
                 if(videoInfo.lastTimePlayed>0)
+                    // TODO MARC this is a GMT date and not UTC as required by trakt
                     sm.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 sm.id(mi);
                 SyncItems sitems = new SyncItems();
@@ -427,7 +430,7 @@ public class Trakt {
     }
 
     public Result postWatching(final String action,final VideoDbInfo videoInfo, final float progress, final int trial) {
-        if (DBG) Log.d(TAG, "postWatching for action=" + action + ", progress=" + progress + ", trial=" + trial);
+        log.debug("postWatching for action=" + action + ", progress=" + progress + ", trial=" + trial);
         PlaybackResponse playbackResponse = null;
         AuthParam param = fillParam(videoInfo);
         if (videoInfo.isShow) {
@@ -436,27 +439,27 @@ public class Trakt {
             SyncEpisode se = new SyncEpisode();
             EpisodeIds ids = new EpisodeIds();
             if(showParam.episode_tmdb_id!=null) {
-                if (DBG) Log.d(TAG, "postWatching: showid=" + showParam.episode_tmdb_id);
+                log.debug("postWatching: showid=" + showParam.episode_tmdb_id);
                 ids.tmdb = Integer.valueOf(showParam.episode_tmdb_id);
             }
             se.id(ids);
             ScrobbleProgress ep = new ScrobbleProgress(se, progress, "", "");
-            if (DBG) Log.d(TAG, "postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids.tmdb);
+            log.debug("postWatching: EpisodeProgres=" + ep.progress + ", episode id " + se.ids.tmdb);
             switch (action) {
                 case "start":
-                    if (DBG) Log.d(TAG, "postWatching: sending startWatching");
+                    log.debug("postWatching: sending startWatching");
                     playbackResponse = exec(mTraktV2.scrobble().startWatching(ep));
                     break;
                 case "stop":
-                    if (DBG) Log.d(TAG, "postWatching: sending stopWatching");
+                    log.debug("postWatching: sending stopWatching");
                     playbackResponse = exec(mTraktV2.scrobble().stopWatching(ep));
                     break;
                 case "pause":
-                    if (DBG) Log.d(TAG, "postWatching: sending pauseWatching");
+                    log.debug("postWatching: sending pauseWatching");
                     playbackResponse = exec(mTraktV2.scrobble().pauseWatching(ep));
                     break;
                 case "default":
-                    Log.w(TAG, "postWatching: not supported action!");
+                    log.warn("postWatching: not supported action!");
                     break;
             }
         } else {
@@ -469,22 +472,22 @@ public class Trakt {
             SyncMovie sm= new SyncMovie();
             sm.id(mi);
             ScrobbleProgress mp = new ScrobbleProgress(sm, progress, "", "");
-            if (DBG) Log.d(TAG, "postWatching: MovieProgress=" + mp);
+            log.debug("postWatching: MovieProgress=" + mp);
             switch (action) {
                 case "start":
-                    if (DBG) Log.d(TAG, "postWatching: sending startWatching");
+                    log.debug("postWatching: sending startWatching");
                     playbackResponse = exec(mTraktV2.scrobble().startWatching(mp));
                     break;
                 case "stop":
-                    if (DBG) Log.d(TAG, "postWatching: sending stopWatching");
+                    log.debug("postWatching: sending stopWatching");
                     playbackResponse = exec(mTraktV2.scrobble().stopWatching(mp));
                     break;
                 case "pause":
-                    if (DBG) Log.d(TAG, "postWatching: sending pauseWatching");
+                    log.debug("postWatching: sending pauseWatching");
                     playbackResponse = exec(mTraktV2.scrobble().pauseWatching(mp));
                     break;
                 case "default":
-                    Log.w(TAG, "postWatching: not supported action!");
+                    log.warn("postWatching: not supported action!");
                     break;
             }
         }
@@ -511,7 +514,7 @@ public class Trakt {
     }
 
     private boolean refreshAccessToken() {
-        Log.d(TAG, "refreshAccessToken()");
+        log.debug("refreshAccessToken()");
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
         String refreshToken = getRefreshTokenFromPreferences(pref);
         if(refreshToken==null|| refreshToken.isEmpty()){
@@ -523,7 +526,7 @@ public class Trakt {
             try {
                 retrofit2.Response<AccessToken> token = mTraktV2.refreshAccessToken(refreshToken);
                 if (!token.isSuccessful()) {
-                    Log.d(TAG, "Failed refreshing token " + token.toString());
+                    log.debug("Failed refreshing token " + token.toString());
                     Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
                     intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
                     mContext.sendBroadcast(intent);
@@ -533,7 +536,7 @@ public class Trakt {
                 setRefreshToken(pref, token.body().refresh_token);
                 return true;
             } catch (IOException ioe) {
-                Log.e(TAG, "getAccessToken: caught IOException " + ioe);
+                log.error("getAccessToken: caught IOException " + ioe);
                 return false;
             }
         }
@@ -545,7 +548,7 @@ public class Trakt {
     }
 
     private Result getAllShows(String library, int trial){
-        Log.d(TAG, "getAllShows");
+        log.debug("getAllShows");
         List<BaseShow> ret = null;
         if (library.equals(Trakt.LIBRARY_WATCHED)) {
             ret = exec(mTraktV2.sync().watchedShows(Extended.EPISODES));
@@ -561,6 +564,9 @@ public class Trakt {
     }
 
     public Result getPlaybackStatus(int trial){
+        // for the moment trakt-java API does not support getting history between two dates
+        //Long epochUtcSeconds = System.currentTimeMillis() / 1000L;
+        //Long lastTraktSyncUtcEpochSeconds = PreferenceManager.getDefaultSharedPreferences(mContext).getLong("trakt_last_sync", 1);
         List<PlaybackResponse> list = exec(mTraktV2.sync().getPlayback(PLAYBACK_HISTORY_SIZE));
         if(list == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
@@ -581,11 +587,11 @@ public class Trakt {
         return exec(call, MAX_TRIAL);
     }
     public <T> T exec(retrofit2.Call<T> call, int remaining) {
-        if (DBG) Log.d(TAG, "exec: call, remaining trials=" + remaining);
+        log.debug("exec: call, remaining trials=" + remaining);
         try {
             retrofit2.Response<T> res = call.execute();
             if (!res.isSuccessful()) {
-                Log.e(TAG, "exec request error code is " + res.code(), new Throwable());
+                log.error("exec request error code is " + res.code(), new Throwable());
                 // TODO check this new retry case with 409
                 // 409	Conflict - resource already created is happening often but no retry...
                 if (res.code() == 401 || res.code() == 409 ) {
@@ -610,7 +616,7 @@ public class Trakt {
     }
 
     public Result getAllMovies(final String library, int trial) {
-        if (DBG) Log.d(TAG, "getAllMovies");
+        log.debug("getAllMovies");
         List<BaseMovie> arg0 = null;
         if (library.equals(Trakt.LIBRARY_WATCHED))
             arg0 = exec(mTraktV2.sync().watchedMovies(Extended.FULL));
@@ -622,7 +628,7 @@ public class Trakt {
     }
 
     public Result getLastActivity(int trial) {
-        if (DBG) Log.d(TAG, "getLastActivity");
+        log.debug("getLastActivity");
         LastActivities ret = exec(mTraktV2.sync().lastActivities());
         if(ret == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
@@ -631,7 +637,7 @@ public class Trakt {
 
     /* add new list to trakt profile */
     public Result addList(int trial, String title) {
-        if (DBG) Log.d(TAG, "addList");
+        log.debug("addList");
         TraktList list = new TraktList();
         list.name = title;
         list.privacy = ListPrivacy.PRIVATE;
@@ -643,7 +649,7 @@ public class Trakt {
     }
 
     public Result deleteList(int trial, String id) {
-        if (DBG) Log.d(TAG, "deleteList");
+        log.debug("deleteList");
         Void response = exec(mTraktV2.users().deleteList(UserSlug.ME, id));
         if (response == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
@@ -657,7 +663,7 @@ public class Trakt {
     }
 
     public Result getLists(int trial) {
-        if (DBG) Log.d(TAG, "getLists");
+        log.debug("getLists");
         List<TraktList> lists = exec(mTraktV2.users().lists(UserSlug.ME));
         if (lists == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
@@ -665,7 +671,7 @@ public class Trakt {
     }
 
     public Result getListContent(int trial, int listId) {
-        if (DBG) Log.d(TAG, "getListContent");
+        log.debug("getListContent");
         List<ListEntry> items = exec(mTraktV2.users().listItems(UserSlug.ME, String.valueOf(listId), null));
         if (items == null)
             return handleRet(null, new Exception(), null, ObjectType.NULL);
@@ -673,7 +679,7 @@ public class Trakt {
     }
 
     public Result removeVideoFromList(int trial, int listId, ListEntry onlineItem) {
-        if (DBG) Log.d(TAG, "removeVideoFromLit");
+        log.debug("removeVideoFromLit");
         SyncItems syncItems = new SyncItems();
         if(onlineItem.episode!=null) {
             SyncEpisode syncEpisode = new SyncEpisode();
@@ -694,7 +700,7 @@ public class Trakt {
     }
 
     public Result addVideoToList(int trial, int listId, VideoStore.VideoList.VideoItem videoItem) {
-        if (DBG) Log.d(TAG, "addVideoToList");
+        log.debug("addVideoToList");
         SyncResponse ret = null;
         if (videoItem.episodeId > 0) {
             SyncEpisode se = new SyncEpisode();
