@@ -554,7 +554,7 @@ public class TraktService extends Service {
                                         && video.movie.ids != null
                                         && videoInfo.scraperMovieId != null
                                         && video.movie.ids.tmdb == Integer.valueOf(videoInfo.scraperMovieId)
-                                        && video.progress > -videoInfo.traktResume) ||
+                                        && video.progress > -videoInfo.traktResume) || // negative traktResume means set but not yet synced
                                         (video.episode != null
                                                 && video.episode.ids != null
                                                 && videoInfo.scraperEpisodeId != null
@@ -566,13 +566,8 @@ public class TraktService extends Service {
                                     break;
                                 }
                             }
-                        if(send){
-                            if (log.isDebugEnabled()) {
-                                if (videoInfo.isShow)
-                                    log.debug("syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle + ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr);
-                                else
-                                    log.debug("syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle);
-                            }
+                        if (send) {
+                            log.debug("syncPlaybackStatus: db->trakt " + videoInfo.scraperTitle + (videoInfo.isShow ? ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr : ""));
                             ContentValues values = new ContentValues();
                             Trakt.Result result;
 
@@ -613,10 +608,7 @@ public class TraktService extends Service {
                     whereR = VideoStore.Video.VideoColumns._ID+" IN ("+
                             "SELECT video_id FROM episode where " + VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID + "= " + video.episode.ids.tmdb+")";
                 }
-
-                ContentResolver resolver = getContentResolver();
-                Cursor c= resolver.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
-
+                Cursor c = cr.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, SYNC_PROGRESS_PROJECTION, whereR, null, null);
                 if (c == null) log.debug("syncPlaybackStatus: trakt->db cursor null!");
                 if (c != null) {
                     if (c.getCount() > 0) {

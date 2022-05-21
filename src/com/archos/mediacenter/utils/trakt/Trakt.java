@@ -80,7 +80,7 @@ public class Trakt {
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US);
     public static final int SCROBBLE_THRESHOLD = 90;
     // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
-    public static final int PLAYBACK_HISTORY_SIZE = 100;
+    public static final int PLAYBACK_HISTORY_SIZE = 200;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";
@@ -363,7 +363,6 @@ public class Trakt {
                 ei.tmdb = Integer.valueOf(videoInfo.scraperEpisodeId);
                 se.id(ei);
                 if(videoInfo.lastTimePlayed>0)
-                    // TODO MARC this is a GMT date and not UTC as required by trakt
                     se.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 SyncItems sitems = new SyncItems();
                 sitems.episodes(se);
@@ -374,7 +373,6 @@ public class Trakt {
                 MovieIds mi = new MovieIds();
                 mi.tmdb = Integer.valueOf(videoInfo.scraperMovieId);
                 if(videoInfo.lastTimePlayed>0)
-                    // TODO MARC this is a GMT date and not UTC as required by trakt
                     sm.watchedAt(OffsetDateTime.parse(getDateFormat(videoInfo.lastTimePlayed)));
                 sm.id(mi);
                 SyncItems sitems = new SyncItems();
