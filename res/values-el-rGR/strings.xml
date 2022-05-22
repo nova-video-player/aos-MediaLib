@@ -13,10 +13,24 @@
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
     <string name="network_scan_msg">Δημιουργία ευρετήριου αρχείων πολυμέσων</string>
+    <string name="network_unscan_msg">Αφαίρεση mediafiles από τη βιβλιοθήκη</string>
     <!-- .nfo export options -->
+    <string name="nfo_export_category">Εξαγωγή πληροφοριών Mediainformation</string>
+    <string name="nfo_export_auto_title">Αυτόματη εξαγωγή μετά την αναζήτηση</string>
+    <string name="nfo_export_manual_title">Εξαγωγή βίντεο που έχουν αποκτηθεί πληροφορίες</string>
+    <string name="nfo_export_auto_summary">Αυτόματη εξαγωγή αρχείων .nfo μετά την επιτυχή αναζήτηση στο δίκτυο</string>
+    <string name="nfo_export_manual_summary">Εξαγωγή αρχείων .nfo κάθε βίντεο για τα οποία έχουν ήδη αποκτηθεί πληροφορίες</string>
     <string name="nfo_export_button">Εξαγωγή .nfo</string>
+    <string name="nfo_export_folder">Εξαγωγή όλων σε αυτόν τον φάκελο σε .nfo</string>
+    <string name="nfo_export_all">Εξαγωγή ολόκληρης της βιβλιοθήκης σε .nfo</string>
+    <string name="nfo_export_exporting">Εξαγωγή .nfo</string>
     <string name="nfo_export_exporting_all">όλα</string>
     <string name="nfo_export_in_progress">Εξαγωγή NFO σε εξέλιξη</string>
+    <string name="rescrap_in_progress">Απόκτηση πληροφοριών ολόκληρης της βιβλιοθήκης</string>
+    <string name="rescraping_collection">Απόκτηση πληροφοριών συλλογής</string>
+    <string name="rescraping_collections">Απόκτηση πληροφοριών συλλογών</string>
+    <string name="rescraping_noimage_collections">Απόκτηση πληροφοριών συλλογών χωρίς εικόνα</string>
+    <string name="rescrap_all_title">Απόκτηση πληροφοριών για όλα</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Αδύναμία συγχρονισμού με το trakt</string>
     <!-- Title of screen when no sd card is present -->
@@ -44,10 +58,15 @@
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">Παρουσιάστηκε σφάλμα στον εσωτερικό χώρο αποθήκευσης.</string>
     <string name="scraper_no_settings">Δεν υπάρχουν διαθέσιμες ρυθμίσεις για αυτήν την πηγή.</string>
+    <string-array name="scraper_labels_array">
+        <item>enable_fanart:Ενεργοποίηση εναλλακτικών γραφικών</item>
+        <item>info_language:Γλώσσα</item>
+    </string-array>
     <string name="tv_show_genre_action">Δράσης</string>
     <string name="tv_show_genre_adventure">Περιπέτειες</string>
     <string name="tv_show_genre_animation">Κινουμένων Σχέδιων</string>
     <string name="tv_show_genre_anime">Ιαπωνικά Anime</string>
+    <string name="tv_show_genre_awards_show">Βραβευμένες Εκπομπές</string>
     <string name="tv_show_genre_children">Παιδικά</string>
     <string name="tv_show_genre_comedy">Κωμωδίες</string>
     <string name="tv_show_genre_crime">Αστυνομικές</string>
@@ -65,6 +84,7 @@
     <string name="tv_show_genre_musical">Μιούζικαλ</string>
     <string name="tv_show_genre_mystery">Μυστηρίου</string>
     <string name="tv_show_genre_news">Ειδησεογραφικά</string>
+    <string name="tv_show_genre_podcast">Podcast</string>
     <string name="tv_show_genre_reality">Ριάλιτι Σόου</string>
     <string name="tv_show_genre_romance">Ρομαντικές</string>
     <string name="tv_show_genre_science_fiction">Επιστημονικής Φαντασίας</string>
@@ -72,6 +92,7 @@
     <string name="tv_show_genre_special_interest">Ειδικού Ενδιαφέροντος</string>
     <string name="tv_show_genre_sport">Αθλητικές</string>
     <string name="tv_show_genre_suspense">Αγωνίας</string>
+    <string name="tv_show_genre_talk_show">Εκπομπές Συζητήσεων</string>
     <string name="tv_show_genre_thriller">Θρίλερ</string>
     <string name="tv_show_genre_travel">Ταξιδιωτικές</string>
     <string name="tv_show_genre_war">Πολεμικές</string>
@@ -81,6 +102,7 @@
     <string name="movie_genre_adventure">Περιπέτειες</string>
     <string name="movie_genre_animation">Κινουμένων Σχέδιων</string>
     <string name="movie_genre_comedy">Κωμωδίες</string>
+    <string name="movie_genre_crime">Αστυνομικές</string>
     <string name="movie_genre_documentary">Ντοκιμαντέρ</string>
     <string name="movie_genre_drama">Δραματικές</string>
     <string name="movie_family">Οικογενειακές</string>
@@ -107,7 +129,9 @@
     <string name="tvshow_genre_mystery">Μυστηρίου</string>
     <string name="tvshow_genre_news">Ειδησεογραφικά</string>
     <string name="tvshow_genre_reality">Ριάλιτι Σόου</string>
+    <string name="tvshow_genre_scifi_fantasy">Επιστημονικής Φαντασίας &amp; Φαντασίας</string>
     <string name="tvshow_genre_soap">Σαπουνόπερες</string>
+    <string name="tvshow_genre_talk">Συζήτηση</string>
     <string name="tvshow_genre_war_politics">Πόλεμος &amp; Πολιτική</string>
     <string name="tvshow_genre_western">Γουέστερν</string>
     <!--
@@ -117,6 +141,7 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Καλλιτέχνης</string>
+    <string name="scraping_in_progress">Απόκτηση πληροφοριών σε εξέλιξη</string>
     <string name="remaining_videos_to_process">Εναπομείναντα αρχεία για επεξεργασία:</string>
     <string name="video_store_import">Εισαγωγή τοπικών αρχείων</string>
 </resources>
