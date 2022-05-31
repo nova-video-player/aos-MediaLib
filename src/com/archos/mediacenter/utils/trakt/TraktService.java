@@ -532,7 +532,7 @@ public class TraktService extends Service {
                 resultTrakt.objType == Trakt.Result.ObjectType.MOVIES) {
             videos = (java.util.List<PlaybackResponse>) resultTrakt.obj;
         }
-        log.debug("syncPlaybackStatus: processing batch of " + videos.size());
+        log.debug("syncPlaybackStatus: processing batch of " + ((videos !=null) ? videos.size() : "null"));
         //from db to trakt
 
         Cursor c1= cr.query(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, VideoDbInfo.COLUMNS, VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME +" < 0", null, null);
