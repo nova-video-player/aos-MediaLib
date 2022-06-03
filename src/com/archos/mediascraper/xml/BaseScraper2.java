@@ -46,7 +46,7 @@ import javax.xml.parsers.SAXParserFactory;
 public abstract class BaseScraper2 {
     private static final Logger log = LoggerFactory.getLogger(BaseScraper2.class);
 
-    public final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|cs|sl|hr|ko|en|sv|no|vi|lt";
+    public final static String LANGUAGES = "da|fi|nl|de|it|es|fr|pl|hu|el|tr|ru|he|ja|pt|zh|zt|cs|sl|hr|ko|en|sv|no|vi|lt|th|uk|ku";
 
     protected final SAXParser mParser;
 

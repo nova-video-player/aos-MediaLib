@@ -71,6 +71,7 @@ public class MediaFactory {
         LANG_CODEPAGE_MAP.put("lv_LV", 1257);   // Latvian
         LANG_CODEPAGE_MAP.put("lt_LT", 1257);   // Lithuanian
         LANG_CODEPAGE_MAP.put("vi_VN", 1258);   // Vietnamese
+        LANG_CODEPAGE_MAP.put("th_TH", 874);    // Thai
         // TODO missing 28606?
 
         Method method = null;
