@@ -624,7 +624,7 @@ public class VideoStoreImportImpl {
                     index += window;
                     if (allFiles != null) allFiles.close();
                 } while (window < numberOfRows && window > 0);
-            }
+            } else allFiles.close();
         }
         return imported;
     }
