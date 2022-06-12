@@ -60,18 +60,17 @@ public class FileVisitor {
         if (recursionLimit < 0) {
             return;
         }
-
         if (file != null) {
             if (file.isDirectory()) {
                 if (listener.onDirectory(file) && recursionLimit > 0) {
                     try {
                         List<MetaFile2> files  = file.getRawListerInstance().getFileList();
-                            if (files != null) {
-                                if (listener.onFilesList(files))
+                        if (files != null) {
+                            if (listener.onFilesList(files))
                                 for (MetaFile2 subFile : files) {
                                     recurse(subFile, listener, recursionLimit - 1);
                                 }
-                            }
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (AuthenticationException e) {
