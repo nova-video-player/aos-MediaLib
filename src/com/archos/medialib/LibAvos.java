@@ -276,6 +276,10 @@ public class LibAvos {
         nativeSetPassthrough(forcePassthrough);
     }
 
+    public static void setHdmiSupportedAudioCodecs(long hdmiAudioCodecsFlag) {
+        nativeSetHdmiSupoprtedAudioCodecs(hdmiAudioCodecsFlag);
+    }
+
     public static void setDownmix(int downmix) {
         nativeSetDownmix(downmix);
     }
@@ -299,6 +303,8 @@ public class LibAvos {
     private static native void nativeSetOutputSampleRate(int sampleRate);
 
     private static native void nativeSetPassthrough(int forcePassthrough);
+
+    private static native void nativeSetHdmiSupoprtedAudioCodecs(long hdmiAudioCodecsFlag);
 
     private static native void nativeSetDownmix(int downmix);
 
