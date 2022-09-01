@@ -114,6 +114,8 @@ public interface IMediaPlayer {
 
     public void setAvDelay(int delay) throws IllegalStateException;
 
+    public void setAvSpeed(float speed) throws IllegalStateException;
+
     public void setNextTrack(String path) throws IllegalStateException;
 
     public void setOnPreparedListener(OnPreparedListener listener);

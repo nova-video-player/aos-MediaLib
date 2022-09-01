@@ -399,6 +399,8 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     public native void setAvDelay(int delay);
 
+    public native void setAvSpeed(float speed);
+
     public native void setNextTrack(String path);
 
     /**
