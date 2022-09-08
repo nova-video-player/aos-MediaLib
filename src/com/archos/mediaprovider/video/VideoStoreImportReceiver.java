@@ -39,7 +39,7 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
     //private static final Logger log = LoggerFactory.getLogger(VideoStoreImportReceiver.class);
 
     private static final String TAG =  VideoStoreImportReceiver.class.getSimpleName();
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     public VideoStoreImportReceiver() {
     }

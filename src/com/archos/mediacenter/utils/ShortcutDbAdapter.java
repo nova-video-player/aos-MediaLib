@@ -36,7 +36,7 @@ public enum ShortcutDbAdapter {
     VIDEO(ShortcutDbAdapter.DATABASE_VIDEO_TABLE, ShortcutDbAdapter.DATABASE_CREATE_VIDEO5);
 
     private static final String TAG = "ShortcutDbAdapter";
-    protected final static boolean DBG = true;
+    protected final static boolean DBG = false;
 
     // To be incremented each time the architecture of the database is changed
     private static final int DATABASE_VERSION = 5;
