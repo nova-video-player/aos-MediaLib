@@ -19,6 +19,7 @@
     <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
     <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
     <!-- Title of screen when there was an error accessing the sd card -->
+    <string name="sdcard_error_title">Помилка SD-картки</string>
     <!-- label underneath icon used to indicate there was an error accessing the sd card -->
     <!-- Title of screen when no storage is present -->
     <!-- label underneath icon used to indicate that no storage is present -->
@@ -26,15 +27,51 @@
     <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
     <!-- Title of screen when there was an error accessing the internal storage -->
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
+    <string name="tv_show_genre_adventure">Пригоди</string>
+    <string name="tv_show_genre_animation">Анімація</string>
     <string name="tv_show_genre_anime">Аніме</string>
+    <string name="tv_show_genre_children">Діти</string>
+    <string name="tv_show_genre_comedy">Комедія</string>
     <string name="tv_show_genre_drama">Драма</string>
+    <string name="tv_show_genre_family">Сімʼя</string>
+    <string name="tv_show_genre_fantasy">Фентезі</string>
+    <string name="tv_show_genre_food">Їжа</string>
+    <string name="tv_show_genre_home_garden">Дім і сад</string>
     <string name="tv_show_genre_horror">Жахи</string>
+    <string name="tv_show_genre_mystery">Містика</string>
     <string name="tv_show_genre_news">Новини</string>
+    <string name="tv_show_genre_podcast">Подкаст</string>
+    <string name="tv_show_genre_science_fiction">Наукова фантастика</string>
     <string name="tv_show_genre_sport">Спорт</string>
+    <string name="tv_show_genre_thriller">Трилер</string>
+    <string name="tv_show_genre_travel">Подорожі</string>
+    <string name="tv_show_genre_war">Війна</string>
+    <string name="tv_show_genre_western">Вестерн</string>
     <!-- There are official translations for the tmdb movie genres -->
+    <string name="movie_genre_adventure">Пригоди</string>
+    <string name="movie_genre_animation">Анімація</string>
     <string name="movie_genre_comedy">Комедія</string>
+    <string name="movie_genre_drama">Драма</string>
+    <string name="movie_family">Сімʼя</string>
+    <string name="movie_genre_fantasy">Фентезі</string>
+    <string name="movie_genre_history">Історія</string>
+    <string name="movie_genre_horror">Жахи</string>
+    <string name="movie_genre_music">Музика</string>
+    <string name="movie_genre_mystery">Містика</string>
+    <string name="movie_genre_science_fiction">Наукова фантастика</string>
+    <string name="movie_genre_thriller">Трилер</string>
+    <string name="movie_genre_war">Війна</string>
+    <string name="movie_genre_western">Вестерн</string>
     <!-- There are official translations for the tmdb tv genres -->
+    <string name="tvshow_genre_animation">Анімація</string>
+    <string name="tvshow_genre_comedy">Комедія</string>
+    <string name="tvshow_genre_drama">Драма</string>
+    <string name="tvshow_genre_family">Сімʼя</string>
+    <string name="tvshow_genre_kids">Діти</string>
+    <string name="tvshow_genre_mystery">Містика</string>
     <string name="tvshow_genre_news">Новини</string>
+    <string name="tvshow_genre_scifi_fantasy">Наукова фантастика і фентезі</string>
+    <string name="tvshow_genre_western">Вестерн</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
