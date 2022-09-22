@@ -18,6 +18,10 @@ import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -25,6 +29,8 @@ import java.util.Map;
  * IMediaMetadataRetriever interface
  */
 public class AndroidMediaMetadataRetriever extends MediaMetadataRetriever implements IMediaMetadataRetriever {
+
+    private static final Logger log = LoggerFactory.getLogger(AndroidMediaMetadataRetriever.class);
 
     private SmbProxy mSmbProxy = null;
 
@@ -69,7 +75,11 @@ public class AndroidMediaMetadataRetriever extends MediaMetadataRetriever implem
     @Override
     public void release() {
         // TODO Auto-generated method stub
-        super.release();
+        try {
+            super.release();
+        } catch (IOException ioe) {
+            log.error("release: caught IOException", ioe);
+        }
         if (mSmbProxy != null) {
             mSmbProxy.stop();
             mSmbProxy = null;
