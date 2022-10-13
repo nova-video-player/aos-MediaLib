@@ -600,7 +600,7 @@ public class VideoStoreImportImpl {
                         log.debug("copyData: new batch cursor has size " + allFiles.getCount());
                         while (allFiles.moveToNext()) {
                             cursor_count++;
-                            log.trace("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows);
+                            log.trace("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows + ", " + DatabaseUtils.dumpCurrentRowToString(allFiles));
                             try {
                                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
                                     cv = new ContentValues(ccount + 1);
