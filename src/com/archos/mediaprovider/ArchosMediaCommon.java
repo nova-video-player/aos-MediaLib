@@ -47,7 +47,7 @@ public final class ArchosMediaCommon {
     public static final String AUTHORITY_SCRAPER; // = "com.archos.media.scraper";
     public static final String CONTENT_AUTHORITY_SLASH_SCRAPER; // = CONTENT + AUTHORITY_SCRAPER + SLASH;
 
-    /** Scanned files get _id >= this value. (Integer.MAX_VALUE / 2) rounded to human readable form */
+    /* Scanned files get _id >= this value. (Integer.MAX_VALUE / 2) rounded to human readable form */
     // update: take it to 2e9 (2147483647 = 2^31-1) because in Android 13 (and apex?) _id is increase by 1e9 in
     // DatabaseHelper when next row id is not present in respective xattr. Keeping 1e9 makes local files not scanned.
     public static final long SCANNED_ID_OFFSET = 2000000000;

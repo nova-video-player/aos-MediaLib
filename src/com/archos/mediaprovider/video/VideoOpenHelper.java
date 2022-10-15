@@ -44,7 +44,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 41;
+    private static final int DATABASE_VERSION = 42;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1311,6 +1311,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         onUpgrade(db, DATABASE_CREATE_VERSION, DATABASE_VERSION);
     }
 
+    // Lifecycle:: onConfigure, onCreate/Upgrade/Downgrade/BeforeDelete then onOpen
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // create db sets initial version to 10
@@ -1323,7 +1324,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         }
         if (oldVersion < 37) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
-			ScraperTables.upgradeTo(db, 37);
+            ScraperTables.upgradeTo(db, 37);
 			db.execSQL(CREATE_VIDEO_VIEW_V37);
         }
         if (oldVersion < 38) {
@@ -1344,6 +1345,38 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         if (oldVersion < 41) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             db.execSQL(CREATE_VIDEO_VIEW_V41);
+        }
+        if (oldVersion < 42) {
+            // move away smb files to 2e9 _ids since Android 13 as of January 2022 (with apex) can use insanely high 1e9 file _ids
+            // Note that PRAGMA foreign_keys = "ON" to allow ON UPDATE CASCADE does not work in onUpgrade --> need to propagate modifications by hand
+            // move smb files away from latest google local storage insane _id (1e9) at 2e9+ for video_id that are in files for episode, movie, subtitles, videothumbnails
+            String[] tables = new String[] {"episode", "movie", "subtitles", "videothumbnails"};
+            for (String table : tables){
+                db.execSQL("UPDATE " + table + " " +
+                        "SET video_id = video_id+ 1000000000 " +
+                                "WHERE video_id IN " +
+                                "(SELECT _id " +
+                                "FROM files " +
+                                "WHERE _data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
+            }
+            // do it too on subtitles file_id since it references the subs file_id contrary to video_id which is the video the sub is associated with
+            db.execSQL("UPDATE subtitles " +
+                    "SET file_id = file_id + 1000000000 " +
+                    "WHERE video_id IN " +
+                    "(SELECT _id " +
+                    "FROM files " +
+                    "WHERE _data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
+            // move smb files away from latest google local storage insane _id (1e9) at 2e9+
+            db.execSQL("UPDATE files " +
+                    "SET _id = _id + 1000000000, remote_id = remote_id + 1000000000 " +
+                    "WHERE _data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%';");
+            // remove local storage files from files_import with _id that have been overridden via smb import. It will trigger rescan of these files.
+            db.execSQL("DELETE FROM files_import WHERE _id NOT IN (SELECT _id FROM files);");
+            // delete subs files with file_id not in files because overridden by smb
+            db.execSQL("DELETE FROM subtitles WHERE file_id NOT IN (SELECT _id FROM files);");
+            // delete subs files with file_id not in files because overridden by smb
+            // remove because it creates issues with _DELETE_FILE_J trigger
+            //db.execSQL("DELETE FROM videothumbnails WHERE video_id NOT IN (SELECT _id FROM files);");
         }
     }
 
