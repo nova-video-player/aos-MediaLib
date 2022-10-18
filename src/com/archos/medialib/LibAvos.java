@@ -281,7 +281,7 @@ public class LibAvos {
     }
 
     public static void setAudioSpeed(float audioSpeed) {
-        Log.d(TAG, "MARC setAudioSpeed " + audioSpeed);
+        Log.d(TAG, "setAudioSpeed " + audioSpeed);
         nativeSetAudioSpeed(audioSpeed);
     }
 
