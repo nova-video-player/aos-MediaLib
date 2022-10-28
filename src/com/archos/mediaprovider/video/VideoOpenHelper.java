@@ -44,7 +44,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 42;
+    private static final int DATABASE_VERSION = 43;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1325,7 +1325,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         if (oldVersion < 37) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 37);
-			db.execSQL(CREATE_VIDEO_VIEW_V37);
+            db.execSQL(CREATE_VIDEO_VIEW_V37);
         }
         if (oldVersion < 38) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
@@ -1346,18 +1346,21 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             db.execSQL(CREATE_VIDEO_VIEW_V41);
         }
-        if (oldVersion < 42) {
+        if (oldVersion < 43) { // needed for 42 and 43 due to cleanup issue
+            SQLiteUtils.dropTrigger(db, "after_update_uri_files_scanned");
+            SQLiteUtils.dropTrigger(db, "after_delete_files_scanned");
+            SQLiteUtils.dropTrigger(db, "after_insert_files_scanned");
             // move away smb files to 2e9 _ids since Android 13 as of January 2022 (with apex) can use insanely high 1e9 file _ids
             // Note that PRAGMA foreign_keys = "ON" to allow ON UPDATE CASCADE does not work in onUpgrade --> need to propagate modifications by hand
             // move smb files away from latest google local storage insane _id (1e9) at 2e9+ for video_id that are in files for episode, movie, subtitles, videothumbnails
-            String[] tables = new String[] {"episode", "movie", "subtitles", "videothumbnails"};
+            String[] tables = new String[] {"EPISODE", "MOVIE", "subtitles", "videothumbnails"};
             for (String table : tables){
                 db.execSQL("UPDATE " + table + " " +
-                        "SET video_id = video_id+ 1000000000 " +
+                        "SET video_id = video_id + 1000000000 " +
                                 "WHERE video_id IN " +
                                 "(SELECT _id " +
                                 "FROM files " +
-                                "WHERE _data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
+                                "WHERE (_id < 2000000000 AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%')));");
             }
             // do it too on subtitles file_id since it references the subs file_id contrary to video_id which is the video the sub is associated with
             db.execSQL("UPDATE subtitles " +
@@ -1365,11 +1368,11 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "WHERE video_id IN " +
                     "(SELECT _id " +
                     "FROM files " +
-                    "WHERE _data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
+                    "WHERE (_id < 2000000000 AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%')));");
             // move smb files away from latest google local storage insane _id (1e9) at 2e9+
             db.execSQL("UPDATE files " +
                     "SET _id = _id + 1000000000, remote_id = remote_id + 1000000000 " +
-                    "WHERE _data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%';");
+                    "WHERE (_id < 2000000000 AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%'));");
             // remove local storage files from files_import with _id that have been overridden via smb import. It will trigger rescan of these files.
             db.execSQL("DELETE FROM files_import WHERE _id NOT IN (SELECT _id FROM files);");
             // delete subs files with file_id not in files because overridden by smb
@@ -1377,6 +1380,18 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             // delete subs files with file_id not in files because overridden by smb
             // remove because it creates issues with _DELETE_FILE_J trigger
             //db.execSQL("DELETE FROM videothumbnails WHERE video_id NOT IN (SELECT _id FROM files);");
+            // recreate triggers with correct offset
+            db.execSQL(CREATE_FILES_SCANNED_TRIGGER_INSERT_V32);
+            db.execSQL(CREATE_FILES_SCANNED_TRIGGER_DELETE);
+            db.execSQL(CREATE_FILES_SCANNED_TRIGGER_UPDATE_URI);
+            // cleanup delete netwok videos from MOVIE, EPISODE, identified in files not in files_scanned
+            // leave out "videothumbnails" not to create _DELETE_FILE_J trigger issue
+            tables = new String[] {"EPISODE", "MOVIE", "subtitles"};
+            for (String table : tables) {
+                db.execSQL("DELETE FROM " + table + " WHERE video_id IN (SELECT _id FROM files WHERE (_data NOT IN (SELECT _data FROM files_scanned)) AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%'));");
+            }
+            // cleanup: delete network videos in files not in files_scanned
+            db.execSQL("DELETE FROM files WHERE (_data NOT IN (SELECT _data FROM files_scanned)) AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
         }
     }
 
