@@ -174,7 +174,7 @@ public class ShowIdParser {
 
         //set series logo
         String apikey = "ac6ed0ad315f924847ff24fa4f555571";
-        String url = "http://webservice.fanart.tv/v3/tv/" + serie.external_ids.tvdb_id + "?api_key=" + apikey;
+        String url = "https://webservice.fanart.tv/v3/tv/" + serie.external_ids.tvdb_id + "?api_key=" + apikey;
         List<String> enClearLogos = new ArrayList<>();
         try {
             JSONObject json = new JSONObject(readUrl(url));
