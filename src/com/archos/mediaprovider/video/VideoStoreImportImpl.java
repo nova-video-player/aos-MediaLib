@@ -77,9 +77,11 @@ public class VideoStoreImportImpl {
 
     private static final int WINDOW_SIZE = 2000;
     private static String BLACKLIST;
+    private static String sdCardPath = "";
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;
+        sdCardPath = context.getExternalFilesDir(null).getPath();
         mCr = mContext.getContentResolver();
         mBlackList = Blacklist.getInstance(context);
         mMediaRetrieverServiceClient = new MediaRetrieverServiceClient(context);
@@ -110,11 +112,15 @@ public class VideoStoreImportImpl {
         // delete everything that was not replaced, ! only if it is on primary local storage !
         String existingFiles = getRemoteIdList(mCr);
         int del = 0;
-
         // set files not seen to hidden state. They might be deleted but we don't know for sure.
-        ContentValues cv = new ContentValues();
-        cv.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
+        ContentValues cvHidden = new ContentValues();
+        cvHidden.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
+        ContentValues cvPresent = new ContentValues();
+        cvPresent.put("volume_hidden", 0);
+        // mark not present videos as hidden
+        mCr.update(VideoStoreInternal.FILES_IMPORT, cvHidden, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
+        // mark videos present but hidden as present (solves a bug on shield with external USB storage indexed files hidden)
+        mCr.update(VideoStoreInternal.FILES_IMPORT, cvPresent, "_id IN (" + existingFiles + ") AND volume_hidden != 0", null);
 
         int countEnd = getLocalCount(mCr);
         log.info("full import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
