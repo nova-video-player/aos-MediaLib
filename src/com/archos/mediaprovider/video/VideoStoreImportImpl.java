@@ -602,17 +602,29 @@ public class VideoStoreImportImpl {
                     }
                     log.debug("copyData: new batch fetching cursor from index=" + index + ", window=" + window + " -> index+window=" + (index + window) + "<=" + numberOfRows);
 
+                    String data;
+                    Integer storageId;
+
                     if (allFiles != null && allFiles.getCount() >0) {
                         log.debug("copyData: new batch cursor has size " + allFiles.getCount());
                         while (allFiles.moveToNext()) {
                             cursor_count++;
                             log.trace("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows + ", " + DatabaseUtils.dumpCurrentRowToString(allFiles));
                             try {
-                                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+                                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) { // API26(O)+
                                     cv = new ContentValues(ccount + 1);
                                     DatabaseUtils.cursorRowToContentValues(allFiles, cv);
-                                    // since storage_id does not exist on P and above, set it to 1, not sure it is really used now
-                                    cv.put("storage_id", 1);
+                                    data = allFiles.getString(Math.max(allFiles.getColumnIndex(MediaColumnsDATA), 0));
+                                    if (data != null) {
+                                        if (data.startsWith(sdCardPath))
+                                            storageId = 1;
+                                        else
+                                            storageId = ExtStorageManager.getExtStorageManager().getStorageId3(data);
+                                    } else {
+                                        storageId = 1;
+                                    }
+                                    log.trace("copyData: _data=" + data + " -> storageId=" + storageId);
+                                    cv.put("storage_id", storageId);
                                 } else {
                                     cv = new ContentValues(ccount);
                                     DatabaseUtils.cursorRowToContentValues(allFiles, cv);
@@ -697,6 +709,7 @@ public class VideoStoreImportImpl {
             c.close();
         }
         String result = sb.toString();
+        log.trace("getRemoteIdList: ids of files visible " + result);
         return TextUtils.isEmpty(result) ? "" : result;
     }
 

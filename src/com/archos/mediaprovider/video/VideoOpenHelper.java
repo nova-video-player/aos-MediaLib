@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Creates the video database
@@ -44,7 +46,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 43;
+    private static final int DATABASE_VERSION = 44;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1393,6 +1395,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             // cleanup: delete network videos in files not in files_scanned
             db.execSQL("DELETE FROM files WHERE (_data NOT IN (SELECT _data FROM files_scanned)) AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
         }
+        if (oldVersion < 44) { // assign correct storage_id for /storage/AAAA-BBBB instead of 1
+            processStorageIdInDB(db);
+        }
     }
 
     private static final String[] PROJECTION = {
@@ -1467,6 +1472,41 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     }
                 }
             }
+            c.close();
+        }
+    }
+
+    // match two first directories like /storage/AAAA-BBBB
+    private static final Pattern TWODIRS_PATTERN = Pattern.compile("^(/[^/]+/[^/]+)/.*$");
+
+    private void processStorageIdInDB(SQLiteDatabase db) {
+
+        // select columns starting with /storage but not with /storage/emulated
+        Cursor c = db.query(FILES_TABLE_NAME, new String[] {MediaColumns.DATA, "_id", "storage_id"}, "_data like '/storage/%' and _data not like '/storage/emulated/%'", null, null, null, null);
+        if (c == null) {
+            return;
+        }
+
+        while (c.moveToNext()) {
+            String path = c.getString(0);
+            long id = c.getLong(1);
+            long storageId = c.getLong(2);
+            //if (storageId == 1) { // fix only the storage_id = 1 (prehistoric android versions ok)
+            if (1 == 1) { // fix only the storage_id = 1 (prehistoric android versions ok)
+
+                    Matcher m = TWODIRS_PATTERN.matcher(path);
+                Integer storage_id = 1;
+                if (m.matches()) {
+                    storage_id = m.group(1).hashCode();
+                }
+                log.trace("processStorageIdInDB: path=" + path + " -> " + m.group(1) + " storage_id=" + storage_id);
+                ContentValues update = new ContentValues();
+                update.put("storage_id", Long.valueOf(storage_id));
+                db.update(FILES_TABLE_NAME, update, SELECTION_ID, new String[]{String.valueOf(id)});
+            }
+        }
+
+        if (c != null) {
             c.close();
         }
     }
