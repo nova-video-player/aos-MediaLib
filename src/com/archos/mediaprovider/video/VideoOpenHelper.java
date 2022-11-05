@@ -1491,15 +1491,13 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             String path = c.getString(0);
             long id = c.getLong(1);
             long storageId = c.getLong(2);
-            //if (storageId == 1) { // fix only the storage_id = 1 (prehistoric android versions ok)
-            if (1 == 1) { // fix only the storage_id = 1 (prehistoric android versions ok)
-
-                    Matcher m = TWODIRS_PATTERN.matcher(path);
+            if (storageId == 1) { // fix only the storage_id = 1 (prehistoric android versions ok)
+                Matcher m = TWODIRS_PATTERN.matcher(path);
                 Integer storage_id = 1;
                 if (m.matches()) {
                     storage_id = m.group(1).hashCode();
+                    log.trace("processStorageIdInDB: path=" + path + " -> " + m.group(1) + " storage_id=" + storage_id);
                 }
-                log.trace("processStorageIdInDB: path=" + path + " -> " + m.group(1) + " storage_id=" + storage_id);
                 ContentValues update = new ContentValues();
                 update.put("storage_id", Long.valueOf(storage_id));
                 db.update(FILES_TABLE_NAME, update, SELECTION_ID, new String[]{String.valueOf(id)});
