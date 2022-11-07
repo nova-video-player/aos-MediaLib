@@ -93,6 +93,7 @@ public class Blacklist {
         if (FileUtils.isLocal(file)) { // only makes sense if file is locale
             for (String blacklisted : BLACKLISTED_CAMERA)
                 if (filePath.startsWith(blacklisted)) return true;
+            // TODO not efficient to have getExtStorageManager because triggers updateAllVolumes but since not used not changing this
             List<String> extPathList = ExtStorageManager.getExtStorageManager().getExtSdcards();
             extPathList.add(Environment.getExternalStorageDirectory().getPath());
             for (String extPath: extPathList)
