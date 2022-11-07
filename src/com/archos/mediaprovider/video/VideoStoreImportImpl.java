@@ -529,6 +529,7 @@ public class VideoStoreImportImpl {
         String[] whereArgs = null;
         Cursor allFiles = null;
         ContentValues cv = null;
+        ExtStorageManager extStorageManager = ExtStorageManager.getExtStorageManager();
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
             where = WHERE_ALL_AP + BLACKLIST;
             if (minId != null) {
@@ -619,7 +620,7 @@ public class VideoStoreImportImpl {
                                         if (data.startsWith(sdCardPath))
                                             storageId = 1;
                                         else
-                                            storageId = ExtStorageManager.getExtStorageManager().getStorageId3(data);
+                                            storageId = extStorageManager.getStorageId3(data);
                                     } else {
                                         storageId = 1;
                                     }
