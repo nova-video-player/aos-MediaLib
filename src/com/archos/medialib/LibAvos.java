@@ -285,6 +285,11 @@ public class LibAvos {
         nativeSetAudioSpeed(audioSpeed);
     }
 
+    public static void enableAudioSpeed(boolean enable) {
+        Log.d(TAG, "enableAudioSpeed " + enable);
+        nativeEnableAudioSpeed(enable);
+    }
+
     public static void setDownmix(int downmix) {
         nativeSetDownmix(downmix);
     }
@@ -312,6 +317,8 @@ public class LibAvos {
     private static native void nativeSetHdmiSupoprtedAudioCodecs(long hdmiAudioCodecsFlag);
 
     private static native void nativeSetAudioSpeed(float audioSpeed);
+
+    private static native void nativeEnableAudioSpeed(boolean enable);
 
     private static native void nativeSetDownmix(int downmix);
 
