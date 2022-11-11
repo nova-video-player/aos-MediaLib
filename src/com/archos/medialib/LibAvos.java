@@ -290,6 +290,11 @@ public class LibAvos {
         nativeEnableAudioSpeed(enable);
     }
 
+    public static void parserSyncMode(int mode) {
+        Log.d(TAG, "parserSyncMode " + mode);
+        nativeParserSyncMode(mode);
+    }
+
     public static void setDownmix(int downmix) {
         nativeSetDownmix(downmix);
     }
@@ -319,6 +324,8 @@ public class LibAvos {
     private static native void nativeSetAudioSpeed(float audioSpeed);
 
     private static native void nativeEnableAudioSpeed(boolean enable);
+
+    private static native void nativeParserSyncMode(int mode);
 
     private static native void nativeSetDownmix(int downmix);
 
