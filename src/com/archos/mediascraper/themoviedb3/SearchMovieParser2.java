@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Response;
 
@@ -109,6 +110,8 @@ public class SearchMovieParser2 {
             // Put in lower priority any entry that has no movie banned i.e. .*missing/movie.jpg as banner
             isDecisionTaken = false;
             isReleaseDateKnown = (movie.release_date != null);
+            String movieNameLC = movieName.toLowerCase();
+
             if (! isReleaseDateKnown) {
                 log.debug("getSearchMovieParserResult: set aside " + movie.title + " because release date is missing");
                 searchMovieParserResult.resultsNoAirDate.add(result);
@@ -123,10 +126,8 @@ public class SearchMovieParser2 {
                     result.setPosterPath(movie.poster_path);
                     if (movie.backdrop_path == null || movie.backdrop_path.endsWith("missing/series.jpg") || movie.backdrop_path.endsWith("missing/movie.jpg") || movie.backdrop_path == "") {
                         log.debug("getSearchMovieParserResult: set aside " + movie.title + " because banner missing i.e. banner=" + movie.backdrop_path);
-                        levenshteinDistanceTitle = levenshteinDistance.apply(movieName.toLowerCase(),
-                                result.getTitle().toLowerCase());
-                        levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieName.toLowerCase(),
-                                result.getOriginalTitle().toLowerCase());
+                        levenshteinDistanceTitle = levenshteinDistance.apply(movieNameLC, result.getTitle().toLowerCase());
+                        levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieNameLC, result.getOriginalTitle().toLowerCase());
                         searchMovieParserResult.resultsNoBanner.add(new Pair<>(result,
                                 Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                         isDecisionTaken = true;
@@ -141,10 +142,8 @@ public class SearchMovieParser2 {
                 log.debug("getSearchMovieParserResult: taking into account " + movie.title + " because banner/image exists and known airdate");
                 isDecisionTaken = true;
                 // get the min of the levenshtein distance between cleaned file based show name and title and original title identified
-                levenshteinDistanceTitle = levenshteinDistance.apply(movieName.toLowerCase(),
-                        result.getTitle().toLowerCase());
-                levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieName.toLowerCase(),
-                        result.getOriginalTitle().toLowerCase());
+                levenshteinDistanceTitle = levenshteinDistance.apply(movieNameLC, result.getTitle().toLowerCase());
+                levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieNameLC, result.getOriginalTitle().toLowerCase());
                 searchMovieParserResult.resultsProbable.add(new Pair<>(result,
                         Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
             }

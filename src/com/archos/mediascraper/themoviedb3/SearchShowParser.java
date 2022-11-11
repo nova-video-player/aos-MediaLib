@@ -128,6 +128,7 @@ public class SearchShowParser {
                 // Put in lower priority any entry that has no TV show banned i.e. .*missing/movie.jpg as banner
                 isDecisionTaken = false;
                 isAirDateKnown = (series.first_air_date != null);
+                String showNameLC = searchInfo.getShowName().toLowerCase();
                 // TODO (impossible): would be nice to discard show that has not enough seasons to match the search but impossible at this stage BasicTvShow instead of TvShow in response
                 if (! isAirDateKnown) {
                     log.debug("getSearchShowParserResult: set aside " + series.name + " because air date is missing");
@@ -143,10 +144,8 @@ public class SearchShowParser {
                         result.setPosterPath(series.poster_path);
                         if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
                             log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
-                            levenshteinDistanceTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                                    result.getTitle().toLowerCase());
-                            levenshteinDistanceOriginalTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                                    result.getOriginalTitle().toLowerCase());
+                            levenshteinDistanceTitle = levenshteinDistance.apply(showNameLC, result.getTitle().toLowerCase());
+                            levenshteinDistanceOriginalTitle = levenshteinDistance.apply(showNameLC, result.getOriginalTitle().toLowerCase());
                             searchShowParserResult.resultsNoBanner.add(new Pair<>(result,
                                     Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                             isDecisionTaken = true;
@@ -161,10 +160,8 @@ public class SearchShowParser {
                     log.debug("getSearchShowParserResult: taking into account " + series.name + " because banner/image exists and known airdate");
                     isDecisionTaken = true;
                     // get the min of the levenshtein distance between cleaned file based show name and title and original title identified
-                    levenshteinDistanceTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                            result.getTitle().toLowerCase());
-                    levenshteinDistanceOriginalTitle = levenshteinDistance.apply(searchInfo.getShowName().toLowerCase(),
-                            result.getOriginalTitle().toLowerCase());
+                    levenshteinDistanceTitle = levenshteinDistance.apply(showNameLC, result.getTitle().toLowerCase());
+                    levenshteinDistanceOriginalTitle = levenshteinDistance.apply(showNameLC, result.getOriginalTitle().toLowerCase());
                     searchShowParserResult.resultsProbable.add(new Pair<>(result,
                             Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                 }
