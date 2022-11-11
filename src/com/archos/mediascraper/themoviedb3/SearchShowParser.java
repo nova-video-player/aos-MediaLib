@@ -23,7 +23,6 @@ import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
 import com.archos.mediascraper.xml.ShowScraper4;
 import com.uwetrottmann.tmdb2.entities.BaseTvShow;
-import com.uwetrottmann.tmdb2.entities.TvShow;
 import com.uwetrottmann.tmdb2.entities.TvShowResultsPage;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
@@ -45,7 +44,7 @@ public class SearchShowParser {
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
-    private static List<SearchResult> normalAdd(SearchShowParserResult searchShowParserResult, int maxItems) {
+    private static List<SearchResult> normalAdd(SearchParserResult searchShowParserResult, int maxItems) {
         List<SearchResult> results = new LinkedList<>();
         log.debug("normalAdd: searchShowParserResult.resultsProbable.size()=" + searchShowParserResult.resultsProbable.size());
         if (searchShowParserResult.resultsProbable.size()>0)
@@ -72,16 +71,16 @@ public class SearchShowParser {
                                                TvShowSearchInfo searchInfo, Integer year,
                                                String language, Integer maxItems, ShowScraper4 showScraper) {
         List<SearchResult> results;
-        SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
+        SearchParserResult searchShowParserResult = new SearchParserResult();
         if (response != null)
             searchShowParserResult = getSearchShowParserResult(response, searchInfo, year, language, showScraper);
         results = normalAdd(searchShowParserResult, maxItems);
         return results;
     }
 
-    private static SearchShowParserResult getSearchShowParserResult(Response<TvShowResultsPage> response,
+    private static SearchParserResult getSearchShowParserResult(Response<TvShowResultsPage> response,
                                                                     TvShowSearchInfo searchInfo, Integer year, String language, ShowScraper4 showScraper) {
-        SearchShowParserResult searchShowParserResult = new SearchShowParserResult();
+        SearchParserResult searchShowParserResult = new SearchParserResult();
         int episode, season;
         String countryOfOrigin = searchInfo.getCountryOfOrigin();
         Boolean isDecisionTaken = false;
