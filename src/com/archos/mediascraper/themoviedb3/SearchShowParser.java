@@ -44,29 +44,6 @@ public class SearchShowParser {
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
-    private static List<SearchResult> normalAdd(SearchParserResult searchShowParserResult, int maxItems) {
-        List<SearchResult> results = new LinkedList<>();
-        log.debug("normalAdd: searchShowParserResult.resultsProbable.size()=" + searchShowParserResult.resultsProbable.size());
-        if (searchShowParserResult.resultsProbable.size()>0)
-            for (Pair<SearchResult,Integer> pair : searchShowParserResult.resultsProbable)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(pair.first);
-        // skip shows without a poster
-        /*
-        if (searchShowParserResult.resultsNoPoster.size()>0)
-            for (SearchResult result : searchShowParserResult.resultsNoPoster)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
-         */
-        // do NOT skip shows without a banner (otherwise shows like The Wrong Mans not found)
-        if (searchShowParserResult.resultsNoBanner.size()>0)
-            for (Pair<SearchResult,Integer> pair : searchShowParserResult.resultsNoBanner)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(pair.first);
-        log.debug("normalAdd: results.size()=" + results.size());
-        return results;
-    }
-
     public static List<SearchResult> getResult(Response<TvShowResultsPage> response,
                                                TvShowSearchInfo searchInfo, Integer year,
                                                String language, Integer maxItems, ShowScraper4 showScraper) {
@@ -74,14 +51,13 @@ public class SearchShowParser {
         SearchParserResult searchShowParserResult = new SearchParserResult();
         if (response != null)
             searchShowParserResult = getSearchShowParserResult(response, searchInfo, year, language, showScraper);
-        results = normalAdd(searchShowParserResult, maxItems);
+        results = searchShowParserResult.getResults(maxItems);
         return results;
     }
 
     private static SearchParserResult getSearchShowParserResult(Response<TvShowResultsPage> response,
                                                                     TvShowSearchInfo searchInfo, Integer year, String language, ShowScraper4 showScraper) {
         SearchParserResult searchShowParserResult = new SearchParserResult();
-        int episode, season;
         String countryOfOrigin = searchInfo.getCountryOfOrigin();
         Boolean isDecisionTaken = false;
         int levenshteinDistanceTitle, levenshteinDistanceOriginalTitle;
