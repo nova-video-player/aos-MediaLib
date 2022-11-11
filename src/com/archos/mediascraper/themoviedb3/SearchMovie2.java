@@ -78,7 +78,7 @@ public class SearchMovie2 {
                             log.debug("search: response body has " + response.body().total_results + " results");
                             if (response.body().total_results == 0)
                                 notFound = true;
-                            parserResult = SearchMovieParser2.getResult(response, resultLimit);
+                            parserResult = SearchMovieParser2.getResult(response, query, language, year, resultLimit);
                             myResult.result = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {
