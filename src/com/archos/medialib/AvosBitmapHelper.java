@@ -35,7 +35,13 @@ public class AvosBitmapHelper {
         }
 
         Config config = Bitmap.Config.ARGB_8888;
-        Bitmap bitmap = Bitmap.createBitmap(inData, 0, inLinestep, inWidth, inHeight, config);
+        Bitmap bitmap = null;
+        try {
+            bitmap = Bitmap.createBitmap(inData, 0, inLinestep, inWidth, inHeight, config);
+        } catch (OutOfMemoryError oom) {
+            Log.e("AvosBitmapHelper", "createRGBBitmap: caught OOM", oom);
+            bitmap = null;
+        }
         if (bitmap == null)
             return null;
 
