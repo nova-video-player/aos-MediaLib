@@ -290,6 +290,16 @@ public class LibAvos {
         nativeEnableAudioSpeed(enable);
     }
 
+    public static void setStreamMaxIframeSize(int size) {
+        Log.d(TAG, "setStreamMaxIframeSize " + size);
+        nativeSetStreamMaxIframeSize(size);
+    }
+
+    public static void setStreamBufferSize(int size) {
+        Log.d(TAG, "setStreamBufferSize " + size);
+        nativeSetStreamBufferSize(size);
+    }
+
     public static void parserSyncMode(int mode) {
         Log.d(TAG, "parserSyncMode " + mode);
         nativeParserSyncMode(mode);
@@ -326,6 +336,10 @@ public class LibAvos {
     private static native void nativeEnableAudioSpeed(boolean enable);
 
     private static native void nativeParserSyncMode(int mode);
+
+    private static native void nativeSetStreamBufferSize(int size);
+
+    private static native void nativeSetStreamMaxIframeSize(int size);
 
     private static native void nativeSetDownmix(int downmix);
 
