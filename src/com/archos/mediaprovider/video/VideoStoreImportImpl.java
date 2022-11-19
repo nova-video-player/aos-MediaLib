@@ -81,7 +81,14 @@ public class VideoStoreImportImpl {
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;
-        sdCardPath = context.getExternalFilesDir(null).getPath();
+        File sdCardFile = context.getExternalFilesDir(null);
+        // sdCardFile seen on sentry (3744020792) to be null on MIBOX4 android 9
+        if (sdCardFile != null) {
+            sdCardPath = sdCardFile.getPath();
+        } else {
+            // take a wild probable guess
+            sdCardPath ="/storage/emulated/0";
+        }
         mCr = mContext.getContentResolver();
         mBlackList = Blacklist.getInstance(context);
         mMediaRetrieverServiceClient = new MediaRetrieverServiceClient(context);
