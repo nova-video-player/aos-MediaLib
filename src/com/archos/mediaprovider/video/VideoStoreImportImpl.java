@@ -495,8 +495,8 @@ public class VideoStoreImportImpl {
         return ret;
     }
 
-    private static final String NOT_NETWORKINDEXED_BP = "storage_id & 1 AND _data NOT NULL AND _data != ''";
-    private static final String NOT_NETWORKINDEXED_AP = "_data NOT NULL AND _data != ''";
+    private static final String NOT_NETWORKINDEXED_BP = "storage_id & 1 AND _data NOT NULL AND _data != '' AND _size != '0'";
+    private static final String NOT_NETWORKINDEXED_AP = "_data NOT NULL AND _data != '' AND _size != '0'";
     private static final String WHERE_MIN_ID_BP = NOT_NETWORKINDEXED_BP + " AND _id > ?";
     private static final String WHERE_MIN_ID_AP = NOT_NETWORKINDEXED_AP + " AND _id > ?";
     private static final String WHERE_ALL_BP = NOT_NETWORKINDEXED_BP;
