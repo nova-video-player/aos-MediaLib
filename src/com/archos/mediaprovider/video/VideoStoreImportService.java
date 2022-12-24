@@ -160,7 +160,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     public void onCreate() {
         log.debug("onCreate");
         n = createNotification();
-        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
+        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null) + " isForeground=" + AppState.isForeGround());
         startForeground(NOTIFICATION_ID, n);
         log.debug("onCreate: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
 
@@ -255,12 +255,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             nm.cancel(NOTIFICATION_ID);
             stopForeground(true);
         } else {
-                log.debug("onDestroy: app is in background stopSelf");
-            // if app goes in background do not remove notif use stopSelf
+            log.debug("onDestroy: app is in background stopSelf");
+            // if app goes in background stop foreground service and stopSelf
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onDestroy", "app is in background stopSelf");
-            // be sure to call startForeground before stopSelf to avoid RemoteServiceException
-            if (n == null) n = createNotification();
-            startForeground(NOTIFICATION_ID, n);
             stopForeground(true);
             stopSelf();
         }
