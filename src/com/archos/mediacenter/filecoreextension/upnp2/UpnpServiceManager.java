@@ -22,7 +22,6 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
 
 import com.archos.environment.NetworkState;
 
@@ -40,6 +39,8 @@ import org.fourthline.cling.model.types.UDAServiceId;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -58,16 +59,14 @@ import java.util.Set;
  */
 public class UpnpServiceManager {
 
+    private static final Logger log = LoggerFactory.getLogger(UpnpServiceManager.class);
+
     private boolean mHasStarted;
     private boolean mStopLock;
 
     private NetworkState networkState = null;
     private PropertyChangeListener propertyChangeListener = null;
     private boolean mNetworkStateListenerAdded = false;
-
-    private static final String TAG = "UpnpServiceManager";
-    private static final boolean DBG = false;
-    private static final boolean DBG_LISTENER = false;
 
     /**
      * NOTE: this does not work like the SMB discovery.
@@ -122,6 +121,7 @@ public class UpnpServiceManager {
         }
         if (singleton != null)
             singleton.startUpnpServiceIfNotStartedYet();
+        else log.warn("getSingleton: singleton is null!");
         return singleton;
     }
 
@@ -138,10 +138,10 @@ public class UpnpServiceManager {
                     @Override
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getOldValue() != evt.getNewValue()) {
-                            if (DBG) Log.d(TAG, "NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
+                            log.debug("NetworkState for " + evt.getPropertyName() + " changed:" + evt.getOldValue() + " -> " + evt.getNewValue());
                             //we need to restart upnp service on network state change
                             if (mAndroidUpnpService!=null&&mState==State.RUNNING&&mHasStarted) {
-                                if(DBG) Log.d(TAG, "restarting");
+                                log.debug("restarting");
                                 mDevices.clear();
                                 informListenersOfDeviceListUpdate(mListeners);
                                 mAndroidUpnpService.getRegistry().removeListener(mRegistryListener);
@@ -159,7 +159,7 @@ public class UpnpServiceManager {
             addNetworkListener();
             mHasStarted = true;
             mState = State.NOT_RUNNING;
-            if (DBG) Log.d(TAG, "State NOT_RUNNING");
+            log.debug("State NOT_RUNNING");
         }
     }
 
@@ -185,11 +185,10 @@ public class UpnpServiceManager {
     static public synchronized void stopServiceIfLaunched(){
         if(singleton!=null)
             singleton.stop();
-
     }
+
     private UpnpServiceManager(Context context) {
         mContext = context;
-
     }
 
     /**
@@ -200,10 +199,10 @@ public class UpnpServiceManager {
             boolean result = mContext.bindService(new Intent(mContext, AndroidUpnpServiceImpl.class), mServiceConnection, Context.BIND_AUTO_CREATE);
             if (result) {
                 mState = State.STARTING;
-                if(DBG) Log.d(TAG, "State STARTING");
+                log.debug("State STARTING");
             } else {
                 mState = State.ERROR;
-                if(DBG) Log.e(TAG, "State ERROR - bindService returned false!");
+                log.debug("State ERROR - bindService returned false!");
             }
         }
     }
@@ -266,10 +265,10 @@ public class UpnpServiceManager {
     final ServiceConnection mServiceConnection = new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
-            if(DBG) Log.d(TAG, "onServiceConnected");
+            log.debug("onServiceConnected");
             mAndroidUpnpService = (AndroidUpnpService) service;
             mState = State.RUNNING;
-            if(DBG) Log.d(TAG, "State RUNNING");
+            log.debug("State RUNNING");
 
             // Listen for discovery stuff
             mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
@@ -286,7 +285,7 @@ public class UpnpServiceManager {
             // no more service
             mAndroidUpnpService = null;
             mState = State.NOT_RUNNING;
-            if(DBG) Log.d(TAG, "State NOT_RUNNING");
+            log.debug("State NOT_RUNNING");
         }
     };
 
@@ -377,7 +376,7 @@ public class UpnpServiceManager {
             Action action = service.getAction("Browse");
             if (action == null) return;
 
-            if(DBG) Log.d(TAG, "addDevice with hash code " + device.hashCode());
+            log.debug("addDevice with hash code " + device.hashCode());
             synchronized (this) {
                 // Add to list
                 mDevices.put(Integer.valueOf(device.hashCode()), device);
@@ -440,7 +439,7 @@ public class UpnpServiceManager {
         @Override
         public void run() {
             if (mAndroidUpnpService!=null) {
-                if(DBG) Log.d(TAG, "mPeriodicSearchRunnable search");
+                log.debug("mPeriodicSearchRunnable search");
                 mAndroidUpnpService.getControlPoint().search(new UDADeviceTypeHeader(new UDADeviceType("MediaServer")));
             }
             // program next search
@@ -477,7 +476,7 @@ public class UpnpServiceManager {
     private void addNetworkListener() {
         if (networkState == null) networkState = NetworkState.instance(mContext);
         if (!mNetworkStateListenerAdded && propertyChangeListener != null) {
-            if (DBG_LISTENER) Log.d(TAG, "addNetworkListener: networkState.addPropertyChangeListener");
+            log.trace("addNetworkListener: networkState.addPropertyChangeListener");
             networkState.addPropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = true;
         }
@@ -486,7 +485,7 @@ public class UpnpServiceManager {
     private void removeNetworkListener() {
         if (networkState == null) networkState = NetworkState.instance(mContext);
         if (mNetworkStateListenerAdded && propertyChangeListener != null) {
-            if (DBG_LISTENER) Log.d(TAG, "removeListener: networkState.removePropertyChangeListener");
+            log.trace("removeListener: networkState.removePropertyChangeListener");
             networkState.removePropertyChangeListener(propertyChangeListener);
             mNetworkStateListenerAdded = false;
         }
