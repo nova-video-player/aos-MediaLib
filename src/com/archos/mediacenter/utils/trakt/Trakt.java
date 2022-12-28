@@ -280,7 +280,7 @@ public class Trakt {
             mAccessToken.access_token = response.body().access_token;
             mAccessToken.refresh_token = response.body().refresh_token;
             return mAccessToken;
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             log.error("getAccessToken: caught IoException ", e);
         }
         return null;
@@ -835,6 +835,7 @@ public class Trakt {
     }
 
     public static boolean shouldMarkAsSeen(float progress) {
+        log.debug("shouldMarkAsSeen: " + progress);
         return progress >= SCROBBLE_THRESHOLD;
     }
 
