@@ -287,7 +287,7 @@ public enum ShortcutDbAdapter {
                     null,
                     null);
         }
-        catch (SQLiteException e) {
+        catch (SQLiteException | NullPointerException e) {
             // The table corresponding to this type does not exist yet
             Log.w(TAG, e);
             return null;
