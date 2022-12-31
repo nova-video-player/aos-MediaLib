@@ -257,7 +257,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             log.debug("extra not null");
             mRecordOnFailPreference = intent.getExtras().getString(RECORD_ON_FAIL_PREFERENCE, null);
             if(mRecordEndOfScanPreference==null) //reset only when null to avoid pred not being written when another intent with no pref comes just after (this will be written when service stops)
-            mRecordEndOfScanPreference = intent.getExtras().getString(RECORD_END_OF_SCAN_PREFERENCE,null);
+                mRecordEndOfScanPreference = intent.getExtras().getString(RECORD_END_OF_SCAN_PREFERENCE,null);
         }
         else {
             log.debug("extra null");
