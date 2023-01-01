@@ -35,7 +35,7 @@ import io.sentry.SentryLevel;
  * receiver for events that trigger mediastore import
  */
 public class VideoStoreImportReceiver extends BroadcastReceiver {
-    // DO NOT use slf4j master logger not initialized package name not known otherwise filenotfound
+    // /!\ DO NOT use slf4j master logger not initialized package name not known otherwise fileNotFound
     //private static final Logger log = LoggerFactory.getLogger(VideoStoreImportReceiver.class);
 
     private static final String TAG =  VideoStoreImportReceiver.class.getSimpleName();
@@ -48,15 +48,15 @@ public class VideoStoreImportReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (DBG) Log.d(TAG, "onReceive:" + intent);
         if (AppState.isForeGround()) {
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent if intent supported");
+            if (DBG) Log.d(TAG, "VideoStoreImportReceiver onReceive: application is in foreground, asking NetworkScannerServiceVideo via intent if intent supported");
             // start network scan / removal service
             NetworkScannerServiceVideo.startIfHandles(context, intent);
             // in addition and all other cases inform import service about the event but only if this is something we handle
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in foreground, asking VideoStoreImportService via intent if intent supported");
+            if (DBG) Log.d(TAG, "VideoStoreImportReceiver onReceive: application is in foreground, asking VideoStoreImportService via intent if intent supported");
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportReceiver.onReceive", "application is in foreground, asking VideoStoreImportService via intent if intent supported");
             VideoStoreImportService.startIfHandles(context, intent);
         } else {
-            if (DBG) Log.d(TAG, "VSIR onReceive: application is in background, do nothing");
+            if (DBG) Log.d(TAG, "VideoStoreImportReceiver onReceive: application is in background, do nothing");
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportReceiver.onReceive", "application is in background, do nothing");
         }
     }
