@@ -1368,7 +1368,6 @@ public class VideoProvider extends ContentProvider {
 
     private final AppState.OnForeGroundListener mForeGroundListener = (applicationContext, foreground) -> {
         if (foreground) {
-            // TODO MARC
             // should be done at each foreground to check if there are new videos (redo incremental import not full?)
             log.debug("mForeGroundListener: app is foreground VideoStoreImportService.startService");
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoProvider.mForeGroundListener", "app is foreground VideoStoreImportService.startService");
