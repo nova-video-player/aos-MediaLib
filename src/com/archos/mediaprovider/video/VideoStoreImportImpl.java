@@ -359,8 +359,8 @@ public class VideoStoreImportImpl {
         // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
         // note that the db is being modified during import
         do {
-            if (window > numberOfRows)
-                window = numberOfRows;
+            if (window > numberOfRowsRemaining)
+                window = numberOfRowsRemaining;
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>30 requires bundle to LIMIT
                 final Bundle bundle = new Bundle();
                 bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, WHERE_UNSCANNED);
@@ -374,8 +374,7 @@ public class VideoStoreImportImpl {
                 c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ,
                         WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + window);
             }
-            log.debug("doScan: new batch fetching window=" + window + " entries <=" + numberOfRows);
-            log.debug("doScan: new batch cursor has size " + c.getCount());
+            log.debug("doScan: new batch fetching window=" + window + " 0<= entries <=" + window + "/" + numberOfRowsRemaining + ", new batch cursor has size " + c.getCount());
             handleScanCursor(c, cr, context, blacklist);
             numberOfRowsRemaining -= window;
             c.close();
