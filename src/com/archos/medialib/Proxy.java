@@ -29,7 +29,7 @@ public abstract class Proxy {
         mUri = uri;
     }
     public static boolean needToStream(String scheme){
-        return "smb".equalsIgnoreCase(scheme) || "upnp".equalsIgnoreCase(scheme)||"ftp".equalsIgnoreCase(scheme)||"ftps".equalsIgnoreCase(scheme) || "sftp".equalsIgnoreCase(scheme);
+        return "upnp".equalsIgnoreCase(scheme)|| SmbProxy.needToStream(scheme);
     }
     protected abstract Uri start();
 

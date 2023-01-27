@@ -54,6 +54,7 @@ public enum FTPShortcutDbAdapter {
     // ftp types
     public static final int FTP = 0;
     public static final int SFTP = 1;
+    public static final int WEBDAV = 2;
      
     private static final String DATABASE_NAME = "ftp_shortcuts_db";
     private static final String DATABASE_VIDEO_TABLE = "ftp_shortcuts_table_video";
@@ -66,8 +67,7 @@ public enum FTPShortcutDbAdapter {
     private Context mContext;
     private DatabaseHelper mDbHelper;
     // The path is the only info the other classes need to know.
-    private List<FTPShortcut> mFTPShortcutList;
-    private List<FTPShortcut> mSFTPShortcutList;
+    private ArrayList<FTPShortcut>[] mShortcuts;
     private HashMap<String, String> mShortcutIpList;
     // The database id is only needed locally for the database management
     private List<Long> mShortcutDbIdList;
@@ -138,8 +138,12 @@ public enum FTPShortcutDbAdapter {
 
         mContext = context;
         mDbHelper = new DatabaseHelper(context);
-        mFTPShortcutList = new ArrayList<FTPShortcut>();
-        mSFTPShortcutList = new ArrayList<FTPShortcut>();
+
+        mShortcuts = new ArrayList[3];
+        mShortcuts[0] = new ArrayList<FTPShortcut>();
+        mShortcuts[1] = new ArrayList<FTPShortcut>();
+        mShortcuts[2] = new ArrayList<FTPShortcut>();
+
         mShortcutIpList = new HashMap<String, String>();
         mShortcutDbIdList = new ArrayList<Long>();
 
@@ -175,12 +179,7 @@ public enum FTPShortcutDbAdapter {
                     String shortcutName = 	cursor.getString(shortcutNameIndex);
                     if(shortcutName==null)
                     	shortcutName = host;
-                    if(type == FTP){
-                    	mFTPShortcutList.add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
-                    	
-                    }
-                    else
-                    	mSFTPShortcutList.add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
+                   	mShortcuts[type].add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
 
                 } while (cursor.moveToNext());
             }
@@ -188,7 +187,7 @@ public enum FTPShortcutDbAdapter {
         }
         close();
         if (DBG)
-            Log.d(TAG, "loadShortcuts : found " + mSFTPShortcutList.size() + " shortcuts");
+            Log.d(TAG, "loadShortcuts : found " + mShortcuts[SFTP].size() + " shortcuts");
     }
 
     public void addToShortcutList(int type, String host,int port, String path,String username, String password, String shortcutName){
@@ -199,68 +198,42 @@ public enum FTPShortcutDbAdapter {
     	addToShortcutList(shortcut);
     }
     public List<FTPShortcut> getFTPShortcutList() {
-        return mFTPShortcutList;
+        return mShortcuts[FTP];
     }
     public void addToShortcutList(FTPShortcut shortcut){
-
-
         // Add the new shortcut to the current list
-    	if(shortcut.type==FTP){
-    		mFTPShortcutList.add(shortcut);
-    	}
-    	else
-    		mSFTPShortcutList.add(shortcut);
-
+        mShortcuts[shortcut.type].add(shortcut);
 
         new AddToShortcutListTask().execute(shortcut);
     }
     public void removeFromSFTPShortcutList(FTPShortcut shortcutPath) {
-      
-
         // Remove the shortcut from the current list
         Long rowId = Long.valueOf(-1);
         int indexInArray =-1;
-        if(shortcutPath.type==SFTP){
-        	for(int i =0; i<mSFTPShortcutList.size(); i++){
-        		if(mSFTPShortcutList.get(i).host.equals(shortcutPath.host)&&
-        				mSFTPShortcutList.get(i).path.equals(shortcutPath.path)&&
-        				mSFTPShortcutList.get(i).username.equals(shortcutPath.username)&&
-        				mSFTPShortcutList.get(i).password.equals(shortcutPath.password)&&
-        				mSFTPShortcutList.get(i).port== shortcutPath.port){
-        			indexInArray = i;
-        			break;
-        		}
-        	}
-        	if (indexInArray >= 0 ) {
-            	rowId = mSFTPShortcutList.get(indexInArray).rowID;
-                mSFTPShortcutList.remove(indexInArray);
-        	}
+        ArrayList<FTPShortcut> myList = mShortcuts[shortcutPath.type];
+        for(int i =0; i<myList.size(); i++){
+            if(myList.get(i).host.equals(shortcutPath.host)&&
+                    myList.get(i).path.equals(shortcutPath.path)&&
+                    myList.get(i).username.equals(shortcutPath.username)&&
+                    myList.get(i).password.equals(shortcutPath.password)&&
+                    myList.get(i).port== shortcutPath.port){
+                indexInArray = i;
+
+                break;
+
+            }
         }
-        else {
-        	for(int i =0; i<mFTPShortcutList.size(); i++){
-        		if(mFTPShortcutList.get(i).host.equals(shortcutPath.host)&&
-        				mFTPShortcutList.get(i).path.equals(shortcutPath.path)&&
-        				mFTPShortcutList.get(i).username.equals(shortcutPath.username)&&
-        				mFTPShortcutList.get(i).password.equals(shortcutPath.password)&&
-        				mFTPShortcutList.get(i).port== shortcutPath.port){
-        			indexInArray = i;
-
-        			break;
-
-        		}
-        	}
-        	if (indexInArray >= 0 ) {
-            	rowId = mFTPShortcutList.get(indexInArray).rowID;
-                mFTPShortcutList.remove(indexInArray);
-        	}
+        if (indexInArray >= 0 ) {
+            rowId = myList.get(indexInArray).rowID;
+            myList.remove(indexInArray);
+        }
         	
-        }
         new RemoveFromShortcutListTask().execute(rowId);
         
     }
 
     public List<FTPShortcut> getSFTPShortcutList() {
-        return mSFTPShortcutList;
+        return mShortcuts[SFTP];
     }
 
     public HashMap<String, String> getShortcutIpList() {

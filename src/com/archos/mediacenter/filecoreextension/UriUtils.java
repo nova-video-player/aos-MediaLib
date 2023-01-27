@@ -37,6 +37,7 @@ public class UriUtils {
         sImplementedByFileCore.add("ftps");
         sImplementedByFileCore.add("upnp");
         sImplementedByFileCore.add("content");
+        sImplementedByFileCore.add("webdav");
         sIndexableSchemes.addAll(sImplementedByFileCore);
         sIndexableSchemes.add("http");
         sIndexableSchemes.add("https");
@@ -68,6 +69,7 @@ public class UriUtils {
                 uri.getScheme().equals("ftps")||
                 uri.getScheme().equals("ftp")||
                 uri.getScheme().equals("sftp")||
+                uri.getScheme().equals("webdav")||
                 uri.getScheme().equals("content");
     }
 

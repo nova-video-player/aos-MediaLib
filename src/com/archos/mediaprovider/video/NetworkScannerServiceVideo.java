@@ -653,6 +653,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 return getStorageId(4 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
             else if (path.startsWith("ftps://"))
                 return getStorageId(5 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
+            else if (path.startsWith("webdav://"))
+                return getStorageId(6 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
             else log.warn("path has no valid storage id: " + path);
             return 0;
         }
