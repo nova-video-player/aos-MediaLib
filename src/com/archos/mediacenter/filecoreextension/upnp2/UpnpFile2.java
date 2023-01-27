@@ -23,7 +23,7 @@ import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.MimeUtils;
 import com.archos.filecorelibrary.RawLister;
 import com.archos.filecorelibrary.FileUtils;
-import com.archos.filecorelibrary.ftp.AuthenticationException;
+import com.archos.filecorelibrary.AuthenticationException;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 

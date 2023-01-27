@@ -26,7 +26,7 @@ import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.RawLister;
 import com.archos.filecorelibrary.FileUtils;
-import com.archos.filecorelibrary.ftp.AuthenticationException;
+import com.archos.filecorelibrary.AuthenticationException;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.RawListerFactoryWithUpnp;
 import com.jcraft.jsch.JSchException;
