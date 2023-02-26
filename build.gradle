@@ -113,7 +113,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
     implementation 'androidx.media:media:1.6.0'
     implementation 'androidx.fragment:fragment:1.5.5'
-    implementation 'androidx.appcompat:appcompat:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.preference:preference:1.2.0'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.1.4'
     implementation 'org.json:json:20220924'
@@ -147,6 +147,7 @@ dependencies {
     implementation files('libs/seamless-http-1.1.2.jar');
     implementation files('libs/seamless-xml-1.1.2.jar');
     implementation files('libs/seamless-swing-1.1.2.jar');
+    // gradle 7.5 migration issue https://github.com/gradle/gradle/issues/21452
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
