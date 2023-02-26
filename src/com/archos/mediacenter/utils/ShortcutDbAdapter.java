@@ -207,6 +207,17 @@ public enum ShortcutDbAdapter {
         return getAllShortcuts(context, null, null);
     }
 
+    public int numberOfShortcuts(Context context) {
+        Cursor shortcuts = getAllShortcuts(context, null, null);
+        if (shortcuts == null)
+            return 0;
+        else {
+            int count = shortcuts.getCount();
+            shortcuts.close();
+            return count;
+        }
+    }
+
     /**
      * NEW 2015: better have direct access to the DB
      * This new version does not need the ipPath parameter, it just use the regular path + a name
