@@ -34,13 +34,13 @@ public class SmbProxy extends Proxy{
         super(uri);
     }
     public static boolean needToStream(String scheme){
-            return
-                "smb".equalsIgnoreCase(scheme) ||
-                "ftp".equalsIgnoreCase(scheme) ||
-                "ftps".equalsIgnoreCase(scheme) ||
-                "sftp".equalsIgnoreCase(scheme) ||
-                "webdav".equalsIgnoreCase(scheme) ||
-                UriUtils.isContentUri(Uri.parse(scheme+"://test"));
+            return "smb".equalsIgnoreCase(scheme) ||
+                    "ftp".equalsIgnoreCase(scheme) ||
+                    "ftps".equalsIgnoreCase(scheme) ||
+                    "sftp".equalsIgnoreCase(scheme) ||
+                    "webdav".equalsIgnoreCase(scheme) ||
+                    "webdavs".equalsIgnoreCase(scheme) ||
+                    UriUtils.isContentUri(Uri.parse(scheme+"://test"));
     }
     protected Uri start() {
         stop();
