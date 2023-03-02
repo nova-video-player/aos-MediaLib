@@ -54,8 +54,7 @@ public enum FTPShortcutDbAdapter {
     // ftp types
     public static final int FTP = 0;
     public static final int SFTP = 1;
-    public static final int WEBDAV = 2;
-     
+
     private static final String DATABASE_NAME = "ftp_shortcuts_db";
     private static final String DATABASE_VIDEO_TABLE = "ftp_shortcuts_table_video";
 
