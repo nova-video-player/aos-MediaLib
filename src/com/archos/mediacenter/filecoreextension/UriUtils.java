@@ -25,28 +25,44 @@ import java.util.List;
  * Created by alexandre on 25/06/15.
  */
 public class UriUtils {
+
+    public final static List<String> networkSharesTypes = List.of("ftp", "sftp", "ftps", "smb", "webdav", "webdavs", "upnp");
+    private final static int maxUriType = networkSharesTypes.size();
+
     /*
       index only implemented schemes
    */
     public static List<String> sImplementedByFileCore = new ArrayList<>();
     public static List<String> sIndexableSchemes = new ArrayList<>();
     static{
-        sImplementedByFileCore.add("smb");
-        sImplementedByFileCore.add("sftp");
-        sImplementedByFileCore.add("ftp");
-        sImplementedByFileCore.add("ftps");
-        sImplementedByFileCore.add("upnp");
+        sImplementedByFileCore.addAll(networkSharesTypes);
         sImplementedByFileCore.add("content");
-        sImplementedByFileCore.add("webdav");
-        sImplementedByFileCore.add("webdavs");
         sIndexableSchemes.addAll(sImplementedByFileCore);
         sIndexableSchemes.add("http");
         sIndexableSchemes.add("https");
     }
 
+    public static int getNumberUriTypes() {
+        return maxUriType;
+    }
+
+    public static boolean isValidUriType(int type) {
+        return (type > -1 && type < getNumberUriTypes());
+    }
+
     public static boolean isIndexable(Uri uri){
-        return isImplementedByFileCore(uri)||
-                isWebUri(uri);
+        // allows only indexing for shares as in smb://[user:pass@]server/share/
+        String path = uri != null ? uri.toString() : null;
+        if (path == null) return false;
+        // valid paths contain at least 3x (not 4!) '/' e.g. "smb://server/share"
+        int len = path.length();
+        int slashCount = 0;
+        for (int i = 0; i < len; i++) {
+            if (path.charAt(i) == '/') {
+                slashCount++;
+            }
+        }
+        return (isImplementedByFileCore(uri)||isWebUri(uri)) && (slashCount >= 3);
     }
 
     public static boolean isWebUri(Uri uri){
@@ -60,19 +76,26 @@ public class UriUtils {
      * @param uri
      * @return
      */
-
     public static boolean isImplementedByFileCore(Uri uri){
         if (uri == null) return false;
         if (FileUtils.isLocal(uri)) return true;
         if (uri.getScheme() == null) return false;
-        return uri.getScheme().equals("smb")||
-                uri.getScheme().equals("upnp")||
-                uri.getScheme().equals("ftps")||
-                uri.getScheme().equals("ftp")||
-                uri.getScheme().equals("sftp")||
-                uri.getScheme().equals("webdav")||
-                uri.getScheme().equals("webdavs")||
-                uri.getScheme().equals("content");
+        return sImplementedByFileCore.contains(uri.getScheme());
+    }
+
+    public static Integer getUriType(Uri uri){
+        // -1 if not found
+        return networkSharesTypes.indexOf(uri.getScheme());
+    }
+
+    public static boolean doesUriTypeRequiresDomain(int type){
+        return (networkSharesTypes.get(type) == "smb");
+    }
+
+    public static String getTypeUri(Integer type) throws IllegalArgumentException {
+        if (type < 0 || type > maxUriType)
+            throw new IllegalArgumentException("Invalid network type " + type);
+        return networkSharesTypes.get(type);
     }
 
     public static boolean isCompatibleWithRemoteDB(Uri uri) {
