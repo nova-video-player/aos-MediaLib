@@ -92,8 +92,8 @@ task ndkBuild(type:Exec) {
     myCmd.add("native_avos_full")
     myCmd.add("native_torrentd")
     //myCmd.add("trakt-java")
-    myCmd.add("seamless")
-    myCmd.add("cling")
+    //myCmd.add("seamless")
+    //myCmd.add("cling")
     commandLine myCmd
 }
 
