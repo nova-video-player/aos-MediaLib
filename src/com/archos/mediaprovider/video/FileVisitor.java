@@ -14,6 +14,8 @@
 
 package com.archos.mediaprovider.video;
 
+import android.util.Log;
+
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.AuthenticationException;
 import com.jcraft.jsch.JSchException;
@@ -23,7 +25,11 @@ import com.jcraft.jsch.SftpException;
 import java.io.IOException;
 import java.util.List;
 
+import jcifs.smb.SmbAuthException;
+
 public class FileVisitor {
+
+    private static final String TAG = "FileVisitor";
 
     public interface Listener {
         /** called when visiting started */
@@ -72,8 +78,10 @@ public class FileVisitor {
                                 }
                         }
                     } catch (IOException e) {
+                        Log.e(TAG, "recurse: IOException for " + file.getName());
                         e.printStackTrace();
                     } catch (AuthenticationException e) {
+                        Log.e(TAG, "recurse: AuthenticationException for " + file.getName());
                         e.printStackTrace();
                     } catch (SftpException e) {
                         e.printStackTrace();
