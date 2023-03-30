@@ -54,11 +54,11 @@ public class SearchMovie2 {
                 annee = null;
             }
         }
-        log.debug("search: quering tmdb for " + query + " year " + year + " in " + language);
+        log.debug("search: quering tmdb for " + query + " year " + annee + " in " + language);
         try {
             // by default no adult search
             response = searchService.movie(query, null, language,
-                    null, adultScrape, annee, null).execute();
+                    null, adultScrape, null, annee).execute();
             switch (response.code()) {
                 case 401: // auth issue
                     log.debug("search: auth error");
