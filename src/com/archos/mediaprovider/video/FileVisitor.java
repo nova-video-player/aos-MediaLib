@@ -14,7 +14,6 @@
 
 package com.archos.mediaprovider.video;
 
-import android.util.Log;
 
 import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.AuthenticationException;
@@ -22,14 +21,15 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.List;
 
-import jcifs.smb.SmbAuthException;
-
 public class FileVisitor {
 
-    private static final String TAG = "FileVisitor";
+    private static final Logger log = LoggerFactory.getLogger(FileVisitor.class);
 
     public interface Listener {
         /** called when visiting started */
@@ -61,7 +61,6 @@ public class FileVisitor {
         }
     }
 
-
     private static void recurse(MetaFile2 file, Listener listener, int recursionLimit) {
         if (recursionLimit < 0) {
             return;
@@ -78,15 +77,17 @@ public class FileVisitor {
                                 }
                         }
                     } catch (IOException e) {
-                        Log.e(TAG, "recurse: IOException for " + file.getName());
-                        e.printStackTrace();
+                        if (log.isTraceEnabled()) log.error("recurse: IOException for " + file.getName(), e);
+                        else log.error("recurse: IOException for " + file.getName());
                     } catch (AuthenticationException e) {
-                        Log.e(TAG, "recurse: AuthenticationException for " + file.getName());
-                        e.printStackTrace();
+                        if (log.isTraceEnabled()) log.error("recurse: AuthenticationException for " + file.getName(), e);
+                        else log.error("recurse: AuthenticationException for " + file.getName());
                     } catch (SftpException e) {
-                        e.printStackTrace();
+                        if (log.isTraceEnabled()) log.error("recurse: SftpException for " + file.getName(), e);
+                        else log.error("recurse: SftpException for " + file.getName());
                     } catch (JSchException e) {
-                        e.printStackTrace();
+                        if (log.isTraceEnabled()) log.error("recurse: JSchException for " + file.getName(), e);
+                        else log.error("recurse: JSchException for " + file.getName());
                     }
                 }
             } else if (file.isFile()) {
