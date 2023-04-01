@@ -28,7 +28,7 @@ public abstract class Subtitle {
     }
 
     public boolean isTimed() {
-        return this.type == TYPE_TIMED_TEXT_SUBTITLE || this.type == TYPE_TIMED_BITMAP_SUBTITLE;
+        return (this.type == TYPE_TIMED_TEXT_SUBTITLE || this.type == TYPE_TIMED_BITMAP_SUBTITLE) && getDuration() != -1;
     }
     
     public boolean isText() {
