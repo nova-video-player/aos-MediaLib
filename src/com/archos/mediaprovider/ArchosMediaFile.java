@@ -382,6 +382,8 @@ public class ArchosMediaFile {
     public static boolean isHiddenFile(MetaFile2 f) {
         // null is hidden
         String name = f != null ? f.getName() : ".";
-        return name.startsWith(".");
+        // avoid NPE seen on sentry, if no name then declare it hidden
+        if (name != null) return name.startsWith(".");
+        else return true;
     }
 }
