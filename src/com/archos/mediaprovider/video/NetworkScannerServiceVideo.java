@@ -301,8 +301,11 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         switch (msg.what) {
             case MESSAGE_KILL:
                 log.debug("handleMessage: MESSAGE_KILL");
-                if (msg.arg1 != -1)
+                if (msg.arg1 != -1) {
                     stopSelf(msg.arg1);
+                    nm.cancel(NOTIFICATION_ID);
+                    stopForeground(true);
+                }
                 break;
             case MESSAGE_DO_SCAN:
                 uri = (Uri) msg.obj;
