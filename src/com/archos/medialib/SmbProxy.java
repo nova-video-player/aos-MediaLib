@@ -40,6 +40,7 @@ public class SmbProxy extends Proxy{
                     "sftp".equalsIgnoreCase(scheme) ||
                     "webdav".equalsIgnoreCase(scheme) ||
                     "webdavs".equalsIgnoreCase(scheme) ||
+                    "smbj".equalsIgnoreCase(scheme) ||
                     UriUtils.isContentUri(Uri.parse(scheme+"://test"));
     }
     protected Uri start() {

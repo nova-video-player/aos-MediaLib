@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class UriUtils {
 
-    public final static List<String> networkSharesTypes = List.of("ftp", "sftp", "ftps", "smb", "webdav", "webdavs", "upnp");
+    public final static List<String> networkSharesTypes = List.of("ftp", "sftp", "ftps", "smb", "webdav", "webdavs", "upnp", "smbj");
     private final static int maxUriType = networkSharesTypes.size();
 
     /*
@@ -89,7 +89,7 @@ public class UriUtils {
     }
 
     public static boolean doesUriTypeRequiresDomain(int type){
-        return (networkSharesTypes.get(type) == "smb");
+        return (networkSharesTypes.get(type) == "smb" || networkSharesTypes.get(type) == "smbj");
     }
 
     public static String getTypeUri(Integer type) throws IllegalArgumentException {
