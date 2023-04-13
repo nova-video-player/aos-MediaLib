@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class UriUtils {
 
-    public final static List<String> networkSharesTypes = List.of("ftp", "sftp", "ftps", "smb", "webdav", "webdavs", "upnp", "smbj");
+    public final static List<String> networkSharesTypes = List.of("ftp", "sftp", "ftps", "smb", "smbj", "webdav", "webdavs", "upnp");
     private final static int maxUriType = networkSharesTypes.size();
 
     /*
