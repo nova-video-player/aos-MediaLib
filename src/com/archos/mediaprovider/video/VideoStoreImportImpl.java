@@ -741,7 +741,7 @@ public class VideoStoreImportImpl {
         int offset = Uri.parse(path).getScheme()!=null?Uri.parse(path).getScheme().length()+3:1;//go after smb://
 
         // in case of smb, skip checking smb://SERVER/.nomedia since it makes jcifs-ng crash
-        if ("smb".equals(uri.getScheme())) // in case of smb server skip the serveur name since exists causes a crash with jcifs-ng
+        if (uri.getScheme().startsWith("smb")) // in case of smb server skip the serveur name since exists causes a crash with jcifs-ng
             offset = path.indexOf('/', offset) + 1; // +1 moves past next slash
 
         while (offset >= 0) {
