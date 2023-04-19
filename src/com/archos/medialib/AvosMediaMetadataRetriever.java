@@ -20,6 +20,9 @@ import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,6 +31,8 @@ import java.util.Map;
 
 public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
 {
+    private static final Logger log = LoggerFactory.getLogger(AvosMediaMetadataRetriever.class);
+
     // The field below is accessed by native methods
     private long mMediaMetadataRetrieverHandle;
 

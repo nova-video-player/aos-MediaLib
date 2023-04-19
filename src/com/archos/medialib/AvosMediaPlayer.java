@@ -24,9 +24,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
-import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -34,8 +36,8 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 
 public class AvosMediaPlayer implements IMediaPlayer {
-    private static final String TAG = "AvosMediaPlayer";
-    private static final boolean DBG = false;
+
+    private static final Logger log = LoggerFactory.getLogger(AvosMediaPlayer.class);
 
     private long mMediaPlayerHandle = 0;     // Read-only, reserved for JNI
     private long mNativeWindowHandle = 0;    // Read-only, reserved for JNI
@@ -60,7 +62,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private native void create(Object weakReference);
 
     public AvosMediaPlayer() {
-        Log.v(TAG, "Initializing AvosMediaPlayer");
+        log.info("AvosMediaPlayer: Initializing AvosMediaPlayer");
         Looper looper;
         if ((looper = Looper.myLooper()) != null) {
             mEventHandler = new EventHandler(this, looper);
@@ -103,7 +105,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
         if(scheme == null || scheme.equals("file")) {
             String uriString = uri.getPath();
             if (uri.getQuery() != null)
-		    uriString += "?"+uri.getQuery();
+                uriString += "?"+uri.getQuery();
             setDataSource2(uriString, headers);
             return;
         }
@@ -132,9 +134,8 @@ public class AvosMediaPlayer implements IMediaPlayer {
             }
         }
 
-        Log.d(TAG, "Couldn't open file on client side, trying server side");
+        log.debug("Couldn't open file on client side, trying server side");
         setDataSource2(uri.toString(), headers);
-        return;
     }
 
     public void setDataSource(Context context, Uri uri) throws IOException,
@@ -210,7 +211,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     public void setSurface(Surface surface) {
         if (mScreenOnWhilePlaying && surface != null) {
-            Log.w(TAG, "setScreenOnWhilePlaying(true) is ineffective for Surface");
+            log.warn("setScreenOnWhilePlaying(true) is ineffective for Surface");
         }
         mSurfaceHolder = null;
         setVideoSurface(surface);
@@ -452,7 +453,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
         @Override
         public void handleMessage(Message msg) {
             if (mMediaPlayerHandle == 0) {
-                Log.w(TAG, "mediaplayer went away with unhandled events");
+                log.warn("mediaplayer went away with unhandled events");
                 return;
             }
             switch(msg.what) {
@@ -500,7 +501,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
             case MEDIA_ERROR:
                 // For PV specific error values (msg.arg2) look in
                 // opencore/pvmi/pvmf/include/pvmf_return_codes.h
-                Log.e(TAG, "Error (" + msg.arg1 + "," + msg.arg2 + ")");
+                log.error("Error (" + msg.arg1 + "," + msg.arg2 + ")");
                 boolean error_was_handled = false;
                 if (mOnErrorListener != null) {
                     error_was_handled = mOnErrorListener.onError(mMediaPlayer, msg.arg1, msg.arg2,
@@ -514,7 +515,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
             case MEDIA_INFO:
                 if (msg.arg1 != MEDIA_INFO_VIDEO_TRACK_LAGGING) {
-                    Log.i(TAG, "Info (" + msg.arg1 + "," + msg.arg2 + ")");
+                    log.info("Info (" + msg.arg1 + "," + msg.arg2 + ")");
                 }
                 if (mOnInfoListener != null) {
                     mOnInfoListener.onInfo(mMediaPlayer, msg.arg1, msg.arg2);
@@ -524,20 +525,20 @@ public class AvosMediaPlayer implements IMediaPlayer {
             case MEDIA_SUBTITLE:
                 if (mOnSubtitleListener != null) {
                     if (msg.obj == null) {
-                        Log.e(TAG, "MEDIA_SUBTITLE with null object");
+                        log.error("MEDIA_SUBTITLE with null object");
                         return;
                     }
                     if (msg.obj instanceof Subtitle)
                         mOnSubtitleListener.onSubtitle(mMediaPlayer, (Subtitle)msg.obj);
                     else
-                        Log.e(TAG, "MEDIA_SUBTITLE with wrong object");
+                        log.error("MEDIA_SUBTITLE with wrong object");
                 }
                 return;
             case MEDIA_NOP: // interface test message - ignore
                 break;
 
             default:
-                Log.e(TAG, "Unknown message type " + msg.what);
+                log.error("Unknown message type " + msg.what);
                 return;
             }
         }

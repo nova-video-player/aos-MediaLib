@@ -22,12 +22,15 @@ import com.archos.filecorelibrary.MimeUtils;
 import com.archos.filecorelibrary.StreamOverHttp;
 import com.archos.mediacenter.filecoreextension.UriUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Map;
 
-import jcifs.smb.SmbFile;
-
 public class SmbProxy extends Proxy{
+
+    private static final Logger log = LoggerFactory.getLogger(SmbProxy.class);
     private StreamOverHttp mStream;
 
     protected SmbProxy(Uri uri) {
