@@ -14,6 +14,8 @@
 
 package com.archos.medialib;
 
+import static com.archos.filecorelibrary.FileUtils.encodeUri;
+
 import android.net.Uri;
 
 import com.archos.filecorelibrary.MetaFile2;
@@ -48,7 +50,8 @@ public class SmbProxy extends Proxy{
     }
     protected Uri start() {
         stop();
-        String mimeType = MimeUtils.guessMimeTypeFromExtension(mUri.getLastPathSegment());
+        Uri encodedUri = encodeUri(mUri);
+        String mimeType = MimeUtils.guessMimeTypeFromExtension(encodedUri.getLastPathSegment());
         MetaFile2 file = null;
         try {
             try {
@@ -63,7 +66,7 @@ public class SmbProxy extends Proxy{
         } catch (IOException e) {
             return null;
         }
-        return mStream.getUri(file != null ? file.getName():mUri.getLastPathSegment());
+        return mStream.getUri(file != null ? file.getName():encodedUri.getLastPathSegment());
     }
     
     public void stop() {
