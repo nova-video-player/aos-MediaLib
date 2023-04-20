@@ -20,7 +20,6 @@ import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.MetaFile2;
@@ -32,6 +31,8 @@ import com.archos.mediacenter.filecoreextension.upnp2.RawListerFactoryWithUpnp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -56,8 +57,9 @@ import java.util.regex.Pattern;
 
 import jcifs.smb.SmbException;
 
-public class XmlDb  implements Callback {
-    private final static String TAG = "XmlDb";
+public class XmlDb implements Callback {
+
+    private static final Logger log = LoggerFactory.getLogger(XmlDb.class);
 
     private static XmlDb sXmlDb;
 
@@ -79,8 +81,6 @@ public class XmlDb  implements Callback {
         return sRemoteCache.get(videoFileLocation);
     }
 
-
-
     public static class ParseResult {
         public final boolean success;
         private final Uri location;
@@ -89,11 +89,7 @@ public class XmlDb  implements Callback {
             this.location = location;
             this.success = success;
         }
-
-
     }
-
-
 
     private static class ContentHandler extends DefaultHandler {
         private final Uri mLocation;
@@ -224,9 +220,9 @@ public class XmlDb  implements Callback {
 
         @Override
         protected Void doInBackground(Void... params) {
-            if (DBG) Log.d(TAG, "doInBackground: " + mVideoDbInfo.uri);
+            log.debug("doInBackground: " + mVideoDbInfo.uri);
             boolean ret = writeXml(mVideoDbInfo);
-            if (DBG) Log.d(TAG, "writeXml: " + ret);
+            log.debug("writeXml: " + ret);
             return null;
         }
 
@@ -264,23 +260,21 @@ public class XmlDb  implements Callback {
             return null;
         InputStream fis=null;
         try {
-
-                try {
-                    fis = FileEditorFactoryWithUpnp.getFileEditorForUrl(location, null).getInputStream();
-                } catch (MalformedURLException e1) {
-                    Log.e(TAG, "parseXml: Error: " + e1);
-                    return null;
-                } catch (IOException e2) {
-                    Log.e(TAG, "parseXml: Error: " + e2);
-                    return null;
-                } catch (Exception e) {
-                    Log.e(TAG, "parseXml: Error: " + e);
-                    return null;
-
-                }
+            try {
+                fis = FileEditorFactoryWithUpnp.getFileEditorForUrl(location, null).getInputStream();
+            } catch (MalformedURLException e1) {
+                log.error("parseXml: Error: " + e1);
+                return null;
+            } catch (IOException e2) {
+                log.error("parseXml: Error: " + e2);
+                return null;
+            } catch (Exception e) {
+                log.error("parseXml: Error: " + e);
+                return null;
+            }
 
             if (fis == null) {
-                Log.d(TAG, "parseXml: Invalid InputStream");
+                log.debug("parseXml: Invalid InputStream");
                 return null;
             }
             ContentHandler handler = new ContentHandler(location);
@@ -290,15 +284,15 @@ public class XmlDb  implements Callback {
             fis.close();
             return handler.getResult();
         } catch (InterruptedIOException e) {
-            Log.e(TAG, "parseXml: timeout while parsing files.", e);
+            log.error("parseXml: timeout while parsing files.", e);
         } catch (FileNotFoundException e) {
             // when file was never created.
         } catch (SmbException e) {
             // when file was never created.
         } catch (SAXException e) {
-            Log.e(TAG, "parseXml: Error while parsing files.", e);
+            log.error("parseXml: Error while parsing files.", e);
         } catch (IOException e) {
-            Log.e(TAG, "parseXml: Error while reading files.", e);
+            log.error("parseXml: Error while reading files.", e);
             // delete file since it may be corrupt
         }
         finally {
@@ -309,7 +303,6 @@ public class XmlDb  implements Callback {
                     e.printStackTrace();
                 }
         }
-
         return null;
     }
 
@@ -323,10 +316,9 @@ public class XmlDb  implements Callback {
         if(toList!=null){
            RawLister rl = RawListerFactoryWithUpnp.getRawListerForUrl(toList);
             try {
-
                 List<MetaFile2> list = rl.getFileList();
                 if(list!=null)
-                return extractAssociatedWithUriDbXmlMetafileFromList(list, videoFile);
+                    return extractAssociatedWithUriDbXmlMetafileFromList(list, videoFile);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (AuthenticationException e) {
@@ -355,7 +347,6 @@ public class XmlDb  implements Callback {
                 }
             }
         return toReturn;
-
     }
 
     /**
@@ -368,11 +359,9 @@ public class XmlDb  implements Callback {
         List<MetaFile2> dbList = extractAssociatedWithUriDbXmlMetafileFromList(metaFile2List, videoFile);
         if(dbList!=null&&!dbList.isEmpty()){
             Uri uri = dbList.get(0).getUri();
-
             VideoDbInfo info =  extractBasicVideoInfoFromXmlFileName(uri);
             if(info!=null)
                 return info.resume;
-
         }
         return -1;
     }
@@ -472,32 +461,34 @@ public class XmlDb  implements Callback {
 
         OutputStream os = null;
 
-            try {
-                //TODO first, we look for an old db, then we delete it
-                Uri xmlUri = getXmlPath(entry);
-                if(xmlUri==null)
-                    return false;
-                FileEditor fileEditor = FileEditorFactoryWithUpnp.getFileEditorForUrl(xmlUri, null);
-                if (DBG) Log.d(TAG, "xmlPath: "+ xmlUri);
-                // Delete existing file to avoid overwrite issue (end of previous content still there is the new content is shorter)
-                if (fileEditor.exists()) {
-                    fileEditor.delete();
-                }
-                os = fileEditor.getOutputStream();
-            } catch (Exception e1) {
-                Log.e(TAG, "writeXml: Error: " + e1);
+        try {
+            //TODO first, we look for an old db, then we delete it
+            Uri xmlUri = getXmlPath(entry);
+            if(xmlUri==null)
                 return false;
+            FileEditor fileEditor = FileEditorFactoryWithUpnp.getFileEditorForUrl(xmlUri, null);
+            log.debug("xmlPath: "+ xmlUri);
+            // Delete existing file to avoid overwrite issue (end of previous content still there is the new content is shorter)
+            if (fileEditor.exists()) {
+                fileEditor.delete();
             }
-
+            os = fileEditor.getOutputStream();
+        } catch (Exception e1) {
+            log.error("writeXml: Error: " + e1);
+            try {
+                if (os != null) os.close();
+            } catch (IOException ioe) {
+            }
+            return false;
+        }
 
         if (os != null) {
             try {
                 os.write(xmlContent.getBytes());
             } catch (IOException e) {
-                Log.e(TAG, "writeXml: Error: " + e);
+                log.error("writeXml: Error: " + e);
                 return false;
-            }
-            finally {
+            } finally {
                 if(os!=null)
                     try {
                         os.close();
@@ -506,7 +497,6 @@ public class XmlDb  implements Callback {
                     }
             }
         }
-
 
         return true;
     }
@@ -518,7 +508,6 @@ public class XmlDb  implements Callback {
         mOnParseListeners = Collections.synchronizedList(new ArrayList<ParseListener>());
     }
 
-
     private static Uri getFilePath(Uri xmlLocation, String videoPath) {
         if (videoPath == null)
             return null;
@@ -529,6 +518,7 @@ public class XmlDb  implements Callback {
         }
         return null;
     }
+
     private static Uri getXmlPath(VideoDbInfo videoFile) {
         if (videoFile == null)
             return null;
@@ -541,7 +531,6 @@ public class XmlDb  implements Callback {
         }
         return null;
     }
-
 
     public static synchronized XmlDb getInstance() {
         if (sXmlDb == null) {
@@ -570,7 +559,7 @@ public class XmlDb  implements Callback {
             writeXmlEntryElement(writer, "subtitle_delay", Integer.toString(entry.subtitleDelay));
         if (entry.subtitleRatio != 0)
             writeXmlEntryElement(writer, "subtitle_ratio", Integer.toString(entry.subtitleRatio));
-                if (entry.lastTimePlayed >= 0)
+        if (entry.lastTimePlayed >= 0)
             writeXmlEntryElement(writer, "last_time_played", Long.toString(entry.lastTimePlayed));
     }
     public void addParseListener(ParseListener pl){
@@ -590,7 +579,7 @@ public class XmlDb  implements Callback {
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
             case MSG_PARSE_OK:
-                if (DBG) Log.d(TAG, "MSG_PARSE_OK");
+                log.debug("MSG_PARSE_OK");
                 synchronized (mOnParseListeners) {
                     // some listeners want to remove themselves for list after being called. to avoid concurrent exception, to not iterate on main list
                     List<ParseListener> tmp = new ArrayList<>(mOnParseListeners);
@@ -600,7 +589,7 @@ public class XmlDb  implements Callback {
                 }
                 return true;
             case MSG_PARSE_TIMEOUT: {
-                if (DBG) Log.d(TAG, "MSG_PARSE_TIMEOUT");
+                log.debug("MSG_PARSE_TIMEOUT");
                 Uri location = (Uri) msg.obj;
                 ParseTask task = sRemoteParseTasks.get(location.toString());
                 if (task != null) {
@@ -626,60 +615,45 @@ public class XmlDb  implements Callback {
                         new ParseResult(location, success)).sendToTarget();
     }
 
-
-
     public void parseXmlLocation(final Uri videoFileUri) {
-        if (DBG) Log.d(TAG, "parseCommon:" + videoFileUri);
+        log.debug("parseCommon:" + videoFileUri);
+        ParseTask task;
+        if (sRemoteWriteTasks.get(videoFileUri.toString()) != null) {
+            log.debug("writing task is running: assume we are up to date");
+            notifyChanged(videoFileUri, true);
+            return;
+        }
+        if (sRemoteParseTasks.get(videoFileUri.toString()) != null) {
+            log.debug("parsing task is already running:");
+            return;
+        }
 
-
-            ParseTask task;
-                if (sRemoteWriteTasks.get(videoFileUri.toString()) != null) {
-                    if (DBG) Log.d(TAG, "writting task is running: assume we are up to date");
-                    notifyChanged(videoFileUri, true);
-                    return;
-                }
-                if (sRemoteParseTasks.get(videoFileUri.toString()) != null) {
-                    if (DBG) Log.d(TAG, "parsing task is already running:");
-                    return;
-                }
-
-            task = new ParseTask(videoFileUri);
-            final ParseTask.Listener listener = new ParseTask.Listener() {
-                @Override
-                public void onResult(VideoDbInfo result) {
-                    mUiThreadHandler.removeMessages(MSG_PARSE_TIMEOUT);
-                    if (DBG) Log.d(TAG, "onResult ");
-
-                    notifyChanged(videoFileUri, result != null);
-                }
-            };
-            task.setListener(listener);
-            task.execute();
-            mUiThreadHandler.sendMessageDelayed(
-                    mUiThreadHandler.obtainMessage(MSG_PARSE_TIMEOUT, videoFileUri),
-                    PARSING_TIMEOUT * 1000);
+        task = new ParseTask(videoFileUri);
+        final ParseTask.Listener listener = new ParseTask.Listener() {
+            @Override
+            public void onResult(VideoDbInfo result) {
+                mUiThreadHandler.removeMessages(MSG_PARSE_TIMEOUT);
+                log.debug("onResult ");
+                notifyChanged(videoFileUri, result != null);
+            }
+        };
+        task.setListener(listener);
+        task.execute();
+        mUiThreadHandler.sendMessageDelayed(
+                mUiThreadHandler.obtainMessage(MSG_PARSE_TIMEOUT, videoFileUri),
+                PARSING_TIMEOUT * 1000);
 
     }
 
-
-
     public void writeXmlRemote(VideoDbInfo videoDbInfo) {
         WriteTask task;
-
-
         task = sRemoteWriteTasks.get(videoDbInfo.uri.toString());
         if (task != null) {
             task.cancel(true);
         }
-
         task = new WriteTask(videoDbInfo);
         task.execute();
     }
-
-
-
-
-
 
     // taken from FastXmlSerializer, slightly modified
     private static final String ESCAPE_TABLE[] = new String[] {
@@ -692,6 +666,7 @@ public class XmlDb  implements Callback {
         null,     null,     null,     null,     null,     null,     null,     null,  // 48-55
         null,     null,     null,     null,     "&lt;",   null,     "&gt;",   null,  // 56-63
     };
+
     private static void escapeAndAppendString(final String string, final StringWriter writer) {
         final int N = string.length();
         final char NE = (char)ESCAPE_TABLE.length;
