@@ -15,6 +15,8 @@
 
 package com.archos.mediaprovider.video;
 
+import static com.archos.filecorelibrary.smbj.SmbjUtils.isSMBjEnabled;
+
 import android.app.IntentService;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -26,6 +28,8 @@ import android.provider.BaseColumns;
 import android.util.Pair;
 
 import com.archos.filecorelibrary.FileEditor;
+import com.archos.filecorelibrary.jcifs.JcifsFileEditor;
+import com.archos.filecorelibrary.smbj.SmbjFileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
 import com.archos.mediacenter.utils.AppState;
@@ -118,12 +122,16 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                             mServerDbUpdated = true;
                     } else if(!server.startsWith("upnp")) { // SMB goes there even if on cellular only
                         if (hasLocalConnection) { // perform the check of the server existing only if hasLocalConnection
-                            final FileEditor serverFile = FileEditorFactoryWithUpnp.getFileEditorForUrl(Uri.parse(server + "/"), null);
+                            Uri serverUri = Uri.parse(server + "/");
+                            final FileEditor serverFile;
+                            // always use jcifs-ng to check if server exists
+                            if ("smb".equalsIgnoreCase(serverUri.getScheme()) || "smbj".equalsIgnoreCase(serverUri.getScheme()))
+                                serverFile = new JcifsFileEditor(serverUri);
+                            else serverFile = FileEditorFactoryWithUpnp.getFileEditorForUrl(serverUri, null);
                             if (serverFile == null) {
                                 log.warn("bad server [" + server + "]");
                                 continue;
                             }
-                            // TODO MARC this checks visibility of smb shares.
                             // To check: with mdns it might take long to get IP of server (there is no longer a resolver available)
                             // thus on netstate change it might think share is not available
                             new Thread() {
