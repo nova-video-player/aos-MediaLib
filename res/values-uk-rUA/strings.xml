@@ -12,7 +12,10 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
+    <string name="network_unscan_msg">Видалення медіафайлів з бібліотеки</string>
     <!-- .nfo export options -->
+    <string name="nfo_export_category">Експорт медіаінформації</string>
+    <string name="nfo_export_auto_title">Автоекспорт після пошуку</string>
     <!-- trakt.tv -->
     <!-- Title of screen when no sd card is present -->
     <!-- label underneath icon used to indicate that no sd card is present -->
