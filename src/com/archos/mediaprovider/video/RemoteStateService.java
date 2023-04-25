@@ -62,8 +62,16 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
     private static final int COLUMN_ACTIVE = 2;
 
     private static final String SELECTION_ID = BaseColumns._ID + "=?";
-    private static final String SELECTION_LOCAL_REMOTE = MediaColumns.DATA + " LIKE 'smb://%' OR "+MediaColumns.DATA + " LIKE 'upnp://%'";
-    private static final String SELECTION_DISTANT_REMOTE = MediaColumns.DATA + " LIKE 'ftps://%' OR "+MediaColumns.DATA  + " LIKE 'ftp://%' OR "+MediaColumns.DATA + " LIKE 'sftp://%'";
+    private static final String SELECTION_LOCAL_REMOTE =
+            MediaColumns.DATA + " LIKE 'smb://%' OR " +
+            MediaColumns.DATA + " LIKE 'upnp://%' OR " +
+            MediaColumns.DATA + " LIKE 'smbj://%'";
+    private static final String SELECTION_DISTANT_REMOTE =
+            MediaColumns.DATA + " LIKE 'ftps://%' OR " +
+            MediaColumns.DATA + " LIKE 'ftp://%' OR " +
+            MediaColumns.DATA + " LIKE 'sftp://%' OR " +
+            MediaColumns.DATA + " LIKE 'webdav://%' OR " +
+            MediaColumns.DATA + " LIKE 'webdavs://%'";
     private static final String SELECTION_ALL_NETWORK = SELECTION_LOCAL_REMOTE+" OR "+SELECTION_DISTANT_REMOTE;
     public static final String ACTION_CHECK_SMB = "archos.intent.action.CHECK_SMB";
     private ConcurrentHashMap<String, Pair<Long, Integer>> mUpnpId; //store name, id and active state
