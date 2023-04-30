@@ -15,8 +15,6 @@
 
 package com.archos.mediaprovider.video;
 
-import static com.archos.filecorelibrary.smbj.SmbjUtils.isSMBjEnabled;
-
 import android.app.IntentService;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -29,11 +27,9 @@ import android.util.Pair;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.jcifs.JcifsFileEditor;
-import com.archos.filecorelibrary.smbj.SmbjFileEditor;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
 import com.archos.mediacenter.utils.AppState;
-import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
@@ -241,5 +237,21 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
             mUpnpId.put(deviceName, new Pair<>(id,isInList?1:0 ));
        }
         cr.notifyChange(NOTIFY_URI, null);
+    }
+
+    public static boolean isNetworkShortcutAvailable(Uri uri, Context context) {
+        // server state should be tracked by RemoteStateService correctly and continuously
+        String server = uri.getHost();
+        String scheme = uri.getScheme();
+        int port = uri.getPort();
+        String SELECTION;
+        if (port != -1) SELECTION = "_data LIKE '" + scheme + "://" + server + ":" + port + "/%'";
+        else SELECTION = "_data LIKE '" + scheme + "://" + server + "/%'";
+        Cursor c = context.getContentResolver().query(VideoStore.SmbServer.getContentUri(), new String[]{"_id", "_data", "active"}, SELECTION, null, null);
+        boolean active = false;
+        if (c != null)
+            while (c.moveToNext() && active == false)
+                active = (c.getInt(2) == 1);
+        return active;
     }
 }
