@@ -43,6 +43,7 @@ public class SmbProxy extends Proxy{
                     "ftp".equalsIgnoreCase(scheme) ||
                     "ftps".equalsIgnoreCase(scheme) ||
                     "sftp".equalsIgnoreCase(scheme) ||
+                    "sshj".equalsIgnoreCase(scheme) ||
                     "webdav".equalsIgnoreCase(scheme) ||
                     "webdavs".equalsIgnoreCase(scheme) ||
                     "smbj".equalsIgnoreCase(scheme) ||

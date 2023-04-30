@@ -66,6 +66,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
             MediaColumns.DATA + " LIKE 'ftps://%' OR " +
             MediaColumns.DATA + " LIKE 'ftp://%' OR " +
             MediaColumns.DATA + " LIKE 'sftp://%' OR " +
+            MediaColumns.DATA + " LIKE 'sshj://%' OR " +
             MediaColumns.DATA + " LIKE 'webdav://%' OR " +
             MediaColumns.DATA + " LIKE 'webdavs://%'";
     private static final String SELECTION_ALL_NETWORK = SELECTION_LOCAL_REMOTE+" OR "+SELECTION_DISTANT_REMOTE;

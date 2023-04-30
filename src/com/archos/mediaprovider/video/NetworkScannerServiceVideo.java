@@ -662,6 +662,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 return getStorageId(7 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
             else if (path.startsWith("smbj://"))
                 return getStorageId(8 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
+            else if (path.startsWith("sshj://"))
+                return getStorageId(9 + ArchosMediaCommon.LIGHT_INDEX_STORAGE_ID_OFFSET);
             else log.warn("path has no valid storage id: " + path);
             return 0;
         }
