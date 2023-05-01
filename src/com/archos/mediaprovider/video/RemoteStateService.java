@@ -121,7 +121,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
                     final long id = c.getLong(COLUMN_ID);
                     final String server = c.getString(COLUMN_DATA);
                     final int active = c.getInt(COLUMN_ACTIVE);
-                    if(server.startsWith("sftp")||server.startsWith("ftp")) { //for distant folders, we don't check existence (for now)
+                    if(server.startsWith("sftp")||server.startsWith("ftp")||server.startsWith("webdav")||server.startsWith("sshj")) { //for distant folders, we don't check existence (for now)
                         log.debug("ftp server is assumed to exist: " + server);
                         if (updateServerDb(id, cr, active, 1, now))
                             mServerDbUpdated = true;
