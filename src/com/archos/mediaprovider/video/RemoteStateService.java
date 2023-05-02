@@ -33,7 +33,7 @@ import com.archos.mediacenter.utils.AppState;
 import com.archos.environment.NetworkState;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
-import org.fourthline.cling.model.meta.Device;
+import org.jupnp.model.meta.Device;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

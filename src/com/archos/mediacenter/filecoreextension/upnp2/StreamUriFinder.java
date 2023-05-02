@@ -23,7 +23,7 @@ import com.archos.filecorelibrary.MetaFile2;
 import com.archos.filecorelibrary.RawLister;
 import com.archos.filecorelibrary.FileUtils;
 
-import org.fourthline.cling.model.meta.Device;
+import org.jupnp.model.meta.Device;
 
 import java.util.List;
 
@@ -48,9 +48,6 @@ public class StreamUriFinder {
                 }
             }
         }
-
-
-
     };
     public StreamUriFinder(Uri uri, Context context){
         this(uri, context, Looper.getMainLooper());

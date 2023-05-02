@@ -16,7 +16,7 @@ package com.archos.mediacenter.filecoreextension.upnp2;
 
 import android.util.Log;
 
-import org.fourthline.cling.model.meta.Device;
+import org.jupnp.model.meta.Device;
 
 import java.util.HashMap;
 

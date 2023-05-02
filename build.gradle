@@ -135,23 +135,10 @@ dependencies {
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.10.0'
-    // all below is linked to cling, jetty version locked to latest 8.1
-    api 'com.github.nova-video-player.cling:cling-core:2.1.7'
-    implementation 'com.github.nova-video-player.cling:cling-support:2.1.7'
-    implementation 'com.github.nova-video-player.seamless:seamless-swing:1.1.4'
-    implementation 'com.github.nova-video-player.seamless:seamless-xml:1.1.4'
-    implementation 'com.github.nova-video-player.seamless:seamless-util:1.1.4'
-    implementation 'com.github.nova-video-player.seamless:seamless-http:1.1.4'
-    implementation 'javax.servlet:javax.servlet-api:4.0.1'
-    // version aligned with cling dependencies
-    implementation ('org.eclipse.jetty:jetty-server:8.1.22.v20160922') {
-        exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
-    }
-    implementation ('org.eclipse.jetty:jetty-servlet:8.1.22.v20160922')  {
-        exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
-    }
-    implementation ('org.eclipse.jetty:jetty-client:8.1.22.v20160922') {
-        exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
-    }
+    api 'org.jupnp:org.jupnp:2.7.0'
+    api 'org.jupnp:org.jupnp.support:2.7.0'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'8.1.22.v20160922'
     implementation 'io.sentry:sentry:7.0.0'
 }
