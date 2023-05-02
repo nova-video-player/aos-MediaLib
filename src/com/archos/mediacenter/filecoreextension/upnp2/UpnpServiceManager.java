@@ -25,20 +25,21 @@ import android.os.Looper;
 
 import com.archos.environment.NetworkState;
 
-import org.fourthline.cling.android.AndroidUpnpService;
-import org.fourthline.cling.android.AndroidUpnpServiceImpl;
-import org.fourthline.cling.controlpoint.ActionCallback;
-import org.fourthline.cling.model.message.header.UDADeviceTypeHeader;
-import org.fourthline.cling.model.meta.Action;
-import org.fourthline.cling.model.meta.Device;
-import org.fourthline.cling.model.meta.LocalDevice;
-import org.fourthline.cling.model.meta.RemoteDevice;
-import org.fourthline.cling.model.meta.Service;
-import org.fourthline.cling.model.types.UDADeviceType;
-import org.fourthline.cling.model.types.UDAServiceId;
-import org.fourthline.cling.registry.DefaultRegistryListener;
-import org.fourthline.cling.registry.Registry;
-import org.fourthline.cling.registry.RegistryListener;
+import com.archos.mediacenter.upnp.AndroidUpnpService;
+import com.archos.mediacenter.upnp.AndroidUpnpServiceImpl;
+
+import org.jupnp.controlpoint.ActionCallback;
+import org.jupnp.model.message.header.UDADeviceTypeHeader;
+import org.jupnp.model.meta.Action;
+import org.jupnp.model.meta.Device;
+import org.jupnp.model.meta.LocalDevice;
+import org.jupnp.model.meta.RemoteDevice;
+import org.jupnp.model.meta.Service;
+import org.jupnp.model.types.UDADeviceType;
+import org.jupnp.model.types.UDAServiceId;
+import org.jupnp.registry.DefaultRegistryListener;
+import org.jupnp.registry.Registry;
+import org.jupnp.registry.RegistryListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
