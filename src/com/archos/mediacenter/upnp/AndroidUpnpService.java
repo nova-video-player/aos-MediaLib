@@ -90,5 +90,6 @@ public interface AndroidUpnpService {
      */
     public ControlPoint getControlPoint();
 
+    void startup();
 }
 // DOC:CLASS

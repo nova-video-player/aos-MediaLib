@@ -26,6 +26,8 @@ import org.jupnp.controlpoint.ControlPoint;
 import org.jupnp.protocol.ProtocolFactory;
 import org.jupnp.registry.Registry;
 import org.jupnp.transport.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides a UPnP stack with Android configuration as an application service component.
@@ -40,6 +42,8 @@ import org.jupnp.transport.Router;
  * @author Christian Bauer
  */
 public class AndroidUpnpServiceImpl extends Service {
+
+    private static final Logger log = LoggerFactory.getLogger(AndroidUpnpServiceImpl.class);
 
     protected UpnpService upnpService;
     protected Binder binder = new Binder();
@@ -112,6 +116,11 @@ public class AndroidUpnpServiceImpl extends Service {
 
         public Registry getRegistry() {
             return upnpService.getRegistry();
+        }
+
+        public void startup() {
+            log.debug("startup: MARC");
+            upnpService.startup();
         }
 
         public ControlPoint getControlPoint() {
