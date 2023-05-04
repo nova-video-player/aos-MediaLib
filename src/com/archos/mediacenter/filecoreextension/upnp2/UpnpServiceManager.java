@@ -270,7 +270,8 @@ public class UpnpServiceManager {
             mAndroidUpnpService = (AndroidUpnpService) service;
             mState = State.RUNNING;
             log.debug("State RUNNING");
-
+            // TODO MARC see https://community.openhab.org/t/main-class-in-jupnp-code-fails/119001
+            mAndroidUpnpService.startup();
             // Listen for discovery stuff
             mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
 
