@@ -36,9 +36,8 @@ public class AndroidNetworkAddressFactory extends NetworkAddressFactoryImpl {
 
     final private static Logger log = Logger.getLogger(AndroidUpnpServiceConfiguration.class.getName());
 
-    public AndroidNetworkAddressFactory(int streamListenPort) {
-        //super(streamListenPort);
-        super(streamListenPort, DEFAULT_MULTICAST_RESPONSE_LISTEN_PORT);
+    public AndroidNetworkAddressFactory(int streamListenPort, int multicastResponsePort) {
+        super(streamListenPort, multicastResponsePort);
     }
 
     @Override

@@ -22,24 +22,26 @@ import org.jupnp.binding.xml.RecoveringUDA10DeviceDescriptorBinderImpl;
 import org.jupnp.binding.xml.ServiceDescriptorBinder;
 import org.jupnp.binding.xml.UDA10ServiceDescriptorBinderSAXImpl;
 import org.jupnp.model.Namespace;
-/*
+
 import org.jupnp.model.ServerClientTokens;
+/*
 import org.jupnp.transport.impl.AsyncServletStreamServerConfigurationImpl;
 import org.jupnp.transport.impl.AsyncServletStreamServerImpl;
 import org.jupnp.transport.impl.RecoveringGENAEventProcessorImpl;
 import org.jupnp.transport.impl.RecoveringSOAPActionProcessorImpl;
-import org.jupnp.transport.impl.jetty.JettyServletContainer;
-import org.jupnp.transport.impl.jetty.StreamClientConfigurationImpl;
-import org.jupnp.transport.impl.jetty.StreamClientImpl;
-import org.jupnp.transport.spi.GENAEventProcessor;
 */
+import org.jupnp.transport.impl.jetty.JettyServletContainer;
+import org.jupnp.transport.impl.jetty.JettyStreamClientImpl;
+import org.jupnp.transport.impl.jetty.StreamClientConfigurationImpl;
+//import org.jupnp.transport.impl.jetty.StreamClientImpl;
+import org.jupnp.transport.spi.GENAEventProcessor;
+
 import org.jupnp.transport.impl.NetworkAddressFactoryImpl;
 import org.jupnp.transport.spi.NetworkAddressFactory;
-/*
+
 import org.jupnp.transport.spi.SOAPActionProcessor;
 import org.jupnp.transport.spi.StreamClient;
 import org.jupnp.transport.spi.StreamServer;
- */
 
 /**
  * Configuration settings for deployment on Android.
@@ -78,12 +80,11 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
         System.setProperty("org.xml.sax.driver", "org.xmlpull.v1.sax2.Driver");
     }
 
-    /*
+
     @Override
-    protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort) {
-        return new AndroidNetworkAddressFactory(streamListenPort);
+    protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort, int multicastResponsePort) {
+        return new AndroidNetworkAddressFactory(streamListenPort, multicastResponsePort);
     }
-     */
 
     @Override
     protected Namespace createNamespace() {
@@ -91,11 +92,11 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
         return new Namespace("/upnp");
     }
 
-    /*
+
     @Override
     public StreamClient createStreamClient() {
         // Use Jetty
-        return new StreamClientImpl(
+        return new JettyStreamClientImpl(
             new StreamClientConfigurationImpl(
                 getSyncProtocolExecutorService()
             ) {
@@ -113,6 +114,7 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
         );
     }
 
+    /*
     @Override
     public StreamServer createStreamServer(NetworkAddressFactory networkAddressFactory) {
         // Use Jetty, start/stop a new shared instance of JettyServletContainer
@@ -130,6 +132,7 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
         return new RecoveringUDA10DeviceDescriptorBinderImpl();
     }
 
+    // see https://github.com/4thline/cling/issues/247
     @Override
     protected ServiceDescriptorBinder createServiceDescriptorBinderUDA10() {
         return new UDA10ServiceDescriptorBinderSAXImpl();
