@@ -110,21 +110,39 @@ public class AndroidUpnpServiceImpl extends Service {
             return upnpService;
         }
 
+        @Override
         public UpnpServiceConfiguration getConfiguration() {
             return upnpService.getConfiguration();
         }
 
+        @Override
         public Registry getRegistry() {
             return upnpService.getRegistry();
         }
 
+        @Override
+        public Router getRouter() {
+            return upnpService.getRouter();
+        }
+
+        @Override
+        public void shutdown() {
+            upnpService.shutdown();
+        }
+
+        @Override
         public void startup() {
-            log.debug("startup: MARC");
             upnpService.startup();
         }
 
+        @Override
         public ControlPoint getControlPoint() {
             return upnpService.getControlPoint();
+        }
+
+        @Override
+        public ProtocolFactory getProtocolFactory() {
+            return upnpService.getProtocolFactory();
         }
     }
 

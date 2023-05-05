@@ -18,7 +18,9 @@ package com.archos.mediacenter.upnp;
 import org.jupnp.UpnpService;
 import org.jupnp.UpnpServiceConfiguration;
 import org.jupnp.controlpoint.ControlPoint;
+import org.jupnp.protocol.ProtocolFactory;
 import org.jupnp.registry.Registry;
+import org.jupnp.transport.Router;
 
 /**
  * Interface of the Android UPnP application service component.
@@ -70,26 +72,29 @@ import org.jupnp.registry.Registry;
 // DOC:CLASS
 public interface AndroidUpnpService {
 
-    /**
-     * @return The actual main instance and interface of the UPnP service.
-     */
-    public UpnpService get();
-
-    /**
-     * @return The configuration of the UPnP service.
-     */
     public UpnpServiceConfiguration getConfiguration();
 
-    /**
-     * @return The registry of the UPnP service.
-     */
-    public Registry getRegistry();
-
-    /**
-     * @return The client API of the UPnP service.
-     */
     public ControlPoint getControlPoint();
 
-    void startup();
+    public ProtocolFactory getProtocolFactory();
+
+    public Registry getRegistry();
+
+    public Router getRouter();
+
+    /**
+     * Stopping the UPnP stack.
+     * <p>
+     * Clients are required to stop the UPnP stack properly. Notifications for
+     * disappearing devices will be multicast'ed, existing event subscriptions cancelled.
+     * </p>
+     */
+    public void shutdown();
+
+    static public class Start {}
+
+    static public class Shutdown {}
+
+    public void startup();
 }
 // DOC:CLASS

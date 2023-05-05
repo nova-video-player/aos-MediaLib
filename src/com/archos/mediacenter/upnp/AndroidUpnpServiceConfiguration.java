@@ -15,25 +15,13 @@
 
 package com.archos.mediacenter.upnp;
 
-import android.os.Build;
 import org.jupnp.DefaultUpnpServiceConfiguration;
-import org.jupnp.binding.xml.DeviceDescriptorBinder;
 import org.jupnp.binding.xml.RecoveringUDA10DeviceDescriptorBinderImpl;
-import org.jupnp.binding.xml.ServiceDescriptorBinder;
-import org.jupnp.binding.xml.UDA10ServiceDescriptorBinderSAXImpl;
 import org.jupnp.model.Namespace;
 
-import org.jupnp.model.ServerClientTokens;
-/*
-import org.jupnp.transport.impl.AsyncServletStreamServerConfigurationImpl;
-import org.jupnp.transport.impl.AsyncServletStreamServerImpl;
-import org.jupnp.transport.impl.RecoveringGENAEventProcessorImpl;
-import org.jupnp.transport.impl.RecoveringSOAPActionProcessorImpl;
-*/
 import org.jupnp.transport.impl.jetty.JettyServletContainer;
 import org.jupnp.transport.impl.jetty.JettyStreamClientImpl;
 import org.jupnp.transport.impl.jetty.StreamClientConfigurationImpl;
-//import org.jupnp.transport.impl.jetty.StreamClientImpl;
 import org.jupnp.transport.spi.GENAEventProcessor;
 
 import org.jupnp.transport.impl.NetworkAddressFactoryImpl;
@@ -43,29 +31,6 @@ import org.jupnp.transport.spi.SOAPActionProcessor;
 import org.jupnp.transport.spi.StreamClient;
 import org.jupnp.transport.spi.StreamServer;
 
-/**
- * Configuration settings for deployment on Android.
- * <p>
- * This configuration utilizes the Jetty transport implementation
- * found in {@link org.jupnp.transport.impl.jetty} for TCP/HTTP networking, as
- * client and server. The servlet context path for UPnP is set to <code>/upnp</code>.
- * </p>
- * <p>
- * The kxml2 implementation of <code>org.xmlpull</code> is available on Android, therefore
- * this configuration uses {@link RecoveringUDA10DeviceDescriptorBinderImpl},
- * {@link RecoveringSOAPActionProcessorImpl}, and {@link RecoveringGENAEventProcessorImpl}.
- * </p>
- * <p>
- * This configuration utilizes {@link UDA10ServiceDescriptorBinderSAXImpl}, the system property
- * <code>org.xml.sax.driver</code> is set to  <code>org.xmlpull.v1.sax2.Driver</code>.
- * </p>
- * <p>
- * To preserve battery, the {@link org.jupnp.registry.Registry} will only
- * be maintained every 3 seconds.
- * </p>
- *
- * @author Christian Bauer
- */
 public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfiguration {
 
     public AndroidUpnpServiceConfiguration() {
@@ -77,7 +42,7 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
         super(streamListenPort, NetworkAddressFactoryImpl.DEFAULT_MULTICAST_RESPONSE_LISTEN_PORT, false);
 
         // This should be the default on Android 2.1 but it's not set by default
-        System.setProperty("org.xml.sax.driver", "org.xmlpull.v1.sax2.Driver");
+        //System.setProperty("org.xml.sax.driver", "org.xmlpull.v1.sax2.Driver");
     }
 
 
@@ -86,13 +51,16 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
         return new AndroidNetworkAddressFactory(streamListenPort, multicastResponsePort);
     }
 
+    /*
     @Override
     protected Namespace createNamespace() {
         // For the Jetty server, this is the servlet context path
         return new Namespace("/upnp");
     }
+     */
 
 
+    /*
     @Override
     public StreamClient createStreamClient() {
         // Use Jetty
@@ -113,6 +81,7 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
             }
         );
     }
+     */
 
     /*
     @Override
@@ -124,29 +93,6 @@ public class AndroidUpnpServiceConfiguration extends DefaultUpnpServiceConfigura
                 networkAddressFactory.getStreamListenPort()
             )
         );
-    }
-     */
-
-    @Override
-    protected DeviceDescriptorBinder createDeviceDescriptorBinderUDA10() {
-        return new RecoveringUDA10DeviceDescriptorBinderImpl();
-    }
-
-    // see https://github.com/4thline/cling/issues/247
-    @Override
-    protected ServiceDescriptorBinder createServiceDescriptorBinderUDA10() {
-        return new UDA10ServiceDescriptorBinderSAXImpl();
-    }
-
-    /*
-    @Override
-    protected SOAPActionProcessor createSOAPActionProcessor() {
-        return new RecoveringSOAPActionProcessorImpl();
-    }
-
-    @Override
-    protected GENAEventProcessor createGENAEventProcessor() {
-        return new RecoveringGENAEventProcessorImpl();
     }
      */
 
