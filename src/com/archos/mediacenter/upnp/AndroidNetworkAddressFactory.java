@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class AndroidNetworkAddressFactory extends NetworkAddressFactoryImpl {
 
-    final private static Logger log = Logger.getLogger(AndroidUpnpServiceConfiguration.class.getName());
+    final private static Logger log = Logger.getLogger(AndroidNetworkAddressFactory.class.getName());
 
     public AndroidNetworkAddressFactory(int streamListenPort, int multicastResponsePort) {
         super(streamListenPort, multicastResponsePort);
