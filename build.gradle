@@ -146,12 +146,12 @@ dependencies {
     //implementation group: 'org.fourthline.cling', name: 'cling-support', version:'2.1.1'
     // investigate https://mvnrepository.com/artifact/org.jupnp/jupnp and https://github.com/UniversalMediaServer/UniversalMediaServer/pull/2789
     //implementation 'org.jupnp:jupnp:2.6.0'
-    api 'com.github.nova-video-player.cling:cling-core:2.1.5'
-    implementation 'com.github.nova-video-player.cling:cling-support:2.1.5'
-    implementation 'com.github.nova-video-player.seamless:seamless-swing:1.1.2'
-    implementation 'com.github.nova-video-player.seamless:seamless-xml:1.1.2'
-    implementation 'com.github.nova-video-player.seamless:seamless-util:1.1.2'
-    implementation 'com.github.nova-video-player.seamless:seamless-http:1.1.2'
+    api 'com.github.nova-video-player.cling:cling-core:2.1.6'
+    implementation 'com.github.nova-video-player.cling:cling-support:2.1.6'
+    implementation 'com.github.nova-video-player.seamless:seamless-swing:1.1.3'
+    implementation 'com.github.nova-video-player.seamless:seamless-xml:1.1.3'
+    implementation 'com.github.nova-video-player.seamless:seamless-util:1.1.3'
+    implementation 'com.github.nova-video-player.seamless:seamless-http:1.1.3'
     // gradle 7.5 migration issue https://github.com/gradle/gradle/issues/21452
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'8.1.22.v20160922'
     implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'8.1.22.v20160922'
