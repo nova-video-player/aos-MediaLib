@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!--
+    This string is used as the format string in a String.format call,
+    and 5 additional arguments are available for printing:
+    1 - hours
+    2 - minutes
+    3 - minutes%60
+    4 - seconds
+    5 - second%60
+    -->
+    <!-- Do not translate. Duration format for duration < 1 hour -->
+    <!-- Do not translate. Duration format for duration >= 1 hour -->
+    <!-- Notification Message when Indexing Network -->
+    <string name="network_scan_msg">Mediafayllardı kórsetiw</string>
+    <string name="network_unscan_msg">Mediafayllardı kitapxanadan óshiriw</string>
+    <!-- .nfo export options -->
+    <string name="nfo_export_category">Media maǵlıwmattı kóshiriw</string>
+    <string name="nfo_export_auto_title">Izlewden soń avtomat tárizde kóshiriw</string>
+    <string name="nfo_export_auto_summary">Tabıslı onlayn izlewden keyin .nfo fayllardı avtomat tárizde kóshiriw</string>
+    <string name="nfo_export_button">.nfo kóshiriw</string>
+    <string name="nfo_export_folder">Bul papkadaǵı hámmesin .nfoǵa kóshiriw</string>
+    <string name="nfo_export_all">Pútkil kitapxananı .nfo ǵa kóshiriw </string>
+    <string name="nfo_export_exporting">.nfo kóshiriwi</string>
+    <string name="nfo_export_exporting_all">hámme nárse</string>
+    <string name="nfo_export_in_progress">NFO kóshiriwi ámelge asırılmaqta</string>
+    <!-- trakt.tv -->
+    <!-- Title of screen when no sd card is present -->
+    <string name="sdcard_missing_title">SD karta joq</string>
+    <!-- label underneath icon used to indicate that no sd card is present -->
+    <string name="sdcard_missing_message">Siziń qurılmańız kirgizilgen SD kartaǵa iye emes.</string>
+    <!-- label underneath icon used to indicate that the sd card is present, but currently unavailable -->
+    <!-- label underneath icon used to indicate sd card is mounted to your computer via USB -->
+    <string name="sdcard_busy_message">Keshirersiz, siziń SD karta bánt.</string>
+    <!-- Title of screen when there was an error accessing the sd card -->
+    <string name="sdcard_error_title">SD kartada qáte</string>
+    <!-- label underneath icon used to indicate there was an error accessing the sd card -->
+    <!-- Title of screen when no storage is present -->
+    <!-- label underneath icon used to indicate that no storage is present -->
+    <!-- label underneath icon used to indicate that the storage is present, but currently unavailable -->
+    <!-- label underneath icon used to indicate storage is mounted to your computer via USB -->
+    <!-- Title of screen when there was an error accessing the internal storage -->
+    <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
+    <string name="tv_show_genre_animation">Animaciya</string>
+    <string name="tv_show_genre_anime">Anime</string>
+    <string name="tv_show_genre_sport">Sport</string>
+    <!-- There are official translations for the tmdb movie genres -->
+    <string name="movie_genre_animation">Animaciya</string>
+    <string name="movie_genre_comedy">Komediya</string>
+    <string name="movie_genre_drama">Drama</string>
+    <string name="movie_genre_history">Tarıyxıy</string>
+    <string name="movie_genre_horror">Qorqınıshlı</string>
+    <string name="movie_genre_music">Muzika</string>
+    <string name="movie_genre_science_fiction">Ilimiy fantastika</string>
+    <!-- There are official translations for the tmdb tv genres -->
+    <string name="tvshow_genre_animation">Animaciya</string>
+    <string name="tvshow_genre_comedy">Komediya</string>
+    <string name="tvshow_genre_news">Xabar baǵdarlaması</string>
+    <string name="tvshow_genre_soap">Serial</string>
+    <!--
+      STRINGS BELOW ARE FOR MUSIC ONLY.
+      I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
+      BECAUSE I DO NOT WANT TO DO THE MUSIC CLEANING/REMOVING NOW
+    -->
+    <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
+</resources>
