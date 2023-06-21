@@ -45,6 +45,7 @@ public class SearchShow {
         boolean notFoundIssue = true;
         boolean isResponseOk = false;
         boolean isResponseEmpty = false;
+        boolean serviceError = false;
         String showKey = null;
         String name;
         log.debug("search: quering tmdb for " + searchInfo.getShowName() + " year " + searchInfo.getFirstAiredYear() + " in " + language + ", resultLimit=" + resultLimit);
@@ -66,8 +67,13 @@ public class SearchShow {
                 log.debug("SearchShowResult: no boost for " + searchInfo.getShowName() + " year " + year);
                 // adult search false by default
                 response = tmdb.searchService().tv(searchInfo.getShowName(), null, language, year, false).execute();
-                if (response.code() == 401) authIssue = true; // this is an OR
                 if (response.code() != 404) notFoundIssue = false; // this is an AND
+                // Check https://developer.themoviedb.org/docs/errors
+                switch (response.code()) {
+                    case 401 -> authIssue = true; // this is an OR
+                    case 404 -> notFoundIssue = true; // this is an AND
+                    case 500, 503, 504 -> serviceError = true;
+                }
                 if (response.isSuccessful()) isResponseOk = true;
                 if (response.body() == null)
                     isResponseEmpty = true;
@@ -104,10 +110,11 @@ public class SearchShow {
                 ShowScraper4.reauth();
                 return myResult;
             }
-            if (notFoundIssue) {
+            if (notFoundIssue || serviceError) {
                 log.debug("search: not found");
                 myResult.result = SearchShowResult.EMPTY_LIST;
-                myResult.status = ScrapeStatus.NOT_FOUND;
+                if (serviceError) myResult.status = ScrapeStatus.ERROR;
+                else myResult.status = ScrapeStatus.NOT_FOUND;
             } else {
                 if (isResponseEmpty) {
                     log.debug("search: error");
