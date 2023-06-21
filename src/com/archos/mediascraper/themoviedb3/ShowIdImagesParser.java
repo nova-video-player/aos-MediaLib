@@ -62,11 +62,11 @@ public class ShowIdImagesParser {
             }
         }
 
-        if (images.posters != null)
+        if (images != null && images.posters != null)
             for (Image poster : images.posters)
                 tempPosters.add(Pair.create(poster, poster.iso_639_1));
 
-        if (images.backdrops != null)
+        if (images != null && images.backdrops != null)
             for (Image backdrop : images.backdrops)
                 tempBackdrops.add(Pair.create(backdrop, backdrop.iso_639_1));
 
