@@ -79,26 +79,26 @@ public class ISO639codes {
     static private HashMap<String, String> iso63922bToIso6393 = new HashMap<>();
     static {
         // existing codes in opensubtitles
-        iso63923ToIso6392b.put("fre", "fra");
-        iso63923ToIso6392b.put("ger", "deu");
-        iso63923ToIso6392b.put("chi", "zho");
-        iso63923ToIso6392b.put("cze", "ces");
-        iso63923ToIso6392b.put("per", "fas");
-        iso63923ToIso6392b.put("dut", "nld");
-        iso63923ToIso6392b.put("rum", "ron");
-        iso63923ToIso6392b.put("slo", "slk");
-        iso63923ToIso6392b.put("scc", "srp");
+        iso63922bToIso6393.put("fre", "fra");
+        iso63922bToIso6393.put("ger", "deu");
+        iso63922bToIso6393.put("chi", "zho");
+        iso63922bToIso6393.put("cze", "ces");
+        iso63922bToIso6393.put("per", "fas");
+        iso63922bToIso6393.put("dut", "nld");
+        iso63922bToIso6393.put("rum", "ron");
+        iso63922bToIso6393.put("slo", "slk");
+        iso63922bToIso6393.put("scc", "srp");
         // non existing codes
-        iso63923ToIso6392b.put("arm", "hye");
-        iso63923ToIso6392b.put("baq", "eus");
-        iso63923ToIso6392b.put("bur", "mya");
-        iso63923ToIso6392b.put("geo", "kat");
-        iso63923ToIso6392b.put("gre", "ell");
-        iso63923ToIso6392b.put("ice", "isl");
-        iso63923ToIso6392b.put("kim", "kmb");
-        iso63923ToIso6392b.put("mac", "mkd");
-        iso63923ToIso6392b.put("mao", "mri");
-        iso63923ToIso6392b.put("may", "msa");
+        iso63922bToIso6393.put("arm", "hye");
+        iso63922bToIso6393.put("baq", "eus");
+        iso63922bToIso6393.put("bur", "mya");
+        iso63922bToIso6393.put("geo", "kat");
+        iso63922bToIso6393.put("gre", "ell");
+        iso63922bToIso6393.put("ice", "isl");
+        iso63922bToIso6393.put("kim", "kmb");
+        iso63922bToIso6393.put("mac", "mkd");
+        iso63922bToIso6393.put("mao", "mri");
+        iso63922bToIso6393.put("may", "msa");
     }
 
     static public String getLanguageNameForLetterCode(String code) {
@@ -148,6 +148,22 @@ public class ISO639codes {
             }
         }
         return languageName;
+    }
+
+    static public String getISO6393ForLetterCode(String code) {
+        if (code.length() == 2) {
+            return convertISO6391ToISO6393(code);
+        } else if (code.length() == 3) {
+            return convertIso6392bToIsa6393(code);
+        } else {
+            log.error("getISO6393ForLetterCode: Invalid code {}", code);
+            return code;
+        }
+    }
+
+    static public boolean is3letterCode(String code) {
+        String result = getLanguageNameFor3LetterCode(code);
+        return !code.equals(result);
     }
 
     static public String convertISO6391ToISO6393(String code) {
