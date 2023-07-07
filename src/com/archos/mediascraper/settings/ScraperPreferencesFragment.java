@@ -14,10 +14,12 @@
 
 package com.archos.mediascraper.settings;
 
+import com.archos.mediacenter.utils.ISO639codes;
 import com.archos.medialib.R;
 import com.archos.mediascraper.xml.BaseScraper2;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
@@ -132,11 +134,10 @@ public class ScraperPreferencesFragment extends PreferenceFragmentCompat {
                     String userLocale = Locale.getDefault().getLanguage();
                     String localeDefault = null;
                     for(String item: items) {
-                        Locale loc = new Locale(item);
                         if (userLocale.equals(item)) {
                             localeDefault = item;
                         }
-                        values.put(loc.getDisplayLanguage(), item);
+                        values.put(ISO639codes.getLanguageNameFor2LetterCode(item), item);
                     }
                     String[] keys = values.keySet().toArray(new String[items.size()]);
                     Arrays.sort(keys);

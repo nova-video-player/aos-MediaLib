@@ -14,6 +14,9 @@
 
 package com.archos.mediacenter.utils;
 
+import android.content.Context;
+import android.content.res.Resources;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,25 +32,25 @@ public class ISO639codes {
 
     static private HashMap<String, String> missingISO6391ToISO6393 = new HashMap<>();
     static {
-        missingISO6391ToISO6393.put("at", "ast"); // Asturian (at used for opensubtitles)
-        missingISO6391ToISO6393.put("pb", "pob"); // Brazilian Portuguese (pb used for opensubtitles)
-        missingISO6391ToISO6393.put("zt", "yue"); // Cantonese (zt is used for opensubtitles and should be Traditional Chinese which ISO 639-3 code does not exist e.g. cmn)
-        missingISO6391ToISO6393.put("cn", "yue"); // Cantonese (cn is used for tmdb)
-        // TODO MARC issue: double entries since ro is Romanian too making crash during sort
-        // TODO MARC: remove
-        // {"iso_639_1":"mo","english_name":"Moldavian","name":""}
         // https://api.opensubtitles.com/api/v1/infos/languages
+        missingISO6391ToISO6393.put("at", "ast"); // Asturian (at used for opensubtitles)
+        // pob does not exist as ISO639-3 code: use string exception
+        missingISO6391ToISO6393.put("pb", "s_brazilian"); // Brazilian Portuguese (pb used for opensubtitles), pb=pob
+        missingISO6391ToISO6393.put("zt", "s_traditional_chinese"); // take yue = Cantonese (zt is used for opensubtitles and should be Traditional Chinese which ISO 639-3 code does not exist e.g. cmn)
+        missingISO6391ToISO6393.put("cn", "yue"); // take yue = Cantonese (cn is used for tmdb)
+        // Moldavian is now officially Romanian since 202303 mo -> ron
+        // {"iso_639_1":"mo","english_name":"Moldavian","name":""}
         missingISO6391ToISO6393.put("mo", "ron"); // Moldovian != Romanian it is an issue (mo is used for tmdb)
     }
 
     static private HashMap<String, String> missingISO6393ToISO6391 = new HashMap<>();
     static {
         missingISO6393ToISO6391.put("ast", "at");
-        missingISO6393ToISO6391.put("pob", "pb");
+        //missingISO6393ToISO6391.put("pob", "pb"); // pob is not a valid ISO 639-3 code
         missingISO6393ToISO6391.put("yue", "zt");
         // /!\ cannot have two maps with the same key -> not used thus prioritize opensubtitles
         //missingISO6391ToISO6393.put("yue", "cn");
-        missingISO6391ToISO6393.put("ron", "mo");
+        //missingISO6391ToISO6393.put("ron", "mo"); // cannot make the reverse since Romanian exists
     }
 
     static private HashMap<String, String> iso63923ToIso6392b = new HashMap<>();
@@ -138,13 +141,17 @@ public class ISO639codes {
         if (languageName.equals(code)) {
             // it has not been found thus perhaps it is a missing ISO 639-1 and conversion to ISO 639-3 is needed
             String iso6393Code = convertISO6391ToISO6393(code);
-            if (iso6393Code != null) {
-                locale = new Locale(iso6393Code);
-                languageName = locale.getDisplayLanguage();
+            if (iso6393Code.startsWith("s_")) {
+                return iso6393Code; // return exception string (cannot be translated in MediaLib)
             } else {
-                // there is something missing make it obvious and fallback to original 3 letter code
-                languageName = code;
-                log.error("getLanguageNameFor2LetterCode: No language name found for code {}", code);
+                if (iso6393Code != null) {
+                    locale = new Locale(iso6393Code);
+                    languageName = locale.getDisplayLanguage();
+                } else {
+                    // there is something missing make it obvious and fallback to original 3 letter code
+                    languageName = code;
+                    log.error("getLanguageNameFor2LetterCode: No language name found for code {}", code);
+                }
             }
         }
         return languageName;
@@ -225,6 +232,20 @@ public class ISO639codes {
             languageNames[i] = locale.getDisplayLanguage();
         }
         return languageNames;
+    }
+
+    static public CharSequence getLanguageString(Context context, CharSequence name) {
+        final Resources resources = context.getResources();
+        CharSequence lang;
+        if (name == null)
+            return "Unknown";
+        int resId = resources.getIdentifier((String) name, "string", context.getPackageName());
+        try {
+            lang = resources.getText(resId);
+        } catch (Resources.NotFoundException e) {
+            lang = name;
+        }
+        return lang;
     }
 
 }
