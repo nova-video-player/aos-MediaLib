@@ -76,6 +76,8 @@ public class ISO639codes {
         iso63923ToIso6392b.put("mkd", "mac");
         iso63923ToIso6392b.put("mri", "mao");
         iso63923ToIso6392b.put("msa", "may");
+        iso63923ToIso6392b.put("s_brazilian", "pob"); // specific to opensubtitles
+        iso63923ToIso6392b.put("s_traditional_chinese", "zht"); // specific to opensubtitles
     }
 
     // use with iso63922bToIso6393.get(code)
