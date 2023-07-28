@@ -71,7 +71,7 @@ class TvShowPathMatcher implements InputMatcher {
     private static final String SEASON = "(?:S|SEAS|SEASON)";
     private static final String EPISODE = "(?:E|EP|EPISODE)";
     private static final String SEASON_NUMBER = "20\\d{2}|\\d{1,2}";
-    private static final String EPISODE_NUMBER = "\\d{1,3}";
+    private static final String EPISODE_NUMBER = "\\d{1,4}";
     private static final String NOT_DECIMAL = "(?!\\d).*";
     private static final String LETTER_NUMBER_SEP = "(?:[\\p{L}\\p{N}]++[\\s._-]*+)"; // contains no date between ()...
 
