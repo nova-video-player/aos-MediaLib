@@ -232,8 +232,8 @@ public class ShowIdParser {
 
         if (serie.production_companies != null) {
             for (int i = 0; i < serie.production_companies.size(); i++) {
-                log.debug("getResult: " + serie.id + " has studiologo_path=" + ScraperImage.GSNL + serie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
-                result.addStudioLogoGITHUB(mContext, serie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("\t", "") + ".png");
+                log.debug("getResult: " + serie.id + " has studiologo_path=" + ScraperImage.GSNL + serie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("/", "%20").replaceAll("\t", "") + ".png");
+                result.addStudioLogoGITHUB(mContext, serie.production_companies.get(i).name.replaceAll(" ", "%20").replaceAll("/", "%20").replaceAll("\t", "") + ".png");
             }
         } else log.debug("getResult: no networklogo_path for " + serie.id);
 
