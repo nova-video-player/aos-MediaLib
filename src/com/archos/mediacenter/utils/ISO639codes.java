@@ -160,6 +160,10 @@ public class ISO639codes {
     }
 
     static public String getISO6393ForLetterCode(String code) {
+        if (code == null) {
+            log.error("getISO6393ForLetterCode: null code!");
+            return "null";
+        }
         if (code.length() == 2) {
             return convertISO6391ToISO6393(code);
         } else if (code.length() == 3) {
