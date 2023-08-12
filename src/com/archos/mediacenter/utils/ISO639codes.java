@@ -14,6 +14,8 @@
 
 package com.archos.mediacenter.utils;
 
+import static com.archos.mediascraper.StringUtils.capitalizeFirstLetter;
+
 import android.content.Context;
 import android.content.res.Resources;
 
@@ -23,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ISO639codes {
 
@@ -252,6 +256,37 @@ public class ISO639codes {
             lang = name;
         }
         return lang;
+    }
+
+    public static String findLanguageInString(String string) {
+        // either string is of the form "title (XYZ)" or "XYZ" with XYZ being the language code
+        if (string == null) return null;
+        String pattern = "(?:^[A-Za-z]{3}$|\\([A-Za-z]{3}\\))";
+        Pattern regexPattern = Pattern.compile(pattern);
+        Matcher matcher = regexPattern.matcher(string);
+        if (matcher.find()) {
+            return ISO639codes.getLanguageNameForLetterCode(matcher.group());
+        } else {
+            return null;
+        }
+    }
+
+    public static String replaceLanguageCodeInString(String string) {
+        // either string is of the form "title (XYZ)" and XYZ is replaced by language corresponding to the XYZ code
+        // or string is of the form "XYZ" and it is replaced by the language corresponding to the XYZ code
+        if (string == null) return null;
+        String pattern = "\\((.{3})\\)$"; // This pattern captures the last 3 characters between parentheses i.e. the language code
+        String languageCode = "";
+        Pattern regexPattern = Pattern.compile(pattern);
+        Matcher matcher = regexPattern.matcher(string);
+        if (matcher.find()) {
+            languageCode = matcher.group(1); // Group 1 contains the matched part
+            log.debug("replaceLanguageCodeInString: languageCode=" + languageCode);
+            return string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
+        } else {
+            log.debug("replaceLanguageCodeInString: no languageCode");
+            return capitalizeFirstLetter(ISO639codes.getLanguageNameForLetterCode(string));
+        }
     }
 
 }
