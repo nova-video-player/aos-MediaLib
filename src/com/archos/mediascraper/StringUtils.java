@@ -298,6 +298,13 @@ public class StringUtils {
         return input;
     }
 
+    public static String capitalizeFirstLetter(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return Character.toUpperCase(input.charAt(0)) + input.substring(1);
+    }
+
     private StringUtils() {
         // all static
     }
