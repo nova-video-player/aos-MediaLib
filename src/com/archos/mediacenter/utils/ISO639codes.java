@@ -111,6 +111,10 @@ public class ISO639codes {
     }
 
     static public String getLanguageNameForLetterCode(String code) {
+        if (code == null) {
+            log.error("getLanguageNameForLetterCode: null code!");
+            return "unknown";
+        }
         if (code.length() == 2) {
             return getLanguageNameFor2LetterCode(code);
         } else if (code.length() == 3) {
@@ -166,7 +170,7 @@ public class ISO639codes {
     static public String getISO6393ForLetterCode(String code) {
         if (code == null) {
             log.error("getISO6393ForLetterCode: null code!");
-            return "null";
+            return "unknown";
         }
         if (code.length() == 2) {
             return convertISO6391ToISO6393(code);
@@ -259,33 +263,52 @@ public class ISO639codes {
     }
 
     public static String findLanguageInString(String string) {
-        // either string is of the form "title (XYZ)" or "XYZ" with XYZ being the language code
+        // either string is of the form "title (l_XYZ)" or "l_XYZ" with XYZ being the language code
         if (string == null) return null;
-        String pattern = "(?:^[A-Za-z]{3}$|\\([A-Za-z]{3}\\))";
+        String pattern = "(?:^l_([A-Za-z]{3}$)|\\(l_([A-Za-z]{3})\\)$)";
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(string);
+        String languageCode = "";
         if (matcher.find()) {
-            return ISO639codes.getLanguageNameForLetterCode(matcher.group());
+            String languageCode1 = matcher.group(1);
+            String languageCode2 = matcher.group(2);
+            log.debug("findLanguageInString: languageCode1=" + languageCode1 + " languageCode2=" + languageCode2);
+            if (languageCode1 != null) {
+                languageCode = languageCode1;
+            } else if (languageCode2 != null) {
+                languageCode = languageCode2;
+            }
+            return ISO639codes.getLanguageNameForLetterCode(languageCode);
         } else {
             return null;
         }
     }
 
     public static String replaceLanguageCodeInString(String string) {
-        // either string is of the form "title (XYZ)" and XYZ is replaced by language corresponding to the XYZ code
+        // either string is of the form "title (l_XYZ)" and l_XYZ is replaced by language corresponding to the XYZ code
         // or string is of the form "XYZ" and it is replaced by the language corresponding to the XYZ code
+        log.debug("replaceLanguageCodeInString: string=" + string);
         if (string == null) return null;
-        String pattern = "\\((.{3})\\)$"; // This pattern captures the last 3 characters between parentheses i.e. the language code
+        String pattern = "(?:^l_([A-Za-z]{3}$)|\\(l_([A-Za-z]{3})\\)$)";
         String languageCode = "";
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(string);
         if (matcher.find()) {
-            languageCode = matcher.group(1); // Group 1 contains the matched part
-            log.debug("replaceLanguageCodeInString: languageCode=" + languageCode);
-            return string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
+            String languageCode1 = matcher.group(1);
+            String languageCode2 = matcher.group(2);
+            log.debug("replaceLanguageCodeInString: languageCode1=" + languageCode1 + " languageCode2=" + languageCode2);
+            if (languageCode1 != null) {
+                languageCode = languageCode1;
+                return capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
+
+            } else if (languageCode2 != null) {
+                languageCode = languageCode2;
+                return string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
+            }
+            return string; // this never happens?
         } else {
-            log.debug("replaceLanguageCodeInString: no languageCode");
-            return capitalizeFirstLetter(ISO639codes.getLanguageNameForLetterCode(string));
+            log.error("replaceLanguageCodeInString: no languageCode in " + string);
+            return string;
         }
     }
 
