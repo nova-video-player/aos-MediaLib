@@ -19,6 +19,7 @@ import android.util.Log;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class StringUtils {
@@ -303,6 +304,11 @@ public class StringUtils {
             return input;
         }
         return Character.toUpperCase(input.charAt(0)) + input.substring(1);
+    }
+
+    public static boolean stringContainsForced(String string) {
+        // return true if string contains "forced" case insensitive
+        return string != null && string.toLowerCase().contains("forced");
     }
 
     private StringUtils() {
