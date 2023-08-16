@@ -187,6 +187,12 @@ public class ISO639codes {
         return !code.equals(result);
     }
 
+    static public boolean isletterCode(String code) {
+        String result = getLanguageNameForLetterCode(code);
+        log.debug("isletterCode: code={} result={}", code, result);
+        return !code.equals(result);
+    }
+
     static public String convertISO6391ToISO6393(String code) {
         String result = missingISO6391ToISO6393.get(code);
         if (result == null) {
