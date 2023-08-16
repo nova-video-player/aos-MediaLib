@@ -269,9 +269,10 @@ public class ISO639codes {
     }
 
     public static String findLanguageInString(String string) {
-        // either string is of the form "title (l_XYZ)" or "l_XYZ" with XYZ being the language code
+        // treat strings being "l_XYZ" or "l_XY" or "XYZ" or "XY" or "title (l_XYZ)" or "title (l_XY)"
+        // and return locale language corresponding to XY or XYZ letter code
         if (string == null) return null;
-        String pattern = "(?:^l_([A-Za-z]{3}$)|\\(l_([A-Za-z]{3})\\)$)";
+        String pattern = "(?:^l_([A-Za-z]{2,3}$)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(string);
         String languageCode = "";
@@ -281,21 +282,31 @@ public class ISO639codes {
             log.debug("findLanguageInString: languageCode1=" + languageCode1 + " languageCode2=" + languageCode2);
             if (languageCode1 != null) {
                 languageCode = languageCode1;
+                if (languageCode1.equals("und") || languageCode1.equals("Unknown")) return null; // und = undefined
             } else if (languageCode2 != null) {
                 languageCode = languageCode2;
             }
             return ISO639codes.getLanguageNameForLetterCode(languageCode);
         } else {
+            pattern = "^[A-Za-z]{2,3}$"; // 2 or 3 letters code
+            regexPattern = Pattern.compile(pattern);
+            matcher = regexPattern.matcher(string);
+            if (matcher.find()) {
+                languageCode = matcher.group();
+                log.debug("findLanguageInString: languageCode=" + languageCode);
+                if (languageCode.equals("und") || languageCode.equals("Unknown")) return ""; // und = undefined
+                return ISO639codes.getLanguageNameForLetterCode(languageCode);
+            }
             return null;
         }
     }
 
     public static String replaceLanguageCodeInString(String string) {
-        // either string is of the form "title (l_XYZ)" and l_XYZ is replaced by language corresponding to the XYZ code
-        // or string is of the form "XYZ" and it is replaced by the language corresponding to the XYZ code
+        // treat strings being "l_XYZ" or "l_XY" or "XYZ" or "XY" or "title (l_XYZ)" or "title (l_XY)"
+        // and replace it with locale language corresponding to XY or XYZ letter code
         log.debug("replaceLanguageCodeInString: string=" + string);
         if (string == null) return null;
-        String pattern = "(?:^l_([A-Za-z]{3}$)|\\(l_([A-Za-z]{3})\\)$)";
+        String pattern = "(?:^l_([A-Za-z]{2,3}$)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
         String languageCode = "";
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(string);
@@ -305,14 +316,24 @@ public class ISO639codes {
             log.debug("replaceLanguageCodeInString: languageCode1=" + languageCode1 + " languageCode2=" + languageCode2);
             if (languageCode1 != null) {
                 languageCode = languageCode1;
+                if (languageCode1.equals("und") || languageCode1.equals("Unknown")) return ""; // und = undefined
                 return capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
-
             } else if (languageCode2 != null) {
                 languageCode = languageCode2;
                 return string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
             }
             return string; // this never happens?
         } else {
+            // could be that it is a 2|3 letter code alone: treat this case too
+            pattern = "^[A-Za-z]{2,3}$"; // 2 or 3 letters code
+            regexPattern = Pattern.compile(pattern);
+            matcher = regexPattern.matcher(string);
+            if (matcher.find()) {
+                languageCode = matcher.group();
+                log.debug("replaceLanguageCodeInString: languageCode=" + languageCode);
+                if (languageCode.equals("und") || languageCode.equals("Unknown")) return ""; // und = undefined
+                return capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
+            }
             log.error("replaceLanguageCodeInString: no languageCode in " + string);
             return string;
         }
