@@ -305,7 +305,7 @@ public class ISO639codes {
         // treat strings being "l_XYZ" or "l_XY" or "XYZ" or "XY" or "title (l_XYZ)" or "title (l_XY)"
         // and replace it with locale language corresponding to XY or XYZ letter code
         log.debug("replaceLanguageCodeInString: string=" + string);
-        if (string == null) return null;
+        if (string == null) return "";
         String pattern = "(?:^l_([A-Za-z]{2,3}$)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
         String languageCode = "";
         Pattern regexPattern = Pattern.compile(pattern);
