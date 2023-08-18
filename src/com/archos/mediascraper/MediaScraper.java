@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper;
 
+import static com.archos.mediacenter.utils.MediaUtils.getExternalCacheDir;
+
 import android.content.Context;
 import android.os.Environment;
 
@@ -48,7 +50,7 @@ public final class MediaScraper {
      * External cache is NOT cleared when using the clear cache button in system settings > apps
      */
     public static File getPictureCacheDirectory(Context context) {
-        return new File(context.getExternalCacheDir(), "pictures");
+        return new File(getExternalCacheDir(context), "pictures");
     }
 
     /**
@@ -83,7 +85,7 @@ public final class MediaScraper {
      * External cache is NOT cleared when using the clear cache button in system settings > apps
      */
     public static File getBackdropCacheDirectory(Context context) {
-        return new File(context.getExternalCacheDir(), "backdrops");
+        return new File(getExternalCacheDir(context), "backdrops");
     }
 
     /** Timeout for {@link HttpCache} - 1 day since xml responses are quite dynamic */

@@ -196,8 +196,9 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
     }
 
     /*
-  * returns the path of local subtitles directory
-  */
+     * returns the path of local subtitles directory
+     */
+    // TODO MARC change and align with FileUtilsQ and FileUtils...
     public static File getSubsDir(Context context){
         StringBuilder sb = new StringBuilder();
         if(context.getExternalCacheDir()!=null) //seems that some devices haven't external cache
@@ -210,7 +211,19 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
         return subsDir;
     }
 
- // nice way to close things that might be null
+    public static File getExternalCacheDir(Context context){
+        StringBuilder sb = new StringBuilder();
+        if(context.getExternalCacheDir()!=null) //seems that some devices haven't external cache
+            sb.append(context.getExternalCacheDir().getAbsolutePath());
+        else
+            sb.append(STORAGE_PATH).append("/Android/data/").append(context.getPackageName()).append("/cache");
+        File subsDir = new File(sb.toString());
+        if (!subsDir.exists())
+            subsDir.mkdirs();
+        return subsDir;
+    }
+
+    // nice way to close things that might be null
     public static void closeSilently(Closeable closeme) {
         if (closeme == null) return;
         try {
