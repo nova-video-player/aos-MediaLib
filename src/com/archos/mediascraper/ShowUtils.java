@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.archos.mediascraper.StringUtils.removeTrailingSlash;
+import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
 import static com.archos.mediascraper.preprocess.ParseUtils.getCountryOfOrigin;
 import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
 import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
@@ -94,6 +95,8 @@ public final class ShowUtils {
         name = ParseUtils.removeNumbering(name);
         name = ParseUtils.replaceAcronyms(name);
         name = StringUtils.replaceAllChars(name, REPLACE_ME, ' ');
+        // Strip out everything else in brackets <[{( .. )})>, most of the time teams names, etc
+        name = StringUtils.replaceAll(name, "", BRACKETS);
         return name.trim();
     }
 
