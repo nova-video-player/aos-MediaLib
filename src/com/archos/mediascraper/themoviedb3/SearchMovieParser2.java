@@ -35,8 +35,8 @@ import retrofit2.Response;
 public class SearchMovieParser2 {
     private static final Logger log = LoggerFactory.getLogger(SearchMovieParser2.class);
 
-    private final static boolean SORT_POPULARITY = false;
-    private final static boolean SORT_YEAR = true;
+    private final static boolean SORT_POPULARITY = true; // used only if year specified
+    private final static boolean SORT_YEAR = true; // used only if no year specified
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
@@ -57,8 +57,9 @@ public class SearchMovieParser2 {
 
         // sort first movies by popularity so that distinction between levenstein distance is operated on popularity
         List<BaseMovie> resultsMovie = response.body().results;
-        // popularity sort is disabled for now to enable sort by year to pick lower year if not specified with lowest levenshtein metric
-        if (SORT_POPULARITY)
+        // popularity sort is disabled to enable sort by year to pick lower year if not specified with lowest levenshtein metric
+        // if year is specified pick movies with highest popularity (solves The Killer 1989 best pick)
+        if (SORT_POPULARITY && year != null && ! year.isEmpty())
             Collections.sort(resultsMovie, new Comparator<BaseMovie>() {
                 @Override
                 public int compare(final BaseMovie bm1, final BaseMovie bm2) {
@@ -71,8 +72,8 @@ public class SearchMovieParser2 {
                     }
                 }
             });
-        // prefer older movie first
-        if (SORT_YEAR)
+        // prefer older movie first if no specific year has been requested
+        if (SORT_YEAR && (year == null || year.isEmpty()))
             Collections.sort(resultsMovie, new Comparator<BaseMovie>() {
                 @Override
                 public int compare(final BaseMovie bm1, final BaseMovie bm2) {

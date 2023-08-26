@@ -39,8 +39,8 @@ import retrofit2.Response;
 public class SearchShowParser {
     private static final Logger log = LoggerFactory.getLogger(SearchShowParser.class);
     private final static int SERIES_NOT_PERMITTED_ID = 313081;
-    private final static boolean SORT_POPULARITY = false;
-    private final static boolean SORT_YEAR = true;
+    private final static boolean SORT_POPULARITY = true; // used only if year specified
+    private final static boolean SORT_YEAR = true; // used only if no year specified
 
     private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
@@ -67,7 +67,8 @@ public class SearchShowParser {
         List<BaseTvShow> resultsTvShow = response.body().results;
         // OBSERVATION: number_of_seasons only available on id search not name search --> cannot discriminate
         // popularity sort is disabled for now to enable sort by year to pick lower year if not specified with lowest levenshtein metric
-        if (SORT_POPULARITY)
+        // pick most popular show with same same levenshtein distance when no year is specified
+        if (SORT_POPULARITY && year != null)
             Collections.sort(resultsTvShow, new Comparator<BaseTvShow>() {
                 @Override
                 public int compare(final BaseTvShow btvs1, final BaseTvShow btvs2) {
@@ -80,8 +81,8 @@ public class SearchShowParser {
                     }
                 }
             });
-        // prefer older show first
-        if (SORT_YEAR)
+        // prefer older show first if no year is specified (if this is a reboot year should never be null)
+        if (SORT_YEAR && year == null)
             Collections.sort(resultsTvShow, new Comparator<BaseTvShow>() {
                 @Override
                 public int compare(final BaseTvShow btvs1, final BaseTvShow btvs2) {
