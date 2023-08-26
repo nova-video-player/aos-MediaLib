@@ -28,11 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.archos.mediascraper.ShowUtils.cleanUpName;
-import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
 import static com.archos.mediascraper.preprocess.ParseUtils.getCountryOfOrigin;
 import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
-import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
-import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
 
 /**
  * Matches Tv Shows in folders like
