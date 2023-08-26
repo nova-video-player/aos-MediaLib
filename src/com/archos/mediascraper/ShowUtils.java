@@ -129,7 +129,7 @@ public final class ShowUtils {
                     log.debug("getMatch: patternsShowFirst " + nameCountry.first + " season " + matcher.group(2) + " episode " + matcher.group(3) + " year " + nameYear.second + " country " + nameCountry.second);
                     buffer.put(SHOW, nameCountry.first);
                     String season = matcher.group(2);
-                    buffer.put(SEASON, (season == null || season.isEmpty()) ? "0" : season);
+                    buffer.put(SEASON, (season == null || season.isEmpty()) ? "1" : season);
                     buffer.put(EPNUM, matcher.group(3).replaceAll(SEP_MANDATORY, ""));
                     buffer.put(YEAR, nameYear.second);
                     buffer.put(ORIGIN, nameCountry.second);
