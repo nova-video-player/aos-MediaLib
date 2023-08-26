@@ -41,9 +41,6 @@ public class VideoNameProcessor {
     private static final String[] STRING_LIST_1080P = {" 1080p "};
     private static final String[] STRING_LIST_4K = {" 2160p ", " 4K "};
 
-
-
-
     private static final String[] STRING_LIST_H264 = {" h264 ", " x264 ", " x.264 ", " h.264 "};
     private static final String[] STRING_LIST_HEVC = {" hevc "," h265 ", " x265 ", " x.265 ", " h.265 "};
     private static final String[] STRING_LIST_DIVX = {" divx "," xvid "};
@@ -60,10 +57,6 @@ public class VideoNameProcessor {
     private static final String[] STRING_LIST_SCREEN_VIDEO = {};
     private static final String[] STRING_LIST_H263 = {};
     private static final String[] STRING_LIST_MSVC = {};
-
-
-
-
 
     //link between string parsing and video format given by AVP metadata retriever
     static final Map<String[] , String> VIDEO_FORMAT_MAP = new HashMap<String[] , String>() {{
@@ -83,7 +76,6 @@ public class VideoNameProcessor {
         put(STRING_LIST_H263,	"H263");
         put(STRING_LIST_MSVC,	"MSVC");
     }};
-
 
     private static final String[] STRING_LIST_PCM = {" pcm "};
     private static final String[] STRING_LIST_LAW = {" A-law"};
@@ -121,7 +113,6 @@ public class VideoNameProcessor {
     private static final String[] STRING_LIST_TRUEHD= {"TrueHD"};
     private static final String[] STRING_LIST_EAC3=	{" eac "};
     static final Map<String[] , String> AUDIO_FORMAT_MAP = new HashMap<String[] , String>() {{
-
         put(STRING_LIST_PCM,"PCM");
         put(STRING_LIST_LAW,"A-law");
         put(STRING_LIST_MULAW,"u-law");
@@ -158,6 +149,7 @@ public class VideoNameProcessor {
         put(STRING_LIST_TRUEHD,	"TrueHD");
         put(STRING_LIST_EAC3,"EAC3");
     }};
+
     public static ContentValues extractValuesFromPath(String path) {
         ContentValues values = new ContentValues(2);
 
