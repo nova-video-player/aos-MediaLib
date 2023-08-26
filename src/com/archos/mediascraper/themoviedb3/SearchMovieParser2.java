@@ -97,7 +97,7 @@ public class SearchMovieParser2 {
             SearchResult result = new SearchResult();
             result.setMovie();
             if (movie.id != null) result.setId(movie.id);
-            if (movie.original_title != null) result.setTitle(movie.original_title);
+            if (movie.title != null) result.setTitle(movie.title);
             log.debug("getSearchMovieParserResult: taking into account " + movie.original_title);
             // add backdrop and poster here already if it exists because MovieIdImages can return empty results...
             log.debug("getSearchMovieParserResult: poster path " + movie.poster_path);
@@ -129,6 +129,7 @@ public class SearchMovieParser2 {
                         log.debug("getSearchMovieParserResult: set aside " + movie.title + " because banner missing i.e. banner=" + movie.backdrop_path);
                         levenshteinDistanceTitle = levenshteinDistance.apply(movieNameLC, result.getTitle().toLowerCase());
                         levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieNameLC, result.getOriginalTitle().toLowerCase());
+                        log.debug("getSearchMovieParserResult: between " + movieNameLC + " and " + result.getOriginalTitle().toLowerCase() + "/" + result.getTitle().toLowerCase() + " levenshteinDistanceTitle=" + levenshteinDistanceTitle + ", levenshteinDistanceOriginalTitle=" + levenshteinDistanceOriginalTitle);
                         searchMovieParserResult.resultsNoBanner.add(new Pair<>(result,
                                 Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                         isDecisionTaken = true;
@@ -145,6 +146,7 @@ public class SearchMovieParser2 {
                 // get the min of the levenshtein distance between cleaned file based show name and title and original title identified
                 levenshteinDistanceTitle = levenshteinDistance.apply(movieNameLC, result.getTitle().toLowerCase());
                 levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieNameLC, result.getOriginalTitle().toLowerCase());
+                log.debug("getSearchMovieParserResult: between " + movieNameLC + " and " + result.getOriginalTitle().toLowerCase() + "/" + result.getTitle().toLowerCase() + " levenshteinDistanceTitle=" + levenshteinDistanceTitle + ", levenshteinDistanceOriginalTitle=" + levenshteinDistanceOriginalTitle);
                 searchMovieParserResult.resultsProbable.add(new Pair<>(result,
                         Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
             }
