@@ -21,6 +21,7 @@ import com.archos.mediascraper.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,8 +29,8 @@ public class SearchParserResult {
 
     private static final Logger log = LoggerFactory.getLogger(SearchParserResult.class);
 
-    List<SearchResult> resultsNoAirDate;
-    List<SearchResult> resultsNoPoster;
+    List<Pair<SearchResult,Integer>> resultsNoAirDate;
+    List<Pair<SearchResult,Integer>> resultsNoPoster;
     List<Pair<SearchResult,Integer>> resultsProbable;
     List<Pair<SearchResult,Integer>> resultsNoBanner;
 
@@ -42,6 +43,8 @@ public class SearchParserResult {
         // contains list of probable results (i.e. with banner and non numeric slug) with its Levenshtein distance to cleaned filename
         this.resultsProbable = new LinkedList<>();
     }
+
+    public static Comparator<Pair<SearchResult, Integer>> comparator = (sr1, sr2) -> Integer.compare(sr1.second, sr2.second);
 
     public List<SearchResult> getResults(int maxItems) {
         List<SearchResult> results = new LinkedList<>();
