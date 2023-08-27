@@ -53,16 +53,14 @@ public class SearchParserResult {
             for (Pair<SearchResult,Integer> pair : resultsProbable)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(pair.first);
-        // skip videos without a poster
-        /*
-        if (resultsNoPoster.size()>0)
-            for (SearchResult result : resultsNoPoster)
-                if (maxItems < 0 || results.size() < maxItems)
-                    results.add(result);
-         */
-        // do NOT skip videos without a banner (otherwise shows like The Wrong Mans not found)
+        // do NOT skip videos without a banner but with a poster (otherwise shows like The Wrong Mans not found)
         if (resultsNoBanner.size()>0)
             for (Pair<SearchResult,Integer> pair : resultsNoBanner)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(pair.first);
+        // skip videos without a poster only if resultsProbable is empty
+        if (resultsNoPoster.size()>0 && resultsProbable.size() == 0)
+            for (Pair<SearchResult,Integer> pair : resultsNoPoster)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(pair.first);
         log.debug("getResults: results.size()=" + results.size());
