@@ -382,8 +382,10 @@ public class MovieTags extends VideoTags {
         Cursor cursor = contentResolver.query(ScraperStore.MovieCollections.URI.BASE, baseProjection,
                 nameSelection, selectionArgs, null);
         Boolean isKnown = false;
-        if (cursor != null) isKnown = cursor.moveToFirst();
-        cursor.close();
+        if (cursor != null) {
+            isKnown = cursor.moveToFirst();
+            cursor.close();
+        }
         return isKnown;
     }
 
