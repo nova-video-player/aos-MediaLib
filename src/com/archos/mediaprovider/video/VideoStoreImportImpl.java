@@ -187,76 +187,85 @@ public class VideoStoreImportImpl {
         String timeString = String.valueOf(time);
 
         NfoParser.ImportContext importContext = new NfoParser.ImportContext();
-        while (c.moveToNext()) {
-            ImportState.VIDEO.setRemainingCount(remaining--);
-            log.debug("doFullImport: ImportState.VIDEO.setRemainingCount " + remaining);
-            String id;
-            String path;
-            int scraperID;
+        // Still getting SQLiteBlobTooBigException due perhaps to large blobs in the database for some reasons
+        while (true) {
             try {
-                id = c.getString(0);
-                path = c.getString(1);
-                if (path.startsWith("/"))
-                    path = "file://" + path;
-                scraperID = c.getInt(2);
-            } catch (IllegalStateException ignored) {
-                 //we silently ignore empty lines - it means content has been deleted while scanning
-                continue;
-            }
-            Job job = new Job(path, id, blacklist);
-            log.debug("handleScanCursor: scanning " + job.mPath);
-            // update property with current file
-            ContentValues cv = null;
-            try {
-                cv = fromRetrieverService(job, timeString);
-            } catch (InterruptedException e) {
-                // won't happen but stopping as soon as we can would be desired
-                break;
-            } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
-                // something is fishy with our service, abort and try again later.
-                break;
-            }
+                if (!c.moveToNext()) {
+                    break; // Exit the loop when there are no more rows
+                } else {
+                    ImportState.VIDEO.setRemainingCount(remaining--);
+                    log.debug("doFullImport: ImportState.VIDEO.setRemainingCount " + remaining);
+                    String id;
+                    String path;
+                    int scraperID;
+                    try {
+                        id = c.getString(0);
+                        path = c.getString(1);
+                        if (path.startsWith("/"))
+                            path = "file://" + path;
+                        scraperID = c.getInt(2);
+                    } catch (IllegalStateException ignored) {
+                        //we silently ignore empty lines - it means content has been deleted while scanning
+                        continue;
+                    }
+                    Job job = new Job(path, id, blacklist);
+                    log.debug("handleScanCursor: scanning " + job.mPath);
+                    // update property with current file
+                    ContentValues cv = null;
+                    try {
+                        cv = fromRetrieverService(job, timeString);
+                    } catch (InterruptedException e) {
+                        // won't happen but stopping as soon as we can would be desired
+                        break;
+                    } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
+                        // something is fishy with our service, abort and try again later.
+                        break;
+                    }
 
-            // using ContentProviderOperation so updates are done as single transaction
-            operations.add(
-                ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                        .withSelection(UPDATE_WHERE, new String[] { job.mId })
-                        .withValues(cv)
-                        .build()
+                    // using ContentProviderOperation so updates are done as single transaction
+                    operations.add(
+                            ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                                    .withSelection(UPDATE_WHERE, new String[] { job.mId })
+                                    .withValues(cv)
+                                    .build()
                     );
-            scanned++;
+                    scanned++;
 
-            // .nfo auto-parsing
-            if (job.mRetrieve && scraperID <= 0) {
-                Uri videoFile = job.mPath;
-                if (videoFile != null) {
-                    log.debug("handleScanCursor: searching .nfo for " + videoFile);
-                    NfoParser.NfoFile nfo = NfoParser.determineNfoFile(videoFile);
-                    if (nfo != null && nfo.hasNfo()) {
-                        log.debug("handleScanCursor: .nfo found for " + videoFile + " : " + nfo.videoNfo);
-                        BaseTags tagForFile = NfoParser.getTagForFile(nfo, context, importContext);
-                        if (tagForFile != null) {
-                            log.debug("handleScanCursor: .nfo contains valid BaseTags for " + videoFile);
-                            long videoId = parseLong(job.mId, -1);
-                            if (videoId > 0) {
-                                tagForFile.save(context, videoId);
-                                log.debug("handleScanCursor: BaseTags saved for " + videoFile);
-                                scraped++;
+                    // .nfo auto-parsing
+                    if (job.mRetrieve && scraperID <= 0) {
+                        Uri videoFile = job.mPath;
+                        if (videoFile != null) {
+                            log.debug("handleScanCursor: searching .nfo for " + videoFile);
+                            NfoParser.NfoFile nfo = NfoParser.determineNfoFile(videoFile);
+                            if (nfo != null && nfo.hasNfo()) {
+                                log.debug("handleScanCursor: .nfo found for " + videoFile + " : " + nfo.videoNfo);
+                                BaseTags tagForFile = NfoParser.getTagForFile(nfo, context, importContext);
+                                if (tagForFile != null) {
+                                    log.debug("handleScanCursor: .nfo contains valid BaseTags for " + videoFile);
+                                    long videoId = parseLong(job.mId, -1);
+                                    if (videoId > 0) {
+                                        tagForFile.save(context, videoId);
+                                        log.debug("handleScanCursor: BaseTags saved for " + videoFile);
+                                        scraped++;
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
 
-            if (job.mMediaType == FileColumns.MEDIA_TYPE_VIDEO) {
-                /* Process the FileName for more information */
-                ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
-                operations.add(
-                        ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                                .withSelection(UPDATE_WHERE, new String[] { job.mId })
-                                .withValues(cvExtra)
-                                .build()
-                            );
+                    if (job.mMediaType == FileColumns.MEDIA_TYPE_VIDEO) {
+                        /* Process the FileName for more information */
+                        ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
+                        operations.add(
+                                ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                                        .withSelection(UPDATE_WHERE, new String[] { job.mId })
+                                        .withValues(cvExtra)
+                                        .build()
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                log.error("handleScanCursor: exception while moving to next cursor row!", e);
             }
         }
 
