@@ -55,9 +55,7 @@ public class CPOExecutor {
         try {
             mCr.applyBatch(mAuthority, mOpList);
             mExecuted += mOpList.size();
-        } catch (RemoteException e) {
-            Log.e(TAG, e.toString(), e);
-        } catch (OperationApplicationException e) {
+        } catch (RemoteException | OperationApplicationException e) {
             Log.e(TAG, e.toString(), e);
         }
         // got to clear the list anyways.
