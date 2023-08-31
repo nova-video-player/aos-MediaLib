@@ -263,7 +263,7 @@ public class ArchosMediaFile {
         addFileType("MTS", FILE_TYPE_MP2TS, "video/avos-mts");
 
         addFileType("FLV", FILE_TYPE_FLV, "video/x-flv");
-	addFileType("F4V", FILE_TYPE_F4V, "video/x-f4v");
+        addFileType("F4V", FILE_TYPE_F4V, "video/x-f4v");
 
         addFileType("RM", FILE_TYPE_RM, "video/vnd.rn-realvideo");
         addFileType("RMVB", FILE_TYPE_RM, "video/vnd.rn-realvideo");

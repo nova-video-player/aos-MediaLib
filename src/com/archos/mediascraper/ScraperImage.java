@@ -676,7 +676,7 @@ public class ScraperImage {
                 log.warn("setAsDefault: unknown type:" + mType);
                 break;
         }
-        if (updateUri != null) {
+        if (context != null && updateUri != null) {
             success = context.getContentResolver().update(updateUri, updateValues, selection, selectionArgs) > 0;
         }
         return success;
