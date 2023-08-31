@@ -112,7 +112,7 @@ public class MovieIdParser2 {
                         result.addWriterIfAbsent(crew.name);
                 }
         }
-        if (movie.release_dates.results != null) {
+        if (movie.release_dates != null && movie.release_dates.results != null) {
             for (int i = 0; i < movie.release_dates.results.size(); i++) {
                 ReleaseDatesResult releaseDatesResult = movie.release_dates.results.get(i);
                 if (releaseDatesResult.iso_3166_1.equals("US")) {
