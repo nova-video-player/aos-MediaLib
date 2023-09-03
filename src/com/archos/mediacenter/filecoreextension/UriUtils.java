@@ -92,6 +92,26 @@ public class UriUtils {
         }
     }
 
+    public static boolean isValidStringUri(String uriString) {
+        if (uriString == null) return false;
+        try {
+            URI uri = new URI(uriString);
+            String scheme = uri.getScheme();
+            if (sIndexableSchemes.contains(scheme)) {
+                String path = uri.getPath();
+                int port = uri.getPort();
+                String host = uri.getHost();
+                log.debug("isValidStringUri: input=" + uriString + " -> scheme=" + scheme + " host=" + host + " port=" + port + " path=" + path);
+                return isValidPath(path) && isValidHost(host) && isValidPort(port);
+            }
+            log.warn("isValidStringUri: input=" + uriString + " -> scheme=" + scheme + " not supported");
+            return false;
+        } catch (URISyntaxException e) {
+            log.error("isValidStringUri: input=" + uriString + " -> URISyntaxException", e);
+            return false;
+        }
+    }
+
     public static boolean isValidPort(String input) {
         try {
             int port = Integer.parseInt(input);
