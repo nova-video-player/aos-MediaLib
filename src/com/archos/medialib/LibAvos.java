@@ -277,7 +277,7 @@ public class LibAvos {
     }
 
     public static void setHdmiSupportedAudioCodecs(long hdmiAudioCodecsFlag) {
-        nativeSetHdmiSupoprtedAudioCodecs(hdmiAudioCodecsFlag);
+        nativeSetHdmiSupportedAudioCodecs(hdmiAudioCodecsFlag);
     }
 
     public static void setAudioSpeed(float audioSpeed) {
@@ -329,7 +329,7 @@ public class LibAvos {
 
     private static native void nativeSetPassthrough(int forcePassthrough);
 
-    private static native void nativeSetHdmiSupoprtedAudioCodecs(long hdmiAudioCodecsFlag);
+    private static native void nativeSetHdmiSupportedAudioCodecs(long hdmiAudioCodecsFlag);
 
     private static native void nativeSetAudioSpeed(float audioSpeed);
 
