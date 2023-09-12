@@ -138,7 +138,7 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'org.apache.commons:commons-text:1.10.0'
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.10.0'
     // all below is linked to cling, jetty version locked to latest 8.1
     api 'com.github.nova-video-player.cling:cling-core:2.1.7'
