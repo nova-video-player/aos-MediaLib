@@ -3,4 +3,5 @@
     <string name="tmdb_api_key">051012651ba326cf5b1e2f482342eaa2</string>
     <string name="trakt_api_key">c2aaa573df0885a12e21a3174471bc27a47817d001806ef0db8bb7b66a8ea4d9</string>
     <string name="trakt_api_secret">430ff5925792b884b087e60309b65485cb632c427b983604bc04c75e77614890</string>
+    <string name="opensubtitles_api_key">H8s7CewJVkODzZDJQfBWUrqpkvtPlV3C</string>
 </resources>
