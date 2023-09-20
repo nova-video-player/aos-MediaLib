@@ -228,6 +228,8 @@ public class ISO639codes {
     }
 
     static public String convertIso6393ToIsa6392b(String code) {
+        if (code.equals("system"))
+            return convertIso6393ToIsa6392b(Locale.getDefault().getISO3Language());
         String result = iso63923ToIso6392b.get(code);
         if (result == null) return code;
         else return result;
