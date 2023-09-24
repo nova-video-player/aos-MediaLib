@@ -80,6 +80,7 @@ public class UriUtils {
 
     public static boolean isValidPath(String pathname) {
         if (pathname == null) return false;
+        if ("/".equals(pathname)) return true;
         if (pathname.endsWith("/"))
             pathname = pathname.substring(0, pathname.length() - 1);
         File file = new File(pathname);
