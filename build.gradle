@@ -135,10 +135,10 @@ dependencies {
     api ('org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.2') {
         exclude group:'org.apache.oltu.oauth2' , module: 'org.apache.oltu.oauth2.common'
     }
-    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'commons-codec:commons-codec:1.16'
     implementation 'org.apache.commons:commons-text:1.10.0'
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.10.0'
     // all below is linked to cling, jetty version locked to latest 8.1
     api 'com.github.nova-video-player.cling:cling-core:2.1.7'
@@ -158,6 +158,6 @@ dependencies {
     implementation ('org.eclipse.jetty:jetty-client:8.1.22.v20160922') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation 'io.sentry:sentry:6.31.0'
+    implementation 'io.sentry:sentry:6.32.0'
 
 }
