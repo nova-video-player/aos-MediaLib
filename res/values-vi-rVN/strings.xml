@@ -12,14 +12,14 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
-    <string name="network_scan_msg">Đang lập chỉ mục các tệp phương tiện</string>
-    <string name="network_unscan_msg">Đang loại bỏ các tệp phương tiện khỏi thư viện</string>
+    <string name="network_scan_msg">Đang lập chỉ mục các tập tin phương tiện</string>
+    <string name="network_unscan_msg">Đang loại bỏ các tập tin phương tiện khỏi thư viện</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Xuất thông tin đa phương tiện</string>
     <string name="nfo_export_auto_title">Tự động xuất sau khi tìm kiếm</string>
     <string name="nfo_export_manual_title">Xuất video đã thu thập thông tin</string>
-    <string name="nfo_export_auto_summary">Tự động xuất tệp .nfo sau khi tra cứu trực tuyến thành công</string>
-    <string name="nfo_export_manual_summary">Xuất tệp .nfo của mọi video đã được loại bỏ</string>
+    <string name="nfo_export_auto_summary">Tự động xuất tập tin .nfo sau khi tra cứu trực tuyến thành công</string>
+    <string name="nfo_export_manual_summary">Xuất tập tin .nfo của mọi video đã được loại bỏ</string>
     <string name="nfo_export_button">Xuất ra .nfo</string>
     <string name="nfo_export_folder">Xuất tất cả vào thư mục này thành .nfo</string>
     <string name="nfo_export_all">Xuất toàn bộ thư viện sang .nfo</string>
@@ -140,6 +140,6 @@
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Nghệ sĩ</string>
     <string name="scraping_in_progress">Đang lấy thông tin</string>
-    <string name="remaining_videos_to_process">Các tệp phương tiện còn lại sẽ được xử lý:</string>
-    <string name="video_store_import">Nhập tệp phương tiện cục bộ</string>
+    <string name="remaining_videos_to_process">Các tập tin phương tiện còn lại sẽ được xử lý:</string>
+    <string name="video_store_import">Nhập tập tin phương tiện cục bộ</string>
 </resources>
