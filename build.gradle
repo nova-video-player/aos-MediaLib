@@ -12,7 +12,7 @@ ext {
 
 allprojects {
     gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
+        tasks.withType(JavaCompile).configureEach {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
         // to generate the required jar dependencies e.g. cling seamless
@@ -21,14 +21,14 @@ allprojects {
 }
 
 configurations {
-    all {
+    configureEach {
         exclude group: 'org.json', module: 'json'
     }
 }
 
 android {
     namespace 'com.archos.medialib'
-    compileSdkVersion 34
+    compileSdk 34
     gradle.startParameter.getTaskNames().each { task ->
         if (task.contains("Open")) {
             groupOpen = true
@@ -60,7 +60,7 @@ android {
         multiDexEnabled true
     }
 
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
         compileTask -> compileTask.dependsOn ndkBuild
     }
     clean.dependsOn 'ndkClean'
@@ -89,7 +89,7 @@ android {
     }
 }
 
-task ndkBuild(type:Exec) {
+tasks.register('ndkBuild', Exec) {
     workingDir = "../"
     List<String> myCmd = new ArrayList<String>()
     myCmd.add("make")
@@ -103,7 +103,7 @@ task ndkBuild(type:Exec) {
     commandLine myCmd
 }
 
-task ndkClean(type:Exec) {
+tasks.register('ndkClean', Exec) {
     workingDir = "../"
     List<String> myCmd = new ArrayList<String>()
     myCmd.add("make")
@@ -159,5 +159,4 @@ dependencies {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
     implementation 'io.sentry:sentry:6.32.0'
-
 }
