@@ -36,11 +36,31 @@ public class ISO639codes {
 
     static private HashMap<String, String> missingISO6391ToISO6393 = new HashMap<>();
     static {
-        // https://api.opensubtitles.com/api/v1/infos/languages
+        // https://www.opensubtitles.org/addons/export_languages.php
         missingISO6391ToISO6393.put("at", "ast"); // Asturian (at used for opensubtitles)
         // pob does not exist as ISO639-3 code: use string exception
         missingISO6391ToISO6393.put("pb", "s_brazilian"); // Brazilian Portuguese (pb used for opensubtitles), pb=pob
         missingISO6391ToISO6393.put("zt", "s_traditional_chinese"); // take yue = Cantonese (zt is used for opensubtitles and should be Traditional Chinese which ISO 639-3 code does not exist e.g. cmn)
+
+        // https://api.opensubtitles.com/api/v1/infos/languages
+        // opensubtitles REST API language code exceptions (2 letters that are 4 letters)
+        missingISO6391ToISO6393.put("pt-br", "s_brazilian"); // Brazilian Portuguese (pb used for opensubtitles), pb=pob
+        missingISO6391ToISO6393.put("pt-pt", "por"); // Portuguese
+        missingISO6391ToISO6393.put("zh-cn", "s_chinese"); // Chinese (simplified) -> Chinese in strings.xml
+        missingISO6391ToISO6393.put("zh-tw", "s_traditional_chinese"); // Chinese (traditional)
+        // opensubtitles REST API not recognized languages ea=Spanish (LA)|ex=Extremaduran|me=Montenegrin|ma=Manipuri|pr=Dari|pm=Portuguese (MZ)|sp=Spanish (EU)|sx=Santali|sy=Syriac|tp=Toki Pona|ze=Chinese bilingual
+        missingISO6391ToISO6393.put("ea", "s_spanish_la"); // Spanish (LA)
+        missingISO6391ToISO6393.put("ex", "s_extremaduran"); // Extremaduran
+        missingISO6391ToISO6393.put("me", "s_montenegrin"); // Montenegrin
+        missingISO6391ToISO6393.put("ma", "s_manipuri"); // Manipuri
+        missingISO6391ToISO6393.put("pr", "s_dari"); // Dari
+        missingISO6391ToISO6393.put("pm", "s_portuguese_mz"); // Portuguese (MZ)
+        missingISO6391ToISO6393.put("sp", "s_spanish_eu"); // Spanish (EU)
+        missingISO6391ToISO6393.put("sx", "s_santali"); // Santali
+        missingISO6391ToISO6393.put("sy", "s_syriac"); // Syriac
+        missingISO6391ToISO6393.put("tp", "s_toki_pona"); // Toki Pona
+        missingISO6391ToISO6393.put("ze", "s_chinese_bilingual"); // Chinese bilingual
+
         missingISO6391ToISO6393.put("cn", "yue"); // take yue = Cantonese (cn is used for tmdb)
         // Moldavian is now officially Romanian since 202303 mo -> ron
         // {"iso_639_1":"mo","english_name":"Moldavian","name":""}
@@ -241,6 +261,8 @@ public class ISO639codes {
     }
 
     public static String convertISO6391ToLanguageName(String iso6391Code) {
+        if (iso6391Code.equals("system"))
+            return Locale.getDefault().getDisplayLanguage();
         Locale locale = new Locale(iso6391Code);
         return locale.getDisplayLanguage();
     }
