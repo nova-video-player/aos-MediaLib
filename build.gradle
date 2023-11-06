@@ -152,7 +152,7 @@ dependencies {
     implementation ('org.eclipse.jetty:jetty-server:8.1.22.v20160922') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation ('org.eclipse.jetty:jetty-servlet:8.1.22.v20160922')  {
+    implementation ('org.eclipse.jetty:jetty-servlet:11.0.18')  {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
     implementation ('org.eclipse.jetty:jetty-client:8.1.22.v20160922') {
