@@ -22,6 +22,7 @@ import android.content.res.Resources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -151,7 +152,7 @@ public class ISO639codes {
         String languageName = locale.getDisplayLanguage();
         if (languageName.equals(code)) {
             // it has not been found thus perhaps it is ISO 639-2b and conversion is needed
-            String iso6393Code = convertIso6392bToIsa6393(code);
+            String iso6393Code = convertIso6392bToIso6393(code);
             if (iso6393Code != null) {
                 locale = new Locale(iso6393Code);
                 languageName = locale.getDisplayLanguage();
@@ -195,10 +196,29 @@ public class ISO639codes {
         if (code.length() == 2) {
             return convertISO6391ToISO6393(code);
         } else if (code.length() == 3) {
-            return convertIso6392bToIsa6393(code);
+            return convertIso6392bToIso6393(code);
         } else {
             log.error("getISO6393ForLetterCode: Invalid code {}", code);
             return code;
+        }
+    }
+
+    static public String getISO6391ForLetterCode(String code) {
+        // TODO: not working "eng" returns "eng" instead of "en"
+        String result = "";
+        if (code == null) {
+            log.error("getISO6391ForLetterCode: null code!");
+            return result;
+        }
+        if (code.length() == 2) result = (new Locale(code)).getLanguage();
+        if (code.length() == 3) result = convertIso6392bToIso6393(code);
+        if (result.length() == 3) result = convertISO6393ToISO6391(result);
+        if (result.length() == 2) {
+            log.debug("getISO6391ForLetterCode: code={} result={}", code, result);
+            return result;
+        } else {
+            log.error("getISO6391ForLetterCode: Invalid code {}", code);
+            return "";
         }
     }
 
@@ -238,18 +258,33 @@ public class ISO639codes {
                 result = code;
             }
         }
-        return convertIso6393ToIsa6392b(result);
+        return convertIso6393ToIso6392b(result);
     }
 
-    static public String convertIso6392bToIsa6393(String code) {
+    static public String convertISO6393ToISO6391(String code) {
+        // TODO: not working "eng" returns "eng" instead of "en"
+        String result = missingISO6393ToISO6391.get(code);
+        if (result == null) {
+            Locale locale = new Locale(code);
+            try {
+                result = locale.getLanguage();
+            } catch (MissingResourceException e) {
+                log.error("convertISO6393ToISO6391: No ISO1 found for code {}", code);
+                result = code;
+            }
+        }
+        return result;
+    }
+
+    static public String convertIso6392bToIso6393(String code) {
         String result = iso63922bToIso6393.get(code);
         if (result == null) return code;
         else return result;
     }
 
-    static public String convertIso6393ToIsa6392b(String code) {
+    static public String convertIso6393ToIso6392b(String code) {
         if (code.equals("system"))
-            return convertIso6393ToIsa6392b(Locale.getDefault().getISO3Language());
+            return convertIso6393ToIso6392b(Locale.getDefault().getISO3Language());
         String result = iso63923ToIso6392b.get(code);
         if (result == null) return code;
         else return result;
