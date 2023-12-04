@@ -122,7 +122,7 @@ dependencies {
     implementation project(':FileCoreLibrary')
     implementation 'androidx.core:core:1.12.0'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
-    implementation 'androidx.media:media:1.6.0'
+    implementation 'androidx.media:media:1.7.0'
     implementation 'androidx.fragment:fragment:1.6.2'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.preference:preference:1.2.1'
@@ -158,5 +158,5 @@ dependencies {
     implementation ('org.eclipse.jetty:jetty-client:8.1.22.v20160922') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation 'io.sentry:sentry:6.34.0'
+    implementation 'io.sentry:sentry:7.0.0'
 }
