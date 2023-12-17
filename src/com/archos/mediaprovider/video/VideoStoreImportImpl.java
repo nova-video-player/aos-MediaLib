@@ -706,8 +706,6 @@ public class VideoStoreImportImpl {
             } catch (Exception e) {
                 log.error("getLocalCount: exception while moving to next cursor row!", e);
                 break;
-            } finally {
-                if (c != null) c.close();
             }
         }
         return result;
