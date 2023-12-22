@@ -142,6 +142,6 @@
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">Interpret</string>
     <string name="scraping_in_progress">Scraping läuft</string>
-    <string name="remaining_videos_to_process">Noch zu verarbeitende Meiden-Dateien:</string>
+    <string name="remaining_videos_to_process">Noch zu verarbeitende Videos:</string>
     <string name="video_store_import">Importiere lokale Medien-Dateien</string>
 </resources>
