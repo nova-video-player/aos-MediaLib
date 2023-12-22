@@ -192,7 +192,6 @@ public class VideoStoreImportImpl {
         while (true) {
             try {
                 if (!c.moveToNext()) {
-                    log.debug("handleScanCursor: no more data, break");
                     break; // Exit the loop when there are no more rows
                 } else {
                     ImportState.VIDEO.setRemainingCount(remaining--);
@@ -207,7 +206,6 @@ public class VideoStoreImportImpl {
                             path = "file://" + path;
                         scraperID = c.getInt(2);
                     } catch (IllegalStateException ignored) {
-                        log.error("handleScanCursor: IllegalStateException caught, content deleted while scanning?");
                         //we silently ignore empty lines - it means content has been deleted while scanning
                         continue;
                     }
@@ -218,11 +216,9 @@ public class VideoStoreImportImpl {
                     try {
                         cv = fromRetrieverService(job, timeString);
                     } catch (InterruptedException e) {
-                        log.error("handleScanCursor: InterruptedException caught");
                         // won't happen but stopping as soon as we can would be desired
                         break;
                     } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
-                        log.error("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught");
                         // something is fishy with our service, abort and try again later.
                         break;
                     }
@@ -271,11 +267,10 @@ public class VideoStoreImportImpl {
                 }
             } catch (Exception e) {
                 log.error("handleScanCursor: exception while moving to next cursor row!", e);
-                break;
             }
         }
 
-        if (c != null) c.close();
+        c.close();
         operations.execute();
         log.info("media scanned:" + scanned + " nfo-scraped:" + scraped);
         if (scraped > 0)
@@ -390,12 +385,10 @@ public class VideoStoreImportImpl {
                 handleScanCursor(c, cr, context, blacklist);
             } catch (SQLException | IllegalStateException e) {
                 log.error("SQLException or IllegalStateException",e);
-                break;
             } finally {
                 if (c != null) c.close();
             }
         }
-        if (c != null) c.close();
     }
 
     /** get MediaMetadata object or null for a path */
