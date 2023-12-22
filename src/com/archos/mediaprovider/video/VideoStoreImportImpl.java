@@ -682,18 +682,13 @@ public class VideoStoreImportImpl {
      */
     private static final String[] COUNT_PROJ = new String[] { "count(*)" };
     private static int getLocalCount (ContentResolver cr) {
+        Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, COUNT_PROJ, null, null, null);
         int result = 0;
-        int offset = 0;
-        while (true) {
-            Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, COUNT_PROJ, null, null, BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
-            if (c != null) {
-                if (c.moveToFirst()) {
-                    result += c.getInt(0);
-                }
-                c.close();
+        if (c != null) {
+            if (c.moveToFirst()) {
+                result = c.getInt(0);
             }
-            if (c == null || c.getCount() < WINDOW_SIZE) break;
-            offset += WINDOW_SIZE;
+            c.close();
         }
         return result;
     }
