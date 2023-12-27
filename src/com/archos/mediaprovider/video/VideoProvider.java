@@ -84,6 +84,8 @@ import io.sentry.SentryLevel;
 public class VideoProvider extends ContentProvider {
     private static final Logger log = LoggerFactory.getLogger(VideoProvider.class);
 
+    private final static boolean SKIP_THUMBNAILS = false;
+
     private DbHolder mDbHolder;
     private Handler mThumbHandler;
     private VobHandler mVobHandler;
@@ -1277,9 +1279,13 @@ public class VideoProvider extends ContentProvider {
          * @param kind could be MINI_KIND or MICRO_KIND
          */
         public static Bitmap createVideoThumbnail(Context ctx, String filePath, int kind) {
-            Bitmap res = createVideoThumbnail_(ctx, filePath, kind);
-            log.debug("createVideoThumbnail: " + res);
-            return res;
+            if (SKIP_THUMBNAILS) {
+                return null;
+            } else {
+                Bitmap res = createVideoThumbnail_(ctx, filePath, kind);
+                log.debug("createVideoThumbnail: " + res);
+                return res;
+            }
         }
         private static class Result{
             Bitmap bm;

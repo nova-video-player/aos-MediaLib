@@ -210,7 +210,7 @@ public final class VideoStore {
     }
 
     /** for {@link VideoStore.Video.VideoColumns#ARCHOS_PLAYER_PARAMS} */
-    public static int   paramsToSubtitleTrack(int params) {
+    public static int paramsToSubtitleTrack(int params) {
         return ((params >> ARCHOS_PARAMS_SIZE) & ARCHOS_PARAMS_MASK)-1;
     }
 

@@ -18,6 +18,7 @@ import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.SQLException;
@@ -81,6 +82,7 @@ public class VideoStoreImportImpl {
     private static String sdCardPath = "";
 
     private final static boolean CRASH_ON_ERROR = false;
+    private final static boolean CHECK_NFO = true;
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;
@@ -175,6 +177,8 @@ public class VideoStoreImportImpl {
     private static final String UPDATE_WHERE = "remote_id=?";
     /** scans every file in cursor and update database, also closes cursor */
     private void handleScanCursor(Cursor c, ContentResolver cr, Context context, Blacklist blacklist) {
+        // for some reasons doScan passes a a cursor with size > WINDOW_SIZE
+        // thus only process WINDOW_SIZE entries
         if (c == null || c.getCount() == 0) {
             if (c != null) c.close();
             log.debug("handleScanCursor: no media to scan");
@@ -185,61 +189,59 @@ public class VideoStoreImportImpl {
         int scraped = 0;
         int remaining = c.getCount();
 
-        CPOExecutor operations = new CPOExecutor(VideoStore.AUTHORITY, cr, 500);
+        ArrayList<ContentProviderOperation> operations = new ArrayList<ContentProviderOperation>();
         long time = System.currentTimeMillis() / 1000L;
         String timeString = String.valueOf(time);
 
         NfoParser.ImportContext importContext = new NfoParser.ImportContext();
         // Still getting SQLiteBlobTooBigException due perhaps to large blobs in the database for some reasons
-        while (true) {
-            try {
-                if (!c.moveToNext()) {
-                    log.debug("handleScanCursor: no more data, break");
-                    break; // Exit the loop when there are no more rows
-                } else {
-                    ImportState.VIDEO.setRemainingCount(remaining--);
-                    log.debug("handleScanCursor: ImportState.VIDEO.setRemainingCount " + remaining);
-                    String id;
-                    String path;
-                    int scraperID;
-                    try {
-                        id = c.getString(0);
-                        path = c.getString(1);
-                        if (path.startsWith("/"))
-                            path = "file://" + path;
-                        scraperID = c.getInt(2);
-                    } catch (IllegalStateException ignored) {
-                        log.error("handleScanCursor: IllegalStateException caught, content deleted while scanning?");
-                        //we silently ignore empty lines - it means content has been deleted while scanning
-                        continue;
-                    }
-                    Job job = new Job(path, id, blacklist);
-                    log.debug("handleScanCursor: scanning " + job.mPath);
-                    // update property with current file
-                    ContentValues cv = null;
-                    try {
-                        cv = fromRetrieverService(job, timeString);
-                    } catch (InterruptedException e) {
-                        log.error("handleScanCursor: InterruptedException caught");
-                        // won't happen but stopping as soon as we can would be desired
-                        if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                        break;
-                    } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
-                        log.error("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught");
-                        // something is fishy with our service, abort and try again later.
-                        if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                        break;
-                    }
-
-                    // using ContentProviderOperation so updates are done as single transaction
-                    operations.add(
-                            ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                                    .withSelection(UPDATE_WHERE, new String[] { job.mId })
-                                    .withValues(cv)
-                                    .build()
-                    );
-                    scanned++;
-
+        try {
+            int count = 0;
+            while (c.moveToNext() && count < WINDOW_SIZE) {
+                count++;
+                ImportState.VIDEO.setRemainingCount(remaining--);
+                log.debug("handleScanCursor: ImportState.VIDEO.setRemainingCount " + remaining + " count " + count);
+                String id;
+                String path;
+                int scraperID;
+                try {
+                    id = c.getString(0);
+                    path = c.getString(1);
+                    if (path.startsWith("/"))
+                        path = "file://" + path;
+                    scraperID = c.getInt(2);
+                } catch (IllegalStateException ignored) {
+                    log.error("handleScanCursor: IllegalStateException caught, content deleted while scanning?");
+                    //we silently ignore empty lines - it means content has been deleted while scanning
+                    continue;
+                }
+                Job job = new Job(path, id, blacklist);
+                log.debug("handleScanCursor: scanning " + job.mPath);
+                // update property with current file
+                ContentValues cv = null;
+                try {
+                    cv = fromRetrieverService(job, timeString);
+                } catch (InterruptedException e) {
+                    log.error("handleScanCursor: InterruptedException caught");
+                    // won't happen but stopping as soon as we can would be desired
+                    if (CRASH_ON_ERROR) throw new RuntimeException(e);
+                    break;
+                } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
+                    log.error("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught");
+                    // something is fishy with our service, abort and try again later.
+                    if (CRASH_ON_ERROR) throw new RuntimeException(e);
+                    break;
+                }
+                // set the scan_state correctly so that it is not picked up again
+                // using ContentProviderOperation so updates are done as single transaction but at the applyBatch
+                operations.add(
+                        ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                                .withSelection(UPDATE_WHERE, new String[]{job.mId})
+                                .withValues(cv)
+                                .build()
+                );
+                scanned++;
+                if (CHECK_NFO) {
                     // .nfo auto-parsing
                     if (job.mRetrieve && scraperID <= 0) {
                         Uri videoFile = job.mPath;
@@ -261,27 +263,30 @@ public class VideoStoreImportImpl {
                             }
                         }
                     }
-
-                    if (job.mMediaType == FileColumns.MEDIA_TYPE_VIDEO) {
-                        /* Process the FileName for more information */
-                        ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
-                        operations.add(
-                                ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                                        .withSelection(UPDATE_WHERE, new String[] { job.mId })
-                                        .withValues(cvExtra)
-                                        .build()
-                        );
-                    }
                 }
-            } catch (Exception e) {
-                log.error("handleScanCursor: exception while moving to next cursor row!", e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
+                if (job.mMediaType == FileColumns.MEDIA_TYPE_VIDEO) {
+                    /* Process the FileName for more information */
+                    ContentValues cvExtra = VideoNameProcessor.extractValuesFromPath(path);
+                    operations.add(
+                            ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                                    .withSelection(UPDATE_WHERE, new String[]{job.mId})
+                                    .withValues(cvExtra)
+                                    .build()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.error("handleScanCursor: exception while moving to next cursor row!", e);
+            if (CRASH_ON_ERROR) throw new RuntimeException(e);
+        } finally {
+            try {
+                cr.applyBatch(VideoStore.AUTHORITY, operations);
+            } catch (RemoteException | OperationApplicationException e1) {
+                log.error("handleScanCursor: RemoteException or OperationApplicationException applying batch", e1);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e1);
             }
         }
-
         if (c != null) c.close();
-        operations.execute();
         log.info("handleScanCursor: media scanned:" + scanned + " nfo-scraped:" + scraped);
         if (scraped > 0)
             TraktService.onNewVideo(context);
@@ -374,8 +379,11 @@ public class VideoStoreImportImpl {
     private void doScan(ContentResolver cr, Context context, Blacklist blacklist) {
         log.debug("doScan: Scanning Metadata all unscanned files");
         Cursor c = null;
+        int cursorCount = 0;
         while (true) {
             try {
+                // for some reasons this does return a cursor with size > WINDOW_SIZE
+                // thus only process WINDOW_SIZE entries in handleScanCursor
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>30 requires bundle to LIMIT
                     final Bundle bundle = new Bundle();
                     bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, WHERE_UNSCANNED);
@@ -384,17 +392,20 @@ public class VideoStoreImportImpl {
                     bundle.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
                     bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
                     bundle.putInt(ContentResolver.QUERY_ARG_OFFSET, 0);
+                    log.debug("doScan: >Q new batch fetching cursor with bundle=" + bundle.toString());
                     c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, bundle, null);
                 } else {
                     c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ,
                             WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE);
                 }
-                log.debug("doScan: new batch fetching window=" + WINDOW_SIZE + " 0<= entries <=" + WINDOW_SIZE + ", new batch cursor has size " + c.getCount());
-                if (c.getCount() == 0) {
-                    log.debug("doScan: no more data");
-                    break; // break out if no more data
-                }
+                if (c != null) cursorCount = c.getCount();
+                else cursorCount = 0;
+                log.debug("doScan: new batch fetching window=" + WINDOW_SIZE + " 0<= entries <=" + WINDOW_SIZE + ", new batch cursor has size " + cursorCount);
                 handleScanCursor(c, cr, context, blacklist);
+                if (cursorCount < WINDOW_SIZE) { // avoid infinite loop: trusts that handleScanCursor processes all entries
+                    log.debug("doScan: no more data after handleScanCursor, c.getCount()={}<WINDOW_SIZE={} exit loop", cursorCount, WINDOW_SIZE);
+                    break;
+                }
             } catch (SQLException | IllegalStateException e) {
                 log.error("SQLException or IllegalStateException",e);
                 if (CRASH_ON_ERROR) throw new RuntimeException(e);
