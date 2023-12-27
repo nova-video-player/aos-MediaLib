@@ -693,15 +693,22 @@ public class VideoStoreImportImpl {
         int result = 0;
         int offset = 0;
         while (true) {
-            Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, COUNT_PROJ, null, null, BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
-            if (c != null) {
-                if (c.moveToFirst()) {
-                    result += c.getInt(0);
+            try {
+                Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, COUNT_PROJ, null, null, BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
+                if (c != null) {
+                    if (c.moveToFirst()) {
+                        result += c.getInt(0);
+                    }
+                    c.close();
                 }
-                c.close();
+                if (c == null || c.getCount() < WINDOW_SIZE) break;
+                offset += WINDOW_SIZE;
+            } catch (Exception e) {
+                log.error("getLocalCount: exception while moving to next cursor row!", e);
+                break;
+            } finally {
+                if (c != null) c.close();
             }
-            if (c == null || c.getCount() < WINDOW_SIZE) break;
-            offset += WINDOW_SIZE;
         }
         return result;
     }
