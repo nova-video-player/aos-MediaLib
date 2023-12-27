@@ -532,6 +532,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
             } catch (SQLException | IllegalStateException e) {
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+                break;
             } finally {
                 if (c != null) c.close();
             }
@@ -564,6 +565,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
             } catch (SQLException | IllegalStateException e) {
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+                break;
             } finally {
                 if (c != null) c.close();
             }
@@ -595,6 +597,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
             } catch (SQLException | IllegalStateException e) {
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+                break;
             } finally {
                 if (c != null) c.close();
             }
