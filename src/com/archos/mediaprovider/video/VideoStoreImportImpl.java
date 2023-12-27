@@ -80,6 +80,8 @@ public class VideoStoreImportImpl {
     private static String BLACKLIST;
     private static String sdCardPath = "";
 
+    private final static boolean CRASH_ON_ERROR = false;
+
     public VideoStoreImportImpl(Context context) {
         mContext = context;
         File sdCardFile = context.getExternalFilesDir(null);
@@ -196,7 +198,7 @@ public class VideoStoreImportImpl {
                     break; // Exit the loop when there are no more rows
                 } else {
                     ImportState.VIDEO.setRemainingCount(remaining--);
-                    log.debug("doFullImport: ImportState.VIDEO.setRemainingCount " + remaining);
+                    log.debug("handleScanCursor: ImportState.VIDEO.setRemainingCount " + remaining);
                     String id;
                     String path;
                     int scraperID;
@@ -220,10 +222,12 @@ public class VideoStoreImportImpl {
                     } catch (InterruptedException e) {
                         log.error("handleScanCursor: InterruptedException caught");
                         // won't happen but stopping as soon as we can would be desired
+                        if (CRASH_ON_ERROR) throw new RuntimeException(e);
                         break;
                     } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
                         log.error("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught");
                         // something is fishy with our service, abort and try again later.
+                        if (CRASH_ON_ERROR) throw new RuntimeException(e);
                         break;
                     }
 
@@ -271,13 +275,14 @@ public class VideoStoreImportImpl {
                 }
             } catch (Exception e) {
                 log.error("handleScanCursor: exception while moving to next cursor row!", e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             }
         }
 
         if (c != null) c.close();
         operations.execute();
-        log.info("media scanned:" + scanned + " nfo-scraped:" + scraped);
+        log.info("handleScanCursor: media scanned:" + scanned + " nfo-scraped:" + scraped);
         if (scraped > 0)
             TraktService.onNewVideo(context);
     }
@@ -338,6 +343,7 @@ public class VideoStoreImportImpl {
     private static String WHERE_FILE = "_data = ?";
     /** executes metadata scan of files defined by Uri */
     public void doScan(Uri what) {
+        log.debug("doScan: Scanning Metadata single uri: " + what);
         String path = what.getPath();
 
         if (path.endsWith("/"))
@@ -366,6 +372,7 @@ public class VideoStoreImportImpl {
             + ") AND _id < " + VideoOpenHelper.SCANNED_ID_OFFSET;
     /** executes metadata scan of every unscanned file */
     private void doScan(ContentResolver cr, Context context, Blacklist blacklist) {
+        log.debug("doScan: Scanning Metadata all unscanned files");
         Cursor c = null;
         while (true) {
             try {
@@ -390,6 +397,7 @@ public class VideoStoreImportImpl {
                 handleScanCursor(c, cr, context, blacklist);
             } catch (SQLException | IllegalStateException e) {
                 log.error("SQLException or IllegalStateException",e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             } finally {
                 if (c != null) c.close();
@@ -408,6 +416,7 @@ public class VideoStoreImportImpl {
 
     /** creates ContentValues via MediaRetrieverService, can't be null */
     private ContentValues fromRetrieverService(Job job, String timeString) throws InterruptedException, MediaRetrieverServiceClient.ServiceManagementException {
+        log.debug("fromRetrieverService: Scanning metadata of: " + job.mPath);
         ContentValues cv = new ContentValues();
         String path = job.mPath.toString();
         // tell mediaprovider that this update originates from here.
@@ -705,6 +714,7 @@ public class VideoStoreImportImpl {
                 offset += WINDOW_SIZE;
             } catch (Exception e) {
                 log.error("getLocalCount: exception while moving to next cursor row!", e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             }
         }
