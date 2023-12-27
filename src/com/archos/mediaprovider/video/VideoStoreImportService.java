@@ -98,6 +98,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private static final int WINDOW_SIZE = 2000;
 
+    private final static boolean CRASH_ON_ERROR = false;
+
     public VideoStoreImportService() {
         log.debug("VideoStoreImportService CTOR");
     }
@@ -532,6 +534,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
             } catch (SQLException | IllegalStateException e) {
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             } finally {
                 if (c != null) c.close();
@@ -565,6 +568,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
             } catch (SQLException | IllegalStateException e) {
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             } finally {
                 if (c != null) c.close();
@@ -597,6 +601,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
             } catch (SQLException | IllegalStateException e) {
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             } finally {
                 if (c != null) c.close();
