@@ -20,6 +20,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.database.SQLException;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -360,34 +361,34 @@ public class VideoStoreImportImpl {
             + ") AND _id < " + VideoOpenHelper.SCANNED_ID_OFFSET;
     /** executes metadata scan of every unscanned file */
     private void doScan(ContentResolver cr, Context context, Blacklist blacklist) {
-        Cursor c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, WHERE_UNSCANNED, null, null);
-        final int numberOfRows = c.getCount();
-        int numberOfRowsRemaining = numberOfRows;
-        c.close();
-        int window = WINDOW_SIZE;
-        // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
-        // note that the db is being modified during import
-        do {
-            if (window > numberOfRowsRemaining)
-                window = numberOfRowsRemaining;
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>30 requires bundle to LIMIT
-                final Bundle bundle = new Bundle();
-                bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, WHERE_UNSCANNED);
-                bundle.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
-                bundle.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{BaseColumns._ID});
-                bundle.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
-                bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, window);
-                bundle.putInt(ContentResolver.QUERY_ARG_OFFSET, 0);
-                c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, bundle, null);
-            } else {
-                c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ,
-                        WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + window);
+        Cursor c = null;
+        while (true) {
+            try {
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) { // API>30 requires bundle to LIMIT
+                    final Bundle bundle = new Bundle();
+                    bundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, WHERE_UNSCANNED);
+                    bundle.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
+                    bundle.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{BaseColumns._ID});
+                    bundle.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+                    bundle.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
+                    bundle.putInt(ContentResolver.QUERY_ARG_OFFSET, 0);
+                    c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ, bundle, null);
+                } else {
+                    c = cr.query(VideoStoreInternal.FILES, ID_DATA_PROJ,
+                            WHERE_UNSCANNED, null, BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE);
+                }
+                log.debug("doScan: new batch fetching window=" + WINDOW_SIZE + " 0<= entries <=" + WINDOW_SIZE + ", new batch cursor has size " + c.getCount());
+                if (c.getCount() == 0) {
+                    log.debug("doScan: no more data");
+                    break; // break out if no more data
+                }
+                handleScanCursor(c, cr, context, blacklist);
+            } catch (SQLException | IllegalStateException e) {
+                log.error("SQLException or IllegalStateException",e);
+            } finally {
+                if (c != null) c.close();
             }
-            log.debug("doScan: new batch fetching window=" + window + " 0<= entries <=" + window + "/" + numberOfRowsRemaining + ", new batch cursor has size " + c.getCount());
-            handleScanCursor(c, cr, context, blacklist);
-            numberOfRowsRemaining -= window;
-            c.close();
-        } while (numberOfRowsRemaining > 0);
+        }
     }
 
     /** get MediaMetadata object or null for a path */
