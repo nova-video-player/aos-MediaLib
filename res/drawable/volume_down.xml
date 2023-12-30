@@ -4,9 +4,9 @@
 
   <item
        android:state_pressed="false"
-       android:drawable="@drawable/volume_minus" />
+       android:drawable="@drawable/new_volume_minus" />
   <item
        android:state_pressed="true"
-       android:drawable="@drawable/volume_minus_pressed" />
+       android:drawable="@drawable/new_volume_minus_pressed" />
 
 </selector>
