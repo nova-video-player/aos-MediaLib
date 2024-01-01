@@ -131,7 +131,8 @@ dependencies {
     implementation ('com.uwetrottmann.trakt5:trakt-java:6.11.2') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
-    implementation 'org.threeten:threetenbp:1.6.8'
+    implementation 'com.jakewharton.threetenabp:threetenabp:1.4.6'
+    //implementation 'org.threeten:threetenbp:1.6.8'
     api ('org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.2') {
         exclude group:'org.apache.oltu.oauth2' , module: 'org.apache.oltu.oauth2.common'
     }
