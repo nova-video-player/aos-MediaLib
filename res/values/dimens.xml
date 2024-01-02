@@ -97,25 +97,6 @@
     <dimen name="quick_action_row_height">50dip</dimen>
     <dimen name="quick_action_anchor_size">24dip</dimen>    <!-- used to adjust the vertical distance between the popup and the anchor -->
 
-    <!-- ============ VIDEO PLAYER ============ -->
-    <dimen name="video_title_marginTop">0dip</dimen>
-    <dimen name="volume_bar_marginTop">8dip</dimen>
-    <dimen name="volume_bar_marginBottom">-18dip</dimen> <!-- negative bottom margin to have the volume bar stick to the bottom of the screen in phone mode (while it is floating on tablets) -->
-    <dimen name="volume_button_vertical_margin">0dip</dimen>
-
-    <dimen name="player_time_text_size">14dip</dimen>
-    <dimen name="player_button_padding_full">6dip</dimen>
-    <dimen name="player_button_padding_half">0dip</dimen>
-    <dimen name="player_button_padding_small">0dip</dimen>
-    <dimen name="player_button_margin_small">0dip</dimen>
-    <dimen name="player_button_margin_half">2dip</dimen>
-    <dimen name="player_button_margin_full">4dip</dimen>
-    <dimen name="player_subtitles_popup_width">300dip</dimen>
-
-    <dimen name="control_bar_margin_left">58dip</dimen>
-    <dimen name="control_bar_margin_right">-18dip</dimen>
-    <dimen name="control_bar_margin_bottom">-16dip</dimen> <!-- negative bottom margin to have the control bar stick to the bottom of the screen in phone mode (while it is floating on tablets) -->
-
     <!-- based on base/core/res/res/layout/popup_menu_item_layout.xml -->
     <dimen name="track_menu_minWidth">196dip</dimen>
     <dimen name="track_menu_padding">16dip</dimen>

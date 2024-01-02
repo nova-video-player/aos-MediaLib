@@ -96,22 +96,6 @@
 <dimen name="quick_action_row_height">37dip</dimen>
 <dimen name="quick_action_anchor_size">18dip</dimen>
 
-    <!-- ============ VIDEO PLAYER ============ -->
-<dimen name="video_title_marginTop">0dip</dimen>
-<dimen name="volume_bar_marginTop">6dip</dimen>
-<dimen name="volume_bar_marginBottom">-13dip</dimen>
-<dimen name="volume_button_vertical_margin">0dip</dimen>
-
-<dimen name="player_time_text_size">10dip</dimen>
-<dimen name="player_button_padding_full">4dip</dimen>
-<dimen name="player_button_padding_half">0dip</dimen>
-<dimen name="player_button_padding_small">0dip</dimen>
-<dimen name="player_subtitles_popup_width">225dip</dimen>
-
-<dimen name="control_bar_margin_left">43dip</dimen>
-<dimen name="control_bar_margin_right">-13dip</dimen>
-<dimen name="control_bar_margin_bottom">-12dip</dimen>
-
     <!-- based on base/core/res/res/layout/popup_menu_item_layout.xml -->
 <dimen name="track_menu_minWidth">147dip</dimen>
 <dimen name="track_menu_padding">12dip</dimen>
