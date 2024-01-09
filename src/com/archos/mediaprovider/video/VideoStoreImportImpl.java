@@ -573,22 +573,28 @@ public class VideoStoreImportImpl {
         Cursor allFiles = null;
         ContentValues cv = null;
         ExtStorageManager extStorageManager = ExtStorageManager.getExtStorageManager();
+        String[] projection;
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
             where = WHERE_ALL_AP + BLACKLIST;
+            projection = FILES_PROJECTION_AP;
             if (minId != null) {
                 where = WHERE_MIN_ID_AP + BLACKLIST;
                 whereArgs = new String[]{minId};
             }
-            allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
-                    FILES_PROJECTION_AP, where, whereArgs, BaseColumns._ID));
         } else {
             where = WHERE_ALL_BP + BLACKLIST;
+            projection = FILES_PROJECTION_BP;
             if (minId != null)  {
                 where = WHERE_MIN_ID_BP + BLACKLIST;
                 whereArgs = new String[] { minId };
             }
+        }
+        try { // for some reasons external_primary is not readable on some devices hinting READ_EXTERNAL_STORAGE permission missing
             allFiles = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
-                    FILES_PROJECTION_BP, where, whereArgs, BaseColumns._ID));
+                    projection, where, whereArgs, BaseColumns._ID));
+        } catch (IllegalArgumentException e) {
+            log.error("copyData: exception while querying external_primary, missing READ_EXTERNAL_STORAGE?", e);
+            if (CRASH_ON_ERROR) throw new RuntimeException(e);
         }
         if (allFiles != null) {
             int count = allFiles.getCount();
