@@ -87,6 +87,7 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
         // prevent to be executed if app is in background
         if (!AppState.isForeGround()) {
             log.warn("onHandleIntent: app is in background exiting!");
+            stopSelf();
             return;
         }
         if (ACTION_CHECK_SMB.equals(intent.getAction())) {
@@ -99,9 +100,16 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
 
     /** use to issue a check of the smb:// state */
     public static void start(Context context) {
+        log.debug("start");
         Intent intent = new Intent(context, RemoteStateService.class);
         intent.setAction(ACTION_CHECK_SMB);
         context.startService(intent);
+    }
+
+    public static void stop(Context context) {
+        log.debug("stop");
+        Intent intent = new Intent(context, RemoteStateService.class);
+        context.stopService(intent);
     }
 
     protected void handleDb(Context context, boolean hasConnection, boolean hasLocalConnection) {

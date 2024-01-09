@@ -21,6 +21,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.content.SharedPreferences;
 import android.content.UriMatcher;
@@ -1388,6 +1389,10 @@ public class VideoProvider extends ContentProvider {
 
     protected void handleForeGround(boolean foreground) {
         final Context context = getContext();
+        if (context == null) {
+            log.error("handleForeGround: context is null");
+            return;
+        }
         if (foreground) {
             log.trace("App now in ForeGround");
             UpnpServiceManager.restartUpnpServiceIfWasStartedBefore();
@@ -1398,6 +1403,7 @@ public class VideoProvider extends ContentProvider {
             log.trace("App now in BackGround");
             UpnpServiceManager.stopServiceIfLaunched();
             removeNetworkListener();
+            RemoteStateService.stop(context);
         }
     }
 
