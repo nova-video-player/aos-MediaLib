@@ -162,13 +162,17 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     @Override
     public void onCreate() {
         // executed on each startService
-        if (nm == null && n == null) {
-            n = createNotification();
+        if (AppState.isForeGround()) {
+            if (nm == null && n == null) {
+                n = createNotification();
+            }
+            startForeground(NOTIFICATION_ID, n);
+            log.debug("onCreate: app in foreground created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null) + " isForeground=" + AppState.isForeGround());
+        } else {
+            log.debug("onCreate: app in background stopSelf!");
+            stopSelf();
         }
-        startForeground(NOTIFICATION_ID, n);
-        log.debug("onCreate: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
-        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null) + " isForeground=" + AppState.isForeGround());
-
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
         // setup background worker thread
@@ -365,14 +369,12 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         Intent intent = new Intent(context, VideoStoreImportService.class);
         if (AppState.isForeGround()) {
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in foreground calling ContextCompat.startForegroundService");
-            ContextCompat.startForegroundService(context, intent); // triggers an initial video import on local storage because files might have been created meanwhile
             log.debug("startService: app in foreground calling ContextCompat.startForegroundService");
+            ContextCompat.startForegroundService(context, intent); // triggers an initial video import on local storage because files might have been created meanwhile
         } else {
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in background NOT calling ContextCompat.startForegroundService");
             log.debug("startService: app in background NOT calling ContextCompat.startForegroundService");
         }
-        // it used to be a bound service but with Android O it is not anymore
-        // context.bindService(intent, new LoggingConnection(), Context.BIND_AUTO_CREATE);
     }
 
     public static void stopService(Context context) {
