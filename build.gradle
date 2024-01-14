@@ -128,11 +128,11 @@ dependencies {
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.3'
     implementation 'org.json:json:20231013'
+    // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     implementation ('com.uwetrottmann.trakt5:trakt-java:6.11.2') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
     implementation 'com.jakewharton.threetenabp:threetenabp:1.4.6'
-    //implementation 'org.threeten:threetenbp:1.6.8'
     api ('org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.2') {
         exclude group:'org.apache.oltu.oauth2' , module: 'org.apache.oltu.oauth2.common'
     }
