@@ -360,6 +360,12 @@ public class ISO639codes {
         }
     }
 
+    public static boolean isLanguageInString(String language, String string) {
+        // check if string is of the form "language" or "description (language)"
+        String pattern = "^" + language + "$|^.* \\(" + language + "\\)$";
+        return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(string).matches();
+    }
+
     public static String replaceLanguageCodeInString(String string) {
         // treat strings being "l_XYZ" or "l_XY" or "XYZ" or "XY" or "title (l_XYZ)" or "title (l_XY)"
         // and replace it with locale language corresponding to XY or XYZ letter code
