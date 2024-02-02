@@ -135,12 +135,13 @@ dependencies {
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.10.0'
-    // investigate https://mvnrepository.com/artifact/org.jupnp/jupnp and https://github.com/UniversalMediaServer/UniversalMediaServer/pull/2789
-    // cannot upgrade to higher than 2.5.2 due to https://github.com/jupnp/jupnp/issues/144
-    api 'org.jupnp:org.jupnp:2.5.2'
-    api 'org.jupnp:org.jupnp.support:2.5.2'
-    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'9.3.14.v20161028'
-    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.3.14.v20161028'
-    implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'9.3.14.v20161028'
+    api files('libs/jupnp.jar')
+    api files('libs/jupnp-android.jar')
+    api files('libs/jupnp-support.jar')
+    // jetty required by jupnp and going above 9.4.14 requires minSdkVersion 26
+    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version:'9.4.14.v20181114'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.4.14.v20181114'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-client', version:'9.4.14.v20181114'
+    implementation 'javax.servlet:javax.servlet-api:4.0.1'
     implementation 'io.sentry:sentry:7.0.0'
 }
