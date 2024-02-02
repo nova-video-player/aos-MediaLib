@@ -25,9 +25,6 @@ import android.os.Looper;
 
 import com.archos.environment.NetworkState;
 
-import com.archos.mediacenter.upnp.AndroidUpnpService;
-import com.archos.mediacenter.upnp.AndroidUpnpServiceImpl;
-
 import org.jupnp.controlpoint.ActionCallback;
 import org.jupnp.model.message.header.UDADeviceTypeHeader;
 import org.jupnp.model.meta.Action;
@@ -40,6 +37,8 @@ import org.jupnp.model.types.UDAServiceId;
 import org.jupnp.registry.DefaultRegistryListener;
 import org.jupnp.registry.Registry;
 import org.jupnp.registry.RegistryListener;
+import org.jupnp.android.AndroidUpnpService;
+import org.jupnp.android.AndroidUpnpServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -270,10 +269,13 @@ public class UpnpServiceManager {
             mAndroidUpnpService = (AndroidUpnpService) service;
             mState = State.RUNNING;
             log.debug("State RUNNING");
-            // TODO MARC see https://community.openhab.org/t/main-class-in-jupnp-code-fails/119001
-            mAndroidUpnpService.startup();
             // Listen for discovery stuff
-            mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+            if (mAndroidUpnpService != null) {
+                mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
+                mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+            } else {
+                log.error("onServiceConnected: mAndroidUpnpService is null!");
+            }
 
             // Start searching for servers periodically
             mUiHandler.removeCallbacks(mPeriodicSearchRunnable); // better safe than sorry
@@ -378,7 +380,8 @@ public class UpnpServiceManager {
             Action action = service.getAction("Browse");
             if (action == null) return;
 
-            log.debug("addDevice with hash code " + device.hashCode());
+            log.debug("deviceAdded: " + device.getDisplayString() + " " + device.getDetails().getFriendlyName() + " " + device.getDetails().getSerialNumber() + " " + device.getDetails().getManufacturerDetails().getManufacturer());
+            log.debug("deviceAdded: addDevice with hash code " + device.hashCode());
             synchronized (this) {
                 // Add to list
                 mDevices.put(Integer.valueOf(device.hashCode()), device);
