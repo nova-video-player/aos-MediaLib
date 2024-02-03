@@ -97,9 +97,6 @@ tasks.register('ndkBuild', Exec) {
     myCmd.add("native_libnativehelper")
     myCmd.add("native_avos_full")
     myCmd.add("native_torrentd")
-    //myCmd.add("trakt-java")
-    //myCmd.add("seamless")
-    //myCmd.add("cling")
     commandLine myCmd
 }
 
@@ -108,9 +105,6 @@ tasks.register('ndkClean', Exec) {
     List<String> myCmd = new ArrayList<String>()
     myCmd.add("make")
     myCmd.add("native_clean")
-    //myCmd.add("external_clean_trakt-java")
-    //myCmd.add("external_clean_seamless")
-    //myCmd.add("external_clean_cling")
     commandLine myCmd
 }
 
