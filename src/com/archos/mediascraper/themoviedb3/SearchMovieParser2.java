@@ -62,6 +62,9 @@ public class SearchMovieParser2 {
             Collections.sort(resultsMovie, new Comparator<BaseMovie>() {
                 @Override
                 public int compare(final BaseMovie bm1, final BaseMovie bm2) {
+                    if (bm1.popularity == null && bm2.popularity == null) return 0;
+                    if (bm1.popularity == null) return -1;
+                    if (bm2.popularity == null) return 1;
                     if (bm1.popularity > bm2.popularity) {
                         return -1;
                     } else if (bm1.popularity.equals(bm2.popularity)) {
