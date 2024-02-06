@@ -253,7 +253,6 @@ public class VideoProvider extends ContentProvider {
         String groupby = uri.getQueryParameter("group");
         String having = uri.getQueryParameter("having");
 
-
         // query our custom files tables directly
         if (table == RAW) {
             String tableName = uri.getLastPathSegment();
@@ -321,6 +320,12 @@ public class VideoProvider extends ContentProvider {
             default:
                 throw new IllegalStateException("Unknown Uri : " + uri);
         }
+
+        // TOFIX: seen on sentry, projectionIn can be null, let's initialize it to empty array
+        if (projectionIn == null) {
+            projectionIn = new String[] {};
+        }
+
         Cursor c = qb.query(db, projectionIn, selection,
                 combine(prependArgs, selectionArgs), groupby, having, sort, limit, cancellationSignal);
 
