@@ -568,8 +568,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                         log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
                     }
                 }
-            } catch (SQLException | IllegalStateException e) {
-                log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
+            } catch (RuntimeException e) {
+                log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException or CursorWindowAllocationException",e);
                 if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
             } finally {
