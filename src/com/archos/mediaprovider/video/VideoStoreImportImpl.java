@@ -757,18 +757,54 @@ public class VideoStoreImportImpl {
     };
     /** helper to get a comma separated list of all ids */
     private static String getRemoteIdList (ContentResolver cr) {
-        Cursor c = cr.query(MediaStore.Files.getContentUri("external"), REMOTE_LIST_PROJECTION, null, null, null);
         StringBuilder sb = new StringBuilder();
         String prefix = "";
-        if (c != null) {
-            c.moveToFirst();
-            while (!c.isAfterLast()) {
-                sb.append(prefix).append(c.getString(0));
-                prefix = ",";
-                c.moveToNext();
+        int offset = 0;
+        Cursor c = null;
+        while (true) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API>=30 requires bundle to LIMIT
+                    Bundle queryArgs = new Bundle();
+                    queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, null);
+                    queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
+                    queryArgs.putString(ContentResolver.QUERY_ARG_SORT_COLUMNS, BaseColumns._ID);
+                    queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+                    queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
+                    queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offset);
+                    c = cr.query(MediaStore.Files.getContentUri("external"), REMOTE_LIST_PROJECTION, queryArgs, null);
+                } else {
+                    c = cr.query(MediaStore.Files.getContentUri("external"),
+                            REMOTE_LIST_PROJECTION, null, null,
+                            BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
+                }
+
+                int count = 0;
+
+                if (c != null) {
+                    while (c.moveToNext() && count < WINDOW_SIZE) {
+                        count++;
+                        sb.append(prefix).append(c.getString(0));
+                        prefix = ",";
+                    }
+                    log.debug("getRemoteIdList: count=" + count + " WINDOW_SIZE=" + WINDOW_SIZE + " offset=" + offset);
+                    if (count < WINDOW_SIZE) {
+                        c.close();
+                        break;
+                    }
+                    offset += WINDOW_SIZE;
+                    c.close();
+                } else {
+                    break;
+                }
+            } catch (Exception e) {
+                log.error("getRemoteIdList: exception while moving to next cursor row!", e);
+                if (CRASH_ON_ERROR) throw new RuntimeException(e);
+                break;
+            } finally {
+                if (c != null) c.close();
             }
-            c.close();
         }
+
         String result = sb.toString();
         log.trace("getRemoteIdList: ids of files visible " + result);
         return TextUtils.isEmpty(result) ? "" : result;
