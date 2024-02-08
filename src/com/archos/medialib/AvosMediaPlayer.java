@@ -21,6 +21,7 @@ import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
@@ -61,6 +62,9 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     private native void create(Object weakReference);
 
+    private HandlerThread mHandlerThread;
+    private Handler mHandler;
+
     public AvosMediaPlayer() {
         log.info("AvosMediaPlayer: Initializing AvosMediaPlayer");
         Looper looper;
@@ -72,6 +76,10 @@ public class AvosMediaPlayer implements IMediaPlayer {
             mEventHandler = null;
         }
         create(new WeakReference<AvosMediaPlayer>(this));
+
+        mHandlerThread = new HandlerThread("AvosMediaPlayerCommands");
+        mHandlerThread.start();
+        mHandler = new Handler(mHandlerThread.getLooper());
     }
 
     protected void finalize() throws Throwable {
@@ -332,6 +340,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
             mSmbProxy.stop();
             mSmbProxy = null;
         }
+        mHandlerThread.quitSafely();
     }
 
     public native void prepareAsync() throws IllegalStateException;
@@ -340,20 +349,26 @@ public class AvosMediaPlayer implements IMediaPlayer {
     
     private native void nativeStart() throws IllegalStateException;
     public void start() throws IllegalStateException {
-        stayAwake(true);
-        nativeStart();
+        mHandler.post(() -> {
+            stayAwake(true);
+            nativeStart();
+        });
     }
 
     private native void nativeStop() throws IllegalStateException;
     public void stop() throws IllegalStateException {
-        stayAwake(false);
-        nativeStop();
+        mHandler.post(() -> {
+            stayAwake(true);
+            nativeStop();
+        });
     }
 
     private native void nativePause() throws IllegalStateException;
     public void pause() throws IllegalStateException {
-        stayAwake(false);
-        nativePause();
+        mHandler.post(() -> {
+            stayAwake(true);
+            nativePause();
+        });
     }
 
     public native int getDuration();
