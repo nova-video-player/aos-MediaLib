@@ -15,6 +15,7 @@
 package com.archos.mediacenter.utils.videodb;
 
 import androidx.loader.app.LoaderManager;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -26,7 +27,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
-import android.util.Log;
 
 import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediacenter.filecoreextension.UriUtils;
@@ -42,14 +42,16 @@ import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loader.OnLoadCompleteListener<Cursor> {
-    private static final String TAG = "IndexHelper";
-    private static final boolean DBG = false;
 
+    private static final Logger log = LoggerFactory.getLogger(IndexHelper.class);
     private final Context mContext;
     private final LoaderManager mLoaderManager;
     private final int mLoaderManagerId;
@@ -153,8 +155,9 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
         @Override
         protected Void doInBackground(Void... params) {
-            if (DBG) Log.d(TAG, "position: "+mVideoInfo.resume+" - id: "+mVideoInfo.id);
+            log.debug("position: "+mVideoInfo.resume+" - id: "+mVideoInfo.id);
             if (mVideoInfo.id != -1) {
+                // this stores the audioTrack and subtitleTrack in the same column
                 int playerParams = VideoStore.paramsFromTracks(mVideoInfo.audioTrack, mVideoInfo.subtitleTrack);
                 final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
                 ContentResolver resolver = mContext.getContentResolver();
@@ -171,7 +174,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
                                 values, where, null);
             }
             XmlDb xmlDb = null;
-            if (DBG) Log.d(TAG, "mExportDb: "+mExportDb+" - isLocal: "+FileUtils.isLocal(mVideoInfo.uri)+" isSlowRemote "+FileUtils.isSlowRemote(mVideoInfo.uri));
+            log.debug("mExportDb: "+mExportDb+" - isLocal: "+FileUtils.isLocal(mVideoInfo.uri)+" isSlowRemote "+FileUtils.isSlowRemote(mVideoInfo.uri));
             if (mExportDb &&
                     !FileUtils.isLocal(mVideoInfo.uri)&&
                     mVideoInfo.duration>0
@@ -335,8 +338,10 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
             mRemoteVideoInfo.id = mVideoId;
         if (mAutoScrape && !mLocalVideoInfo.isScraped&& UriUtils.isIndexable(mUri))
             requestScraping();
-        if (mListener != null)
+        if (mListener != null) {
+            log.debug("onVideoDbInfo "+mLocalVideoInfo+" "+mRemoteVideoInfo);
             mListener.onVideoDb(mLocalVideoInfo, mRemoteVideoInfo);
+        }
     }
 
     private void requestScraping() {
@@ -411,7 +416,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        if (DBG) Log.d(TAG, "onLoaderReset");
+        log.debug("onLoaderReset");
     }
 
     @Override
@@ -420,7 +425,7 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
     }
 
     public void writeVideoInfo(VideoDbInfo videoInfo, boolean exportDb) {
-        if (DBG) Log.d(TAG, "writeVideoInfo "+exportDb);
+        log.debug("writeVideoInfo "+exportDb);
         new WriteVideoInfoTask(mContext, videoInfo, exportDb).execute();
     }
 }
