@@ -121,25 +121,30 @@ public class VideoStoreImportImpl {
         // replace everything with new data
         int copy = copyData(mCr, null);
 
-        // delete everything that was not replaced, ! only if it is on primary local storage !
-        String existingFiles = getRemoteIdList(mCr);
-        int del = 0;
-        // set files not seen to hidden state. They might be deleted but we don't know for sure.
-        ContentValues cvHidden = new ContentValues();
-        cvHidden.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
-        ContentValues cvPresent = new ContentValues();
-        cvPresent.put("volume_hidden", 0);
-        // mark not present videos as hidden
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cvHidden, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
-        // mark videos present but hidden as present (solves a bug on shield with external USB storage indexed files hidden)
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cvPresent, "_id IN (" + existingFiles + ") AND volume_hidden != 0", null);
-
-        int countEnd = getLocalCount(mCr);
-        log.info("full import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
-
-        // then trigger scan of new data
-        doScan(mCr, mContext, mBlackList);
-
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            // External storage is available, proceed with your operation
+            // delete everything that was not replaced, ! only if it is on primary local storage !
+            String existingFiles = getRemoteIdList(mCr);
+            int del = 0;
+            // set files not seen to hidden state. They might be deleted but we don't know for sure.
+            ContentValues cvHidden = new ContentValues();
+            cvHidden.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
+            ContentValues cvPresent = new ContentValues();
+            cvPresent.put("volume_hidden", 0);
+            // mark not present videos as hidden
+            mCr.update(VideoStoreInternal.FILES_IMPORT, cvHidden, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
+            // mark videos present but hidden as present (solves a bug on shield with external USB storage indexed files hidden)
+            mCr.update(VideoStoreInternal.FILES_IMPORT, cvPresent, "_id IN (" + existingFiles + ") AND volume_hidden != 0", null);
+            int countEnd = getLocalCount(mCr);
+            log.info("full import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
+            // then trigger scan of new data
+            doScan(mCr, mContext, mBlackList);
+            // ...
+        } else {
+            // External storage is not available, handle this situation
+            log.error("doFullImport: external storage (volume: 'external_primary') is not available");
+        }
         ImportState.VIDEO.setState(State.IDLE);
         log.debug("doFullImport: ImportState.VIDEO.setState(State.IDLE)");
     }
@@ -149,21 +154,27 @@ public class VideoStoreImportImpl {
         ImportState.VIDEO.setState(countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT);
         log.debug("doIncrementalImport: ImportState.VIDEO.setState " + (countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT));
 
-        String existingFiles = getRemoteIdList(mCr);
-        int del = 0;
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            String existingFiles = getRemoteIdList(mCr);
+            int del = 0;
 
-        // 1. Hide files that are currently not visible, they might be removed at that point but we don't know for sure.
-        ContentValues cv = new ContentValues();
-        cv.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
-        mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
+            // 1. Hide files that are currently not visible, they might be removed at that point but we don't know for sure.
+            ContentValues cv = new ContentValues();
+            cv.put("volume_hidden", Long.valueOf(System.currentTimeMillis() / 1000));
+            mCr.update(VideoStoreInternal.FILES_IMPORT, cv, "_id NOT IN (" + existingFiles + ") AND volume_hidden = 0", null);
 
-        // 2. copy all remote files with higher id than our max id
-        String maxLocal = getMaxId(mCr);
-        int copy = copyData(mCr, maxLocal);
-        int countEnd = getLocalCount(mCr);
-        log.info("part import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
-        // then trigger scan of new data
-        doScan(mCr, mContext, mBlackList);
+            // 2. copy all remote files with higher id than our max id
+            String maxLocal = getMaxId(mCr);
+            int copy = copyData(mCr, maxLocal);
+            int countEnd = getLocalCount(mCr);
+            log.info("part import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
+            // then trigger scan of new data
+            doScan(mCr, mContext, mBlackList);
+        } else {
+            // External storage is not available, handle this situation
+            log.error("doIncrementalImport: external storage (volume: 'external_primary') is not available");
+        }
 
         ImportState.VIDEO.setState(State.IDLE);
         log.debug("doFullImport: ImportState.VIDEO.setState(State.IDLE)");
