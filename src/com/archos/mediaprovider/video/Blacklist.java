@@ -65,7 +65,7 @@ public class Blacklist {
     };
 
     private static final String[] BLACKLISTED_CAM_DIRS = {
-            "/WhatsApp", "/Android/media/com.whatsapp",
+            "/com.whatsapp", "/WhatsApp", "/Android/media/com.whatsapp",
             "/Android/data",
             //"/Android/data/org.courville.nova",
             "/DCIM", "/Camera",
@@ -76,6 +76,9 @@ public class Blacklist {
             "/com.facebook.orca",
             "/Movies/Instagram", "/Movies/Messenger",
             "/Movies/Twitter", "/tencent",
+            "/Android/media/com.zhiliaoapp.musically",
+            "/tiktok",
+            "/DCIM/TikTok",
     };
 
     public String[] getBlackListCamDirs() {
