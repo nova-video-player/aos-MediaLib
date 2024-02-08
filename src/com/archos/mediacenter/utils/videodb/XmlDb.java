@@ -127,23 +127,30 @@ public class XmlDb implements Callback {
                 return;
             if (localName.equals("path")) {
                 String path = getString();
+                log.debug("endElement: path=" + path);
                 mCurrentEntry.setFile(getFilePath(mLocation, path));
-            }
-            else if (localName.equals("last_position"))
+            } else if (localName.equals("last_position")) {
                 mCurrentEntry.resume = getInt();
-            else if (localName.equals("bookmark_position"))
+                log.debug("endElement: last_position=" + mCurrentEntry.resume);
+            } else if (localName.equals("bookmark_position")) {
                 mCurrentEntry.bookmark = getInt();
-            else if (localName.equals("audio_track"))
+                log.debug("endElement: bookmark_position=" + mCurrentEntry.bookmark);
+            } else if (localName.equals("audio_track")) {
                 mCurrentEntry.audioTrack = getInt();
-            else if (localName.equals("subtitle_track"))
+                log.debug("endElement: audio_track=" + mCurrentEntry.audioTrack);
+            } else if (localName.equals("subtitle_track")) {
                 mCurrentEntry.subtitleTrack = getInt();
-            else if (localName.equals("subtitle_delay"))
+                log.debug("endElement: subtitle_track=" + mCurrentEntry.subtitleTrack);
+            } else if (localName.equals("subtitle_delay")) {
                 mCurrentEntry.subtitleDelay = getInt();
-            else if (localName.equals("subtitle_ratio"))
+                log.debug("endElement: subtitle_delay=" + mCurrentEntry.subtitleDelay);
+            } else if (localName.equals("subtitle_ratio")) {
                 mCurrentEntry.subtitleRatio = getInt();
-            else if (localName.equals("last_time_played"))
+                log.debug("endElement: subtitle_ratio=" + mCurrentEntry.subtitleRatio);
+            } else if (localName.equals("last_time_played")) {
                 mCurrentEntry.lastTimePlayed = Long.decode(getString());
-            else if (localName.equals("network_database")) {
+                log.debug("endElement: last_time_played=" + mCurrentEntry.lastTimePlayed);
+            } else if (localName.equals("network_database")) {
                 mResult = mCurrentEntry;
                 sRemoteCache.put(mCurrentEntry.uri, mCurrentEntry);
                 mCurrentEntry = null;
