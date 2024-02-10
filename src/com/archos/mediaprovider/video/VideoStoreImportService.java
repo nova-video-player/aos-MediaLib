@@ -497,6 +497,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         DeleteFileCallback delCb = new DeleteFileCallback();
         String[] DeleteFileCallbackArgs = null;
         String[] VobUpdateCallbackArgs = null;
+        int count = 0;
 
         try {
             // tidy up the accumulated actor director writer studio genre piled up in v_.*_deletable tables in one shot during deletes
@@ -517,8 +518,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         while (true) {
             try {
                 c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE) ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                log.debug("processDeleteFileAndVobCallback: delete_files cover_movie new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + c.getCount());
-                if (c.getCount() == 0) {
+                count = c.getCount();
+                log.debug("processDeleteFileAndVobCallback: delete_files cover_movie new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + count);
+                if (count == 0) {
                     log.debug("processDeleteFileAndVobCallback: delete_files cover_movie no more data");
                     break; // break out if no more data
                 }
@@ -549,8 +551,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         while (true) {
             try {
                 c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + c.getCount());
-                if (c.getCount() == 0) {
+                count = c.getCount();
+                log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + count);
+                if (count == 0) {
                     log.debug("processDeleteFileAndVobCallback: delete_files no more data");
                     break; // break out if no more data
                 }
@@ -582,9 +585,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         while (true) {
             try {
                 c = db.rawQuery("SELECT * FROM vob_insert ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + c.getCount());
+                count = c.getCount();
+                log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + count);
                 // TOFIX crashes with CursorWindowAllocationException when doing getCount() though rawQuery is paginated catch it via RuntimeException
-                if (c.getCount() == 0) {
+                if (count == 0) {
                     log.debug("processDeleteFileAndVobCallback: vob_insert no more data");
                     break; // break out if no more data
                 }

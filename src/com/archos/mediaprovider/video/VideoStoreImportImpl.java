@@ -190,7 +190,8 @@ public class VideoStoreImportImpl {
     private void handleScanCursor(Cursor c, ContentResolver cr, Context context, Blacklist blacklist) {
         // for some reasons doScan passes a a cursor with size > WINDOW_SIZE
         // thus only process WINDOW_SIZE entries
-        if (c == null || c.getCount() == 0) {
+        int remaining = c.getCount();
+        if (c == null || remaining == 0) {
             if (c != null) c.close();
             log.debug("handleScanCursor: no media to scan");
             return;
@@ -198,7 +199,6 @@ public class VideoStoreImportImpl {
 
         int scanned = 0;
         int scraped = 0;
-        int remaining = c.getCount();
 
         ArrayList<ContentProviderOperation> operations = new ArrayList<ContentProviderOperation>();
         long time = System.currentTimeMillis() / 1000L;
@@ -666,8 +666,9 @@ public class VideoStoreImportImpl {
                     String data;
                     Integer storageId;
 
-                    if (allFiles != null && allFiles.getCount() >0) {
-                        log.debug("copyData: new batch cursor has size " + allFiles.getCount());
+                    int allFilesCount = allFiles.getCount();
+                    if (allFiles != null && allFilesCount >0) {
+                        log.debug("copyData: new batch cursor has size " + allFilesCount);
                         while (allFiles.moveToNext()) {
                             cursor_count++;
                             log.trace("copyData: processing cursor number=" + cursor_count + "/" + numberOfRows + ", " + DatabaseUtils.dumpCurrentRowToString(allFiles));
