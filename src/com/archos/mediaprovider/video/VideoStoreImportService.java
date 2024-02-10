@@ -583,6 +583,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             try {
                 c = db.rawQuery("SELECT * FROM vob_insert ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
                 log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + c.getCount());
+                // TOFIX crashes with CursorWindowAllocationException when doing getCount() though rawQuery is paginated catch it via RuntimeException
                 if (c.getCount() == 0) {
                     log.debug("processDeleteFileAndVobCallback: vob_insert no more data");
                     break; // break out if no more data
@@ -601,7 +602,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                         log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
                     }
                 }
-            } catch (SQLException | IllegalStateException e) {
+            } catch (RuntimeException e) {
+                ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.processDeleteFileAndVobCallback", "crash " + e.getMessage());
                 log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
                 if (CRASH_ON_ERROR) throw new RuntimeException(e);
                 break;
