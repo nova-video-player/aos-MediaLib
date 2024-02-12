@@ -36,7 +36,7 @@ public enum ShortcutDbAdapter {
     VIDEO(ShortcutDbAdapter.DATABASE_VIDEO_TABLE, ShortcutDbAdapter.DATABASE_CREATE_VIDEO5);
 
     private static final String TAG = "ShortcutDbAdapter";
-    protected final static boolean DBG = false;
+    private final static boolean DBG = false;
 
     // To be incremented each time the architecture of the database is changed
     private static final int DATABASE_VERSION = 5;
@@ -73,6 +73,10 @@ public enum ShortcutDbAdapter {
     // The database id is only needed locally for the database management
     private SQLiteDatabase mDb;
     private final String mDatabaseTable;
+
+    public boolean isDbOpen() {
+        return mDb != null && mDb.isOpen();
+    }
 
     public boolean isHimselfOrAncestorShortcut(Context context, String path) {
         open(context);
