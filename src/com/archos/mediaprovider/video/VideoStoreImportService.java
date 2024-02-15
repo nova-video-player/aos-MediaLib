@@ -145,7 +145,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName,
-                    nm.IMPORTANCE_LOW);
+                    NotificationManager.IMPORTANCE_LOW);
             nc.setDescription(notifChannelDescr);
             if (nm != null)
                 nm.createNotificationChannel(nc);
@@ -162,17 +162,10 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     @Override
     public void onCreate() {
         // executed on each startService
-        if (AppState.isForeGround()) {
-            if (nm == null && n == null) {
-                n = createNotification();
-            }
-            startForeground(NOTIFICATION_ID, n);
-            log.debug("onCreate: app in foreground created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
-            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null) + " isForeground=" + AppState.isForeGround());
-        } else {
-            log.debug("onCreate: app in background stopSelf!");
-            stopSelf();
-        }
+        n = createNotification();
+        log.debug("onCreate: create notification + startForeground " + NOTIFICATION_ID);
+        ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null) + " isForeground=" + AppState.isForeGround());
+        startForeground(NOTIFICATION_ID, n);
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
         // setup background worker thread
