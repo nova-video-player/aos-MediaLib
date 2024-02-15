@@ -16,14 +16,21 @@
 package com.archos.mediaprovider.video;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.BaseColumns;
 import android.util.Pair;
+
+import androidx.core.app.NotificationCompat;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.jcifs.JcifsFileEditor;
@@ -31,6 +38,7 @@ import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.environment.NetworkState;
+import com.archos.medialib.R;
 import com.archos.mediaprovider.video.VideoStore.MediaColumns;
 
 import org.fourthline.cling.model.meta.Device;
@@ -103,7 +111,47 @@ public class RemoteStateService extends IntentService implements UpnpServiceMana
         log.debug("start");
         Intent intent = new Intent(context, RemoteStateService.class);
         intent.setAction(ACTION_CHECK_SMB);
-        context.startService(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
+    }
+
+    private static final int NOTIFICATION_ID = 13;
+    private NotificationManager nm;
+    private Notification n;
+    private static final String notifChannelId = "RemoteStateService_id";
+    private static final String notifChannelName = "RemoteStateService";
+    private static final String notifChannelDescr = "RemoteStateService";
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification notification = createNotification();
+            startForeground(NOTIFICATION_ID, notification);
+        }
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    private Notification createNotification() {
+        log.debug("createNotification");
+        // need to do that early to avoid ANR on Android 26+
+        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName,
+                    NotificationManager.IMPORTANCE_LOW);
+            nc.setDescription(notifChannelDescr);
+            if (nm != null)
+                nm.createNotificationChannel(nc);
+        }
+        return new NotificationCompat.Builder(this, notifChannelId)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(notifChannelName)
+                .setContentText("")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true)
+                .build();
     }
 
     public static void stop(Context context) {
