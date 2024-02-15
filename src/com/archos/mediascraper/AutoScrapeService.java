@@ -158,6 +158,7 @@ public class AutoScrapeService extends Service {
         }
         nb = new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(R.drawable.stat_notify_scraper)
+                .setContentTitle(getString(R.string.scraping_in_progress))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
         log.debug("onCreate: startForeground");
