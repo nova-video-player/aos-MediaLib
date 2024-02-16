@@ -134,26 +134,27 @@ public class SearchShowParser {
                 levenshteinDistanceOriginalTitle = levenshteinDistance.apply(showNameLC, result.getOriginalTitle().toLowerCase());
                 log.debug("getSearchShowParserResult: between " + showNameLC + " and " + result.getOriginalTitle().toLowerCase() + "/" + result.getTitle().toLowerCase() + " levenshteinDistanceTitle=" + levenshteinDistanceTitle + ", levenshteinDistanceOriginalTitle=" + levenshteinDistanceOriginalTitle);
 
-                if (! isAirDateKnown) {
-                    log.debug("getSearchShowParserResult: set aside " + series.name + " because air date is missing");
-                    searchShowParserResult.resultsNoAirDate.add(new Pair<>(result,
+
+                if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
+                    log.debug("getSearchShowParserResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
+                    searchShowParserResult.resultsNoPoster.add(new Pair<>(result,
                             Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                 } else {
-                    if (series.poster_path == null || series.poster_path.endsWith("missing/series.jpg") || series.poster_path.endsWith("missing/movie.jpg") || series.poster_path == "") {
-                        log.debug("getSearchShowParserResult: set aside " + series.name + " because poster missing i.e. image=" + series.poster_path);
-                        searchShowParserResult.resultsNoPoster.add(new Pair<>(result,
+                    log.debug("getSearchShowParserResult: " + series.name + " has poster_path " + ScraperImage.TMPL + series.poster_path);
+                    result.setPosterPath(series.poster_path);
+                    if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
+                        log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
+                        searchShowParserResult.resultsNoBanner.add(new Pair<>(result,
                                 Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                     } else {
-                        log.debug("getSearchShowParserResult: " + series.name + " has poster_path " + ScraperImage.TMPL + series.poster_path);
-                        result.setPosterPath(series.poster_path);
-                        if (series.backdrop_path == null || series.backdrop_path.endsWith("missing/series.jpg") || series.backdrop_path.endsWith("missing/movie.jpg") || series.backdrop_path == "") {
-                            log.debug("getSearchShowParserResult: set aside " + series.name + " because banner missing i.e. banner=" + series.backdrop_path);
-                            searchShowParserResult.resultsNoBanner.add(new Pair<>(result,
+                        log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path + " -> taking into account " + series.name + " because banner/image exists and known airdate");
+                        // TODO MARC: this generates the thumb by resizing the large image: pass the two
+                        result.setBackdropPath(series.backdrop_path);
+                        if (! isAirDateKnown) {
+                            log.debug("getSearchShowParserResult: set aside " + series.name + " because air date is missing");
+                            searchShowParserResult.resultsNoAirDate.add(new Pair<>(result,
                                     Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                         } else {
-                            log.debug("getSearchShowParserResult: " + series.name + " has backdrop_path " + ScraperImage.TMBL + series.backdrop_path + " -> taking into account " + series.name + " because banner/image exists and known airdate");
-                            // TODO MARC: this generates the thumb by resizing the large image: pass the two
-                            result.setBackdropPath(series.backdrop_path);
                             searchShowParserResult.resultsProbable.add(new Pair<>(result,
                                     Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle)));
                         }

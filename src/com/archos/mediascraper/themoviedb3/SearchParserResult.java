@@ -35,12 +35,13 @@ public class SearchParserResult {
     List<Pair<SearchResult,Integer>> resultsNoBanner;
 
     public SearchParserResult() {
+        // contains list of results without air date
         this.resultsNoAirDate = new LinkedList<>();
         // contains list of results without banner
         this.resultsNoBanner = new LinkedList<>();
         // contains list of results without poster
         this.resultsNoPoster = new LinkedList<>();
-        // contains list of probable results (i.e. with banner and non numeric slug) with its Levenshtein distance to cleaned filename
+        // contains list of probable results (i.e. with banner, poster, air date etc.) with its Levenshtein distance to cleaned filename
         this.resultsProbable = new LinkedList<>();
     }
 
@@ -51,6 +52,11 @@ public class SearchParserResult {
         log.debug("getResults: resultsProbable.size()=" + resultsProbable.size());
         if (resultsProbable.size()>0)
             for (Pair<SearchResult,Integer> pair : resultsProbable)
+                if (maxItems < 0 || results.size() < maxItems)
+                    results.add(pair.first);
+        // skip videos without an air date only if resultsProbable is empty
+        if (resultsNoAirDate.size()>0 && resultsProbable.size() == 0)
+            for (Pair<SearchResult,Integer> pair : resultsNoAirDate)
                 if (maxItems < 0 || results.size() < maxItems)
                     results.add(pair.first);
         // do NOT skip videos without a banner but with a poster (otherwise shows like The Wrong Mans not found)
