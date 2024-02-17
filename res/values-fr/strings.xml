@@ -57,11 +57,6 @@
     <string name="storage_error_title">Erreur de stockage interne</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">Une erreur s\'est produite sur le stockage interne.</string>
-    <string name="scraper_no_settings">Aucune option disponible pour cette source.</string>
-    <string-array name="scraper_labels_array">
-        <item>enable_fanart:Activer Fanart</item>
-        <item>info_language:Langue</item>
-    </string-array>
     <string name="tv_show_genre_action">Action</string>
     <string name="tv_show_genre_adventure">Aventure</string>
     <string name="tv_show_genre_animation">Dessin animé</string>

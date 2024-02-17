@@ -57,11 +57,6 @@
     <string name="storage_error_title">Błąd pamięci wewnętrznej</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">Wystąpił błąd pamięci wewnętrznej.</string>
-    <string name="scraper_no_settings">Ustawienia niedostępne dla tego źródła.</string>
-    <string-array name="scraper_labels_array">
-        <item>enable_fanart:Enable Fanart</item>
-        <item>info_language:Language</item>
-    </string-array>
     <string name="tv_show_genre_action">Akcja</string>
     <string name="tv_show_genre_adventure">Przygodowy</string>
     <string name="tv_show_genre_animation">Animowane</string>

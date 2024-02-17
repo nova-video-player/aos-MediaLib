@@ -57,11 +57,6 @@
     <string name="storage_error_title">Lỗi bộ nhớ trong</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">Đã xảy ra lỗi trên bộ nhớ trong của bạn.</string>
-    <string name="scraper_no_settings">Không có cài đặt nào cho nguồn này.</string>
-    <string-array name="scraper_labels_array">
-        <item>enable_fanart:Bật Fanart</item>
-        <item>info_language:Ngôn ngữ</item>
-    </string-array>
     <string name="tv_show_genre_action">Hành động</string>
     <string name="tv_show_genre_adventure">Phiêu lưu</string>
     <string name="tv_show_genre_animation">Hoạt họa</string>

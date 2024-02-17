@@ -57,11 +57,6 @@
     <string name="storage_error_title">Belső tárhely hiba</string>
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">Hiba történt a belső tárhely olvasásakor.</string>
-    <string name="scraper_no_settings">Ehhez a forráshoz nincsenek beállítások.</string>
-    <string-array name="scraper_labels_array">
-        <item>enable_fanart:Rajongói alkotások bekapcsolása</item>
-        <item>info_language:Nyelv</item>
-    </string-array>
     <string name="tv_show_genre_action">Akció</string>
     <string name="tv_show_genre_adventure">Kaland</string>
     <string name="tv_show_genre_animation">Animáció</string>
