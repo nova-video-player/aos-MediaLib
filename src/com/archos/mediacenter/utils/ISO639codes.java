@@ -62,7 +62,9 @@ public class ISO639codes {
         missingISO6391ToISO6393.put("tp", "s_toki_pona"); // Toki Pona
         missingISO6391ToISO6393.put("ze", "s_chinese_bilingual"); // Chinese bilingual
 
-        missingISO6391ToISO6393.put("cn", "yue"); // take yue = Cantonese (cn is used for tmdb)
+        // cf. https://github.com/nova-video-player/aos-AVP/issues/1129
+        //missingISO6391ToISO6393.put("cn", "yue"); // take yue = Cantonese (cn is used for tmdb)
+        missingISO6391ToISO6393.put("cn", "s_traditional_chinese"); // take yue = Cantonese (cn is used for tmdb)
         // Moldavian is now officially Romanian since 202303 mo -> ron
         // {"iso_639_1":"mo","english_name":"Moldavian","name":""}
         missingISO6391ToISO6393.put("mo", "ron"); // Moldovian != Romanian it is an issue (mo is used for tmdb)
