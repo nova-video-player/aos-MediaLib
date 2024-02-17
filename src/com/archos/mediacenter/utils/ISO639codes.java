@@ -47,7 +47,7 @@ public class ISO639codes {
         // opensubtitles REST API language code exceptions (2 letters that are 4 letters)
         missingISO6391ToISO6393.put("pt-br", "s_brazilian"); // Brazilian Portuguese (pb used for opensubtitles), pb=pob
         missingISO6391ToISO6393.put("pt-pt", "por"); // Portuguese
-        missingISO6391ToISO6393.put("zh-cn", "s_chinese"); // Chinese (simplified) -> Chinese in strings.xml
+        missingISO6391ToISO6393.put("zh-cn", "s_chinese_simplified"); // Chinese (simplified) -> Chinese in strings.xml
         missingISO6391ToISO6393.put("zh-tw", "s_traditional_chinese"); // Chinese (traditional)
         // opensubtitles REST API not recognized languages ea=Spanish (LA)|ex=Extremaduran|me=Montenegrin|ma=Manipuri|pr=Dari|pm=Portuguese (MZ)|sp=Spanish (EU)|sx=Santali|sy=Syriac|tp=Toki Pona|ze=Chinese bilingual
         missingISO6391ToISO6393.put("ea", "s_spanish_la"); // Spanish (LA)
