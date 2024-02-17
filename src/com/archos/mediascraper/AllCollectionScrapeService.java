@@ -31,7 +31,6 @@ import androidx.core.content.ContextCompat;
 import com.archos.mediacenter.utils.AppState;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.video.ScraperStore;
-import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.CollectionInfo;
 import com.archos.mediascraper.themoviedb3.CollectionResult;
 import com.archos.mediascraper.themoviedb3.MovieCollection;
@@ -65,7 +64,6 @@ public class AllCollectionScrapeService extends IntentService {
     private static final String notifChannelId = "AllCollectionScrapeService_id";
     private static final String notifChannelName = "AllCollectionScrapeService";
     private static final String notifChannelDescr = "AllCollectionScrapeService";
-    private static ScraperSettings sSettings = null;
 
     private static Context mContext;
 

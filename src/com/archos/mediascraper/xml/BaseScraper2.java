@@ -16,7 +16,6 @@
 package com.archos.mediascraper.xml;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.os.Bundle;
 
 import androidx.preference.PreferenceManager;
@@ -30,7 +29,6 @@ import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
-import com.archos.mediascraper.settings.ScraperSettings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,10 +44,6 @@ import javax.xml.parsers.SAXParserFactory;
 
 public abstract class BaseScraper2 {
     private static final Logger log = LoggerFactory.getLogger(BaseScraper2.class);
-
-    // see https://developer.themoviedb.org/docs/languages
-    // curl --request GET --url 'https://api.themoviedb.org/3/configuration/languages?api_key=APIKEY' | jq '.[] | .iso_639_1' | sed 's/"\([^"]*\)"/\1/g' | grep -v mo | grep -v xx | sort -u | paste -sd "|" -
-    public final static String LANGUAGES = "aa|ab|ae|af|ak|am|an|ar|as|av|ay|az|ba|be|bg|bi|bm|bn|bo|br|bs|ca|ce|ch|cn|co|cr|cs|cu|cv|cy|da|de|dv|dz|ee|el|en|eo|es|et|eu|fa|ff|fi|fj|fo|fr|fy|ga|gd|gl|gn|gu|gv|ha|he|hi|ho|hr|ht|hu|hy|hz|ia|id|ie|ig|ii|ik|io|is|it|iu|ja|jv|ka|kg|ki|kj|kk|kl|km|kn|ko|kr|ks|ku|kv|kw|ky|la|lb|lg|li|ln|lo|lt|lu|lv|mg|mh|mi|mk|ml|mn|mr|ms|mt|my|na|nb|nd|ne|ng|nl|nn|no|nr|nv|ny|oc|oj|om|or|os|pa|pi|pl|ps|pt|qu|rm|rn|ro|ru|rw|sa|sc|sd|se|sg|sh|si|sk|sl|sm|sn|so|sq|sr|ss|st|su|sv|sw|ta|te|tg|th|ti|tk|tl|tn|to|tr|ts|tt|tw|ty|ug|uk|ur|uz|ve|vi|vo|wa|wo|xh|yi|yo|za|zh|zu";
 
     protected final SAXParser mParser;
 
@@ -87,17 +81,6 @@ public abstract class BaseScraper2 {
      * @return the name this Scraper has
      */
     protected abstract String internalGetPreferenceName();
-
-    public final static ScraperSettings getSettings(int scraperType, Context context) {
-        switch (scraperType) {
-            case BaseTags.MOVIE:
-                return MovieScraper3.generatePreferences(context);
-            case BaseTags.TV_SHOW:
-                return ShowScraper4.generatePreferences(context);
-            default:
-                return null;
-        }
-    }
 
     /**
      * Request the detail for the first matching entry directly
@@ -166,10 +149,6 @@ public abstract class BaseScraper2 {
             ret = result.getScraper().getDetailsInternal(result, options);
         }
         return ret;
-    }
-
-    public String getLanguages() {
-        return LANGUAGES;
     }
 
     protected abstract ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options);

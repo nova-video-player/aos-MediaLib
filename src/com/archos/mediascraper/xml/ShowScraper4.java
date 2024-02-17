@@ -38,8 +38,6 @@ import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
-import com.archos.mediascraper.settings.ScraperSetting;
-import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.themoviedb3.SearchShow;
 import com.archos.mediascraper.themoviedb3.SearchShowResult;
@@ -70,6 +68,8 @@ import okhttp3.Cache;
 
 import static com.archos.mediascraper.TagsFactory.buildShowTagsOnlineId;
 
+import androidx.preference.PreferenceManager;
+
 public class ShowScraper4 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
@@ -77,8 +77,6 @@ public class ShowScraper4 extends BaseScraper2 {
 
     // Benchmarks tells that with tv shows sorted in folders, size of 100 or 10 or even provides the same cacheHits on fake collection of 30k episodes, 250 shows
     private final static LruCache<String, Map<String, EpisodeTags>> sEpisodeCache = new LruCache<>(100);
-
-    private static ScraperSettings sSettings = null;
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     static Cache cache;
@@ -122,7 +120,7 @@ public class ShowScraper4 extends BaseScraper2 {
         String language = getLanguage(mContext);
         log.debug("getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
-                + " e:" + searchInfo.getEpisode() + ", maxItems=" + maxItems);
+                + " e:" + searchInfo.getEpisode() + ", maxItems=" + maxItems + ", language=" + language);
         if (tmdb == null) reauth();
         SearchShowResult searchResult = SearchShow.search(searchInfo, language, maxItems, adultScrape,this, tmdb);
         if (searchResult.result.size() > 0) log.debug("getMatches2: match found " + searchResult.result.get(0).getTitle() + " id " + searchResult.result.get(0).getId());
@@ -432,35 +430,7 @@ public class ShowScraper4 extends BaseScraper2 {
     }
 
     public static String getLanguage(Context context) {
-        return generatePreferences(context).getString("language");
-    }
-
-    protected static synchronized ScraperSettings generatePreferences(Context context) {
-        if (sSettings == null) {
-            sSettings = new ScraperSettings(context, PREFERENCE_NAME);
-            HashMap<String, String> labelList = new HashMap<String, String>();
-            String[] labels = context.getResources().getStringArray(R.array.scraper_labels_array);
-            for (String label : labels) {
-                String[] splitted = label.split(":");
-                labelList.put(splitted[0], splitted[1]);
-            }
-            // <settings><setting label="info_language" type="labelenum" id="language" values="$$8" sort="yes" default="en"></setting></settings>
-            ScraperSetting setting = new ScraperSetting("language", ScraperSetting.STR_LABELENUM);
-            String defaultLang = Locale.getDefault().getLanguage();
-            if (!TextUtils.isEmpty(defaultLang) && LANGUAGES.contains(defaultLang))
-                setting.setDefault(defaultLang);
-            else
-                setting.setDefault("en");
-            setting.setLabel(labelList.get("info_language"));
-            setting.setValues(LANGUAGES);
-            sSettings.addSetting("language", setting);
-        }
-        return sSettings;
-    }
-
-    @Override
-    protected String internalGetPreferenceName() {
-        return PREFERENCE_NAME;
+        return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext()).getString("favScraperLang", Locale.getDefault().getLanguage());
     }
 
     public static boolean isShowAlreadyKnown(Integer showId, Context context) {
@@ -475,4 +445,10 @@ public class ShowScraper4 extends BaseScraper2 {
         log.debug("isShowAlreadyKnown: " + showId + " " + isKnown);
         return isKnown;
     }
+
+    @Override
+    protected String internalGetPreferenceName() {
+        return PREFERENCE_NAME;
+    }
+
 }

@@ -72,12 +72,6 @@
     <!-- label underneath icon used to indicate there was an error accessing the internal storage -->
     <string name="storage_error_message">An error was encountered on your internal storage.</string>
 
-    <string name="scraper_no_settings">No settings available for this source.</string>
-    <string-array name="scraper_labels_array">
-        <item>enable_fanart:Enable Fanart</item>
-        <item>info_language:Language</item>
-    </string-array>
-
     <string name="tv_show_genre_action">Action</string>
     <string name="tv_show_genre_adventure">Adventure</string>
     <string name="tv_show_genre_animation">Animation</string>

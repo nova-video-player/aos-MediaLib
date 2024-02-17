@@ -18,7 +18,6 @@ package com.archos.mediascraper.xml;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
 
 import com.archos.medialib.R;
 import com.archos.mediascraper.MovieTags;
@@ -29,8 +28,6 @@ import com.archos.mediascraper.ScraperCache;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.MovieSearchInfo;
 import com.archos.mediascraper.preprocess.SearchInfo;
-import com.archos.mediascraper.settings.ScraperSetting;
-import com.archos.mediascraper.settings.ScraperSettings;
 import com.archos.mediascraper.themoviedb3.CollectionInfo;
 import com.archos.mediascraper.themoviedb3.CollectionResult;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
@@ -63,8 +60,6 @@ public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private static final Logger log = LoggerFactory.getLogger(MovieScraper3.class);
-
-    private static ScraperSettings sSettings = null;
 
     // Add caching for OkHttpClient so that queries for episodes from a same tvshow will get a boost in resolution
     static Cache cache;
@@ -102,7 +97,7 @@ public class MovieScraper3 extends BaseScraper2 {
         if (searchService == null) searchService = tmdb.searchService();
         // get configured language
         String language = getLanguage(mContext);
-        log.debug("movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear());
+        log.debug("movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear() + " language:" + language);
         SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService, adultScrape);
         // TODO: this triggers scrape for all search results, is this intended?
         if (searchResult.status == ScrapeStatus.OKAY) {
@@ -118,6 +113,7 @@ public class MovieScraper3 extends BaseScraper2 {
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
         // TODO: why it searches every first level result?
         String language = getLanguage(mContext);
+        log.debug("getDetailsInternal: language=" + language);
 
         long movieId = result.getId();
         Uri searchFile = result.getFile();
@@ -173,31 +169,7 @@ public class MovieScraper3 extends BaseScraper2 {
     }
 
     public static String getLanguage(Context context) {
-        return generatePreferences(context).getString("language");
-    }
-
-    protected static synchronized ScraperSettings generatePreferences(Context context) {
-        if (sSettings == null) {
-            sSettings = new ScraperSettings(context, PREFERENCE_NAME);
-            HashMap<String, String> labelList = new HashMap<String, String>();
-            String[] labels = context.getResources().getStringArray(R.array.scraper_labels_array);
-            for (String label : labels) {
-                String[] splitted = label.split(":");
-                labelList.put(splitted[0], splitted[1]);
-            }
-            // <settings><setting label="info_language" type="labelenum" id="language" values="$$8" sort="yes" default="en"></setting></settings>
-            ScraperSetting setting = new ScraperSetting("language", ScraperSetting.STR_LABELENUM);
-            String defaultLang = Locale.getDefault().getLanguage();
-            log.debug("generatePreferences: defaultLang=" + defaultLang);
-            if (!TextUtils.isEmpty(defaultLang) && LANGUAGES.contains(defaultLang))
-                setting.setDefault(defaultLang);
-            else
-                setting.setDefault("en");
-            setting.setLabel(labelList.get("info_language"));
-            setting.setValues(LANGUAGES);
-            sSettings.addSetting("language", setting);
-        }
-        return sSettings;
+        return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext()).getString("favScraperLang", Locale.getDefault().getLanguage());
     }
 
     @Override
