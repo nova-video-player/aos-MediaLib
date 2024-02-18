@@ -135,9 +135,9 @@ dependencies {
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.10.0'
-    api files('libs/jupnp.jar')
-    api files('libs/jupnp-android.jar')
-    api files('libs/jupnp-support.jar')
+    api 'org.jupnp:jupnp:3.0.0'
+    api 'org.jupnp:org.jupnp.support:3.0.0'
+    api 'org.jupnp:org.jupnp.android:3.0.0'
     // jetty required by jupnp and going above 9.4.14 requires minSdkVersion 26
     implementation ('org.eclipse.jetty:jetty-server:9.4.14.v20181114') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
