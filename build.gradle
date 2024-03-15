@@ -120,7 +120,7 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.6.2'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.preference:preference:1.2.1'
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
     implementation 'org.json:json:20231013'
     // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     implementation ('com.uwetrottmann.trakt5:trakt-java:6.12.0') {
