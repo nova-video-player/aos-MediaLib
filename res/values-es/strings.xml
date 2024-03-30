@@ -16,10 +16,10 @@
     <string name="network_unscan_msg">Eliminando archivos multimedia de la biblioteca</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Exportar información multimedia</string>
-    <string name="nfo_export_auto_title">Autoexportar después de la búsqueda</string>
+    <string name="nfo_export_auto_title">Exportar automáticamente después de la búsqueda</string>
     <string name="nfo_export_manual_title">Exportar vídeos ya indexados</string>
-    <string name="nfo_export_auto_summary">Exportar automáticamente archivos .nfo después de una búsqueda en línea exitosa</string>
-    <string name="nfo_export_manual_summary">Exportar archivos .nfo de los videos ya indexados</string>
+    <string name="nfo_export_auto_summary">Exporta automáticamente archivos .nfo después de una búsqueda online correcta</string>
+    <string name="nfo_export_manual_summary">Exporta archivos .nfo de todos los videos ya analizados</string>
     <string name="nfo_export_button">Exportar .nfo</string>
     <string name="nfo_export_folder">Exportar todo en esta carpeta a .nfo</string>
     <string name="nfo_export_all">Exportar toda la biblioteca a .nfo</string>
@@ -71,7 +71,7 @@
     <string name="tv_show_genre_fantasy">Fantasía</string>
     <string name="tv_show_genre_food">Comida</string>
     <string name="tv_show_genre_game_show">Concurso</string>
-    <string name="tv_show_genre_home_garden">Hogar y Jardín</string>
+    <string name="tv_show_genre_home_garden">Hogar y jardín</string>
     <string name="tv_show_genre_horror">Terror</string>
     <string name="tv_show_genre_indie">Indie</string>
     <string name="tv_show_genre_martial_arts">Artes marciales</string>
@@ -80,7 +80,7 @@
     <string name="tv_show_genre_mystery">Misterio</string>
     <string name="tv_show_genre_news">Noticias</string>
     <string name="tv_show_genre_podcast">Podcast</string>
-    <string name="tv_show_genre_reality">Tele Realidad</string>
+    <string name="tv_show_genre_reality">Tele realidad</string>
     <string name="tv_show_genre_romance">Romance</string>
     <string name="tv_show_genre_science_fiction">Ciencia Ficción</string>
     <string name="tv_show_genre_soap">Culebrón</string>
@@ -113,7 +113,7 @@
     <string name="movie_genre_war">Bélica</string>
     <string name="movie_genre_western">Western</string>
     <!-- There are official translations for the tmdb tv genres -->
-    <string name="tvshow_genre_action_adventure">Acción &amp; Aventura</string>
+    <string name="tvshow_genre_action_adventure">Acción y aventura</string>
     <string name="tvshow_genre_animation">Serie de animación</string>
     <string name="tvshow_genre_comedy">Comedia</string>
     <string name="tvshow_genre_crime">Crimen</string>
@@ -124,10 +124,10 @@
     <string name="tvshow_genre_mystery">Misterio</string>
     <string name="tvshow_genre_news">Noticias</string>
     <string name="tvshow_genre_reality">Reality</string>
-    <string name="tvshow_genre_scifi_fantasy">Ciencia ficción &amp; Fantasia</string>
+    <string name="tvshow_genre_scifi_fantasy">Ciencia ficción y fantasia</string>
     <string name="tvshow_genre_soap">Culebrón</string>
     <string name="tvshow_genre_talk">Debate</string>
-    <string name="tvshow_genre_war_politics">Guerra &amp; Política</string>
+    <string name="tvshow_genre_war_politics">Guerra y política</string>
     <string name="tvshow_genre_western">Western</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.

@@ -59,7 +59,7 @@
     <string name="storage_error_message">Đã xảy ra lỗi trên bộ nhớ trong của bạn.</string>
     <string name="tv_show_genre_action">Hành động</string>
     <string name="tv_show_genre_adventure">Phiêu lưu</string>
-    <string name="tv_show_genre_animation">Hoạt họa</string>
+    <string name="tv_show_genre_animation">Hoạt hình</string>
     <string name="tv_show_genre_anime">Hoạt họa Nhật Bản</string>
     <string name="tv_show_genre_awards_show">Chương trình giải thưởng</string>
     <string name="tv_show_genre_children">Trẻ em</string>
@@ -95,40 +95,40 @@
     <!-- There are official translations for the tmdb movie genres -->
     <string name="movie_genre_action">Hành động</string>
     <string name="movie_genre_adventure">Phiêu lưu</string>
-    <string name="movie_genre_animation">Hoạt họa</string>
+    <string name="movie_genre_animation">Hoạt hình</string>
     <string name="movie_genre_comedy">Hài kịch</string>
     <string name="movie_genre_crime">Hình sự</string>
-    <string name="movie_genre_documentary">Phim Tài Liệu</string>
+    <string name="movie_genre_documentary">Tài liệu</string>
     <string name="movie_genre_drama">Chính kịch</string>
-    <string name="movie_family">Phim Gia Đình</string>
-    <string name="movie_genre_fantasy">Phim Giả Tượng</string>
-    <string name="movie_genre_history">Phim Lịch Sử</string>
-    <string name="movie_genre_horror">Phim Kinh Dị</string>
-    <string name="movie_genre_music">Phim Nhạc</string>
-    <string name="movie_genre_mystery">Phim Bí Ẩn</string>
-    <string name="movie_genre_romance">Phim Lãng Mạn</string>
-    <string name="movie_genre_science_fiction">Phim Khoa Học Viễn Tưởng</string>
+    <string name="movie_family">Gia đình</string>
+    <string name="movie_genre_fantasy">Giả tưởng</string>
+    <string name="movie_genre_history">Lịch sử</string>
+    <string name="movie_genre_horror">Kinh dị</string>
+    <string name="movie_genre_music">Âm nhạc</string>
+    <string name="movie_genre_mystery">Bí ẩn</string>
+    <string name="movie_genre_romance">Lãng mạn</string>
+    <string name="movie_genre_science_fiction">Khoa học viễn tưởng</string>
     <string name="movie_genre_tv_movie">Chương Trình Truyền Hình</string>
-    <string name="movie_genre_thriller">Phim Gây Cấn</string>
-    <string name="movie_genre_war">Phim Chiến Tranh</string>
-    <string name="movie_genre_western">Phim Miền Tây</string>
+    <string name="movie_genre_thriller">Giật gân</string>
+    <string name="movie_genre_war">Chiến tranh</string>
+    <string name="movie_genre_western">Viễn Tây</string>
     <!-- There are official translations for the tmdb tv genres -->
     <string name="tvshow_genre_action_adventure">Action &amp; Adventure</string>
-    <string name="tvshow_genre_animation">Phim Hoạt Hình</string>
-    <string name="tvshow_genre_comedy">Phim Hài</string>
-    <string name="tvshow_genre_crime">Phim Hình Sự</string>
-    <string name="tvshow_genre_documentary">Phim Tài Liệu</string>
-    <string name="tvshow_genre_drama">Phim Chính Kịch</string>
-    <string name="tvshow_genre_family">Phim Gia Đình</string>
+    <string name="tvshow_genre_animation">Hoạt hình</string>
+    <string name="tvshow_genre_comedy">Hài kịch</string>
+    <string name="tvshow_genre_crime">Hình sự</string>
+    <string name="tvshow_genre_documentary">Tài liệu</string>
+    <string name="tvshow_genre_drama">Chính kịch</string>
+    <string name="tvshow_genre_family">Gia đình</string>
     <string name="tvshow_genre_kids">Kids</string>
-    <string name="tvshow_genre_mystery">Phim Bí Ẩn</string>
+    <string name="tvshow_genre_mystery">Bí ẩn</string>
     <string name="tvshow_genre_news">News</string>
     <string name="tvshow_genre_reality">Reality</string>
     <string name="tvshow_genre_scifi_fantasy">Sci-Fi &amp; Fantasy</string>
     <string name="tvshow_genre_soap">Soap</string>
     <string name="tvshow_genre_talk">Talk</string>
     <string name="tvshow_genre_war_politics">Chiến tranh &amp; Chính trị</string>
-    <string name="tvshow_genre_western">Viễn tây</string>
+    <string name="tvshow_genre_western">Viễn Tây</string>
     <!--
       STRINGS BELOW ARE FOR MUSIC ONLY.
       I KEPT THE DEFAULT ENGLISH VERSION ONLY FOR NOW
