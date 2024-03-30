@@ -73,56 +73,12 @@ class TvShowPathMatcher implements InputMatcher {
     private static final String NOT_DECIMAL = "(?!\\d).*";
     private static final String LETTER_NUMBER_SEP = "(?:[\\p{L}\\p{N}]++[\\s._-]*+)"; // contains no date between ()...
 
-    // /show-sXXeYY/filename.mkv formerly in TvShowFolderMatcher
-    private static final String SHOW_SXEY_FILE_PATH = CASE_INSENSITIVE + WHATEVER + SLASH + "(" + NOT_SLASH_GREEDY + ")" +
-            SEP_MANDATORY + SEASON + SEP_OPTIONAL + "(" + SEASON_NUMBER + ")" + SEP_OPTIONAL + EPISODE + "(" + EPISODE_NUMBER + ")" + NOT_DECIMAL
-            + SLASH + NOT_SLASH_GREEDY;
-
-    // TODO shorter way (?i).*\/([^\/]++)\/[^\/]*?(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+\/[^\/]*?(?:E|EP|EPISODE)[\s._-]*+(\d{1,3})(?!\d)[^\/]*+
-
-    // NOK for /show-s01e02/garbage.mkv (?i).*\/((?:[^\/]*+[\s._-]*+)++)[\s._-]+?(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})[\s._-]*+(?:E|EP|EPISODE)[\s._-]*+(\d{1,3})\/[^\/]*+
-    // Show/sXX/blah-eYY-blah.mkv
-    //private static final String SHOW_SEASON_EPISODE_PATH =
-    //        "(?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(1?\\d{1,2})(?!\\d)[^/]*+";
-
     // Compared to above use of NOT_DECIMAL "(?!\\d).*" which is adding .* at the end compared to orignal string
     private static final String SHOW_SEASON_EPISODE_PATH =
             CASE_INSENSITIVE + WHATEVER + SLASH + "(" + LETTER_NUMBER_SEP + "++" + ")" + SLASH +
                     NOT_SLASH_LAZY + PREVIOUS_NOT_LETTER + SEASON + SEP_OPTIONAL + "(" + SEASON_NUMBER + ")" +
                     NOT_DECIMAL + NOT_SLASH_GREEDY + SLASH + NOT_SLASH_LAZY + PREVIOUS_NOT_LETTER + EPISODE +
                     SEP_OPTIONAL + "(" + EPISODE_NUMBER + ")" + NOT_DECIMAL + NOT_SLASH_GREEDY;
-
-    // TODO: better regex? (?i).*\/((?:[^\/]*+[\s._-]*+)++)\/[^\/]*?(?:S|SEAS|SEASON)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+\/[^\/]*?(?:E|EP|EPISODE)[\s._-]*+(\d{1,2})(?!\d)[^\/]*+
-    // Show/blah-s02e01-blah.mkv
-    //private static final String SHOW_SXEY_PATH =
-    //        "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+";
-
-    // Compared to above use of NOT_DECIMAL "(?!\\d).*" which is adding .* at the end compared to orignal string
-    private static final String SHOW_SXEY_PATH =
-            CASE_INSENSITIVE + WHATEVER + SLASH + "(" + LETTER_NUMBER_SEP + "++" + ")" + SLASH +
-                    NOT_SLASH_LAZY + PREVIOUS_NOT_LETTER + SEASON + SEP_OPTIONAL + "(" + SEASON_NUMBER + ")" +
-                    NOT_DECIMAL + NOT_SLASH_GREEDY + SLASH + NOT_SLASH_LAZY + PREVIOUS_NOT_LETTER + EPISODE +
-                    SEP_OPTIONAL + "(" + EPISODE_NUMBER + ")" + NOT_DECIMAL + NOT_SLASH_GREEDY;
-
-    // Show-sXX/eYY/blah.mkv
-    //private static final String SHOW_SXEY_FILE_PATH =
-    //        "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*+";
-
-    // Show-sXXeYY/blah.mkv formerly in TvShowFolderMatcher
-    //private static final String SHOWSXEY_GARBAGE_PATH =
-    //        "(?i).*/((?:[\\p{L}\\p{N}]++[\\s._-]*+)++)/[^/]*?(?<![\\p{L}])(?:S|SEAS|SEASON)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+?(?<![\\p{L}])(?:E|EP|EPISODE)[\\s._-]*+(\\d{1,2})(?!\\d)[^/]*+/[^/]*+";
-
-    private static final String SHOWSXEY_GARBAGE_PATH =
-            CASE_INSENSITIVE + WHATEVER + SLASH + "(" + LETTER_NUMBER_SEP + "++" + ")" + SLASH +
-                    NOT_SLASH_LAZY + PREVIOUS_NOT_LETTER + SEASON + SEP_OPTIONAL + "(" + SEASON_NUMBER + ")" +
-                    NOT_DECIMAL + NOT_SLASH_GREEDY + PREVIOUS_NOT_LETTER + EPISODE + SEP_OPTIONAL +
-                    "(" + SEASON_NUMBER + ")" + NOT_DECIMAL + NOT_SLASH_GREEDY + SLASH + NOT_SLASH_GREEDY;
-
-    // TODO WIP: replace PATTERN_ by PATTERNS
-    //private static final Pattern[] PATTERNS = {
-    //        Pattern.compile(SHOW_SEASON_EPISODE_PATH),
-    //        Pattern.compile(SHOWSXEY_GARBAGE_PATH),
-    //};
 
     private static final Pattern PATTERN_ = Pattern.compile(SHOW_SEASON_EPISODE_PATH);
 
