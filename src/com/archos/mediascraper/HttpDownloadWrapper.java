@@ -68,6 +68,10 @@ public class HttpDownloadWrapper implements Closeable {
         }
 
         URL url = new URL(mUrl);
+        // See https://github.com/nova-video-player/aos-AVP/issues/1154
+        // on old Android versions (before 7.0) the ssl certification check is based on the platform one that is not anymore up to date leading to problems
+        // thus let's trust image.tmdb.org to fix posters download
+        TrustAllCertificates.trustAllCertificates();
         mUrlConnection = (HttpURLConnection) url.openConnection();
         mUrlConnection.setConnectTimeout(20000);
         mUrlConnection.setReadTimeout(40000);
