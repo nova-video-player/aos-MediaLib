@@ -14,6 +14,9 @@
 
 package com.archos.mediascraper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.cert.X509Certificate;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -23,6 +26,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class TrustAllCertificates {
+
+    private static final Logger log = LoggerFactory.getLogger(TrustAllCertificates.class);
 
     public static void trustAllCertificates() {
         try {
@@ -54,7 +59,7 @@ public class TrustAllCertificates {
             // Install the all-trusting host verifier
             HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error while trusting all certificates", e);
         }
     }
 }

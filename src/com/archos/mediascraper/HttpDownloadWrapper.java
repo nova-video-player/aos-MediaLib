@@ -16,6 +16,8 @@
 package com.archos.mediascraper;
 
 import androidx.annotation.Nullable;
+
+import android.os.Build;
 import android.util.Log;
 
 import org.slf4j.Logger;
@@ -71,7 +73,10 @@ public class HttpDownloadWrapper implements Closeable {
         // See https://github.com/nova-video-player/aos-AVP/issues/1154
         // on old Android versions (before 7.0) the ssl certification check is based on the platform one that is not anymore up to date leading to problems
         // thus let's trust image.tmdb.org to fix posters download
-        TrustAllCertificates.trustAllCertificates();
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+            //TrustLetsEncryptCertificates.trustLetsEncryptCertificates(context);
+            TrustAllCertificates.trustAllCertificates();
+        }
         mUrlConnection = (HttpURLConnection) url.openConnection();
         mUrlConnection.setConnectTimeout(20000);
         mUrlConnection.setReadTimeout(40000);
