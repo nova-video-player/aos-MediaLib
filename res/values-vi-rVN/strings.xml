@@ -17,9 +17,9 @@
     <!-- .nfo export options -->
     <string name="nfo_export_category">Xuất thông tin đa phương tiện</string>
     <string name="nfo_export_auto_title">Tự động xuất sau khi tìm kiếm</string>
-    <string name="nfo_export_manual_title">Xuất video đã thu thập thông tin</string>
+    <string name="nfo_export_manual_title">Xuất băng hình đã thu thập thông tin</string>
     <string name="nfo_export_auto_summary">Tự động xuất tệp .nfo sau khi tra cứu trực tuyến thành công</string>
-    <string name="nfo_export_manual_summary">Xuất tệp .nfo của mọi video đã được loại bỏ</string>
+    <string name="nfo_export_manual_summary">Xuất tệp .nfo của mọi băng hình đã được loại bỏ</string>
     <string name="nfo_export_button">Xuất ra .nfo</string>
     <string name="nfo_export_folder">Xuất tất cả vào thư mục này thành .nfo</string>
     <string name="nfo_export_all">Xuất toàn bộ thư viện sang .nfo</string>
