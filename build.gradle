@@ -114,7 +114,7 @@ if (useSan)
 
 dependencies {
     implementation project(':FileCoreLibrary')
-    implementation 'androidx.core:core:1.13.0'
+    implementation 'androidx.core:core:1.13.1'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
     implementation 'androidx.media:media:1.7.0'
     implementation 'androidx.fragment:fragment:1.6.2'
