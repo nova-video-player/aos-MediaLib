@@ -333,7 +333,9 @@ public class ISO639codes {
         // treat strings being "l_XYZ" or "l_XY" or "XYZ" or "XY" or "title (l_XYZ)" or "title (l_XY)"
         // and return locale language corresponding to XY or XYZ letter code
         if (string == null) return null;
-        String pattern = "(?:^l_([A-Za-z]{2,3}$)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
+        String result = null;
+        //String pattern = "(?:^l_([A-Za-z]{2,3}$)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
+        String pattern = "(?:^l_([A-Za-z]{2,3}\\b)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(string);
         String languageCode = "";
@@ -343,11 +345,12 @@ public class ISO639codes {
             log.debug("findLanguageInString: languageCode1=" + languageCode1 + " languageCode2=" + languageCode2);
             if (languageCode1 != null) {
                 languageCode = languageCode1;
-                if (languageCode1.equals("und") || languageCode1.equals("Unknown")) return null; // und = undefined
+                if (languageCode1.equals("und") || languageCode1.equals("Unknown")) result = ""; // und = undefined
+                else result = ISO639codes.getLanguageNameForLetterCode(languageCode);
             } else if (languageCode2 != null) {
                 languageCode = languageCode2;
+                result = ISO639codes.getLanguageNameForLetterCode(languageCode);
             }
-            return ISO639codes.getLanguageNameForLetterCode(languageCode);
         } else {
             pattern = "^[A-Za-z]{2,3}$"; // 2 or 3 letters code
             regexPattern = Pattern.compile(pattern);
@@ -355,11 +358,12 @@ public class ISO639codes {
             if (matcher.find()) {
                 languageCode = matcher.group();
                 log.debug("findLanguageInString: languageCode=" + languageCode);
-                if (languageCode.equals("und") || languageCode.equals("Unknown")) return ""; // und = undefined
-                return ISO639codes.getLanguageNameForLetterCode(languageCode);
-            }
-            return null;
+                if (languageCode.equals("und") || languageCode.equals("Unknown")) result = ""; // und = undefined
+                else result = ISO639codes.getLanguageNameForLetterCode(languageCode);
+            } else result = "";
         }
+        log.debug("findLanguageInString: input={} -> result={}", string, result);
+        return result;
     }
 
     public static boolean isLanguageInString(String language, String string) {
@@ -384,8 +388,8 @@ public class ISO639codes {
             log.debug("replaceLanguageCodeInString: languageCode1=" + languageCode1 + " languageCode2=" + languageCode2);
             if (languageCode1 != null) {
                 languageCode = languageCode1;
-                if (languageCode1.equals("und") || languageCode1.equals("Unknown")) return ""; // und = undefined
-                result = capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
+                if (languageCode1.equals("und") || languageCode1.equals("Unknown")) result = ""; // und = undefined
+                else result = capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
             } else if (languageCode2 != null) {
                 languageCode = languageCode2;
                 result = string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
@@ -407,7 +411,6 @@ public class ISO639codes {
         }
         log.debug("replaceLanguageCodeInString: input={} -> result={}", string, result);
         return result;
-
     }
 
 }
