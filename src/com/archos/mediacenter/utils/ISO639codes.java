@@ -371,12 +371,13 @@ public class ISO639codes {
     public static String replaceLanguageCodeInString(String string) {
         // treat strings being "l_XYZ" or "l_XY" or "XYZ" or "XY" or "title (l_XYZ)" or "title (l_XY)"
         // and replace it with locale language corresponding to XY or XYZ letter code
-        log.debug("replaceLanguageCodeInString: string=" + string);
+        log.debug("replaceLanguageCodeInString: input string=" + string);
         if (string == null) return "";
-        String pattern = "(?:^l_([A-Za-z]{2,3}$)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
+        String pattern = "(?:^l_([A-Za-z]{2,3}\\b)|\\(l_([A-Za-z]{2,3})\\)$)"; // 2 or 3 letters code
         String languageCode = "";
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(string);
+        String result = "";
         if (matcher.find()) {
             String languageCode1 = matcher.group(1);
             String languageCode2 = matcher.group(2);
@@ -384,12 +385,11 @@ public class ISO639codes {
             if (languageCode1 != null) {
                 languageCode = languageCode1;
                 if (languageCode1.equals("und") || languageCode1.equals("Unknown")) return ""; // und = undefined
-                return capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
+                result = capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
             } else if (languageCode2 != null) {
                 languageCode = languageCode2;
-                return string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
+                result = string.replaceAll(pattern, "(" + ISO639codes.getLanguageNameForLetterCode(languageCode) + ")");
             }
-            return string; // this never happens?
         } else {
             // could be that it is a 2|3 letter code alone: treat this case too
             pattern = "^[A-Za-z]{2,3}$"; // 2 or 3 letters code
@@ -398,12 +398,16 @@ public class ISO639codes {
             if (matcher.find()) {
                 languageCode = matcher.group();
                 log.debug("replaceLanguageCodeInString: languageCode=" + languageCode);
-                if (languageCode.equals("und") || languageCode.equals("Unknown")) return ""; // und = undefined
-                return capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
+                if (languageCode.equals("und") || languageCode.equals("Unknown")) result = ""; // und = undefined
+                else result = capitalizeFirstLetter(string.replaceAll(pattern, ISO639codes.getLanguageNameForLetterCode(languageCode)));
+            } else {
+                log.error("replaceLanguageCodeInString: no languageCode in " + string);
+                result = string;
             }
-            log.error("replaceLanguageCodeInString: no languageCode in " + string);
-            return string;
         }
+        log.debug("replaceLanguageCodeInString: input={} -> result={}", string, result);
+        return result;
+
     }
 
 }
