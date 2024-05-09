@@ -14,9 +14,9 @@
 
 package com.archos.mediacenter.utils;
 
-import org.fourthline.cling.model.meta.Device;
-import org.fourthline.cling.support.model.container.Container;
-import org.fourthline.cling.support.model.item.Item;
+import org.jupnp.model.meta.Device;
+import org.jupnp.support.model.container.Container;
+import org.jupnp.support.model.item.Item;
 
 
 public class UpnpItemData implements Comparable<UpnpItemData> {
