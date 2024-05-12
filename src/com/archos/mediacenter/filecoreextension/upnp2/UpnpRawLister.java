@@ -22,17 +22,17 @@ import com.archos.filecorelibrary.AuthenticationException;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 
-import org.jupnp.model.action.ActionInvocation;
-import org.jupnp.model.message.UpnpResponse;
-import org.jupnp.model.meta.Device;
-import org.jupnp.model.meta.Service;
-import org.jupnp.model.types.UDAServiceId;
-import org.jupnp.support.contentdirectory.callback.Browse;
-import org.jupnp.support.model.BrowseFlag;
-import org.jupnp.support.model.DIDLContent;
-import org.jupnp.support.model.DIDLObject;
-import org.jupnp.support.model.container.Container;
-import org.jupnp.support.model.item.Item;
+import org.fourthline.cling.model.action.ActionInvocation;
+import org.fourthline.cling.model.message.UpnpResponse;
+import org.fourthline.cling.model.meta.Device;
+import org.fourthline.cling.model.meta.Service;
+import org.fourthline.cling.model.types.UDAServiceId;
+import org.fourthline.cling.support.contentdirectory.callback.Browse;
+import org.fourthline.cling.support.model.BrowseFlag;
+import org.fourthline.cling.support.model.DIDLContent;
+import org.fourthline.cling.support.model.DIDLObject;
+import org.fourthline.cling.support.model.container.Container;
+import org.fourthline.cling.support.model.item.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -27,7 +27,7 @@ import com.archos.filecorelibrary.AuthenticationException;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 
-import org.jupnp.support.model.item.Item;
+import org.fourthline.cling.support.model.item.Item;
 
 import java.io.IOException;
 import java.util.List;

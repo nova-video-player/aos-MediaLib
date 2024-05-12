@@ -25,20 +25,20 @@ import android.os.Looper;
 
 import com.archos.environment.NetworkState;
 
-import org.jupnp.controlpoint.ActionCallback;
-import org.jupnp.model.message.header.UDADeviceTypeHeader;
-import org.jupnp.model.meta.Action;
-import org.jupnp.model.meta.Device;
-import org.jupnp.model.meta.LocalDevice;
-import org.jupnp.model.meta.RemoteDevice;
-import org.jupnp.model.meta.Service;
-import org.jupnp.model.types.UDADeviceType;
-import org.jupnp.model.types.UDAServiceId;
-import org.jupnp.registry.DefaultRegistryListener;
-import org.jupnp.registry.Registry;
-import org.jupnp.registry.RegistryListener;
-import org.jupnp.android.AndroidUpnpService;
-import org.jupnp.android.AndroidUpnpServiceImpl;
+import org.fourthline.cling.android.AndroidUpnpService;
+import org.fourthline.cling.android.AndroidUpnpServiceImpl;
+import org.fourthline.cling.controlpoint.ActionCallback;
+import org.fourthline.cling.model.message.header.UDADeviceTypeHeader;
+import org.fourthline.cling.model.meta.Action;
+import org.fourthline.cling.model.meta.Device;
+import org.fourthline.cling.model.meta.LocalDevice;
+import org.fourthline.cling.model.meta.RemoteDevice;
+import org.fourthline.cling.model.meta.Service;
+import org.fourthline.cling.model.types.UDADeviceType;
+import org.fourthline.cling.model.types.UDAServiceId;
+import org.fourthline.cling.registry.DefaultRegistryListener;
+import org.fourthline.cling.registry.Registry;
+import org.fourthline.cling.registry.RegistryListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,13 +269,9 @@ public class UpnpServiceManager {
             mAndroidUpnpService = (AndroidUpnpService) service;
             mState = State.RUNNING;
             log.debug("State RUNNING");
+
             // Listen for discovery stuff
-            if (mAndroidUpnpService != null) {
-                mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
-                mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
-            } else {
-                log.error("onServiceConnected: mAndroidUpnpService is null!");
-            }
+            mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
 
             // Start searching for servers periodically
             mUiHandler.removeCallbacks(mPeriodicSearchRunnable); // better safe than sorry
@@ -380,8 +376,7 @@ public class UpnpServiceManager {
             Action action = service.getAction("Browse");
             if (action == null) return;
 
-            log.debug("deviceAdded: " + device.getDisplayString() + " " + device.getDetails().getFriendlyName() + " " + device.getDetails().getSerialNumber() + " " + device.getDetails().getManufacturerDetails().getManufacturer());
-            log.debug("deviceAdded: addDevice with hash code " + device.hashCode());
+            log.debug("addDevice with hash code " + device.hashCode());
             synchronized (this) {
                 // Add to list
                 mDevices.put(Integer.valueOf(device.hashCode()), device);
