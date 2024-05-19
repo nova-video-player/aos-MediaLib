@@ -83,7 +83,7 @@ public class SearchMovie2 {
                     if (response.isSuccessful()) {
                         if (response.body() != null) {
                             log.debug("search: response body has " + response.body().total_results + " results");
-                            if (response.body().total_results == 0)
+                            if (response.body().total_results != null && response.body().total_results == 0)
                                 notFound = true;
                             parserResult = SearchMovieParser2.getResult(response, query, language, year, resultLimit);
                             myResult.result = parserResult;
