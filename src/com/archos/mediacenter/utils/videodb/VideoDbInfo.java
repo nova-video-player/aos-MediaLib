@@ -198,7 +198,9 @@ public class VideoDbInfo implements Parcelable {
             result.resume = c.getInt(IDX_BOOKMARK);
             result.bookmark = c.getInt(IDX_ARCHOS_BOOKMARK);
             int playerParams = c.getInt(IDX_PLAYER_PARAMS);
-            result.audioTrack = VideoStore.paramsToAudioTrack(playerParams);
+            // ensure that audioTrack is -1 if not played before
+            if (playerParams != 0) result.audioTrack = VideoStore.paramsToAudioTrack(playerParams);
+            else result.audioTrack = -1;
             result.subtitleTrack = VideoStore.paramsToSubtitleTrack(playerParams);
             result.subtitleDelay = c.getInt(IDX_SUBTITLE_DELAY);
             result.subtitleRatio = c.getInt(IDX_SUBTITLE_RATIO);
