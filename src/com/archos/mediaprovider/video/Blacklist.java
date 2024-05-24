@@ -132,26 +132,30 @@ public class Blacklist {
     private static ArrayList<String> getBlacklisteds() {
         ArrayList<String> blacklisteds = new ArrayList<>();
         Cursor c = BlacklistedDbAdapter.VIDEO.queryAllBlacklisteds(mContext);
-        final int pathColumn = c.getColumnIndexOrThrow(BlacklistedDbAdapter.KEY_PATH);
-        try {
-            if (c.moveToFirst()) {
-                while (!c.isAfterLast()) {
-                    String blacklistedPath = c.getString(pathColumn);
-                    if (blacklistedPath != null) {
-                        blacklistedPath = Uri.parse(blacklistedPath).getPath();
-                        if (!blacklistedPath.endsWith("/"))
-                            blacklistedPath += "/";
-                        blacklisteds.add(blacklistedPath);
+        if (c != null) {
+            final int pathColumn = c.getColumnIndexOrThrow(BlacklistedDbAdapter.KEY_PATH);
+            try {
+                if (c.moveToFirst()) {
+                    while (!c.isAfterLast()) {
+                        String blacklistedPath = c.getString(pathColumn);
+                        if (blacklistedPath != null) {
+                            blacklistedPath = Uri.parse(blacklistedPath).getPath();
+                            if (!blacklistedPath.endsWith("/"))
+                                blacklistedPath += "/";
+                            blacklisteds.add(blacklistedPath);
+                        }
+                        c.moveToNext();
                     }
-                    c.moveToNext();
                 }
+            } catch (Exception e) {
+                // with c.close() we get with c.moveToFirst() IllegalStateException: Cannot perform this operation because the connection pool has been closed
+                // without c.close() we get with c.moveToFirst() CursorWindowAllocationException
+                Log.e(TAG, "getBlacklisteds: caught Exception", e);
+            } finally {
+                c.close();
             }
-        } catch (Exception e) {
-            // with c.close() we get with c.moveToFirst() IllegalStateException: Cannot perform this operation because the connection pool has been closed
-            // without c.close() we get with c.moveToFirst() CursorWindowAllocationException
-            Log.e(TAG, "getBlacklisteds: caught Exception", e);
-        } finally {
-            c.close();
+        } else {
+            Log.e(TAG, "getBlacklisteds: cursor is null!");
         }
         return blacklisteds;
     }
