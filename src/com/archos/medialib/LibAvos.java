@@ -84,7 +84,7 @@ public class LibAvos {
                                 if (DBG) Log.d(TAG, "Importing plugins lib "+file.getPath());
                                 while ((read = in.read(buffer)) != -1)
                                     out.write(buffer, 0, read);
-                                    canDeleteFile = true;
+                                canDeleteFile = true;
                             } catch (Exception e) {
                                 if (DBG) Log.d(TAG, "Error Copy");
                             } finally {
@@ -252,6 +252,7 @@ public class LibAvos {
     }
 
     public static void setSubtitlePath(String path) {
+        if (DBG) Log.d("LibAvos", "setSubtitlePath: " + path);
         nativeSetSubtitlePath(path);
     }
 
