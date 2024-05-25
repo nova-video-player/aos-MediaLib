@@ -29,6 +29,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.BaseColumns;
@@ -114,11 +115,15 @@ public final class VideoStore {
                 if (DBG) Log.d(TAG, "requestIndexing: video not present in VideoStore checking MediaStore");
                 whereR = MediaStoreFilesFileColumnsDATA + " = ?";
                 cursor.close();
-                cursor = context.getContentResolver().query(MediaStore.Files.getContentUri("external"),
-                        new String[] { MediaStoreFilesFileColumnsDATA }, whereR, whereRArgs, null);
-
+                String volumeName = "external";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) volumeName = MediaStore.VOLUME_EXTERNAL;
+                try {
+                    cursor = context.getContentResolver().query(MediaStore.Files.getContentUri(volumeName),
+                            new String[] { MediaStoreFilesFileColumnsDATA }, whereR, whereRArgs, null);
+                } catch (IllegalArgumentException e) {
+                    Log.e(TAG, "requestIndexing: no " + volumeName + " available, caught IllegalArgumentException!!!", e);
+                }
                 if (DBG) Log.d(TAG, "requestIndexing: MediaStore.Files cursor dump " + DatabaseUtils.dumpCursorToString(cursor));
-
                 final ContentValues cvR = new ContentValues(1);
 
                 Boolean doPopulate = false;
