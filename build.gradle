@@ -36,6 +36,7 @@ android {
     }
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -114,6 +115,7 @@ if (useSan)
 
 dependencies {
     implementation project(':FileCoreLibrary')
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     implementation 'androidx.core:core:1.13.1'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
     implementation 'androidx.media:media:1.7.0'
