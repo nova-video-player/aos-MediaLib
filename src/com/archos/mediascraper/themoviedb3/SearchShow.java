@@ -70,9 +70,20 @@ public class SearchShow {
                 if (response.code() != 404) notFoundIssue = false; // this is an AND
                 // Check https://developer.themoviedb.org/docs/errors
                 switch (response.code()) {
-                    case 401 -> authIssue = true; // this is an OR
-                    case 404 -> notFoundIssue = true; // this is an AND
-                    case 500, 503, 504 -> serviceError = true;
+                    case 401:
+                        authIssue = true; // this is an OR
+                        break;
+                    case 404:
+                        notFoundIssue = true; // this is an AND
+                        break;
+                    case 500:
+                    case 503:
+                    case 504:
+                        serviceError = true;
+                        break;
+                    default:
+                        // Handle any other response codes if necessary
+                        break;
                 }
                 if (response.isSuccessful()) isResponseOk = true;
                 if (response.body() == null)

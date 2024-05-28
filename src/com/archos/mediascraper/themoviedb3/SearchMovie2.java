@@ -61,24 +61,28 @@ public class SearchMovie2 {
                     null, adultScrape, null, annee).execute();
             // Check https://developer.themoviedb.org/docs/errors
             switch (response.code()) {
-                case 401 -> { // auth issue
+                case 401: { // auth issue
                     log.debug("search: auth error");
                     myResult.result = SearchMovieResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.AUTH_ERROR;
                     MovieScraper3.reauth();
                     return myResult;
                 }
-                case 404 -> { // not found
+                case 404: { // not found
                     myResult.status = ScrapeStatus.NOT_FOUND;
                     notFound = true;
                     log.debug("search: " + query + " not found");
+                    break;
                 }
-                case 500, 503, 504 -> { // internal server error
+                case 500:
+                case 503:
+                case 504: { // internal server error
                     log.error("search: internal server error");
                     myResult.result = SearchMovieResult.EMPTY_LIST;
                     myResult.status = ScrapeStatus.ERROR;
+                    break;
                 }
-                default -> {
+                default: {
                     log.debug("search: found");
                     if (response.isSuccessful()) {
                         if (response.body() != null) {
@@ -97,6 +101,7 @@ public class SearchMovie2 {
                         log.debug("search: response is not successful for " + query);
                         myResult.status = ScrapeStatus.ERROR_PARSER;
                     }
+                    break;
                 }
             }
         } catch (IOException e) {
