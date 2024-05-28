@@ -36,8 +36,6 @@ android {
     }
 
     compileOptions {
-        //sourceCompatibility JavaVersion.VERSION_17
-        //targetCompatibility JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -130,6 +128,7 @@ dependencies {
     implementation ('com.uwetrottmann.trakt5:trakt-java:6.13.0') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
+    // required for trakt-java
     implementation 'com.jakewharton.threetenabp:threetenabp:1.4.7'
     api ('org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.2') {
         exclude group:'org.apache.oltu.oauth2' , module: 'org.apache.oltu.oauth2.common'
