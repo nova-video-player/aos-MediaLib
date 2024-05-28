@@ -141,7 +141,7 @@ dependencies {
     api 'org.jupnp:org.jupnp.support:3.0.2'
     api 'org.jupnp:org.jupnp.android:3.0.2'
     // jetty required by jupnp and going above 9.4.14 requires minSdkVersion 26
-    implementation ('org.eclipse.jetty:jetty-server:9.4.14.v20181114') {
+    implementation ('org.eclipse.jetty:jetty-server:12.0.9') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
     implementation ('org.eclipse.jetty:jetty-servlet:9.4.14.v20181114') {
