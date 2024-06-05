@@ -36,6 +36,7 @@ import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
 import static com.archos.mediascraper.preprocess.ParseUtils.getCountryOfOrigin;
 import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
 import static com.archos.mediascraper.preprocess.ParseUtils.removeAfterEmptyParenthesis;
+import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractorEndString;
 
 /**
  * Class used to parse the file names and try to guess if we have a tv show.
@@ -126,12 +127,20 @@ public final class ShowUtils {
                     name = removeAfterEmptyParenthesis(nameYear.first);
                     name = cleanUpName(name);
                     nameCountry = getCountryOfOrigin(name);
-                    log.debug("getMatch: patternsShowFirst " + nameCountry.first + " season " + matcher.group(2) + " episode " + matcher.group(3) + " year " + nameYear.second + " country " + nameCountry.second);
-                    buffer.put(SHOW, nameCountry.first);
+                    String year = nameYear.second;
+                    if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
+                        nameYear = yearExtractorEndString(nameCountry.first);
+                        if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
+                            name = nameYear.first;
+                            year = nameYear.second;
+                        }
+                    }
+                    log.debug("getMatch: patternsShowFirst " + name + " season " + matcher.group(2) + " episode " + matcher.group(3) + " year " + year + " country " + nameCountry.second);
+                    buffer.put(SHOW, name);
                     String season = matcher.group(2);
                     buffer.put(SEASON, (season == null || season.isEmpty()) ? "1" : season);
                     buffer.put(EPNUM, matcher.group(3).replaceAll(SEP_MANDATORY, ""));
-                    buffer.put(YEAR, nameYear.second);
+                    buffer.put(YEAR, year);
                     buffer.put(ORIGIN, nameCountry.second);
                     return buffer;
                 }

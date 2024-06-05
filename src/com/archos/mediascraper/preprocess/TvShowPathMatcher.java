@@ -18,7 +18,6 @@ package com.archos.mediascraper.preprocess;
 import android.net.Uri;
 import android.util.Pair;
 
-import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.StringUtils;
 
 import org.slf4j.Logger;
@@ -30,6 +29,7 @@ import java.util.regex.Pattern;
 import static com.archos.mediascraper.ShowUtils.cleanUpName;
 import static com.archos.mediascraper.preprocess.ParseUtils.getCountryOfOrigin;
 import static com.archos.mediascraper.preprocess.ParseUtils.parenthesisYearExtractor;
+import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractorEndString;
 
 /**
  * Matches Tv Shows in folders like
@@ -115,8 +115,16 @@ class TvShowPathMatcher implements InputMatcher {
             Pair<String, String>  nameCountry = getCountryOfOrigin(name);
             int season = StringUtils.parseInt(matcher.group(2), 0);
             int episode = StringUtils.parseInt(matcher.group(3), 0);
-            log.debug("getFileInputMatch: " + name + " season " + season + " episode " + episode + " year " + nameYear.second + " country " + nameCountry.second);
-            return new TvShowSearchInfo(file, nameCountry.first, season, episode, nameYear.second, nameCountry.second);
+            String year = nameYear.second;
+            if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
+                nameYear = yearExtractorEndString(nameCountry.first);
+                if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
+                    name = nameYear.first;
+                    year = nameYear.second;
+                }
+            }
+            log.debug("getFileInputMatch: " + name + " season " + season + " episode " + episode + " year " + year + " country " + nameCountry.second);
+            return new TvShowSearchInfo(file, name, season, episode, year, nameCountry.second);
         } else {
             log.debug("getFileInputMatch: no match");
         }
