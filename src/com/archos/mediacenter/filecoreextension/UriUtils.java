@@ -14,6 +14,9 @@
 
 package com.archos.mediacenter.filecoreextension;
 
+import static org.apache.hc.core5.net.InetAddressUtils.isIPv4Address;
+import static org.apache.hc.core5.net.InetAddressUtils.isIPv6Address;
+
 import android.net.Uri;
 
 import com.archos.filecorelibrary.FileUtils;
@@ -25,8 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -68,14 +69,25 @@ public class UriUtils {
         return networkSharesTypes.get(type).contains("ftp");
     }
 
-    private static final String HOSTNAME_PATTERN =
-            "^(?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*$";
+    // FQDN criteria:
+    // - FQDN is limited to 255 chars
+    // - DNS labels should contain be a-z | A-Z | 0-9 and hyphen(-)
+    // - DNS label should be between 1 and 63 characters long
+    // - TLD must be at least two characters, and a maximum of 6 characters
+    // - DNS label should not start or end with hyphen (-) (e.g. -google.com or google-.com)
+    // - DNS label can be a subdomain (e.g. mkyong.blogspot.com)
+    private static final String FQDN_PATTERN = "^(?=.{1,255}$)((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$";
+
+    public static boolean isValidFqdn(String hostname) {
+        if (hostname == null) return false;
+        Pattern pattern = Pattern.compile(FQDN_PATTERN);
+        Matcher matcher = pattern.matcher(hostname);
+        return matcher.matches();
+    }
 
     public static boolean isValidHost(String hostname) {
         if (hostname == null) return false;
-        Pattern pattern = Pattern.compile(HOSTNAME_PATTERN);
-        Matcher matcher = pattern.matcher(hostname);
-        return matcher.matches();
+        return isValidFqdn(hostname) || isIPv4Address(hostname) || isIPv6Address(hostname);
     }
 
     public static boolean isValidPath(String pathname) {
