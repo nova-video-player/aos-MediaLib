@@ -78,6 +78,8 @@ public class UriUtils {
     // - DNS label can be a subdomain (e.g. mkyong.blogspot.com)
     private static final String FQDN_PATTERN = "^(?=.{1,255}$)((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$";
 
+    private static final String SMB_SERVER_PATTERN = "^(?=.{1,15}$)[A-Za-z0-9-]{1,15}$";
+
     public static boolean isValidFqdn(String hostname) {
         if (hostname == null) return false;
         Pattern pattern = Pattern.compile(FQDN_PATTERN);
@@ -85,9 +87,16 @@ public class UriUtils {
         return matcher.matches();
     }
 
+    public static boolean isValidSmbServer(String hostname) {
+        if (hostname == null) return false;
+        Pattern pattern = Pattern.compile(SMB_SERVER_PATTERN);
+        Matcher matcher = pattern.matcher(hostname);
+        return matcher.matches();
+    }
+
     public static boolean isValidHost(String hostname) {
         if (hostname == null) return false;
-        return isValidFqdn(hostname) || isIPv4Address(hostname) || isIPv6Address(hostname);
+        return isValidFqdn(hostname) || isIPv4Address(hostname) || isIPv6Address(hostname) || isValidSmbServer(hostname);
     }
 
     public static boolean isValidPath(String pathname) {
