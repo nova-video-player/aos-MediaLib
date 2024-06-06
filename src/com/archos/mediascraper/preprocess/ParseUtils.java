@@ -51,7 +51,7 @@ public class ParseUtils {
 
     // matches "[space or punctuation/brackets etc]year", year is group 1
     private static final Pattern YEAR_PATTERN = Pattern.compile("(.*)[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)");
-
+    private static final Pattern YEAR_PATTERN_END_STRING = Pattern.compile("(.*)[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)$");
     private static final Pattern PARENTHESIS_YEAR_PATTERN = Pattern.compile("(.*)[\\s\\p{Punct}]+\\(((?:19|20)\\d{2})\\)");
 
     // Strip out everything after empty parenthesis (after year pattern removal)
@@ -127,6 +127,11 @@ public class ParseUtils {
     public static Pair<String, String> yearExtractor(String input) {
         log.debug("yearExtractor input: " + input);
         return twoPatternExtractor2(input, YEAR_PATTERN);
+    }
+
+    public static Pair<String, String> yearExtractorEndString(String input) {
+        log.debug("yearExtractor input: " + input);
+        return twoPatternExtractor2(input, YEAR_PATTERN_END_STRING);
     }
 
     // matches "[space or punctuation/brackets etc](year)", year is group 1
