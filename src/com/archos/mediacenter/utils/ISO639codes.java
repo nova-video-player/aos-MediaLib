@@ -143,7 +143,7 @@ public class ISO639codes {
         } else if (code.length() == 3) {
             return getLanguageNameFor3LetterCode(code);
         } else {
-            log.error("getLanguageNameForLetterCode: Invalid code {}", code);
+            log.debug("getLanguageNameForLetterCode: Invalid code {}", code);
             return code;
         }
     }
@@ -161,7 +161,7 @@ public class ISO639codes {
             } else {
                 // there is something missing make it obvious and fallback to original 3 letter code
                 languageName = code;
-                log.error("getLanguageNameFor3LetterCode: No language name found for code {}", code);
+                log.debug("getLanguageNameFor3LetterCode: No language name found for code {}", code);
             }
         }
         return languageName;
