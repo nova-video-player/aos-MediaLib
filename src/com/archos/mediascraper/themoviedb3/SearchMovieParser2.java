@@ -113,8 +113,10 @@ public class SearchMovieParser2 {
             // Put in lower priority any entry that has no movie banned i.e. .*missing/movie.jpg as banner
             isReleaseDateKnown = (movie.release_date != null);
             String movieNameLC = movieName.toLowerCase();
-            levenshteinDistanceTitle = levenshteinDistance.apply(movieNameLC, result.getTitle().toLowerCase());
-            levenshteinDistanceOriginalTitle = levenshteinDistance.apply(movieNameLC, result.getOriginalTitle().toLowerCase());
+            String title = result.getTitle();
+            String originalTitle = result.getOriginalTitle();
+            levenshteinDistanceTitle = title != null ? levenshteinDistance.apply(movieNameLC, title.toLowerCase()) : Integer.MAX_VALUE;
+            levenshteinDistanceOriginalTitle = originalTitle != null ? levenshteinDistance.apply(movieNameLC, originalTitle.toLowerCase()) : Integer.MAX_VALUE;
             log.debug("getSearchMovieParserResult: between " + movieNameLC + " and " + result.getOriginalTitle().toLowerCase() + "/" + result.getTitle().toLowerCase() + " levenshteinDistanceTitle=" + levenshteinDistanceTitle + ", levenshteinDistanceOriginalTitle=" + levenshteinDistanceOriginalTitle);
 
             if (movie.poster_path == null || movie.poster_path.endsWith("missing/series.jpg") || movie.poster_path.endsWith("missing/movie.jpg") || movie.poster_path == "") {
