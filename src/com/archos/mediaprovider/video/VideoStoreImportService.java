@@ -510,7 +510,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // note that the db is being modified during import
         while (true) {
             try {
-                c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE) ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
+                c = db.rawQuery("SELECT * FROM delete_files WHERE name IS NOT NULL AND name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE) ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
                 cCount = c.getCount();
                 log.debug("processDeleteFileAndVobCallback: delete_files cover_movie new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + cCount);
                 if (cCount == 0) {
@@ -543,7 +543,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // note that the db is being modified during import
         while (true) {
             try {
-                c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
+                c = db.rawQuery("SELECT * FROM delete_files WHERE name IS NOT NULL ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
                 cCount = c.getCount();
                 log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window=" + WINDOW_SIZE + " -> cursor has size " + cCount);
                 if (cCount == 0) {
