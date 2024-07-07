@@ -53,9 +53,12 @@ public class SearchMovieParser2 {
         SearchParserResult searchMovieParserResult = new SearchParserResult();
         int levenshteinDistanceTitle, levenshteinDistanceOriginalTitle;
         log.debug("getSearchMovieParserResult: examining response of " + response.body().total_results + " entries in " + language + ", for " + movieName + " and specific year " + year);
-
         // sort first movies by popularity so that distinction between levenstein distance is operated on popularity
         List<BaseMovie> resultsMovie = response.body().results;
+        if (resultsMovie == null) {
+            log.debug("getSearchMovieParserResult: no results");
+            return searchMovieParserResult;
+        }
         // popularity sort is disabled to enable sort by year to pick lower year if not specified with lowest levenshtein metric
         // if year is specified pick movies with highest popularity (solves The Killer 1989 best pick)
         if (SORT_POPULARITY && year != null && ! year.isEmpty())
@@ -149,11 +152,14 @@ public class SearchMovieParser2 {
         log.debug("getSearchMovieParserResult: resultsProbable=" + searchMovieParserResult.resultsProbable.toString());
 
         // perform the levenshtein distance sort on all results
-        Collections.sort(searchMovieParserResult.resultsProbable, SearchParserResult.comparator);
-        Collections.sort(searchMovieParserResult.resultsNoBanner, SearchParserResult.comparator);
-        Collections.sort(searchMovieParserResult.resultsNoPoster, SearchParserResult.comparator);
-        Collections.sort(searchMovieParserResult.resultsNoAirDate, SearchParserResult.comparator);
-
+        if (searchMovieParserResult.resultsProbable != null)
+            Collections.sort(searchMovieParserResult.resultsProbable, SearchParserResult.comparator);
+        if (searchMovieParserResult.resultsNoBanner != null)
+            Collections.sort(searchMovieParserResult.resultsNoBanner, SearchParserResult.comparator);
+        if (searchMovieParserResult.resultsNoPoster != null)
+            Collections.sort(searchMovieParserResult.resultsNoPoster, SearchParserResult.comparator);
+        if (searchMovieParserResult.resultsNoAirDate != null)
+            Collections.sort(searchMovieParserResult.resultsNoAirDate, SearchParserResult.comparator);
         log.debug("getSearchMovieParserResult: applying Levenshtein distance resultsProbableSorted=" + searchMovieParserResult.resultsProbable.toString());
         return searchMovieParserResult;
     }

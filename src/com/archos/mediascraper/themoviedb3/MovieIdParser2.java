@@ -115,7 +115,7 @@ public class MovieIdParser2 {
         if (movie.release_dates != null && movie.release_dates.results != null) {
             for (int i = 0; i < movie.release_dates.results.size(); i++) {
                 ReleaseDatesResult releaseDatesResult = movie.release_dates.results.get(i);
-                if (releaseDatesResult.iso_3166_1.equals("US")) {
+                if (releaseDatesResult.iso_3166_1 != null && releaseDatesResult.iso_3166_1.equals("US")) {
                     for (int j = 0; j < releaseDatesResult.release_dates.size(); j++) {
                         ReleaseDate releaseDate = releaseDatesResult.release_dates.get(j);
                         result.setContentRating(releaseDate.certification);
@@ -127,7 +127,7 @@ public class MovieIdParser2 {
         if (movie.runtime != null) result.setRuntime(movie.runtime, TimeUnit.MINUTES);
 
         List<ScraperTrailer> trailers;
-        if (movie.videos != null) {
+        if (movie.videos != null && movie.videos.results != null) {
             trailers = new ArrayList<>(movie.videos.results.size());
             int i = 0;
             for (Videos.Video trailer: movie.videos.results) {
