@@ -55,12 +55,12 @@ public class ShowIdParser {
 
         log.debug("getResult: found title=" + serie.name);
 
-        if (serie.content_ratings.results != null)
+        if (serie.content_ratings != null && serie.content_ratings.results != null)
             for (ContentRating results: serie.content_ratings.results)
-                if (results.iso_3166_1.equals("US"))
+                if (results.iso_3166_1 != null && results.iso_3166_1.equals("US"))
                     result.setContentRating(results.rating);
 
-        result.setImdbId(serie.external_ids.imdb_id);
+        if (serie.external_ids != null) result.setImdbId(serie.external_ids.imdb_id);
         result.setOnlineId(serie.id);
         log.debug("getResult: onlineId=" + serie.id + ", imdbId=" + serie.external_ids.imdb_id);
         result.setGenres(getLocalizedGenres(serie.genres));
