@@ -48,7 +48,7 @@ public class LibAvosReceiver extends BroadcastReceiver {
             LibAvos.init(context);
             LibAvos.avsh(intent.getStringExtra("cmd"));
         } else if (action.equals("com.archos.mediacenter.DEBUG_SCAN")) {
-            Log.d("IMetadataRetriever", intent.getData().getPath());
+            if (intent.getData() != null) Log.d("IMetadataRetriever", intent.getData().getPath());
             final IMediaMetadataRetriever retriever = MediaFactory.createMetadataRetriever(context);
             retriever.setDataSource(context, intent.getData());
             final MediaMetadata metadata = retriever.getMediaMetadata();
