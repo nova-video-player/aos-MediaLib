@@ -58,7 +58,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 33
         multiDexEnabled true
     }
 
