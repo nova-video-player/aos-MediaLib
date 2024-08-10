@@ -21,11 +21,13 @@ import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.NetworkOnMainThreadException;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
 
 import android.util.Log;
@@ -134,14 +136,18 @@ public class NfoExportService extends IntentService {
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
-        startForeground(NOTIFICATION_ID, nb.build());
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, nb.build(),
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC : 0
+        );
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
         Uri data = intent != null ? intent.getData() : null;
-        startForeground(NOTIFICATION_ID, nb.build());
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, nb.build(),
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC : 0
+        );
         boolean processIntent = false;
         if (INTENT_EXPORT_FILE.equals(action)) {
             if (addDirTask(data))
