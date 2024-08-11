@@ -247,7 +247,7 @@ public class AllCollectionScrapeService extends IntentService {
         if (tmdb == null) reauth();
         if (collectionService == null) collectionService = tmdb.collectionService();
         // get configured language
-        String language = MovieScraper3.getLanguage(getApplicationContext());
+        String language = Scraper.getLanguage(getApplicationContext());
 
         if (cursor != null) {
             // do the processing
