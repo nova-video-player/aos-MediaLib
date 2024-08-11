@@ -111,6 +111,8 @@ public class Scraper {
     public static String getLanguage(Context context) {
         String defaultLanguage = Locale.getDefault().getLanguage();
         String result;
+        // TO CHECK: perhaps below code does not do much since Locale.getDefault().getLanguage() returns 2 letter codes even if a variant of the language is used
+        log.debug("getLanguage: defaultScraperLanguage=" + defaultLanguage);
         // if defaultLanguage is of the form xx-yy take result as xx
         if (defaultLanguage.length() > 2 && defaultLanguage.charAt(2) == '-') {
             result = defaultLanguage.substring(0, 2);
