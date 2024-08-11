@@ -18,6 +18,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.preference.PreferenceManager;
+
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
 import com.archos.mediascraper.xml.BaseScraper2;
@@ -26,6 +28,8 @@ import com.archos.mediascraper.xml.ShowScraper4;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Locale;
 
 public class Scraper {
     private static final Logger log = LoggerFactory.getLogger(Scraper.class);
@@ -102,6 +106,29 @@ public class Scraper {
         if (info.isTvShow())
             return mShowScraper.search(info);
         return mMovieScraper.search(info);
+    }
+
+    public static String getLanguage(Context context) {
+        String defaultLanguage = Locale.getDefault().getLanguage();
+        String result;
+        // if defaultLanguage is of the form xx-yy take result as xx
+        if (defaultLanguage.length() > 2 && defaultLanguage.charAt(2) == '-') {
+            result = defaultLanguage.substring(0, 2);
+        } else {
+            result = defaultLanguage;
+        }
+        // zh = Mandarin -> Chinese Simplified (zh-cn) or Chinese
+        // cn = Cantonese -> Chinese Traditional (zh-tw)
+        if (defaultLanguage.toLowerCase().startsWith("zh-tw")) {
+            log.warn("getLanguage: curing defaultScraperLanguage=" + defaultLanguage + " zh-tw -> to cn");
+            result = "cn";  // Traditional Chinese
+        }
+        // treat brazilian portuguese as an exception, tmdb understands pt-br
+        if (defaultLanguage.toLowerCase().startsWith("pt-br")) {
+            log.warn("getLanguage: curing defaultScraperLanguage=" + defaultLanguage + ", keeping pt-br");
+            result = "pt-br";  // Brazilian Portuguese
+        }
+        return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext()).getString("favScraperLang", result);
     }
 
 }

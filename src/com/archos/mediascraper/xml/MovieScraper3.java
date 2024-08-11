@@ -24,6 +24,7 @@ import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeDetailResult;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.ScrapeStatus;
+import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.ScraperCache;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.preprocess.MovieSearchInfo;
@@ -96,7 +97,7 @@ public class MovieScraper3 extends BaseScraper2 {
         if (tmdb == null) reauth();
         if (searchService == null) searchService = tmdb.searchService();
         // get configured language
-        String language = getLanguage(mContext);
+        String language = Scraper.getLanguage(mContext);
         log.debug("movie search:" + searchInfo.getName() + " year:" + searchInfo.getYear() + " language:" + language);
         SearchMovieResult searchResult = SearchMovie2.search(searchInfo.getName(), language, searchInfo.getYear(), maxItems, searchService, adultScrape);
         // TODO: this triggers scrape for all search results, is this intended?
@@ -112,7 +113,7 @@ public class MovieScraper3 extends BaseScraper2 {
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
         // TODO: why it searches every first level result?
-        String language = getLanguage(mContext);
+        String language = Scraper.getLanguage(mContext);
         log.debug("getDetailsInternal: language=" + language);
 
         long movieId = result.getId();
@@ -166,10 +167,6 @@ public class MovieScraper3 extends BaseScraper2 {
         // TODO MARC ?
         tag.downloadBackdrop(mContext);
         return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
-    }
-
-    public static String getLanguage(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext()).getString("favScraperLang", Locale.getDefault().getLanguage());
     }
 
     @Override

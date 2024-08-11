@@ -117,7 +117,7 @@ public class ShowScraper4 extends BaseScraper2 {
         }
         TvShowSearchInfo searchInfo = (TvShowSearchInfo) info;
         // get configured language
-        String language = getLanguage(mContext);
+        String language = Scraper.getLanguage(mContext);
         log.debug("getMatches2: tvshow search:" + searchInfo.getShowName()
                 + " s:" + searchInfo.getSeason()
                 + " e:" + searchInfo.getEpisode() + ", maxItems=" + maxItems + ", language=" + language);
@@ -427,10 +427,6 @@ public class ShowScraper4 extends BaseScraper2 {
                 bundle.putParcelable(item.getKey(), item.getValue());
         }
         return bundle;
-    }
-
-    public static String getLanguage(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext()).getString("favScraperLang", Locale.getDefault().getLanguage());
     }
 
     public static boolean isShowAlreadyKnown(Integer showId, Context context) {
