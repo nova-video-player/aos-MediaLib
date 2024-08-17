@@ -47,8 +47,10 @@ public class ISO639codes {
         // opensubtitles REST API language code exceptions (2 letters that are 4 letters)
         missingISO6391ToISO6393.put("pt-br", "s_brazilian"); // Brazilian Portuguese (pb used for opensubtitles), pb=pob
         missingISO6391ToISO6393.put("pt-pt", "por"); // Portuguese
-        missingISO6391ToISO6393.put("zh-cn", "s_chinese_simplified"); // Chinese (simplified) -> Chinese in strings.xml
-        missingISO6391ToISO6393.put("zh-tw", "s_traditional_chinese"); // Chinese (traditional)
+        missingISO6391ToISO6393.put("zh-cn", "s_chinese_mainland"); // Mandarin, Chinese Mainland, Chinese Simplified (most of the time)
+        missingISO6391ToISO6393.put("zh-ca", "s_chinese_hk"); // Cantonese, Chinese Hong Kong
+        missingISO6391ToISO6393.put("zh-tw", "s_chinese_tw"); // Min, Chinese Taiwan, Chinese Traditional (most of the time)
+        missingISO6391ToISO6393.put("zh-hk", "s_chinese_hk"); // Cantonese, Chinese Hong Kong
         // opensubtitles REST API not recognized languages ea=Spanish (LA)|ex=Extremaduran|me=Montenegrin|ma=Manipuri|pr=Dari|pm=Portuguese (MZ)|sp=Spanish (EU)|sx=Santali|sy=Syriac|tp=Toki Pona|ze=Chinese bilingual
         missingISO6391ToISO6393.put("ea", "s_spanish_la"); // Spanish (LA)
         missingISO6391ToISO6393.put("ex", "s_extremaduran"); // Extremaduran
@@ -65,9 +67,9 @@ public class ISO639codes {
         // cf. https://github.com/nova-video-player/aos-AVP/issues/1129
         //missingISO6391ToISO6393.put("cn", "yue"); // take yue = Cantonese (cn is used for tmdb)
         // zh = Mandarin -> Chinese Simplified (zh-cn) or Chinese
-        // cn = Cantonese -> Chinese Traditional (zh-tw)
-        missingISO6391ToISO6393.put("cn", "s_traditional_chinese");
-        missingISO6391ToISO6393.put("zh", "s_chinese_simplified");
+        // cn = Cantonese -> Chinese Traditional (zh-hk)
+        missingISO6391ToISO6393.put("cn", "s_chinese_hk"); // cn = Cantonese, Chinese Hong Kong
+        missingISO6391ToISO6393.put("zh", "s_chinese_mainland"); // zh = Mandarin, Chinese Mainland, Chinese Simplified (most of the time)
         // Moldavian is now officially Romanian since 202303 mo -> ron
         // {"iso_639_1":"mo","english_name":"Moldavian","name":""}
         missingISO6391ToISO6393.put("mo", "ron"); // Moldovian != Romanian it is an issue (mo is used for tmdb)
