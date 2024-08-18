@@ -25,6 +25,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.ServiceInfo;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -41,6 +42,7 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
 
 import com.archos.environment.ArchosUtils;
@@ -165,7 +167,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         n = createNotification();
         log.debug("onCreate: create notification + startForeground " + NOTIFICATION_ID);
         ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null) + " isForeground=" + AppState.isForeGround());
-        startForeground(NOTIFICATION_ID, n);
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, n,
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC : 0
+        );
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
         // setup background worker thread
@@ -274,7 +278,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
         log.debug("onStartCommand: created notification + startForeground " + NOTIFICATION_ID + " notification null? " + (n == null));
 
-        if (AppState.isForeGround()) startForeground(NOTIFICATION_ID, n);
+        if (AppState.isForeGround()) {
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, n,
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC : 0
+            );
+        }
 
         if (intent == null || intent.getAction() == null) {
             // do a full import here to make sure that we have initial data

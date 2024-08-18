@@ -21,11 +21,13 @@ import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
 
 import com.archos.mediacenter.utils.AppState;
@@ -169,14 +171,18 @@ public class AllCollectionScrapeService extends IntentService {
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
-        startForeground(NOTIFICATION_ID, nb.build());
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, nb.build(),
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC : 0
+        );
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
         Long collectionId = intent != null ? intent.getLongExtra("collectionId", -1) : null;
-        startForeground(NOTIFICATION_ID, nb.build());
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, nb.build(),
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC : 0
+        );
         boolean processIntent = false;
         if (INTENT_RESCRAPE_COLLECTION.equals(action)) {
             if (addTask(collectionId))
