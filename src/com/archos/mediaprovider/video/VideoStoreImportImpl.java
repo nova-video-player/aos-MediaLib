@@ -752,23 +752,56 @@ public class VideoStoreImportImpl {
 
     private static final String[] MAX_ID_PROJ = new String[] { "max(_id)" };
     /** helper to find the max of _id (=newest in android's db) in our db */
-    private static String getMaxId (ContentResolver cr) {
-        Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, null, null, null);
+    private static String getMaxId(ContentResolver cr) {
+        int offset = 0;
         String result = null;
-        if (c != null) {
-            if (c.moveToFirst()) {
-                result = c.getString(0);
+        int maxId = 0;
+        int highestMaxId = 0;
+        Cursor c = null;
+        while (true) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API>=30 requires bundle to LIMIT
+                    Bundle queryArgs = new Bundle();
+                    queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, null);
+                    queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
+                    queryArgs.putString(ContentResolver.QUERY_ARG_SORT_COLUMNS, BaseColumns._ID);
+                    queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_DESCENDING);
+                    queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
+                    queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offset);
+                    c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, queryArgs, null);
+                } else {
+                    c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, null, null, BaseColumns._ID + " DESC LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
+                }
+                if (c != null && c.moveToFirst()) {
+                    result = c.getString(0);
+                    if (result != null) {
+                        maxId = Integer.parseInt(result);
+                        if (maxId > highestMaxId) {
+                            highestMaxId = maxId;
+                            break;
+                        }
+                    }
+                    break;
+                }
+                if (c == null || c.getCount() < WINDOW_SIZE) break;
+                offset += WINDOW_SIZE;
+                c.close();
+            } catch (Exception e) {
+                log.error("getMaxId: exception while querying", e);
+                break;
+            } finally {
+                if (c != null) c.close();
             }
-            c.close();
         }
-        return TextUtils.isEmpty(result) ? "0" : result;
+        log.debug("getMaxId: highestMaxId=" + highestMaxId);
+        return Integer.toString(highestMaxId);
     }
 
     private final static String[] REMOTE_LIST_PROJECTION = new String[] {
         BaseColumns._ID
     };
     /** helper to get a comma separated list of all ids */
-    private static String getRemoteIdList (ContentResolver cr) {
+    private static String getRemoteIdList(ContentResolver cr) {
         StringBuilder sb = new StringBuilder();
         String prefix = "";
         int offset = 0;
