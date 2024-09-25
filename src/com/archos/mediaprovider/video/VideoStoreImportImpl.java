@@ -730,22 +730,29 @@ public class VideoStoreImportImpl {
     private static int getLocalCount (ContentResolver cr) {
         int result = 0;
         int offset = 0;
-        while (true) {
-            try {
-                Cursor c = cr.query(VideoStoreInternal.FILES_IMPORT, COUNT_PROJ, null, null, BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
-                if (c != null) {
-                    if (c.moveToFirst()) {
-                        result += c.getInt(0);
+        Cursor c = null;
+        try {
+            while (true) {
+                try {
+                    c = cr.query(VideoStoreInternal.FILES_IMPORT, COUNT_PROJ, null, null, BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
+                    if (c != null) {
+                        if (c.moveToFirst()) {
+                            result += c.getInt(0);
+                        }
+                        c.close();
                     }
-                    c.close();
+                    if (c == null || c.getCount() < WINDOW_SIZE) break;
+                    offset += WINDOW_SIZE;
+                } catch (Exception e) {
+                    log.error("getLocalCount: exception while moving to next cursor row!", e);
+                    if (CRASH_ON_ERROR) throw new RuntimeException(e);
+                    break;
+                } finally {
+                    if (c != null) c.close();
                 }
-                if (c == null || c.getCount() < WINDOW_SIZE) break;
-                offset += WINDOW_SIZE;
-            } catch (Exception e) {
-                log.error("getLocalCount: exception while moving to next cursor row!", e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
             }
+        } finally {
+            if (c != null) c.close();
         }
         return result;
     }
@@ -758,40 +765,44 @@ public class VideoStoreImportImpl {
         int maxId = 0;
         int highestMaxId = 0;
         Cursor c = null;
-        while (true) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API>=30 requires bundle to LIMIT
-                    Bundle queryArgs = new Bundle();
-                    queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, null);
-                    queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
-                    queryArgs.putString(ContentResolver.QUERY_ARG_SORT_COLUMNS, BaseColumns._ID);
-                    queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_DESCENDING);
-                    queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
-                    queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offset);
-                    c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, queryArgs, null);
-                } else {
-                    c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, null, null, BaseColumns._ID + " DESC LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
-                }
-                if (c != null && c.moveToFirst()) {
-                    result = c.getString(0);
-                    if (result != null) {
-                        maxId = Integer.parseInt(result);
-                        if (maxId > highestMaxId) {
-                            highestMaxId = maxId;
-                            break;
-                        }
+        try {
+            while (true) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API>=30 requires bundle to LIMIT
+                        Bundle queryArgs = new Bundle();
+                        queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, null);
+                        queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
+                        queryArgs.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{BaseColumns._ID});
+                        queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_DESCENDING);
+                        queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
+                        queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offset);
+                        c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, queryArgs, null);
+                    } else {
+                        c = cr.query(VideoStoreInternal.FILES_IMPORT, MAX_ID_PROJ, null, null, BaseColumns._ID + " DESC LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
                     }
+                    if (c != null && c.moveToFirst()) {
+                        result = c.getString(0);
+                        if (result != null) {
+                            maxId = Integer.parseInt(result);
+                            if (maxId > highestMaxId) {
+                                highestMaxId = maxId;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    if (c == null || c.getCount() < WINDOW_SIZE) break;
+                    offset += WINDOW_SIZE;
+                    c.close();
+                } catch (Exception e) {
+                    log.error("getMaxId: exception while querying", e);
                     break;
+                } finally {
+                    if (c != null) c.close();
                 }
-                if (c == null || c.getCount() < WINDOW_SIZE) break;
-                offset += WINDOW_SIZE;
-                c.close();
-            } catch (Exception e) {
-                log.error("getMaxId: exception while querying", e);
-                break;
-            } finally {
-                if (c != null) c.close();
             }
+        } finally {
+            if (c != null) c.close();
         }
         log.debug("getMaxId: highestMaxId=" + highestMaxId);
         return Integer.toString(highestMaxId);
@@ -806,50 +817,53 @@ public class VideoStoreImportImpl {
         String prefix = "";
         int offset = 0;
         Cursor c = null;
-        while (true) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API>=30 requires bundle to LIMIT
-                    Bundle queryArgs = new Bundle();
-                    queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, null);
-                    queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
-                    queryArgs.putString(ContentResolver.QUERY_ARG_SORT_COLUMNS, BaseColumns._ID);
-                    queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
-                    queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
-                    queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offset);
-                    c = cr.query(MediaStore.Files.getContentUri("external"), REMOTE_LIST_PROJECTION, queryArgs, null);
-                } else {
-                    c = cr.query(MediaStore.Files.getContentUri("external"),
-                            REMOTE_LIST_PROJECTION, null, null,
-                            BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
-                }
-
-                int count = 0;
-
-                if (c != null) {
-                    while (c.moveToNext() && count < WINDOW_SIZE) {
-                        count++;
-                        sb.append(prefix).append(c.getString(0));
-                        prefix = ",";
+        try {
+            while (true) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API>=30 requires bundle to LIMIT
+                        Bundle queryArgs = new Bundle();
+                        queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, null);
+                        queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, null);
+                        queryArgs.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, new String[]{BaseColumns._ID});
+                        queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+                        queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
+                        queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offset);
+                        c = cr.query(MediaStore.Files.getContentUri("external"), REMOTE_LIST_PROJECTION, queryArgs, null);
+                    } else {
+                        c = cr.query(MediaStore.Files.getContentUri("external"),
+                                REMOTE_LIST_PROJECTION, null, null,
+                                BaseColumns._ID + " LIMIT " + WINDOW_SIZE + " OFFSET " + offset);
                     }
-                    log.debug("getRemoteIdList: count=" + count + " WINDOW_SIZE=" + WINDOW_SIZE + " offset=" + offset);
-                    if (count < WINDOW_SIZE) {
+
+                    int count = 0;
+
+                    if (c != null) {
+                        while (c.moveToNext() && count < WINDOW_SIZE) {
+                            count++;
+                            sb.append(prefix).append(c.getString(0));
+                            prefix = ",";
+                        }
+                        log.debug("getRemoteIdList: count=" + count + " WINDOW_SIZE=" + WINDOW_SIZE + " offset=" + offset);
+                        if (count < WINDOW_SIZE) {
+                            c.close();
+                            break;
+                        }
+                        offset += WINDOW_SIZE;
                         c.close();
+                    } else {
                         break;
                     }
-                    offset += WINDOW_SIZE;
-                    c.close();
-                } else {
+                } catch (Exception e) {
+                    log.error("getRemoteIdList: exception while moving to next cursor row!", e);
+                    if (CRASH_ON_ERROR) throw new RuntimeException(e);
                     break;
+                } finally {
+                    if (c != null) c.close();
                 }
-            } catch (Exception e) {
-                log.error("getRemoteIdList: exception while moving to next cursor row!", e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
-            } finally {
-                if (c != null) c.close();
             }
+        } finally {
+            if (c != null) c.close();
         }
-
         String result = sb.toString();
         log.trace("getRemoteIdList: ids of files visible " + result);
         return TextUtils.isEmpty(result) ? "" : result;
