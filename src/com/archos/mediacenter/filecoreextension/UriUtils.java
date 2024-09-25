@@ -76,7 +76,7 @@ public class UriUtils {
     // - TLD must be at least two characters, and a maximum of 6 characters
     // - DNS label should not start or end with hyphen (-) (e.g. -google.com or google-.com)
     // - DNS label can be a subdomain (e.g. mkyong.blogspot.com)
-    private static final String FQDN_PATTERN = "^(?=.{1,255}$)((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$";
+    private static final String FQDN_PATTERN = "^(?=.{1,255}$)((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,63}$";
 
     private static final String SMB_SERVER_PATTERN = "^(?=.{1,15}$)[A-Za-z0-9-]{1,15}$";
 
