@@ -286,6 +286,11 @@ public class LibAvos {
         nativeSetAudioSpeed(audioSpeed);
     }
 
+    public static void setAndroidFrameTiming(boolean enable) {
+        Log.d(TAG, "setAndroidFrameTiming " + enable);
+        nativeSetAndroidFrameTiming(enable);
+    }
+
     public static void enableAudioSpeed(boolean enable) {
         Log.d(TAG, "enableAudioSpeed " + enable);
         nativeEnableAudioSpeed(enable);
@@ -333,6 +338,8 @@ public class LibAvos {
     private static native void nativeSetHdmiSupportedAudioCodecs(long hdmiAudioCodecsFlag);
 
     private static native void nativeSetAudioSpeed(float audioSpeed);
+
+    private static native void nativeSetAndroidFrameTiming(boolean enable);
 
     private static native void nativeEnableAudioSpeed(boolean enable);
 
