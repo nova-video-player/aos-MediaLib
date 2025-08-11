@@ -139,7 +139,7 @@ dependencies {
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
     implementation 'com.squareup.okhttp3:logging-interceptor:5.1.0'
     // stick with 2.10.0 since errors are showing up in sentry when using 2.11.0
-    implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.11.0'
+    implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.12.0'
     // all below is linked to cling, jetty version locked to latest 8.1
     api 'com.github.nova-video-player.cling:cling-core:2.1.7'
     implementation 'com.github.nova-video-player.cling:cling-support:2.1.7'
