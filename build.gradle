@@ -120,7 +120,7 @@ if (useSan)
 
 dependencies {
     implementation project(':FileCoreLibrary')
-    implementation 'androidx.lifecycle:lifecycle-process:2.9.3'
+    implementation 'androidx.lifecycle:lifecycle-process:2.9.4'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation 'androidx.core:core:1.17.0'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
