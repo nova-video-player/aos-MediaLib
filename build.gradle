@@ -153,13 +153,13 @@ dependencies {
     implementation 'com.github.nova-video-player.seamless:seamless-http:1.1.4'
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
     // version aligned with cling dependencies
-    implementation ('org.eclipse.jetty:jetty-server:8.1.22.v20160922') {
+    implementation ('org.eclipse.jetty:jetty-server:11.0.26') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation ('org.eclipse.jetty:jetty-servlet:8.1.22.v20160922')  {
+    implementation ('org.eclipse.jetty:jetty-servlet:11.0.26')  {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation ('org.eclipse.jetty:jetty-client:8.1.22.v20160922') {
+    implementation ('org.eclipse.jetty:jetty-client:11.0.26') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
     implementation 'io.sentry:sentry:8.22.0'
