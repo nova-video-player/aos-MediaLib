@@ -156,13 +156,13 @@ dependencies {
     implementation 'com.github.nova-video-player.seamless:seamless-http:1.1.4'
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
     // jetty 9.2.x for Android API 23 compatibility (LongAdder not available until API 24)
-    implementation ('org.eclipse.jetty:jetty-server:9.2.30.v20200428') {
+    implementation ('org.eclipse.jetty:jetty-server:12.1.2') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation ('org.eclipse.jetty:jetty-servlet:9.2.30.v20200428') {
+    implementation ('org.eclipse.jetty:jetty-servlet:12.1.2') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation ('org.eclipse.jetty:jetty-client:9.2.30.v20200428') {
+    implementation ('org.eclipse.jetty:jetty-client:12.1.2') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
     implementation 'io.sentry:sentry:8.22.0'
