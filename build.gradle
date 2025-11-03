@@ -142,7 +142,7 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.19.0'
     implementation 'org.apache.commons:commons-text:1.14.0'
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.2.1'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.3.0'
     // stick with 2.10.0 since errors are showing up in sentry when using 2.11.0
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.13.0'
     api 'org.jupnp:org.jupnp:3.0.3'
