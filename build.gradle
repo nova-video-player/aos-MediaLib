@@ -156,5 +156,5 @@ dependencies {
     implementation ('org.eclipse.jetty:jetty-client:9.2.30.v20200428') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation 'io.sentry:sentry:8.25.0'
+    implementation 'io.sentry:sentry:8.27.0'
 }
