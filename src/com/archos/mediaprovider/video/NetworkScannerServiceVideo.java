@@ -247,6 +247,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         mBlacklist = Blacklist.getInstance(this);
 
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        if (wifiManager != null) {
+            wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
+            wifiLock.setReferenceCounted(true);
+        }
+
         // Register as a lifecycle observer
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
     }
@@ -449,14 +455,15 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         if (f != null) {
             if (log.isDebugEnabled()) log.debug("doScan path resolved to:{}", f.getUri().toString());
             ContentResolver cr = getContentResolver();
-            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            if (wifiLock == null)
-                wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
+
+            WifiLock lock = wifiLock;
+            boolean lockAcquired = false;
+            if (lock != null) {
+                lock.acquire();
+                lockAcquired = true;
+            }
 
             try {
-                if (wifiLock != null && !wifiLock.isHeld()) {  // Check if the lock is already held
-                    wifiLock.acquire();
-                }
                 // send out a sticky broadcast telling the world that we started scanning
                 Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_STARTED, what);
                 scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
@@ -548,9 +555,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                     PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();
                 }
             } finally {
-                if (wifiLock != null && wifiLock.isHeld()) {
-                    wifiLock.release();
-                    wifiLock = null;
+                if (lockAcquired && lock != null && lock.isHeld()) {
+                    lock.release();
                 }
             }
         } else if(mRecordOnFailPreference!=null){
@@ -1260,9 +1266,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             UpnpServiceManager.stopServiceIfLaunched();
         }
         // Release any acquired locks (e.g., WifiLock)
-        if (wifiLock != null && wifiLock.isHeld()) {
-            wifiLock.release(); // Release the WifiLock
-        }
+        wifiLock = null;
         // Notify listeners that the scanner is stopping
         sIsScannerAlive = false;
         notifyListeners();
