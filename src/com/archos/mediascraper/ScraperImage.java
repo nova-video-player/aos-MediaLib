@@ -51,7 +51,7 @@ public class ScraperImage {
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
     final static String POSTER_THUMB = "w185";
-    public final static String POSTER_LARGE = "w780";
+    public final static String POSTER_LARGE = "w500";
     final static String BACKDROP_THUMB = "w300";
     final static String BACKDROP_LARGE = "w1280";
     final static String STILL_THUMB = "w185";
