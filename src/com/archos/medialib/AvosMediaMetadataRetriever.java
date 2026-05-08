@@ -149,7 +149,7 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
     }
 
     private native void nativeRelease();
-    public void release() {
+    public void release() throws IOException {
         nativeRelease();
         if (mFileProxy != null) {
             mFileProxy.stop();

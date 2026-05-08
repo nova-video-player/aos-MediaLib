@@ -15,6 +15,8 @@
 package com.archos.mediacenter;
 
 import com.archos.medialib.IMediaMetadataRetriever;
+
+import java.io.IOException;
 import com.archos.medialib.LibAvos;
 import com.archos.medialib.MediaFactory;
 import com.archos.medialib.MediaMetadata;
@@ -114,7 +116,11 @@ public class LibAvosReceiver extends BroadcastReceiver {
             } catch (IllegalArgumentException e) {
                 Log.e("LibAvosReceiver", "Invalid data source URI", e);
             } finally {
-                retriever.release();
+                try {
+                    retriever.release();
+                } catch (IOException e) {
+                    // Ignore failures while cleaning up.
+                }
             }
         }
     }

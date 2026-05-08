@@ -73,7 +73,7 @@ android {
     buildTypes {
         release {
             minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
         }
     }
 
@@ -110,9 +110,14 @@ android {
         }
     }
 
-    libraryVariants.all { variant ->
-        variant.assembleProvider.configure { assemble ->
-            assemble.dependsOn("lint" + variant.name.capitalize())
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        project.tasks.configureEach { task ->
+            if (task.name == "assemble${variant.name.capitalize()}") {
+                task.dependsOn("lint${variant.name.capitalize()}")
+            }
         }
     }
 }

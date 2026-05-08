@@ -33,6 +33,7 @@ import com.archos.medialib.MediaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 public class MediaThumbnailService extends Service {
@@ -182,7 +183,7 @@ public class MediaThumbnailService extends Service {
             mHandler.removeMessages(TIMEOUT_MSG);
             try {
                 retriever.release();
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | IOException ex) {
                 // Ignore failures while cleaning up.
             }
         }

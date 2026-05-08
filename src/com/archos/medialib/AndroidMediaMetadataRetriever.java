@@ -15,12 +15,11 @@
 package com.archos.medialib;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.Map;
 
@@ -28,10 +27,9 @@ import java.util.Map;
  * Proxy class between android MediaMetadataRetriever class and
  * IMediaMetadataRetriever interface
  */
-public class AndroidMediaMetadataRetriever extends MediaMetadataRetriever implements IMediaMetadataRetriever {
+public class AndroidMediaMetadataRetriever implements IMediaMetadataRetriever {
 
-    private static final Logger log = LoggerFactory.getLogger(AndroidMediaMetadataRetriever.class);
-
+    private final MediaMetadataRetriever mRetriever = new MediaMetadataRetriever();
     private Proxy mFileProxy = null;
 
     public MediaMetadata getMediaMetadata() {
@@ -46,43 +44,77 @@ public class AndroidMediaMetadataRetriever extends MediaMetadataRetriever implem
     public void setDataSource(Context context, Uri uri) throws IllegalArgumentException,
             SecurityException {
         String scheme = uri.getScheme();
-        if (Proxy.needToStream(scheme)){
+        if (Proxy.needToStream(scheme)) {
             mFileProxy = Proxy.setDataSource(uri, this, null);
             return;
         }
-        super.setDataSource(context, uri);
+        mRetriever.setDataSource(context, uri);
     }
 
     @Override
     public void setDataSource(String path) throws IllegalArgumentException {
-        if (Proxy.needToStream(Uri.parse(path).getScheme())){
+        if (Proxy.needToStream(Uri.parse(path).getScheme())) {
             mFileProxy = Proxy.setDataSource(Uri.parse(path), this, null);
             return;
         }
-        super.setDataSource(path);
+        mRetriever.setDataSource(path);
     }
 
     @Override
     public void setDataSource(String uri, Map<String, String> headers)
             throws IllegalArgumentException {
-        if (Proxy.needToStream(Uri.parse(uri).getScheme())){
+        if (Proxy.needToStream(Uri.parse(uri).getScheme())) {
             mFileProxy = Proxy.setDataSource(Uri.parse(uri), this, headers);
             return;
         }
-        super.setDataSource(uri, headers);
+        mRetriever.setDataSource(uri, headers);
     }
 
     @Override
-    public void release() {
-        // TODO Auto-generated method stub
+    public void setDataSource(FileDescriptor fd, long offset, long length)
+            throws IllegalArgumentException {
+        mRetriever.setDataSource(fd, offset, length);
+    }
+
+    @Override
+    public void setDataSource(FileDescriptor fd) throws IllegalArgumentException {
+        mRetriever.setDataSource(fd);
+    }
+
+    @Override
+    public String extractMetadata(int keyCode) {
+        return mRetriever.extractMetadata(keyCode);
+    }
+
+    @Override
+    public Bitmap getFrameAtTime(long timeUs, int option) {
+        return mRetriever.getFrameAtTime(timeUs, option);
+    }
+
+    @Override
+    public Bitmap getFrameAtTime(long timeUs) {
+        return mRetriever.getFrameAtTime(timeUs);
+    }
+
+    @Override
+    public Bitmap getFrameAtTime() {
+        return mRetriever.getFrameAtTime();
+    }
+
+    @Override
+    public byte[] getEmbeddedPicture() {
+        return mRetriever.getEmbeddedPicture();
+    }
+
+    @Override
+    public void release() throws IOException {
         try {
-            super.release();
-        } catch (IOException ioe) {
-            log.error("release: caught IOException", ioe);
-        }
-        if (mFileProxy != null) {
-            mFileProxy.stop();
-            mFileProxy = null;
+            mRetriever.release();
+        } finally {
+            if (mFileProxy != null) {
+                mFileProxy.stop();
+                mFileProxy = null;
+            }
         }
     }
 }

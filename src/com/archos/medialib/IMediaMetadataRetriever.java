@@ -20,6 +20,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 import java.util.Map;
 
 public interface IMediaMetadataRetriever {
@@ -190,7 +191,7 @@ public interface IMediaMetadataRetriever {
      * Call it when one is done with the object. This method releases the memory
      * allocated internally.
      */
-    public void release();
+    public void release() throws IOException;
 
     /**
      * Option used in method {@link #getFrameAtTime(long, int)} to get a

@@ -1363,7 +1363,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                         } finally {
                             try {
                                 retriever.release();
-                            } catch (RuntimeException ex) {
+                            } catch (RuntimeException | IOException ex) {
                                 // Ignore failures while cleaning up.
                             }
                         }

@@ -1,58 +1,35 @@
+#### JNI-bound classes (native callbacks and field handles) ####
 -keep class com.archos.medialib.AvosMediaPlayer {
   private void postEventFromNative(java.lang.Object, int, int, int, java.lang.Object);
+  private long mMediaPlayerHandle;
+  private long mNativeWindowHandle;
 }
--keep class com.archos.medialib.subtitle.TextSubtitle {
-  public java.lang.Object create(int, int, java.lang.String);
-}
--keep class com.archos.medialib.subtitle.BitmapSubtitle {
-  public java.lang.Object create(int, int, int, int, android.graphics.Bitmap);
+-keep class com.archos.medialib.Subtitle {
+  public java.lang.Object createTimedTextSubtitle(int, int, java.lang.String);
+  public java.lang.Object createTimedBitmapSubtitle(int, int, int, int, int, int, android.graphics.Bitmap);
 }
 -keep class com.archos.medialib.AvosMediaMetadataRetriever {
-  private int mMediaMetadataRetrieverHandle;
-}
--keep class com.archos.medialib.AvosMediaPlayer {
-  private int mMediaPlayerHandle;
-  private int mNativeWindowHandle;
+  private long mMediaMetadataRetrieverHandle;
 }
 
-## trakt-java
+#### TMDb / Trakt JSON entities (Gson/Retrofit reflection targets) ####
 -keep class com.uwetrottmann.trakt5.entities.** { *; }
 -keep class com.uwetrottmann.trakt5.enums.** { *; }
-
-## tmdb-java
 -keep class com.uwetrottmann.tmdb2.entities.** { *; }
 -keep class com.uwetrottmann.tmdb2.enumerations.** { *; }
 
-## retrofit
-
-# Retrofit does reflection on generic parameters. InnerClasses is required to use Signature and
-# EnclosingMethod is required to use InnerClasses.
--keepattributes Signature, InnerClasses, EnclosingMethod
-
-# Retrofit does reflection on method and parameter annotations.
--keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
-
-# Retain service method parameters when optimizing.
+#### Retrofit ####
+-keepattributes Signature,InnerClasses,EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations
 -keepclassmembers,allowshrinking,allowobfuscation interface * {
     @retrofit2.http.* <methods>;
 }
-
-# Ignore annotation used for build tooling.
--dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
-
-# Ignore JSR 305 annotations for embedding nullability information.
--dontwarn javax.annotation.**
-
-# Guarded by a NoClassDefFoundError try/catch and only used when on the classpath.
--dontwarn kotlin.Unit
-
-# Top-level functions that can only be used by Kotlin.
--dontwarn retrofit2.KotlinExtensions
--dontwarn retrofit2.KotlinExtensions$*
-
-# With R8 full mode, it sees no subtypes of Retrofit interfaces since they are created with a Proxy
-# and replaces all potential values with null. Explicitly keeping the interfaces prevents this.
 -if interface * { @retrofit2.http.* <methods>; }
 -keep,allowobfuscation interface <1>
+-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
+-dontwarn javax.annotation.**
+-dontwarn kotlin.Unit
+-dontwarn retrofit2.KotlinExtensions
+-dontwarn retrofit2.KotlinExtensions$*
 
 -keep class org.eclipse.jetty.** { *; }
