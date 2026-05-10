@@ -16,6 +16,7 @@ package com.archos.mediacenter.cover;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
@@ -187,7 +188,11 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 		mAnimHandler = new AnimHandler();
 
 		// Display
-		mDisplay = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			mDisplay = getContext().getDisplay();
+		} else {
+			mDisplay = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		}
 
 		// Focus management
 		getViewTreeObserver().addOnTouchModeChangeListener(this);
