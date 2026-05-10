@@ -23,6 +23,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
+import androidx.core.content.IntentCompat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -181,9 +182,9 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                 Intent intent = (Intent) msg.obj;
                 String action = intent.getAction();
 
-                VideoDbInfo videoInfo = intent.getParcelableExtra("video_info");
+                VideoDbInfo videoInfo = IntentCompat.getParcelableExtra(intent, "video_info", VideoDbInfo.class);
                 final long videoID = intent.getLongExtra("video_id", -1);
-                final Messenger messenger = intent.getParcelableExtra("messenger");
+                final Messenger messenger = IntentCompat.getParcelableExtra(intent, "messenger", Messenger.class);
                 final boolean notify = intent.getBooleanExtra("notify", false);
                 final long intentTime = notify ? intent.getLongExtra("notify_time", -1) : -1;
                 Trakt.Result result = null;
