@@ -20,7 +20,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.DisplayMetrics;
@@ -687,11 +688,10 @@ public class ScraperImage {
     }
 
     public void setAsDefaultAndDownloadAsync(final Context context) {
-        AsyncTask.execute(new Runnable() {
-            public void run() {
-                if (setAsDefault(context))
-                    download(context);
-            }
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            try { if (setAsDefault(context)) download(context); }
+            finally { exec.shutdown(); }
         });
     }
 

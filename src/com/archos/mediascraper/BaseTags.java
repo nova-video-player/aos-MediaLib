@@ -19,7 +19,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
@@ -343,11 +344,10 @@ public abstract class BaseTags implements Parcelable {
      * @param videoId _id of the video in media db
      */
     public void saveAsync(final Context context, final long videoId) {
-        AsyncTask.execute(new Runnable() {
-
-            public void run() {
-                save(context, videoId);
-            }
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            try { save(context, videoId); }
+            finally { exec.shutdown(); }
         });
     }
 

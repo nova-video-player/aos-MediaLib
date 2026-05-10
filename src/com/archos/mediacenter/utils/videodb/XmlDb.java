@@ -15,7 +15,6 @@
 package com.archos.mediacenter.utils.videodb;
 
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Looper;
@@ -41,6 +40,8 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.FileNotFoundException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -52,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,8 +73,8 @@ public class XmlDb implements Callback {
     public static final String FILE_EXTENSION = "xml";
     public static final String FILE_NAME = ".archos.resume."+FILE_EXTENSION;
     private final Handler mUiThreadHandler = new Handler(Looper.getMainLooper(), this);
-    private static final Map<String, WriteTask> sRemoteWriteTasks = new HashMap<String, WriteTask>();
-    private static final Map<String, ParseTask> sRemoteParseTasks = new HashMap<String, ParseTask>();
+    private static final Map<String, WriteTask> sRemoteWriteTasks = new ConcurrentHashMap<>();
+    private static final Map<String, ParseTask> sRemoteParseTasks = new ConcurrentHashMap<>();
     private static final Map<Uri, VideoDbInfo> sRemoteCache = new HashMap<>();
     private final ArrayList<ResumeChangeListener> mResumeChangeListener;
     private List<ParseListener> mOnParseListeners;
@@ -167,13 +169,17 @@ public class XmlDb implements Callback {
         }
     }
 
-    private static class ParseTask extends AsyncTask<Void, Integer, VideoDbInfo> {
+    private static class ParseTask {
         private final Uri mLocation;
-        private Listener mListener;
+        private volatile Listener mListener;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private volatile boolean isCancelled = false;
 
         private interface Listener {
             void onResult(VideoDbInfo result);
         }
+
         public ParseTask(Uri location) {
             mLocation = location;
         }
@@ -183,25 +189,37 @@ public class XmlDb implements Callback {
         }
 
         public void abort() {
-            cancel(true);
+            isCancelled = true;
             mListener = null;
+            executor.shutdownNow();
+            sRemoteParseTasks.remove(mLocation.toString());
         }
 
-        @Override
-        protected VideoDbInfo doInBackground(Void... params) {
-            return parseXml(mLocation);
-        }
-
-        @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
-        protected void onPostExecute(VideoDbInfo result) {
-
-            if (mListener != null)
-                mListener.onResult(result);
+        public void execute() {
+            sRemoteParseTasks.put(mLocation.toString(), this);
+            executor.execute(() -> {
+                VideoDbInfo result = null;
+                try {
+                    if (isCancelled || Thread.currentThread().isInterrupted()) {
+                        sRemoteParseTasks.remove(mLocation.toString());
+                        return;
+                    }
+                    result = parseXml(mLocation);
+                } catch (Exception e) {
+                    log.error("ParseTask failed", e);
+                } finally {
+                    executor.shutdown();
+                }
+                sRemoteParseTasks.remove(mLocation.toString());
+                if (isCancelled) return;
+                final VideoDbInfo finalResult = result;
+                final Listener listener = mListener;
+                handler.post(() -> {
+                    if (isCancelled) return;
+                    if (listener != null)
+                        listener.onResult(finalResult);
+                });
+            });
         }
     }
     public interface ResumeChangeListener{
@@ -220,35 +238,42 @@ public class XmlDb implements Callback {
         void onParseOk(ParseResult obj);
     }
 
-    private class WriteTask extends AsyncTask<Void, Integer, Void> {
+    private class WriteTask {
         private final VideoDbInfo mVideoDbInfo;
-        /**
-         *
-         *
-         * @param videoDbInfo
-         */
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private volatile boolean isCancelled = false;
+
         public WriteTask(VideoDbInfo videoDbInfo) {
             mVideoDbInfo = videoDbInfo;
         }
 
-        @Override
-        protected Void doInBackground(Void... params) {
-            if (log.isDebugEnabled()) log.debug("doInBackground: {}", mVideoDbInfo.uri);
-            boolean ret = writeXml(mVideoDbInfo);
-            if (log.isDebugEnabled()) log.debug("writeXml: {}", ret);
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
+        public void execute() {
             sRemoteWriteTasks.put(mVideoDbInfo.uri.toString(), this);
+            executor.execute(() -> {
+                try {
+                    if (isCancelled || Thread.currentThread().isInterrupted()) return;
+                    if (log.isDebugEnabled()) log.debug("doInBackground: {}", mVideoDbInfo.uri);
+                    boolean ret = writeXml(mVideoDbInfo);
+                    if (log.isDebugEnabled()) log.debug("writeXml: {}", ret);
+                } catch (Exception e) {
+                    log.error("WriteTask failed", e);
+                } finally {
+                    executor.shutdown();
+                }
+                if (isCancelled) return;
+                handler.post(() -> {
+                    if (isCancelled) return;
+                    sRemoteWriteTasks.remove(mVideoDbInfo.uri.toString());
+                    sRemoteCache.put(mVideoDbInfo.uri, mVideoDbInfo);
+                    notifyResumeChange(mVideoDbInfo.uri, (int) ((float) mVideoDbInfo.resume / (float) mVideoDbInfo.duration * 100.0));
+                });
+            });
         }
 
-        @Override
-        protected void onPostExecute(Void result) {
-            sRemoteWriteTasks.remove(mVideoDbInfo.uri.toString());
-            sRemoteCache.put(mVideoDbInfo.uri, mVideoDbInfo);
-            notifyResumeChange(mVideoDbInfo.uri, (int) ((float) mVideoDbInfo.resume / (float) mVideoDbInfo.duration * 100.0));
+        public void cancel() {
+            isCancelled = true;
+            executor.shutdownNow();
         }
     }
     public synchronized void addResumeChangeListener(ResumeChangeListener listener){
@@ -664,7 +689,7 @@ public class XmlDb implements Callback {
         WriteTask task;
         task = sRemoteWriteTasks.get(videoDbInfo.uri.toString());
         if (task != null) {
-            task.cancel(true);
+            task.cancel();
         }
         task = new WriteTask(videoDbInfo);
         task.execute();
