@@ -1433,5 +1433,23 @@ public final class ScraperTables {
 
             if (log.isDebugEnabled()) log.debug("upgradeTo: {} - movie poster/backdrop tables successfully migrated", toVersion);
         }
+        if (toVersion == 54) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding performance indexes for metadata protection", toVersion);
+            db.execSQL("CREATE INDEX IF NOT EXISTS MOVIE_backdrop_idx ON " + MOVIE_TABLE_NAME + "(" + ScraperStore.Movie.BACKDROP + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS SHOW_cover_idx ON " + SHOW_TABLE_NAME + "(" + ScraperStore.Show.COVER + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS SHOW_backdrop_idx ON " + SHOW_TABLE_NAME + "(" + ScraperStore.Show.BACKDROP + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS EPISODE_cover_idx ON " + EPISODE_TABLE_NAME + "(" + ScraperStore.Episode.COVER + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS EPISODE_picture_idx ON " + EPISODE_TABLE_NAME + "(" + ScraperStore.Episode.PICTURE + ")");
+
+            // Indexes for auxiliary tables used in the protection query
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_posters_large_file_idx ON movie_posters(m_po_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_posters_thumb_file_idx ON movie_posters(m_po_thumb_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_backdrops_large_file_idx ON movie_backdrops(m_bd_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_backdrops_thumb_file_idx ON movie_backdrops(m_bd_thumb_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_posters_large_file_idx ON show_posters(s_po_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_posters_thumb_file_idx ON show_posters(s_po_thumb_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_backdrops_large_file_idx ON show_backdrops(s_bd_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_backdrops_thumb_file_idx ON show_backdrops(s_bd_thumb_file)");
+        }
     }
 }

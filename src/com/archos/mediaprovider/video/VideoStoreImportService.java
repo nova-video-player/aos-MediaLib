@@ -524,7 +524,26 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // note that the db is being modified during import
         while (isForeground) {
             try {
-                c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE) ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
+                c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (" +
+                        "SELECT cover_movie FROM MOVIE UNION " +
+                        "SELECT backdrop_movie FROM MOVIE UNION " +
+                        "SELECT cover_show FROM SHOW UNION " +
+                        "SELECT backdrop_show FROM SHOW UNION " +
+                        "SELECT cover_episode FROM EPISODE UNION " +
+                        "SELECT picture_episode FROM EPISODE UNION " +
+                        "SELECT m_po_large_file FROM movie_posters UNION " +
+                        "SELECT m_po_thumb_file FROM movie_posters UNION " +
+                        "SELECT m_bd_large_file FROM movie_backdrops UNION " +
+                        "SELECT m_bd_thumb_file FROM movie_backdrops UNION " +
+                        "SELECT s_po_large_file FROM show_posters UNION " +
+                        "SELECT s_po_thumb_file FROM show_posters UNION " +
+                        "SELECT s_bd_large_file FROM show_backdrops UNION " +
+                        "SELECT s_bd_thumb_file FROM show_backdrops UNION " +
+                        "SELECT m_coll_po_large_file FROM movie_collection UNION " +
+                        "SELECT m_coll_bd_large_file FROM movie_collection UNION " +
+                        "SELECT m_coll_po_thumb_file FROM movie_collection UNION " +
+                        "SELECT m_coll_bd_thumb_file FROM movie_collection" +
+                        ") ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
                 cCount = c.getCount();
                 if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files cover_movie new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
                 if (cCount == 0) {
