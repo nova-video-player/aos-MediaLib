@@ -315,6 +315,10 @@ public class LibAvos {
         nativeSetAudioSpeed(audioSpeed);
     }
 
+    public static float getAudioSpeed() {
+        return nativeGetAudioSpeed();
+    }
+
     public static void enableAudioSpeed(boolean enable) {
         Log.d(TAG, "enableAudioSpeed " + enable);
         nativeEnableAudioSpeed(enable);
@@ -383,6 +387,7 @@ public class LibAvos {
     private static native void nativeSetPcmChannelMasks(int[] channelMasks);
 
     private static native void nativeSetAudioSpeed(float audioSpeed);
+    private static native float nativeGetAudioSpeed();
 
     private static native void nativeSetAndroidFrameTiming(boolean enable);
 
