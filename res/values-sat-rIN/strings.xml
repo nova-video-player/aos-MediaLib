@@ -13,6 +13,8 @@
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
     <!-- .nfo export options -->
+    <string name="nfo_export_auto_summary">ᱚᱱᱞᱟᱭᱤᱱ ᱥᱮᱸᱫᱽᱨᱟ ᱛᱟᱭᱚᱢ ᱟᱡ ᱛᱮ .nfo ᱨᱮᱫ ᱠᱚ ᱮᱠᱥᱯᱚᱨᱴ ᱢᱮ</string>
+    <string name="rescraping_noimage_collections">ᱵᱤᱱᱟᱹ ᱪᱤᱛᱟᱹᱨ ᱛᱮ ᱡᱟᱣᱨᱟ ᱫᱚᱦᱲᱟ ᱥᱠᱨᱮᱯᱤᱝ</string>
     <!-- trakt.tv -->
     <!-- Title of screen when no sd card is present -->
     <!-- label underneath icon used to indicate that no sd card is present -->

@@ -22,10 +22,10 @@
     <string name="nfo_export_manual_summary">.nfo-Dateien von jedem bereits gescraptem Video exportieren</string>
     <string name="nfo_export_button">.nfo exportieren</string>
     <string name="nfo_export_folder">Alle in diesem Verzeichnis in .nfo exportieren</string>
-    <string name="nfo_export_all">Die gesamte Bibliothek nach .nfo exportieren</string>
+    <string name="nfo_export_all">Die gesamte Bibliothek in .nfo Datei exportieren</string>
     <string name="nfo_export_exporting">Exportiere .nfo</string>
     <string name="nfo_export_exporting_all">alles</string>
-    <string name="nfo_export_in_progress">NFO-Export im Gange</string>
+    <string name="nfo_export_in_progress">NFO-Export läuft</string>
     <string name="rescrap_in_progress">Rescraping der gesamten Bibliothek</string>
     <string name="rescraping_collection">Rescraping der Sammlung</string>
     <string name="rescraping_collections">Rescraping der Sammlungen</string>

@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">Actualiser les descriptions</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">La synchronisation avec trakt est impossible</string>
+    <string name="trakt_toast_account_locked">Compte Trakt verrouillé. Synchronisation désactivée. Veuillez vous authentifier à nouveau dans les paramètres pour réactiver.</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Aucune carte SD trouvée</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,4 +140,6 @@
     <string name="scraping_in_progress">Recherche des descriptions en cours</string>
     <string name="remaining_videos_to_process">Fichiers multimédia restants à traiter:</string>
     <string name="video_store_import">Importation des fichiers multimédia locaux</string>
+    <string name="current_video_title">Courant :</string>
+    <string name="noresult_video_title">Non identifié :</string>
 </resources>

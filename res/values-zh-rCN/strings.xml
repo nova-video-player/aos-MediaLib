@@ -17,7 +17,7 @@
     <!-- .nfo export options -->
     <string name="nfo_export_category">媒体信息导出</string>
     <string name="nfo_export_auto_title">搜索后自动导出</string>
-    <string name="nfo_export_manual_title">导出已刮削的视频</string>
+    <string name="nfo_export_manual_title">导出已刮削的视频信息</string>
     <string name="nfo_export_auto_summary">在线搜索成功后自动导出 .nfo 文件</string>
     <string name="nfo_export_manual_summary">导出已经刮削过的每个视频的 .nfo 文件</string>
     <string name="nfo_export_button">导出 .nfo</string>
