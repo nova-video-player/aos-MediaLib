@@ -40,6 +40,7 @@ import org.apache.hc.core5.http.HttpEntity;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
@@ -525,7 +526,7 @@ public class HttpImageManager{
     private BitmapCache mPersistence;
     private NetworkResourceLoader mNetworkResourceLoader = new NetworkResourceLoader(); 
 
-    private Handler mHandler = new Handler();
+    private Handler mHandler = new Handler(Looper.getMainLooper());
     private ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(1, 4, 10, TimeUnit.SECONDS, new LinkedBlockingStack<Runnable>());
     private Set<LoadRequest> mActiveRequests = new HashSet<LoadRequest>();
     private BitmapFilter mFilter;

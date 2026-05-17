@@ -23,6 +23,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -418,7 +419,7 @@ public class InfoDialog extends Dialog {
     }
 
     // Handler to get some asynchronous info
-    private final Handler mHandler = new Handler() {
+    private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         // @SuppressWarnings("unchecked")
         public void handleMessage(Message msg) {
             if (msg.what == MSG_SIZE_COMPUTED) {

@@ -1984,7 +1984,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
         mBackgroundHandlerThread  = new HandlerThread(TAG);
         mBackgroundHandlerThread.start();
         mBackgroundHandler = new TraktHandler(mBackgroundHandlerThread.getLooper(), this);
-        mUiHandler = new Handler();
+        mUiHandler = new Handler(Looper.getMainLooper());
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         super.onCreate();
     }
