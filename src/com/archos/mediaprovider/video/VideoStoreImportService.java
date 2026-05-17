@@ -117,6 +117,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         super.finalize();
     }
 
+    @SuppressWarnings("deprecation") // ACTION_MEDIA_SCANNER_SCAN_FILE reused as internal IPC action string
     public static boolean startIfHandles(Context context, Intent broadcast) {
         String action = broadcast.getAction();
         if (log.isDebugEnabled()) log.debug("startIfHandles: action {}, data {}, extra {}", action, broadcast.getData(), broadcast.getAction());
@@ -243,6 +244,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         return ! ImportState.VIDEO.isDirty();
     }
 
+    @SuppressWarnings("deprecation") // ACTION_MEDIA_SCANNER_SCAN_FILE reused as internal IPC action string
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents are delivered here.
