@@ -24,6 +24,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -136,6 +137,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 	 *
 	 * @see android.view.View#View(android.content.Context, android.util.AttributeSet)
 	 */
+	@SuppressWarnings("deprecation") // getDefaultDisplay: API 30+ uses context.getDisplay()
 	public CoverGLSurfaceView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		if(DBG) Log.d(TAG, "CoverGLSurfaceView()");
@@ -834,6 +836,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 
 	// Handler getting the message that GL is ready
 	class RendererListener extends Handler {
+		RendererListener() { super(Looper.getMainLooper()); }
 		static final String TAG = "RendererListener";
 
 		static final int MSG_GL_READY = 1;
@@ -890,6 +893,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 
 	// Handler getting the message from the texture provider
 	class TextureHandler extends Handler {
+		TextureHandler() { super(Looper.getMainLooper()); }
 		static final String TAG = "TextureHandler";
 		static final boolean DBG = false;
 
@@ -1047,6 +1051,7 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 
 	// ---------- Animation Handler -------------------------------
 	class AnimHandler extends Handler {
+		AnimHandler() { super(Looper.getMainLooper()); }
 
 		static final private int MSG_ANIMATE_LOOP = 12;
 
