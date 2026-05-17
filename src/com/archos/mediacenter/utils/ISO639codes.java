@@ -154,6 +154,7 @@ public class ISO639codes {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static public String getLanguageNameFor3LetterCode(String code) {
         // handles ISO 639-3 and ISO 639-2b (e.g. fra/fre, deu/ger)
         Locale locale = new Locale(code);
@@ -173,8 +174,11 @@ public class ISO639codes {
         return languageName;
     }
 
+    @SuppressWarnings("deprecation")
     static public String getLanguageNameFor2LetterCode(String code) {
-        // handles ISO 639-1 with exceptions
+        // handles ISO 639-1 with exceptions; also handles non-standard OpenSubtitles codes like pt-br,
+        // zh-cn, zh-tw — new Locale(code) returns the raw code as display language for unrecognised
+        // values, triggering the missingISO6391ToISO6393 fallback (e.g. pt-br → s_brazilian).
         Locale locale = new Locale(code);
         String languageName = locale.getDisplayLanguage();
         if (languageName.equals(code)) {
@@ -218,7 +222,7 @@ public class ISO639codes {
             log.error("getISO6391ForLetterCode: null code!");
             return result;
         }
-        if (code.length() == 2) result = (new Locale(code)).getLanguage();
+        if (code.length() == 2) result = Locale.forLanguageTag(code).getLanguage();
         if (code.length() == 3) result = convertIso6392bToIso6393(code);
         if (result.length() == 3) result = convertISO6393ToISO6391(result);
         if (result.length() == 2) {
@@ -244,7 +248,7 @@ public class ISO639codes {
     static public String convertISO6391ToISO6393(String code) {
         String result = missingISO6391ToISO6393.get(code);
         if (result == null) {
-            Locale locale = new Locale(code);
+            Locale locale = Locale.forLanguageTag(code);
             try {
                 result = locale.getISO3Language();
             } catch (MissingResourceException e) {
@@ -258,7 +262,7 @@ public class ISO639codes {
     static public String convertISO6391ToISO6392(String code) {
         String result = missingISO6391ToISO6393.get(code);
         if (result == null) {
-            Locale locale = new Locale(code);
+            Locale locale = Locale.forLanguageTag(code);
             try {
                 result = locale.getISO3Language();
             } catch (MissingResourceException e) {
@@ -269,6 +273,7 @@ public class ISO639codes {
         return convertIso6393ToIso6392b(result);
     }
 
+    @SuppressWarnings("deprecation")
     static public String convertISO6393ToISO6391(String code) {
         // TODO: not working "eng" returns "eng" instead of "en"
         String result = missingISO6393ToISO6391.get(code);
@@ -298,6 +303,7 @@ public class ISO639codes {
         else return result;
     }
 
+    @SuppressWarnings("deprecation")
     public static String convertISO6393ToLanguageName(String iso6393Code) {
         Locale locale = new Locale(iso6393Code);
         return locale.getDisplayLanguage();
@@ -306,7 +312,7 @@ public class ISO639codes {
     public static String convertISO6391ToLanguageName(String iso6391Code) {
         if (iso6391Code.equals("system"))
             return Locale.getDefault().getDisplayLanguage();
-        Locale locale = new Locale(iso6391Code);
+        Locale locale = Locale.forLanguageTag(iso6391Code);
         return locale.getDisplayLanguage();
     }
 
@@ -315,7 +321,7 @@ public class ISO639codes {
         String[] languageNames = new String[languageCodeArray.length];
 
         for (int i = 0; i < languageCodeArray.length; i++) {
-            Locale locale = new Locale(languageCodeArray[i]);
+            Locale locale = Locale.forLanguageTag(languageCodeArray[i]);
             languageNames[i] = locale.getDisplayLanguage();
         }
         return languageNames;
