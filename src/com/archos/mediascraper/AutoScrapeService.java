@@ -837,7 +837,15 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             cursor = null;
 
                             // Restart only if we did not account for all rows still matching this mode.
-                            restartOnNextRound = (sNumberOfFilesScraped + sNumberOfFilesNotScraped + numberOfBlobRowsSkipped != numberOfRows);
+                            // For PARAM_SCRAPED_NOT_FOUND, files that fail to scrape are written back
+                            // with ARCHOS_MEDIA_SCRAPER_ID=-1 (same value), so they remain in the re-query.
+                            // Do not restart in this case — all files have been attempted and the
+                            // remaining ones simply cannot be identified; restarting causes an infinite loop.
+                            if (scrapStatusParam == PARAM_SCRAPED_NOT_FOUND) {
+                                restartOnNextRound = false;
+                            } else {
+                                restartOnNextRound = (sNumberOfFilesScraped + sNumberOfFilesNotScraped + numberOfBlobRowsSkipped != numberOfRows);
+                            }
                         } while (restartOnNextRound && (isForeground || isForceAfterNetworkScan) && !Thread.currentThread().isInterrupted() && PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this).getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP,true));
 
                         //Refresh the Channels in the UI
