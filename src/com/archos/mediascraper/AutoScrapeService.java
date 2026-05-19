@@ -62,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by alexandre on 20/05/15.
@@ -128,6 +129,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     private static final long OBSERVER_REFRESH_THROTTLE_MS = 1500L;
     private static final Object observerRefreshLock = new Object();
     private static long sLastObserverRefreshAtMs = 0L;
+    private static final AtomicBoolean sPendingIdleCheck = new AtomicBoolean(false);
 
     /**
      * Ugly implementation based on a static variable, guessing that there is only one instance at a time (seems to be true...)
@@ -467,6 +469,32 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                         return;
                     }
 
+                    // Debounce: during the initial import storm each row insert fires onChange.
+                    // Accept the first notification immediately; for subsequent ones within the
+                    // throttle window, schedule a single trailing check so that the last DB write
+                    // in a burst (e.g. a one-file addition) is never silently dropped.
+                    if (!shouldRefreshProgressCount()) {
+                        if (sPendingIdleCheck.compareAndSet(false, true)) {
+                            mHandler.postDelayed(() -> {
+                                // Advance the timestamp so the next burst after this check
+                                // doesn't immediately bypass the throttle window.
+                                shouldRefreshProgressCount();
+                                if (!PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true)) return;
+                                if (!(isForeground || isForceAfterNetworkScan)) return;
+                                if (LoaderUtils.getScrapeInProgress()) return;
+                                int pendingCount = getPendingNotScrapedCount(appContext);
+                                if (pendingCount > 0) {
+                                    if (log.isDebugEnabled()) log.debug("registerObserver: trailing check getting {} videos not yet scraped, launching service.", pendingCount);
+                                    AutoScrapeService.startService(appContext);
+                                }
+                                // Clear at the end so no concurrent observer can enqueue
+                                // another runnable while this one is still executing.
+                                sPendingIdleCheck.set(false);
+                            }, OBSERVER_REFRESH_THROTTLE_MS);
+                        }
+                        if (log.isTraceEnabled()) log.trace("registerObserver.onChange: idle, skip count refresh due to throttle");
+                        return;
+                    }
                     // Look for all the videos not yet processed and not located in the Camera folder
                     int pendingCount = getPendingNotScrapedCount(appContext);
                     if (pendingCount > 0) {

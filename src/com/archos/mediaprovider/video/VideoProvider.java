@@ -1406,7 +1406,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
         if (log.isDebugEnabled()) log.debug("handleForeGround: foreground={}", foreground);
         final Context context = getContext();
         if (context == null || ! ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
-            log.error("handleForeGround: context is null or not foreground, return");
+            if (log.isDebugEnabled()) log.debug("handleForeGround: context is null or not foreground, return");
             return;
         }
         if (foreground) {

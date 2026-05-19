@@ -229,8 +229,14 @@ public class VideoStoreImportImpl {
                     if (CRASH_ON_ERROR) throw new RuntimeException(e);
                     break;
                 } catch (MediaRetrieverServiceClient.ServiceManagementException e) {
-                    log.error("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught");
-                    // something is fishy with our service, abort and try again later.
+                    if (mIsImportInterrupted) {
+                        // Expected: MediaRetrieverService was stopped by lifecycle onStop while
+                        // import was still running. interruptImport() was called; we break here.
+                        log.warn("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught during teardown");
+                    } else {
+                        // Unexpected: retriever failure while import should be active.
+                        log.error("handleScanCursor: MediaRetrieverServiceClient.ServiceManagementException caught", e);
+                    }
                     if (CRASH_ON_ERROR) throw new RuntimeException(e);
                     break;
                 }
