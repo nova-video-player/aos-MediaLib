@@ -476,20 +476,22 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                     if (!shouldRefreshProgressCount()) {
                         if (sPendingIdleCheck.compareAndSet(false, true)) {
                             mHandler.postDelayed(() -> {
-                                // Advance the timestamp so the next burst after this check
-                                // doesn't immediately bypass the throttle window.
-                                shouldRefreshProgressCount();
-                                if (!PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true)) return;
-                                if (!(isForeground || isForceAfterNetworkScan)) return;
-                                if (LoaderUtils.getScrapeInProgress()) return;
-                                int pendingCount = getPendingNotScrapedCount(appContext);
-                                if (pendingCount > 0) {
-                                    if (log.isDebugEnabled()) log.debug("registerObserver: trailing check getting {} videos not yet scraped, launching service.", pendingCount);
-                                    AutoScrapeService.startService(appContext);
+                                try {
+                                    // Advance the timestamp so the next burst after this check
+                                    // doesn't immediately bypass the throttle window.
+                                    shouldRefreshProgressCount();
+                                    if (!PreferenceManager.getDefaultSharedPreferences(appContext).getBoolean(KEY_ENABLE_AUTO_SCRAP, true)) return;
+                                    if (!(isForeground || isForceAfterNetworkScan)) return;
+                                    if (LoaderUtils.getScrapeInProgress()) return;
+                                    int pendingCount = getPendingNotScrapedCount(appContext);
+                                    if (pendingCount > 0) {
+                                        if (log.isDebugEnabled()) log.debug("registerObserver: trailing check getting {} videos not yet scraped, launching service.", pendingCount);
+                                        AutoScrapeService.startService(appContext);
+                                    }
+                                } finally {
+                                    // Always clear so future bursts can enqueue a new trailing check.
+                                    sPendingIdleCheck.set(false);
                                 }
-                                // Clear at the end so no concurrent observer can enqueue
-                                // another runnable while this one is still executing.
-                                sPendingIdleCheck.set(false);
                             }, OBSERVER_REFRESH_THROTTLE_MS);
                         }
                         if (log.isTraceEnabled()) log.trace("registerObserver.onChange: idle, skip count refresh due to throttle");

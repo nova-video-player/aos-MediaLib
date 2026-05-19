@@ -85,6 +85,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     protected Handler mHandler;
     private HandlerThread mHandlerThread;
+    private volatile boolean mCleanupCalled = false;
     private VideoStoreImportImpl mImporter;
     private ContentObserver mContentObserver;
     private boolean mNeedToInitScraper = false;
@@ -421,22 +422,22 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             case MESSAGE_IMPORT_INCR:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_IMPORT_INCR");
                 doImport(false);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_IMPORT_FULL:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_IMPORT_FULL");
                 doImport(true);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_UPDATE_METADATA:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_UPDATE_METADATA");
                 mImporter.doScan((Uri)msg.obj);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_REMOVE_FILE:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_REMOVE_FILE");
                 mImporter.doRemove((Uri)msg.obj);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_HIDE_VOLUME:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_HIDE_VOLUME storageId={}", msg.arg2);
@@ -765,6 +766,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private void cleanup() {
         if (log.isDebugEnabled()) log.debug("cleanup");
+        mCleanupCalled = true;
 
         // Remove lifecycle observer to prevent callbacks to destroyed service
         ProcessLifecycleOwner.get().getLifecycle().removeObserver(this);
