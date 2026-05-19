@@ -32,6 +32,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.SystemClock;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
@@ -78,6 +79,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -108,6 +110,46 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
     // yes max retry of 5 is not enough I saw it fail and succeed at 7...
     private static final int THUMB_TRY_MAX = 10    ;
     private ContentResolver mCr;
+
+    // Throttle notifyChange(ALL_CONTENT_URI) only for writes originating on the import handler
+    // thread (MESSAGE_IMPORT_FULL). The heavy import writes in VideoStoreImportImpl and BulkInserter
+    // are synchronous on that thread, so the ThreadLocal marker applies to the noisy bulkInsert,
+    // applyBatch, and direct update/delete paths. Writes from other threads (player, bookmarks,
+    // watched state, VobHandler's own HandlerThread) are never throttled.
+    // VideoStoreImportService fires one final unconditional notification after doImport().
+    private static final ThreadLocal<Boolean> sIsImportThread = new ThreadLocal<>();
+    private static final AtomicLong sLastContentNotifyMs = new AtomicLong(0);
+    private static final long IMPORT_NOTIFY_THROTTLE_MS = 10000;
+
+    /**
+     * Called by VideoStoreImportService on the import handler thread around the full doImport()
+     * body. Setting true marks the current thread and seeds the throttle window so the very first
+     * import write is also deferred. Setting false clears the mark and resets the timestamp.
+     */
+    public static void setImportInProgress(boolean inProgress) {
+        if (inProgress) {
+            sIsImportThread.set(Boolean.TRUE);
+            sLastContentNotifyMs.set(SystemClock.elapsedRealtime());
+        } else {
+            sIsImportThread.remove();
+            sLastContentNotifyMs.set(0);
+        }
+    }
+
+    private void notifyAllContentUri() {
+        if (Boolean.TRUE.equals(sIsImportThread.get())) {
+            long now = SystemClock.elapsedRealtime();
+            long last = sLastContentNotifyMs.get();
+            if (now - last < IMPORT_NOTIFY_THROTTLE_MS) {
+                return;
+            }
+            // Only one thread wins the CAS; others see the updated timestamp and skip.
+            if (!sLastContentNotifyMs.compareAndSet(last, now)) {
+                return;
+            }
+        }
+        mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+    }
 
     private static final int LIGHT_INDEX_STORAGE_MIN_ID = ArchosMediaCommon.LIGHT_INDEX_MIN_STORAGE_ID;
 
@@ -421,7 +463,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
             if (rowId > 0) {
                 Uri result = ContentUris.withAppendedId(uri, rowId);
                 if (!db.inTransaction()) {
-                    mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                    notifyAllContentUri();
                 }
                 return result;
             }
@@ -458,7 +500,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 values.put(VideoStore.VideoList.Columns.LIST_ID,listId);
                 db.insertWithOnConflict(ListTables.VIDEO_LIST_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
                 newUri = uri;
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
                 break;
             }
             case LIST:{
@@ -466,7 +508,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 if (rowId > 0) {
                     newUri = VideoStore.List.getListUri(rowId);
                 }
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
                 break;
             }
             default:
@@ -581,7 +623,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 String tableName = FileUtils.getName(uri);
                 int result = db.delete(tableName, selection, selectionArgs);
                 if (result > 0 && !db.inTransaction()) {
-                    mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                    notifyAllContentUri();
                 }
                 return result;
             case VIDEO_LIST:
@@ -589,11 +631,11 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 List<String> whereArgs = new ArrayList<String>(Arrays.asList(selectionArgs));
                 whereArgs.add(FileUtils.getName(uri));
                 result = db.delete(ListTables.VIDEO_LIST_TABLE, selection, whereArgs.toArray(new String[0]));
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
                 return result;
             case LIST:
                 result = db.delete(ListTables.LIST_TABLE, selection, selectionArgs);
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
                 return result;
         }
 
@@ -605,7 +647,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
 
         count = db.delete(tableAndWhere.table, tableAndWhere.where, selectionArgs);
         if (count > 0 && !db.inTransaction())
-            mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+            notifyAllContentUri();
         return count;
     }
 
@@ -636,7 +678,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 }
                 int result = db.update(tableName, initialValues, userWhere, whereArgs);
                 if (result > 0 && !db.inTransaction()) {
-                    mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                    notifyAllContentUri();
                 }
                 return result;
             }
@@ -645,12 +687,12 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 List<String> whereArgs2 = new ArrayList<String>(Arrays.asList(whereArgs));
                 whereArgs2.add(FileUtils.getName(uri));
                 int result = db.update(ListTables.VIDEO_LIST_TABLE, initialValues, userWhere, whereArgs2.toArray(new String[0]));
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
                 return result;
             }
             case LIST: {
                 int result = db.update(ListTables.LIST_TABLE, initialValues, userWhere, whereArgs);
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
                 return result;
             }
             case VIDEO_MEDIA:
@@ -1115,7 +1157,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 mVobHandler.onEndTransaction();
             }
             if (result > 0)
-                mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                notifyAllContentUri();
             return result;
         }
         return 0;
@@ -1147,7 +1189,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
             mVobHandler.onEndTransaction();
         }
         if (result != null) {
-            mCr.notifyChange(VideoStore.ALL_CONTENT_URI, null);
+            notifyAllContentUri();
             mCr.notifyChange(ScraperStore.ALL_CONTENT_URI, null);
         }
         return result;

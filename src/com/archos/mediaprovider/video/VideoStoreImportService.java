@@ -52,6 +52,7 @@ import com.archos.environment.ArchosUtils;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.DeleteFileCallback;
+import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.ImportState;
 import com.archos.mediaprovider.MediaRetrieverService;
 import com.archos.mediaprovider.VideoDb;
@@ -420,13 +421,25 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
                 break;
             case MESSAGE_IMPORT_INCR:
+                // Incremental import: runs while user may be active (bookmarks, watched state).
+                // Do not throttle notifications so user-visible updates remain responsive.
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_IMPORT_INCR");
                 doImport(false);
                 if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_IMPORT_FULL:
+                // Full import: long-running bulk write (startup or new storage). Throttle
+                // notifications to avoid flooding UI CursorLoaders with SQLite interrupted errors.
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_IMPORT_FULL");
-                doImport(true);
+                VideoProvider.setImportInProgress(true);
+                try {
+                    doImport(true);
+                } finally {
+                    VideoProvider.setImportInProgress(false);
+                    // Unconditional refresh: covers both normal completion and partial writes
+                    // if doImport() throws after DB mutations have already occurred.
+                    getContentResolver().notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                }
                 if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_UPDATE_METADATA:
