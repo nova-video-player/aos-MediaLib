@@ -168,7 +168,7 @@ public class VideoStoreImportImpl {
         }
 
         ImportState.VIDEO.setState(State.IDLE);
-        if (log.isDebugEnabled()) log.debug("doFullImport: ImportState.VIDEO.setState(State.IDLE)");
+        if (log.isDebugEnabled()) log.debug("doIncrementalImport: ImportState.VIDEO.setState(State.IDLE)");
     }
 
     private static final String[] ID_DATA_PROJ = new String[] {

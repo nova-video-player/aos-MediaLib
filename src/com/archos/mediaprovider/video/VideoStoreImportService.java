@@ -113,12 +113,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (log.isDebugEnabled()) log.debug("VideoStoreImportService CTOR");
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        if (log.isDebugEnabled()) log.debug("VideoStoreImportService DTOR");
-        super.finalize();
-    }
-
     @SuppressWarnings("deprecation") // ACTION_MEDIA_SCANNER_SCAN_FILE reused as internal IPC action string
     public static boolean startIfHandles(Context context, Intent broadcast) {
         String action = broadcast.getAction();
