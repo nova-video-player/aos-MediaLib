@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">Opätovné získanie informácií o všetkých položkách</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Nemožnosť synchronizácie so službou Trakt</string>
+    <string name="trakt_toast_account_locked">Účet Trakt bol zablokovaný. Synchronizácia je deaktivovaná. Ak chcete funkciu opäť aktivovať, znova sa prihláste v nastaveniach.</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Žiadna pamäťová karta</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,4 +140,6 @@
     <string name="scraping_in_progress">Prebieha vyhľadávanie informácií</string>
     <string name="remaining_videos_to_process">Zostávajúce mediálne súbory na spracovanie:</string>
     <string name="video_store_import">Importovanie miestnych mediálnych súborov</string>
+    <string name="current_video_title">Aktuálne:</string>
+    <string name="noresult_video_title">Nezaznamenané:</string>
 </resources>

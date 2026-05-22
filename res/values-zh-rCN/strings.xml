@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">重新刮削所有文件</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">无法与 trakt 同步</string>
+    <string name="trakt_toast_account_locked">Trakt 账号已被锁定。同步已禁用。请在设置中重新进行身份验证以重新启用。</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">未发现 SD 卡</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,4 +140,6 @@
     <string name="scraping_in_progress">正在刮削……</string>
     <string name="remaining_videos_to_process">剩余要处理的媒体文件：</string>
     <string name="video_store_import">导入本地媒体文件</string>
+    <string name="current_video_title">当前：</string>
+    <string name="noresult_video_title">未刮削：</string>
 </resources>
