@@ -23,3 +23,14 @@ Amadeus (1984) Theatrical Multi VFI 2160p 4KLight DV HDR Bluray AC3 5.1 X265.mkv
 2 Guns (2013) Hybrid Multi VFF 2160p 10 bits 4KLight HDR Bluray DDP5.1 X265.mkv|2 Guns|2013|2 Guns 2013
 The Formula (2014).mkv|The Formula|2014|The Formula 2014
 300 (2007) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|300|2007|300 2007
+# 4-digit SSEE collision risks: room/address numbers and franchise year suffixes
+# 1408 is below MIN_YEAR (1906) so never extracted as year; no separator before digits -> no SSEE match
+1408.mkv|1408|null|1408
+1408 (2007).mkv|1408|2007|1408 2007
+# Franchise year suffixes: "2000" starts with 20 -> excluded from SSEE pattern
+Death Race 2000.mkv|Death Race|2000|Death Race 2000
+Dracula 2000.mkv|Dracula|2000|Dracula 2000
+Fantasia 2000.mkv|Fantasia|2000|Fantasia 2000
+# Year-titled films: start with 19 -> excluded from SSEE pattern
+1922 (2017).mkv|1922|2017|1922 2017
+1941 (1979).mkv|1941|1979|1941 1979

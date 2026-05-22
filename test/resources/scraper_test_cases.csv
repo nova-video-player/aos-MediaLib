@@ -10,6 +10,18 @@ The Matrix (1999).mkv|Movie|The Matrix|603
 The Matrix.mkv|Movie|The Matrix|603
 upпp://1540402479/0/2/2%2415/2%2415%240/Scream.2022.1080p.BluRay.x264.AAC5.1-[YT.MX].mkv|Movie|Scream|646385
 Wadjda (2013) MULTI VFi 1080p Bluray EAC3 5.1 x265-k7.mkv|Movie|Wadjda|129112
+# 4-digit SSEE format (issue #1419): compact SSEE episodes must be identified as TV shows
+Battlestar Galactica - 0208 - Final cut.mp4|Show|Battlestar Galactica|1972
+Battlestar Galactica - 0100 - Blood and Chrome.mp4|Show|Battlestar Galactica|1972
+# 4-digit collision risks: these must remain identified as movies, not SSEE episodes
+# 1408: room number (< MIN_YEAR 1906, no separator before digits at filename start)
+1408 (2007).mkv|Movie|1408|3021
+# 1922/1941: start with 19 -> excluded from SSEE by year-prefix lookahead
+1922 (2017).mkv|Movie|1922|452507
+1941 (1979).mkv|Movie|1941|11519
+# Franchise year suffixes: 2000/2049 start with 20 -> excluded from SSEE
+Death Race 2000 (1975).mkv|Movie|Death Race 2000|13282
+Fantasia 2000.mkv|Movie|Fantasia 2000|49948
 # Parenthesized content attached to title should be preserved (issue #1665)
 OVNI(s).S01E06.FRENCH.1080p.BluRay.x264.DTS-HDMA.5.1.mkv|Show|OVNI(s)|108353
 Paris_Police_1900-S01E01-Épisode_1-720p-AVC-EAC3-5.1.mkv|Show|Paris Police 1900|93911

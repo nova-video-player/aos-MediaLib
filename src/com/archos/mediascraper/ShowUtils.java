@@ -86,6 +86,9 @@ public final class ShowUtils {
             // Note: can detect movies that contain 3 digit numbers like "127 hours" or shows that have such numbers in their name like "zoey 101"
             // Limit first digit to be >0 in order not to identify "James Bond 007" as tv show
             //Pattern.compile("(.+)" + SEP_MANDATORY + "(?!(?:264|265|720))([1-9])(\\d{2,2})" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
+            // 4-digit SSEE format e.g. "Battlestar Galactica - 0208 - Final cut" -> Season 2, Episode 8
+            // Excludes year-prefixed numbers (19xx, 20xx) and resolution numbers preceded by 'x' (1920x1080)
+            Pattern.compile("(.+?)" + SEP_MANDATORY + "(?!(?:19|20)\\d{2})(?<![xX])([0-9]{2})([0-9]{2})(?!\\d)" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
             // Daily shows The Talk 2023 05 05 XviD-AFG [eztv].mkv -> s2023e0505 ou s2023e(m*31+d)
             Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|19\\d{2}|\\d{1,2})" + SEP_MANDATORY + "((\\d{2})" + SEP_MANDATORY + "(\\d{2})(?!\\d)).*", Pattern.CASE_INSENSITIVE),
             // Match show EXX -> one season?
