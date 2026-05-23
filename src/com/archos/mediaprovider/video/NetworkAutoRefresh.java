@@ -47,9 +47,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by alexandre on 26/06/15.
@@ -59,6 +59,10 @@ public class NetworkAutoRefresh extends BroadcastReceiver implements DefaultLife
     private static final Logger log = LoggerFactory.getLogger(NetworkAutoRefresh.class);
 
     private static volatile boolean isForeground = true;
+    // Prevents two background threads from executing doRescan() concurrently.
+    // Note: cleared as soon as delayed scan broadcasts are queued, not when the scans complete,
+    // so it does not protect against overlapping scan batches — that is pre-existing behaviour.
+    private static final AtomicBoolean sRescanInProgress = new AtomicBoolean(false);
     private static Application mApplication;
 
     public static final String ACTION_RESCAN_INDEXED_FOLDERS = "com.archos.mediaprovider.video.NetworkAutoRefresh";
@@ -87,104 +91,109 @@ public class NetworkAutoRefresh extends BroadcastReceiver implements DefaultLife
         }
         else if(intent.getAction().equals(ACTION_RESCAN_INDEXED_FOLDERS)||
                 intent.getAction().equals(ACTION_FORCE_RESCAN_INDEXED_FOLDERS)) {
-            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-            /*
-                do not scan if auto scan and already scan lately (for example on restart of device) or if already scanning
-             */
-            if(((pref.getInt(AUTO_RESCAN_PERIOD,0)<=0)
-                    &&!intent.getAction().equals(ACTION_FORCE_RESCAN_INDEXED_FOLDERS))
-                    || com.archos.mediaprovider.video.NetworkScannerServiceVideo.isScannerAlive()
-                    ) {
-                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
-                Date dt = new Date();
-                String S = sdf.format(dt);
-                if (log.isDebugEnabled()) log.debug("onReceive: skipping rescan : {} period = {} is scanning ? {}", S, pref.getInt(AUTO_RESCAN_PERIOD, 0), String.valueOf(com.archos.mediaprovider.video.NetworkScannerReceiver.isScannerWorking()));
-                return;
-            }
-            pref.edit().putLong(AUTO_RESCAN_LAST_SCAN, System.currentTimeMillis()).commit();
-            if (log.isDebugEnabled()) log.debug("onReceive: received rescan intent");
-            //updating
-            Cursor cursor = null;
-            List<Uri> toUpdate = new ArrayList<>();
-            try {
-                cursor = ShortcutDbAdapter.VIDEO.queryAllShortcuts(context);
-                if (cursor != null && cursor.moveToFirst()) {
-                    int pathKey = cursor.getColumnIndex(ShortcutDbAdapter.KEY_PATH);
-                    int rescanKey = cursor.getColumnIndex(ShortcutDbAdapter.KEY_RESCAN);
-                    do {
-                        Uri uri = Uri.parse(cursor.getString(pathKey));
-                        int rescan = cursor.getInt(rescanKey);
-                        // if this uri is to be rescan automatically, add it to the list
-                        if (rescan == 1) {
-                            if (log.isDebugEnabled()) log.debug("onReceive: add to scan list {}", uri);
-                            toUpdate.add(uri);
-                        }
-                    }
-                    while (cursor.moveToNext());
+            // goAsync keeps the BroadcastReceiver context alive until finish() is called,
+            // allowing the DB queries inside handleRescan to run on a background thread.
+            final PendingResult pendingResult = goAsync();
+            new Thread(() -> {
+                try {
+                    handleRescan(context, intent);
+                } finally {
+                    pendingResult.finish();
                 }
-            } catch (Exception e) {
-                log.error("onReceive: Error accessing shortcuts database", e);
-                // Continue without shortcuts to prevent crash
-            } finally {
-                if (cursor != null) {
-                    cursor.close();
-                }
-            }
-            ShortcutDbAdapter.VIDEO.close();
-            if(NetworkState.isLocalNetworkConnected(context)) {
-                PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(AUTO_RESCAN_ERROR, 0).commit();//reset error
-                // Reset network scan counter at the start of a new batch to prevent orphaned counts
-                AutoScrapeService.resetNetworkScanCount();
-                boolean triggeredScan = false;
-                int scanCount = 0;
-                Handler handler = new Handler(Looper.getMainLooper());
-                for (Uri uri : toUpdate) {
-                    if (log.isDebugEnabled()) log.debug("onReceive: scanning {}", uri);
-                    if (shouldSkipScanForInactiveServer(context, uri)) {
-                        if (log.isDebugEnabled()) log.debug("onReceive: skip scan for inactive server {}", uri);
-                        continue;
-                    }
-                    if("upnp".equals(uri.getScheme())){ //start upnp service
-                        UpnpServiceManager.startServiceIfNeeded(context);
-                    }
-                    if("ftp".equalsIgnoreCase(uri.getScheme())||"ftps".equals(uri.getScheme()))
-                        Session.getInstance().removeFTPClient(uri);
-                    if("sftp".equalsIgnoreCase(uri.getScheme()))
-                        SFTPSession.getInstance().removeSession(uri);
-                    final Uri scanUri = uri;
-                    final long delayMs = 100L + (scanCount * 2000L);
-                    handler.postDelayed(() -> {
-                        Intent refreshIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE, scanUri);
-                        refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_ON_FAIL_PREFERENCE, AUTO_RESCAN_ERROR);
-                        refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_END_OF_SCAN_PREFERENCE, AUTO_RESCAN_LAST_SCAN);
-                        refreshIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-                        context.sendBroadcast(refreshIntent);
-                    }, delayMs);
-                    triggeredScan = true;
-                    scanCount++;
-                    // Increment the network scan counter for each folder
-                    AutoScrapeService.incrementNetworkScanCount();
-                    if (log.isDebugEnabled()) log.debug("onReceive: queued scan for {} with delay {}ms", uri, delayMs);
-                }
-
-                // Start AutoScrapeService after network scanning to scrape newly found videos
-                if (triggeredScan && AutoScrapeService.isEnable(context)) {
-                    if (log.isDebugEnabled()) log.debug("onReceive: starting AutoScrapeService after network scan, total folders: {}", scanCount);
-                    try {
-                        AutoScrapeService.startServiceAfterNetworkScan(context);
-                    } catch (Exception e) {
-                        // Catch any exceptions that might bubble up from startServiceAfterNetworkScan
-                        // to prevent BroadcastReceiver from crashing and causing RuntimeException to propagate
-                        log.error("onReceive: Failed to start AutoScrapeService after network scan", e);
-                    }
-                }
-            }
-            else{
-                PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(AUTO_RESCAN_ERROR, AUTO_RESCAN_ERROR_NO_WIFI).commit();//reset error
-                NetworkScannerServiceVideo.notifyListeners();
-            }
-            if (log.isDebugEnabled()) log.debug("onReceive: received rescan intent end");
+            }, "NetworkAutoRefresh-bg").start();
         }
+    }
+
+    private void handleRescan(Context context, Intent intent) {
+        if (!sRescanInProgress.compareAndSet(false, true)) {
+            if (log.isDebugEnabled()) log.debug("handleRescan: rescan already in progress, skipping duplicate intent");
+            return;
+        }
+        try {
+            doRescan(context, intent);
+        } finally {
+            sRescanInProgress.set(false);
+        }
+    }
+
+    private void doRescan(Context context, Intent intent) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+        /*
+            do not scan if auto scan and already scan lately (for example on restart of device) or if already scanning
+         */
+        if(((pref.getInt(AUTO_RESCAN_PERIOD,0)<=0)
+                &&!intent.getAction().equals(ACTION_FORCE_RESCAN_INDEXED_FOLDERS))
+                || com.archos.mediaprovider.video.NetworkScannerServiceVideo.isScannerAlive()
+                ) {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
+            Date dt = new Date();
+            String S = sdf.format(dt);
+            if (log.isDebugEnabled()) log.debug("onReceive: skipping rescan : {} period = {} is scanning ? {}", S, pref.getInt(AUTO_RESCAN_PERIOD, 0), String.valueOf(com.archos.mediaprovider.video.NetworkScannerReceiver.isScannerWorking()));
+            return;
+        }
+        pref.edit().putLong(AUTO_RESCAN_LAST_SCAN, System.currentTimeMillis()).commit();
+        if (log.isDebugEnabled()) log.debug("onReceive: received rescan intent");
+        // Use getRescanUris() which opens a local DatabaseHelper, copies results, and closes:
+        // avoids touching the singleton ShortcutDbAdapter.VIDEO mDb from a background thread.
+        List<Uri> toUpdate = ShortcutDbAdapter.VIDEO.getRescanUris(context);
+        for (Uri uri : toUpdate) {
+            if (log.isDebugEnabled()) log.debug("onReceive: add to scan list {}", uri);
+        }
+        if(NetworkState.isLocalNetworkConnected(context)) {
+            PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(AUTO_RESCAN_ERROR, 0).commit();//reset error
+            // Reset network scan counter at the start of a new batch to prevent orphaned counts
+            AutoScrapeService.resetNetworkScanCount();
+            boolean triggeredScan = false;
+            int scanCount = 0;
+            Handler handler = new Handler(Looper.getMainLooper());
+            for (Uri uri : toUpdate) {
+                if (log.isDebugEnabled()) log.debug("onReceive: scanning {}", uri);
+                if (shouldSkipScanForInactiveServer(context, uri)) {
+                    if (log.isDebugEnabled()) log.debug("onReceive: skip scan for inactive server {}", uri);
+                    continue;
+                }
+                if("upnp".equals(uri.getScheme())){ //start upnp service
+                    UpnpServiceManager.startServiceIfNeeded(context);
+                }
+                if("ftp".equalsIgnoreCase(uri.getScheme())||"ftps".equals(uri.getScheme()))
+                    Session.getInstance().removeFTPClient(uri);
+                if("sftp".equalsIgnoreCase(uri.getScheme()))
+                    SFTPSession.getInstance().removeSession(uri);
+                final Uri scanUri = uri;
+                final long delayMs = 100L + (scanCount * 2000L);
+                // Use global application context in the lambda: it fires after pendingResult.finish()
+                // so the receiver's context may already be invalidated.
+                final Context appContext = ArchosUtils.getGlobalContext();
+                handler.postDelayed(() -> {
+                    Intent refreshIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE, scanUri);
+                    refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_ON_FAIL_PREFERENCE, AUTO_RESCAN_ERROR);
+                    refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_END_OF_SCAN_PREFERENCE, AUTO_RESCAN_LAST_SCAN);
+                    refreshIntent.setPackage(appContext.getPackageName());
+                    appContext.sendBroadcast(refreshIntent);
+                }, delayMs);
+                triggeredScan = true;
+                scanCount++;
+                // Increment the network scan counter for each folder
+                AutoScrapeService.incrementNetworkScanCount();
+                if (log.isDebugEnabled()) log.debug("onReceive: queued scan for {} with delay {}ms", uri, delayMs);
+            }
+
+            // Start AutoScrapeService after network scanning to scrape newly found videos
+            if (triggeredScan && AutoScrapeService.isEnable(context)) {
+                if (log.isDebugEnabled()) log.debug("onReceive: starting AutoScrapeService after network scan, total folders: {}", scanCount);
+                try {
+                    AutoScrapeService.startServiceAfterNetworkScan(context);
+                } catch (Exception e) {
+                    // Catch any exceptions that might bubble up from startServiceAfterNetworkScan
+                    // to prevent BroadcastReceiver from crashing and causing RuntimeException to propagate
+                    log.error("onReceive: Failed to start AutoScrapeService after network scan", e);
+                }
+            }
+        } else {
+            PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(AUTO_RESCAN_ERROR, AUTO_RESCAN_ERROR_NO_WIFI).commit();//reset error
+            NetworkScannerServiceVideo.notifyListeners();
+        }
+        if (log.isDebugEnabled()) log.debug("onReceive: received rescan intent end");
     }
 
     private static boolean shouldSkipScanForInactiveServer(Context context, Uri uri) {
