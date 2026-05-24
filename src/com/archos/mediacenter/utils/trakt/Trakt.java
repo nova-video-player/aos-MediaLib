@@ -48,7 +48,9 @@ import com.uwetrottmann.trakt5.entities.SyncResponse;
 import com.uwetrottmann.trakt5.entities.TraktList;
 import com.uwetrottmann.trakt5.entities.UserSlug;
 import com.uwetrottmann.trakt5.enums.Extended;
+import com.uwetrottmann.trakt5.enums.ExtendedShowsWatched;
 import com.uwetrottmann.trakt5.enums.ListPrivacy;
+import com.uwetrottmann.trakt5.enums.Specials;
 
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
@@ -84,6 +86,8 @@ public class Trakt {
     public static final int SCROBBLE_THRESHOLD = 90;
     // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
     public static final int PLAYBACK_HISTORY_SIZE = 200;
+    // page size for paginated endpoints (watched/collection/list); 1000 is the Trakt hard cap
+    private static final int PAGE_LIMIT = 1000;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";
@@ -704,18 +708,21 @@ public class Trakt {
 
     private Result getAllShows(String library, int trial){
         if (log.isDebugEnabled()) log.debug("getAllShows");
-        List<BaseShow> ret = null;
-        if (library.equals(Trakt.LIBRARY_WATCHED)) {
-            ret = exec(mTraktV2.sync().watchedShows(Extended.EPISODES));
-            if (ret == null)
+        List<BaseShow> result = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            List<BaseShow> pageData;
+            if (library.equals(Trakt.LIBRARY_WATCHED))
+                pageData = exec(mTraktV2.sync().watchedShows(page, PAGE_LIMIT, ExtendedShowsWatched.PROGRESS, Specials.TRUE));
+            else
+                pageData = exec(mTraktV2.sync().collectionShows(page, PAGE_LIMIT, Extended.EPISODES));
+            if (pageData == null)
                 return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
-            return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
-        } else {
-            ret = exec(mTraktV2.sync().collectionShows(Extended.EPISODES));
-            if (ret == null)
-                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
-            return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
         }
+        return handleRet(null, null, result, ObjectType.SHOWS_PER_SEASON);
     }
 
     // get playback status from trakt: this covers only videos with progress/resume not watched!
@@ -954,14 +961,21 @@ public class Trakt {
 
     public Result getAllMovies(final String library, int trial) {
         if (log.isDebugEnabled()) log.debug("getAllMovies");
-        List<BaseMovie> arg0 = null;
-        if (library.equals(Trakt.LIBRARY_WATCHED))
-            arg0 = exec(mTraktV2.sync().watchedMovies(Extended.FULL));
-        else
-            arg0 = exec(mTraktV2.sync().collectionMovies(Extended.FULL));
-        if(arg0 == null)
-            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
-        return handleRet(null, null, arg0, ObjectType.MOVIES);
+        List<BaseMovie> result = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            List<BaseMovie> pageData;
+            if (library.equals(Trakt.LIBRARY_WATCHED))
+                pageData = exec(mTraktV2.sync().watchedMovies(page, PAGE_LIMIT, null));
+            else
+                pageData = exec(mTraktV2.sync().collectionMovies(page, PAGE_LIMIT, Extended.FULL));
+            if (pageData == null)
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
+        }
+        return handleRet(null, null, result, ObjectType.MOVIES);
     }
 
     public Result getLastActivity(int trial) {
@@ -1009,10 +1023,18 @@ public class Trakt {
 
     public Result getListContent(int trial, int listId) {
         if (log.isDebugEnabled()) log.debug("getListContent");
-        List<ListEntry> items = exec(mTraktV2.users().listItems(UserSlug.ME, String.valueOf(listId), null));
-        if (items == null)
-            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
-        return handleRet(null, null, items, ObjectType.LIST);
+        List<ListEntry> result = new ArrayList<>();
+        String id = String.valueOf(listId);
+        int page = 1;
+        while (true) {
+            List<ListEntry> pageData = exec(mTraktV2.users().listItems(UserSlug.ME, id, page, PAGE_LIMIT, null));
+            if (pageData == null)
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
+        }
+        return handleRet(null, null, result, ObjectType.LIST);
     }
 
     public Result removeVideoFromList(int trial, int listId, ListEntry onlineItem) {
