@@ -1110,6 +1110,14 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                 }
                                 if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db {}{} db traktResume={}%, traktSeen={}, resume={}, lastTimePlayed={}; trakt resume={}%, resume {}, lastTimePlayed {}, lastWatched={}",
                                         i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.traktResume, i.traktSeen, i.resume, i.lastTimePlayed, newResumePercent, newResume, lastWatched, lastPlayedDateString);
+                                if (i.duration <= 0 && newResumePercent > 0) {
+                                    // Duration is unknown: we cannot compute a valid local bookmark from the Trakt percentage.
+                                    // Skip entirely to avoid writing BOOKMARK=0 or updating ARCHOS_LAST_TIME_PLAYED, which would
+                                    // cause the item to appear in Recently Played at position 0ms.
+                                    // A later sync after the file is scanned will convert the Trakt percentage correctly.
+                                    log.info("syncResumePointsToDb: trakt->db skipping {}{} because local duration is unknown ({}ms), will retry after file is scanned", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.duration);
+                                    continue;
+                                }
                                 boolean toConsider = false;
                                 ContentValues values = new ContentValues();
                                 if (i.lastTimePlayed < lastWatched && newResumePercent > 0) {
@@ -1206,6 +1214,14 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                 }
                                 if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db {}{} db traktResume={}%, traktSeen={}, resume={}, lastTimePlayed={}; trakt resume={}%, resume {}, lastTimePlayed {}, lastWatched={}",
                                         i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.traktResume, i.traktSeen, i.resume, i.lastTimePlayed, newResumePercent, newResume, lastWatched, lastPlayedDateString);
+                                if (i.duration <= 0 && newResumePercent > 0) {
+                                    // Duration is unknown: we cannot compute a valid local bookmark from the Trakt percentage.
+                                    // Skip entirely to avoid writing BOOKMARK=0 or updating ARCHOS_LAST_TIME_PLAYED, which would
+                                    // cause the item to appear in Recently Played at position 0ms.
+                                    // A later sync after the file is scanned will convert the Trakt percentage correctly.
+                                    log.info("syncResumePointsToDb: trakt->db skipping {}{} because local duration is unknown ({}ms), will retry after file is scanned", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.duration);
+                                    continue;
+                                }
                                 boolean toConsider = false;
                                 ContentValues values = new ContentValues();
                                 if (i.lastTimePlayed < lastWatched && newResumePercent > 0) {
