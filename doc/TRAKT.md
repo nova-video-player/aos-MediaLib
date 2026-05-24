@@ -119,14 +119,18 @@ mHandler.postDelayed(mTraktWatchingRunnable, WATCHING_DELAY_MS);
 **Pause/Stop Events**:
 ```java
 // On pause
-mTraktClient.watchingPause(videoInfo, progress);
+pauseTrakt(); // sets videoInfo.traktResume = -progress
+saveVideoStateIfReady(); // async DB write sees the pending Trakt resume
 
 // On stop
-mTraktClient.watchingStop(videoInfo, progress);
+stopTrakt(); // sets videoInfo.traktResume = -progress
+saveVideoStateIfReady(); // async DB write sees the pending Trakt resume
 if (shouldMarkAsSeen(progress)) {
     mTraktClient.markAs(videoInfo, ACTION_SEEN);
 }
 ```
+
+`pauseTrakt()` and `stopTrakt()` must run before `saveVideoStateIfReady()` in normal pause/stop paths. `saveVideoStateIfReady()` writes through an async executor, so `mVideoInfo.traktResume` has to be updated synchronously first; otherwise the DB write can persist the stale resume percentage from playback start or a previous pause.
 
 ### Progress Calculation
 Resume points are stored as percentages (0-100) and converted to milliseconds:
@@ -164,7 +168,7 @@ FLAG_SYNC_PROGRESS          = 0x200;  // Sync resume points
 ```
 
 ### Network Error Handling
-- **Retry Logic**: Up to 7 retries with exponential backoff
+- **Retry Logic**: Up to 3 attempts with a fixed 2s delay on non-auth failures
 - **Queue Flags**: Failed syncs stored in preferences for retry when network available
 - **Authentication Errors**: Automatic token refresh and single retry
 
@@ -207,7 +211,7 @@ FLAG_SYNC_PROGRESS          = 0x200;  // Sync resume points
 ### Hybrid Synchronization Approach
 The system implements a modular `syncPlaybackStatusHybrid()` method that combines original logic with new architecture:
 
-1. **Single API Call Efficiency** - Fetches Trakt data once
+1. **Single Fetch Per Dataset** - Fetches Trakt progress and watched data once per hybrid sync
 2. **Separate Operations** - Decoupled uploads (DB→Trakt) and downloads (Trakt→DB)
 3. **Preserved Logic** - Original conflict checking retained for backward compatibility
 4. **Clean Architecture** - `syncResumePointsToTrakt()`, `syncResumePointsToDb()`, `syncWatchedStatusToDb()`
@@ -215,7 +219,7 @@ The system implements a modular `syncPlaybackStatusHybrid()` method that combine
 ```java
 // Hybrid approach coordinates separate sync operations
 syncPlaybackStatusHybrid() {
-    // 1. FETCH TRAKT DATA ONCE (efficient)
+    // 1. FETCH TRAKT DATA ONCE PER DATASET (efficient)
     traktProgress = mTrakt.getPlaybackStatus();
     traktWatched = mTrakt.getWatchedStatus();
 
@@ -233,9 +237,9 @@ syncPlaybackStatusHybrid() {
 **Purpose**: Reduce bandwidth by only fetching changes since last sync
 
 **Implementation**:
-- `getPlaybackStatus()` uses `getPlaybackSince(lastSync)` when supported
-- `getWatchedStatus()` uses `getWatchedHistorySince(lastSync)` when supported
-- Graceful fallback to full history if fork doesn't support incremental API
+- `getPlaybackStatus()` uses `sync().playback(lastSync, null, null, PLAYBACK_HISTORY_SIZE)`
+- `getWatchedStatus()` uses `sync().history(null, PLAYBACK_HISTORY_SIZE, null, lastSync, null)`
+- Graceful fallback to bounded full history if incremental calls fail
 
 **Timestamp Tracking**:
 ```
@@ -282,7 +286,7 @@ if (lastIndexedUtcSeconds > lastSyncUtcSeconds) {
     // - New videos exist in local DB
     // - Other device may have activity for those new videos
     // - Incremental sync would miss them
-    return exec(mTraktV2.sync().getPlayback(PLAYBACK_HISTORY_SIZE));
+    return exec(mTraktV2.sync().playback(null, null, null, PLAYBACK_HISTORY_SIZE));
 }
 ```
 **Benefit**: Prevents data loss in shared network storage scenario
@@ -290,10 +294,36 @@ if (lastIndexedUtcSeconds > lastSyncUtcSeconds) {
 **Enhancement 3: Incremental Sync** (IMPLEMENTED ✅)
 ```java
 // Safe to use delta sync - no new content since last sync
-OffsetDateTime lastSync = OffsetDateTime.ofEpochSecond(lastSyncTime);
-return exec(mTraktV2.sync().getPlaybackSince(lastSync));
+OffsetDateTime lastSync = OffsetDateTime.ofInstant(
+    Instant.ofEpochSecond(lastSyncTime),
+    ZoneOffset.UTC
+);
+return exec(mTraktV2.sync().playback(lastSync, null, null, PLAYBACK_HISTORY_SIZE));
 ```
 **Benefit**: Minimize API payload and bandwidth usage
+
+### Paginated Full Library and List Sync
+
+The full watched, collection, and user-list sync paths use trakt-java's paginated APIs. `PAGE_LIMIT = 1000` is the number of items requested per page, not a maximum page count. The loop starts at page 1 and stops when Trakt returns fewer than 1000 items.
+
+Current mappings:
+```java
+// Movies
+sync().watchedMovies(page, PAGE_LIMIT, null);
+sync().collectionMovies(page, PAGE_LIMIT, Extended.FULL);
+
+// Shows
+sync().watchedShows(page, PAGE_LIMIT, ExtendedShowsWatched.PROGRESS, Specials.TRUE);
+sync().collectionShows(page, PAGE_LIMIT, Extended.EPISODES);
+
+// User lists
+users().listItems(UserSlug.ME, id, page, PAGE_LIMIT, null);
+```
+
+Notes:
+- Watched movies pass `null` extended because Trakt makes the old `FULL` watched response the default.
+- Watched shows use `ExtendedShowsWatched.PROGRESS` to preserve season/episode progress data.
+- `Specials.TRUE` preserves season 0 episodes during watched-show sync.
 
 ### Granular LastActivities Timestamp Tracking
 
@@ -394,7 +424,7 @@ PREFERENCE_LAST_TIME_VIDEO_SCRAPED_UTC           → Most recent content index (
 
 **Legacy/Derived** (kept for compatibility):
 ```
-PREFERENCE_TRACK_LAST_ACTIVITY_MOVIE             → Most recent movie activity (any type)
+PREFERENCE_TRAKT_LAST_ACTIVITY_MOVIE             → Most recent movie activity (any type)
 PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE           → Most recent episode activity (any type)
 ```
 
@@ -414,10 +444,15 @@ PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE           → Most recent episode activit
 - ✅ Original conflict resolution logic preserved
 
 **Incremental/Delta Sync**:
-- ✅ `getPlaybackStatus()` uses `getPlaybackSince()` with fallback
-- ✅ `getWatchedStatus()` uses `getWatchedHistorySince()` with fallback
+- ✅ `getPlaybackStatus()` uses `sync().playback(startAt, endAt, type, limit)` with fallback
+- ✅ `getWatchedStatus()` uses `sync().history(type, limit, page, startAt, endAt)` with fallback
 - ✅ All 4 sync timestamp preferences implemented
 - ✅ UTC-based timestamp tracking
+
+**trakt-java 6.20+ Endpoint Compatibility**:
+- ✅ Watched movies, watched shows, collection movies, collection shows, and user-list items use paginated API variants
+- ✅ Watched shows include specials with `Specials.TRUE`
+- ✅ Watched movies avoid deprecated `ExtendedMoviesWatched.FULL`
 
 **Multi-Tier Skip Logic**:
 - ✅ **Enhancement 0**: Coarse-grained quick check (existing timestamps)
@@ -460,6 +495,7 @@ PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE           → Most recent episode activit
 1. **Simultaneous Multi-Device Use**: No real-time conflict resolution for concurrent playback (detected at next sync)
 2. **Offline Changes**: Changes made offline may conflict when sync resumes (resolved using timestamp precedence)
 3. **Metadata Dependencies**: Sync requires valid scraper metadata (TMDb IDs) for linking
+   - Scrobbling is skipped for unscraped movies or episodes with missing/invalid TMDb IDs to avoid Trakt 404 responses.
 
 ### Performance Considerations
 1. **Large Libraries**: Full sync can be slow for users with massive collections (mitigated by incremental sync and tier skipping)
@@ -474,7 +510,8 @@ PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE           → Most recent episode activit
 ### Known Edge Cases
 1. **New Content + Concurrent Activity**: If Device B adds new content while Device A is syncing, Device B's next sync catches it (Enhancement 2)
 2. **Multiple Indexed Folders**: `getLastTimeVideoScrapedUtc()` is per-device; can't detect if only one folder refreshed (acceptable limitation per TRAKT_NOTES.md)
-3. **Very Large Libraries**: Performance acceptable for typical users; may be slow for 50k+ videos
+3. **Unknown Duration on Resume Download**: If Trakt reports a resume percentage but the local DB duration is `0`, Nova cannot convert the percentage to milliseconds. Current behavior can update `ARCHOS_LAST_TIME_PLAYED` without creating a usable bookmark.
+4. **Very Large Libraries**: Performance acceptable for typical users; may be slow for 50k+ videos
 
 This synchronization strategy provides robust multi-device support while handling the complexities of distributed state management and conflict resolution in a video player environment.
 
@@ -598,7 +635,7 @@ ORDER BY ARCHOS_LAST_TIME_PLAYED DESC LIMIT 100
    - Coarse-grained quick check prevents unnecessary API calls
 
 4. ✅ **Error Recovery**: Graceful handling of network interruptions during sync
-   - Retry logic with exponential backoff (7 retries)
+   - Retry logic with up to 3 attempts and a fixed 2s delay on non-auth failures
    - Queue flags stored in preferences for retry when network available
    - Automatic token refresh on 401/409 errors
    - Failed syncs don't disrupt next sync attempt
