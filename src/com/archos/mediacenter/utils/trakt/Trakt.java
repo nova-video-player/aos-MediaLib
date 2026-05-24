@@ -1233,6 +1233,10 @@ public class Trakt {
         editor.remove(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_PAUSED);
         editor.remove(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_LIST);
         editor.remove(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_TIME_CHECKED_UTC);
+        editor.remove(TraktService.PREFERENCE_TRAKT_LAST_SYNC_STATUS);
+        editor.remove(TraktService.PREFERENCE_TRAKT_SKIPPED_NO_DURATION);
+        editor.remove(TraktService.PREFERENCE_TRAKT_SKIPPED_NO_METADATA);
+        editor.remove("trakt_last_sync");
     }
 
     public static void setFlagSyncPreference(SharedPreferences preferences, int flag) {

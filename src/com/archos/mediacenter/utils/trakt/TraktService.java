@@ -116,6 +116,8 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
 
     private boolean mForcePush = false;
     private boolean mForcePull = false;
+    /** Count of resume-point downloads skipped in the current sync session due to unknown duration. */
+    private int mSyncSkippedNoDuration = 0;
 
     public static final int FLAG_SYNC_AUTO =                0x001;
     public static final int FLAG_SYNC_LAST_ACTIVITY_VETO =  0x002;
@@ -149,6 +151,16 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
     public static final String PREFERENCE_TRAKT_LAST_TIME_SYNC_LIST = "trakt_last_time_sync_list";
     public static final String PREFERENCE_TRAKT_LAST_TIME_SYNC_TO_DB_LIST = "trakt_last_time_sync_to_db_list";
     public static final String PREFERENCE_TRAKT_FIRST_SYNC_DONE = "trakt_first_sync_done";
+    /** Outcome of the last background sync: 0=success, 1=network error, 2=auth error, 3=account locked. */
+    public static final String PREFERENCE_TRAKT_LAST_SYNC_STATUS = "trakt_last_sync_status";
+    public static final int SYNC_STATUS_SUCCESS = 0;
+    public static final int SYNC_STATUS_ERROR_NETWORK = 1;
+    public static final int SYNC_STATUS_ERROR_AUTH = 2;
+    public static final int SYNC_STATUS_ERROR_ACCOUNT_LOCKED = 3;
+    /** Number of resume-point downloads skipped in the last sync because the local file duration was unknown. */
+    public static final String PREFERENCE_TRAKT_SKIPPED_NO_DURATION = "trakt_skipped_no_duration";
+    /** Cumulative number of live scrobble attempts skipped because the video lacked Trakt-compatible metadata. Reset on sign-out. */
+    public static final String PREFERENCE_TRAKT_SKIPPED_NO_METADATA = "trakt_skipped_no_metadata";
 
     private static volatile boolean isForeground = true;
 
@@ -204,6 +216,14 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                         if (videoInfo == null && videoID >= 0)
                             videoInfo = VideoDbInfo.fromId(getContentResolver(), videoID);
                         if (videoInfo != null) {
+                            // track scrobbles that will be skipped due to missing Trakt-compatible metadata
+                            final String metaId = videoInfo.isShow ? videoInfo.scraperEpisodeId : videoInfo.scraperMovieId;
+                            if (metaId == null || metaId.isEmpty()) {
+                                final int newSkipCount = mPreferences.getInt(PREFERENCE_TRAKT_SKIPPED_NO_METADATA, 0) + 1;
+                                mPreferences.edit().putInt(PREFERENCE_TRAKT_SKIPPED_NO_METADATA, newSkipCount).apply();
+                                log.info("postWatching: missing metadata for {}, scrobble will be skipped — count now {}",
+                                        videoInfo.scraperTitle, newSkipCount);
+                            }
                             final float finalProgress = progress >= 0 ? progress : -progress;
                             result = mTrakt.postWatching(videoInfo, finalProgress);
                             if (videoInfo.traktResume < 0 && (result.status == Trakt.Status.SUCCESS || result.status == Trakt.Status.SUCCESS_ALREADY)) {
@@ -300,8 +320,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                     } else if (action.equals(INTENT_ACTION_SYNC)) {
                         int flag = intent.getIntExtra("flag_sync", 0);
                         result = sync(flag);
-                        // store last successful trakt sync time
-                        if (result.status == Status.SUCCESS) mPreferences.edit().putLong("trakt_last_sync", System.currentTimeMillis() / 1000L).apply();
+                        // trakt_last_sync and sync status are written by handleSyncStatus() inside sync()
                     }
                 }
                 else if (action.equals(INTENT_ACTION_FORCE_PUSH)) {
@@ -1116,6 +1135,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                     // cause the item to appear in Recently Played at position 0ms.
                                     // A later sync after the file is scanned will convert the Trakt percentage correctly.
                                     log.info("syncResumePointsToDb: trakt->db skipping {}{} because local duration is unknown ({}ms), will retry after file is scanned", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.duration);
+                                    mSyncSkippedNoDuration++;
                                     continue;
                                 }
                                 boolean toConsider = false;
@@ -1220,6 +1240,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                     // cause the item to appear in Recently Played at position 0ms.
                                     // A later sync after the file is scanned will convert the Trakt percentage correctly.
                                     log.info("syncResumePointsToDb: trakt->db skipping {}{} because local duration is unknown ({}ms), will retry after file is scanned", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.duration);
+                                    mSyncSkippedNoDuration++;
                                     continue;
                                 }
                                 boolean toConsider = false;
@@ -1577,6 +1598,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                     errorMessage +=" "+details;
                 if (log.isDebugEnabled()) showToast(errorMessage);
                 log.warn(errorMessage);
+                mPreferences.edit().putInt(PREFERENCE_TRAKT_LAST_SYNC_STATUS, SYNC_STATUS_ERROR_NETWORK).apply();
                 break;
             case ERROR_ACCOUNT_LOCKED:
                 // Disable Trakt and clear authentication tokens
@@ -1586,11 +1608,13 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                 showToast(accountLockedMessage);
                 log.error(accountLockedMessage);
                 // Don't set flag for retry since account is locked
+                mPreferences.edit().putInt(PREFERENCE_TRAKT_LAST_SYNC_STATUS, SYNC_STATUS_ERROR_ACCOUNT_LOCKED).apply();
                 break;
             case ERROR_AUTH:
                 log.warn("Trakt sync aborted due to authentication failure: {}", details);
                 // Don't set flag for retry since auth is failed
                 Trakt.setFlagSyncPreference(mPreferences, 0);
+                mPreferences.edit().putInt(PREFERENCE_TRAKT_LAST_SYNC_STATUS, SYNC_STATUS_ERROR_AUTH).apply();
                 break;
             case SUCCESS:
                 if ((flag & FLAG_SYNC_TO_TRAKT_WATCHED) != 0 || (flag & FLAG_SYNC_TO_DB_WATCHED) != 0) {
@@ -1600,6 +1624,11 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                     if ((flag & FLAG_SYNC_SHOWS) != 0)
                         Trakt.setLastTimeShowWatched(mPreferences, time);
                 }
+                mPreferences.edit()
+                        .putInt(PREFERENCE_TRAKT_LAST_SYNC_STATUS, SYNC_STATUS_SUCCESS)
+                        .putLong("trakt_last_sync", System.currentTimeMillis() / 1000L)
+                        .putInt(PREFERENCE_TRAKT_SKIPPED_NO_DURATION, mSyncSkippedNoDuration)
+                        .apply();
             default:
                 // SUCCESS go here too
                 Trakt.setFlagSyncPreference(mPreferences, 0);
@@ -1614,6 +1643,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
          *  for items removed from trakt
          */
 
+        mSyncSkippedNoDuration = 0;
         if (log.isDebugEnabled()) log.debug("sync with flag={}", flag);
         /*
         if ((flag & FLAG_SYNC_NOW) != 0)
@@ -1721,7 +1751,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
 
         if (!syncShowsFromTrakt && !syncMoviesFromTrakt) {
             if (log.isDebugEnabled()) log.debug("sync: no movie/show flag, abort");
-            return Trakt.Result.getSuccess();
+            return handleSyncStatus(Trakt.Status.SUCCESS, flag, null);
         }
 
         libraries = null;
