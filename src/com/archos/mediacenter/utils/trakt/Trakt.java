@@ -84,6 +84,10 @@ public class Trakt {
     private static String API_KEY;
     private static String API_SECRET;
     public static final int SCROBBLE_THRESHOLD = 90;
+    /** Minimum progress percentage to record as a Trakt resume point: ignore accidental short plays. */
+    public static final float RESUME_THRESHOLD_PERCENT = 1.0f;
+    /** Minimum play duration in milliseconds to record as a Trakt resume point (30 seconds). */
+    public static final int RESUME_THRESHOLD_MS = 30000;
     // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
     public static final int PLAYBACK_HISTORY_SIZE = 200;
     // page size for paginated endpoints (watched/collection/list); 1000 is the Trakt hard cap

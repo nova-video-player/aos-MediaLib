@@ -864,9 +864,27 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                     if (videoInfo != null &&
                             (videoInfo.scraperMovieId != null || videoInfo.scraperEpisodeId != null) &&
                             videoInfo.traktResume < 0) {
+                        // Skip upload if progress is below the minimum threshold: max(30s, 1%).
+                        // This guards against accidental short plays that slipped through PlayerService
+                        // (e.g. no duration available at stop time).
+                        final int pendingPercent = Math.abs(videoInfo.traktResume);
+                        final float minPercent = videoInfo.duration > 0
+                                ? Math.max(Trakt.RESUME_THRESHOLD_PERCENT, Trakt.RESUME_THRESHOLD_MS * 100.0f / videoInfo.duration)
+                                : Trakt.RESUME_THRESHOLD_PERCENT;
+                        if (pendingPercent < minPercent) {
+                            if (log.isDebugEnabled()) log.debug("syncResumePointsToTrakt: db->trakt {}{} skipped, progress {}% below threshold {}% — clearing pending marker",
+                                    videoInfo.scraperTitle, videoInfo.isShow ? ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr : "",
+                                    pendingPercent, minPercent);
+                            // Clear the pending marker so this row is not reconsidered on every sync.
+                            ContentValues clearValues = new ContentValues();
+                            clearValues.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 0);
+                            cr.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, clearValues,
+                                    VideoStore.Video.VideoColumns._ID + " = " + videoInfo.id, null);
+                            continue;
+                        }
                         boolean send = true;
                         GenericProgress gprog = null;
-                        
+
                         // PRESERVED ORIGINAL LOGIC: Check if Trakt has more recent progress than what we're about to send
                         if (traktVideos != null) {
                             for (PlaybackResponse video : traktVideos) { // video is from trakt and videoInfo is from db
