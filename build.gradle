@@ -163,7 +163,7 @@ dependencies {
     implementation 'org.json:json:20251224'
     // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     //implementation ('com.github.nova-video-player:trakt-java:0.0.1') {
-    implementation ('com.uwetrottmann.trakt5:trakt-java:6.19.0') {
+    implementation ('com.uwetrottmann.trakt5:trakt-java:6.20.0') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
     implementation 'com.jakewharton.threetenabp:threetenabp:1.4.9'
