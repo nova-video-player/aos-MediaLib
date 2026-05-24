@@ -55,6 +55,17 @@ if (response.code() == 401 || response.code() == 409) {
 3. **Video Events** - Sync after marking videos watched/unwatched
 4. **Manual Sync** - User-initiated full synchronization
 
+### Auto-Scrape Trakt Triggers
+`AutoScrapeService` is the coalescing point for Trakt work after automatic scraping or full re-scraping. It tracks scrape lifecycle with `LoaderUtils.setScrapeInProgress(true/false)` and tracks remaining work with `sTotalNumberOfFilesRemainingToProcess`.
+
+When a scrape batch completes and at least one file was scraped, `AutoScrapeService`:
+1. Updates `PREFERENCE_LAST_TIME_VIDEO_SCRAPED_UTC`
+2. Calls `TraktService.onNewVideo(...)` once from the end-of-batch block
+
+Do not trigger Trakt sync inside the per-file auto-scrape loop. Full scrape/re-scrape can process many files, so Trakt work must remain coalesced at scrape completion.
+
+If scraping repairs metadata required for Trakt resume sync, such as adding a missing TMDb id or filling a previously unknown duration, the scrape completion hook should request pending progress sync (`FLAG_SYNC_PROGRESS`) so local `ARCHOS_TRAKT_RESUME < 0` values can be uploaded. Manual single-item scrape flows may trigger the Trakt hook immediately because they are scoped to one user action rather than a batch.
+
 ### Last Activity Check
 The system uses Trakt's "last activities" API to determine what needs syncing:
 

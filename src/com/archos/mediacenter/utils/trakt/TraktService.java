@@ -2270,7 +2270,11 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
     // TODO: improvement, add a method to add a single new video
     public static void onNewVideo(Context context) {
         if (Trakt.isTraktV2Enabled(context, PreferenceManager.getDefaultSharedPreferences(context)))
-            new Client(context, null, false).sync(FLAG_SYNC_TO_DB_WATCHED|FLAG_SYNC_TO_TRAKT|FLAG_SYNC_MOVIES|FLAG_SYNC_SHOWS);
+            // FLAG_SYNC_PROGRESS ensures pending negative ARCHOS_TRAKT_RESUME values are uploaded
+            // after a metadata repair (e.g. TMDb ID added by re-scrape). Without it the upload still
+            // runs via syncPlaybackStatusHybrid() when playback sync is enabled, but the flag makes
+            // the intent explicit and future-proofs against flag-gated changes.
+            new Client(context, null, false).sync(FLAG_SYNC_TO_DB_WATCHED|FLAG_SYNC_TO_TRAKT|FLAG_SYNC_MOVIES|FLAG_SYNC_SHOWS|FLAG_SYNC_PROGRESS);
     }
 
     public static void syncAtStart(Context context) {
