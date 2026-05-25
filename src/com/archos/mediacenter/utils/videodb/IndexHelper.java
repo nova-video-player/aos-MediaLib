@@ -388,7 +388,13 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
     @Override
     public void onLoadComplete(Loader<Cursor> loader, Cursor cursor) {
-        onLoadFinished(loader,cursor);
+        try {
+            onLoadFinished(loader,cursor);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     public void writeVideoInfo(VideoDbInfo videoInfo, boolean exportDb) {
