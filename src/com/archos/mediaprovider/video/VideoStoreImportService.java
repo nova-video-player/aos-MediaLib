@@ -536,57 +536,46 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
         // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
         // note that the db is being modified during import
-        while (isForeground) {
-            try {
-                c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (" +
-                        "SELECT cover_movie FROM MOVIE UNION " +
-                        "SELECT backdrop_movie FROM MOVIE UNION " +
-                        "SELECT cover_show FROM SHOW UNION " +
-                        "SELECT backdrop_show FROM SHOW UNION " +
-                        "SELECT cover_episode FROM EPISODE UNION " +
-                        "SELECT picture_episode FROM EPISODE UNION " +
-                        "SELECT m_po_large_file FROM movie_posters UNION " +
-                        "SELECT m_po_thumb_file FROM movie_posters UNION " +
-                        "SELECT m_bd_large_file FROM movie_backdrops UNION " +
-                        "SELECT m_bd_thumb_file FROM movie_backdrops UNION " +
-                        "SELECT s_po_large_file FROM show_posters UNION " +
-                        "SELECT s_po_thumb_file FROM show_posters UNION " +
-                        "SELECT s_bd_large_file FROM show_backdrops UNION " +
-                        "SELECT s_bd_thumb_file FROM show_backdrops UNION " +
-                        "SELECT m_coll_po_large_file FROM movie_collection UNION " +
-                        "SELECT m_coll_bd_large_file FROM movie_collection UNION " +
-                        "SELECT m_coll_po_thumb_file FROM movie_collection UNION " +
-                        "SELECT m_coll_bd_thumb_file FROM movie_collection" +
-                        ") ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                cCount = c.getCount();
-                if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files cover_movie new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
-                if (cCount == 0) {
-                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files cover_movie no more data");
-                    break; // break out if no more data
+        // The goal here is to remove from delete_files table all files that are still referenced in the database
+        // so that they are not deleted from disk in the next loop.
+        boolean protectionSuccess = true;
+        try {
+            // Optimize by using targeted deletes instead of one massive UNION query which is slow and can fail
+            String[] tablesAndColumns = {
+                    "MOVIE:cover_movie", "MOVIE:backdrop_movie",
+                    "SHOW:cover_show", "SHOW:backdrop_show",
+                    "EPISODE:cover_episode", "EPISODE:picture_episode",
+                    "movie_posters:m_po_large_file", "movie_posters:m_po_thumb_file",
+                    "movie_backdrops:m_bd_large_file", "movie_backdrops:m_bd_thumb_file",
+                    "show_posters:s_po_large_file", "show_posters:s_po_thumb_file",
+                    "show_backdrops:s_bd_large_file", "show_backdrops:s_bd_thumb_file",
+                    "movie_collection:m_coll_po_large_file", "movie_collection:m_coll_bd_large_file",
+                    "movie_collection:m_coll_po_thumb_file", "movie_collection:m_coll_bd_thumb_file"
+            };
+
+            for (String item : tablesAndColumns) {
+                if (!isForeground) {
+                    return;
                 }
-                while (c.moveToNext() && isForeground) {
-                    long id = c.getLong(0);
-                    String path = c.getString(1);
-                    long count = c.getLong(2);
-                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: clean delete_files {} path {} count {}", id, path, count);
-                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                    try {
-                        // path should not be null but deal with it and remove entry in this case
-                        if (path == null)
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id));
-                        else
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    } catch (SQLException sqlE) {
-                        log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
-                    }
+                String[] split = item.split(":");
+                String table = split[0];
+                String column = split[1];
+                try {
+                    db.execSQL("DELETE FROM delete_files WHERE name IN (SELECT " + column + " FROM " + table + " WHERE " + column + " IS NOT NULL)");
+                } catch (SQLException e) {
+                    log.error("processDeleteFileAndVobCallback: Error protecting metadata from {}.{}", table, column, e);
+                    protectionSuccess = false;
+                    break;
                 }
-            } catch (RuntimeException e) {
-                log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
-            } finally {
-                if (c != null) c.close();
             }
+        } catch (Exception e) {
+            log.error("processDeleteFileAndVobCallback: unexpected error during protection phase", e);
+            protectionSuccess = false;
+        }
+
+        if (!protectionSuccess) {
+            log.error("processDeleteFileAndVobCallback: protection phase failed, ABORTING disk deletion to prevent data loss");
+            return;
         }
 
         // note: seems that the delete is performed not as a table trigger anymore but elsewhere

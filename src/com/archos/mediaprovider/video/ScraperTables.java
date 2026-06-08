@@ -765,16 +765,16 @@ public final class ScraperTables {
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
-            // set scraper type / id to -1 if something is refering this episode
-            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+            // set scraper type / id to 0 if something is refering this episode
+            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
             "END";
     private static final String EPISODE_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER episode_delete AFTER DELETE ON episode " +
                     "BEGIN " +
                     "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
-                    // set scraper type / id to -1 if something is refering this episode
-                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+                    // set scraper type / id to 0 if something is refering this episode
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
                     "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
                     "END";
     private static final String MOVIE_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS movie_delete";
@@ -784,8 +784,8 @@ public final class ScraperTables {
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
-            // set scraper type / id to -1 if something is refering this episode
-            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+            // set scraper type / id to 0 if something is refering this episode
+            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
             "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
             + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
@@ -794,8 +794,8 @@ public final class ScraperTables {
     private static final String MOVIE_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
                     "BEGIN " +
-                    // set scraper type / id to -1 if something is refering this episode
-                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+                    // set scraper type / id to 0 if something is refering this episode
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
                     "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
                     "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
                     + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
@@ -1450,6 +1450,17 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX IF NOT EXISTS show_posters_thumb_file_idx ON show_posters(s_po_thumb_file)");
             db.execSQL("CREATE INDEX IF NOT EXISTS show_backdrops_large_file_idx ON show_backdrops(s_bd_large_file)");
             db.execSQL("CREATE INDEX IF NOT EXISTS show_backdrops_thumb_file_idx ON show_backdrops(s_bd_thumb_file)");
+        }
+        if (toVersion == 55) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - recreating movie/show/episode deletion triggers with 0/0 reset", toVersion);
+            // Drop and recreate triggers to apply the -1 -> 0 fix for shared file records
+            // Use the _v2 variants to maintain the performance optimizations from v39 (no deletable-view cleanup inside triggers)
+            db.execSQL("DROP TRIGGER IF EXISTS movie_delete");
+            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
+            db.execSQL("DROP TRIGGER IF EXISTS show_delete");
+            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
+            db.execSQL("DROP TRIGGER IF EXISTS episode_delete");
+            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
         }
     }
 }
