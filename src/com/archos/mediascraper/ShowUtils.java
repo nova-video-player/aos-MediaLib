@@ -135,19 +135,30 @@ public final class ShowUtils {
                     // remove junk behind () that was containing year
                     // applies to movieName (1928) junk -> movieName () junk -> movieName
                     name = removeAfterEmptyParenthesis(nameYear.first);
+
+                    // Strip common garbage (like '720p' or '(FR)') to help year extractor find the year if it's followed by junk
+                    // Do this before cleanUpName so we don't lose original separators that garbage patterns expect
+                    String nameForYear = ParseUtils.removeGarbage(name).trim();
+                    nameForYear = cleanUpName(nameForYear);
+
                     name = cleanUpName(name);
                     nameCountry = getCountryOfOrigin(name);
+
                     if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
-                        nameYear = yearExtractorEndString(nameCountry.first);
+                        Pair<String, String> countryForYear = getCountryOfOrigin(nameForYear);
+                        nameYear = yearExtractorEndString(countryForYear.first);
                         if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
                             if (ParseUtils.isValidYear(nameYear.second)) {
                                 name = nameYear.first;
                                 year = nameYear.second;
+                                // If we successfully extracted the year from the garbage-stripped string,
+                                // we must update the final name to also be garbage-stripped.
+                                nameCountry = getCountryOfOrigin(cleanUpName(nameYear.first));
                             }
                         }
                     }
-                    if (log.isDebugEnabled()) log.debug("getMatch: patternsShowFirst {} season {} episode {} year {} country {}", name, matcher.group(2), matcher.group(3), year, nameCountry.second);
-                    buffer.put(SHOW, name);
+                    if (log.isDebugEnabled()) log.debug("getMatch: patternsShowFirst {} season {} episode {} year {} country {}", nameCountry.first, matcher.group(2), matcher.group(3), year, nameCountry.second);
+                    buffer.put(SHOW, nameCountry.first);
                     String season = matcher.group(2);
                     buffer.put(SEASON, (season == null || season.isEmpty()) ? "1" : season);
                     buffer.put(EPNUM, matcher.group(3).replaceAll(SEP_MANDATORY, ""));
@@ -168,14 +179,25 @@ public final class ShowUtils {
                         // remove junk behind () that was containing year
                         // applies to movieName (1928) junk -> movieName () junk -> movieName
                         name = removeAfterEmptyParenthesis(nameYear.first);
+
+                        // Strip common garbage (like '720p' or '(FR)') to help year extractor find the year if it's followed by junk
+                        // Do this before cleanUpName so we don't lose original separators that garbage patterns expect
+                        String nameForYear = ParseUtils.removeGarbage(name).trim();
+                        nameForYear = cleanUpName(nameForYear);
+
                         name = cleanUpName(name);
                         nameCountry = getCountryOfOrigin(name);
+
                         if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
-                            nameYear = yearExtractorEndString(nameCountry.first);
+                            Pair<String, String> countryForYear = getCountryOfOrigin(nameForYear);
+                            nameYear = yearExtractorEndString(countryForYear.first);
                             if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
                                 if (ParseUtils.isValidYear(nameYear.second)) {
                                     name = nameYear.first;
                                     year = nameYear.second;
+                                    // If we successfully extracted the year from the garbage-stripped string,
+                                    // we must update the final name to also be garbage-stripped.
+                                    nameCountry = getCountryOfOrigin(cleanUpName(nameYear.first));
                                 }
                             }
                         }

@@ -157,9 +157,43 @@ public class ShowScraper4 extends BaseScraper2 {
             }
         }
 
-        searchResult = SearchShow.search(searchInfo, language, maxItems, adultScrape,this, getTmdb());
-        if (log.isDebugEnabled()) if (searchResult.result.size() > 0) log.debug("getMatches2: match found {} id {}", searchResult.result.get(0).getTitle(), searchResult.result.get(0).getId());
+        List<SearchCandidate> candidates = new ArrayList<>();
+        // Prefer cleaned name with year filter (if any) first
+        candidates.add(new SearchCandidate(searchInfo.getShowName(), searchInfo.getFirstAiredYear()));
+        // Fallback to suggestion (name + year) without year filter (if year exists)
+        if (searchInfo.getFirstAiredYear() != null && !searchInfo.getFirstAiredYear().isEmpty()) {
+            candidates.add(new SearchCandidate(searchInfo.getShowName() + " " + searchInfo.getFirstAiredYear(), null));
+        }
+
+        for (SearchCandidate candidate : candidates) {
+            if (log.isDebugEnabled()) log.debug("getMatches2: trying candidate '{}' with year {}", candidate.query, candidate.year);
+            // Temporarily update searchInfo with candidate values for the search call
+            TvShowSearchInfo candidateInfo = new TvShowSearchInfo(
+                    searchInfo.getFile(),
+                    candidate.query,
+                    searchInfo.getSeason(),
+                    searchInfo.getEpisode(),
+                    candidate.year,
+                    searchInfo.getCountryOfOrigin()
+            );
+            searchResult = SearchShow.search(candidateInfo, language, maxItems, adultScrape, this, getTmdb());
+            if (searchResult.status == ScrapeStatus.OKAY && !searchResult.result.isEmpty()) {
+                if (log.isDebugEnabled()) log.debug("getMatches2: found results for '{}', stopping early", candidate.query);
+                break;
+            }
+        }
+
+        if (log.isDebugEnabled()) if (searchResult != null && !searchResult.result.isEmpty()) log.debug("getMatches2: match found {} id {}", searchResult.result.get(0).getTitle(), searchResult.result.get(0).getId());
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
+    }
+
+    private static class SearchCandidate {
+        String query;
+        String year;
+        SearchCandidate(String query, String year) {
+            this.query = query;
+            this.year = year;
+        }
     }
 
     @Override

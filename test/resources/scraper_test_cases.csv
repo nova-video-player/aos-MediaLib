@@ -1,44 +1,74 @@
-# URI|Type|ExpectedTitle|ExpectedId
-Blade Runner 2049.mkv|Movie|Blade Runner 2049|335984
-The Flash S01E01.mkv|Show|The Flash|60735
-2001 A Space Odyssey.mkv|Movie|2001: A Space Odyssey|62
-Class of 1999.mkv|Movie|Class of 1999|23535
-Scream 2022.mkv|Movie|Scream|646385
-The.Incredibles.DVDSCR.XviD.cd1.avi|Movie|The Incredibles|9806
-./series/Galactica/Season 1/galactica.ep3.avi|Show|Battlestar Galactica|1972
-The Matrix (1999).mkv|Movie|The Matrix|603
-The Matrix.mkv|Movie|The Matrix|603
-upпp://1540402479/0/2/2%2415/2%2415%240/Scream.2022.1080p.BluRay.x264.AAC5.1-[YT.MX].mkv|Movie|Scream|646385
-Wadjda (2013) MULTI VFi 1080p Bluray EAC3 5.1 x265-k7.mkv|Movie|Wadjda|129112
+# URI|Type|ExpectedTitle|ExpectedId|Language
+Blade Runner 2049.mkv|Movie|Blade Runner 2049|335984|en
+The Flash S01E01.mkv|Show|The Flash|60735|en
+2001 A Space Odyssey.mkv|Movie|2001: A Space Odyssey|62|en
+Class of 1999.mkv|Movie|Class of 1999|23535|en
+Scream 2022.mkv|Movie|Scream|646385|en
+The.Incredibles.DVDSCR.XviD.cd1.avi|Movie|The Incredibles|9806|en
+./series/Galactica/Season 1/galactica.ep3.avi|Show|Battlestar Galactica|1972|en
+The Matrix (1999).mkv|Movie|The Matrix|603|en
+The Matrix.mkv|Movie|The Matrix|603|en
+upпp://1540402479/0/2/2%2415/2%2415%240/Scream.2022.1080p.BluRay.x264.AAC5.1-[YT.MX].mkv|Movie|Scream|646385|en
+Wadjda (2013) MULTI VFi 1080p Bluray EAC3 5.1 x265-k7.mkv|Movie|Wadjda|129112|en
 # 4-digit SSEE format (issue #1419): compact SSEE episodes must be identified as TV shows
-Battlestar Galactica - 0208 - Final cut.mp4|Show|Battlestar Galactica|1972
-Battlestar Galactica - 0100 - Blood and Chrome.mp4|Show|Battlestar Galactica|1972
+Battlestar Galactica - 0208 - Final cut.mp4|Show|Battlestar Galactica|1972|en
+Battlestar Galactica - 0100 - Blood and Chrome.mp4|Show|Battlestar Galactica|1972|en
 # 4-digit collision risks: these must remain identified as movies, not SSEE episodes
 # 1408: room number (< MIN_YEAR 1906, no separator before digits at filename start)
-1408 (2007).mkv|Movie|1408|3021
+1408 (2007).mkv|Movie|1408|3021|en
 # 1922/1941: start with 19 -> excluded from SSEE by year-prefix lookahead
-1922 (2017).mkv|Movie|1922|452507
-1941 (1979).mkv|Movie|1941|11519
+1922 (2017).mkv|Movie|1922|452507|en
+1941 (1979).mkv|Movie|1941|11519|en
 # Franchise year suffixes: 2000/2049 start with 20 -> excluded from SSEE
-Death Race 2000 (1975).mkv|Movie|Death Race 2000|13282
-Fantasia 2000.mkv|Movie|Fantasia 2000|49948
+Death Race 2000 (1975).mkv|Movie|Death Race 2000|13282|en
+Fantasia 2000.mkv|Movie|Fantasia 2000|49948|en
 # Parenthesized content attached to title should be preserved (issue #1665)
-OVNI(s).S01E06.FRENCH.1080p.BluRay.x264.DTS-HDMA.5.1.mkv|Show|OVNI(s)|108353
-Paris_Police_1900-S01E01-Épisode_1-720p-AVC-EAC3-5.1.mkv|Show|Paris Police 1900|93911
-1984.mkv|Movie|1984|1984
-Nineteen Eighty-Four (1984).mkv|Movie|Nineteen Eighty-Four|9314
-1917.2019.2160p.HDR10Plus.BluRay.8CH.x265.HEVC-PSA.mkv|Movie|1917|530915
-2067.2020.1080p.10bit.BluRay.6CH.x265.HEVC-PSA.mkv|Movie|2067|528085
-2001 - L'Odyssée De l'Espace (1968) (2001 - A Space Odyssey) 720p x264 AAC 5.1 MULTI [NOEX].mkv|Movie|2001: A Space Odyssey|62
-2012 (2009) MULTi TrueFrench 1080p HDLight x264.GHT.mkv|Movie|2012|14161
-1961 le cave se rebiffe 1920x1080 HD ABcollection gabin.mkv|Movie|Le Cave se rebiffe|59434
-2046.2004.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4|Movie|2046|844
-./sd/don_camillo/1-Le petit monde de Don CAMILLO.avi|Movie|Le Petit Monde de Don Camillo|11972
-./sd/Marx_Brothers/1933 La soupe au canard (Duck Soup).mkv|Movie|La soupe au canard|3063
-./sd/Fernandel/22-La Cuisine Au Beurre (1963).mkv|Movie|La Cuisine au beurre|70449
-./anime/Walt_Disney/19-LES.101.DALMATIENS.mkv|Movie|Les 101 Dalmatiens|12230
-Amadeus (1984) Theatrical Multi VFI 2160p 4KLight DV HDR Bluray AC3 5.1 X265.mkv|Movie|Amadeus|279
-2 Guns (2013) Hybrid Multi VFF 2160p 10 bits 4KLight HDR Bluray DDP5.1 X265.mkv|Movie|2 Guns|136400
-Zorro.(FR).2024.S01E01.TRUEFRENCH.1080p.WEB.EAC3.H265-FW.mkv|Show|Zorro (2024)|212286
-The Formula (2014).mkv|Movie|The Formula|270672
-300 (2007) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|300|1271
+OVNI(s).S01E06.FRENCH.1080p.BluRay.x264.DTS-HDMA.5.1.mkv|Show|OVNI(s)|108353|fr
+Paris_Police_1900-S01E01-Épisode_1-720p-AVC-EAC3-5.1.mkv|Show|Paris Police 1900|93911|fr
+1984.mkv|Movie|1984|1984|en
+Nineteen Eighty-Four (1984).mkv|Movie|Nineteen Eighty-Four|9314|en
+1917.2019.2160p.HDR10Plus.BluRay.8CH.x265.HEVC-PSA.mkv|Movie|1917|530915|en
+2067.2020.1080p.10bit.BluRay.6CH.x265.HEVC-PSA.mkv|Movie|2067|528085|en
+2001 - L'Odyssée De l'Espace (1968) (2001 - A Space Odyssey) 720p x264 AAC 5.1 MULTI [NOEX].mkv|Movie|2001: A Space Odyssey|62|fr
+2012 (2009) MULTi TrueFrench 1080p HDLight x264.GHT.mkv|Movie|2012|14161|fr
+1961 le cave se rebiffe 1920x1080 HD ABcollection gabin.mkv|Movie|Le Cave se rebiffe|59434|fr
+2046.2004.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4|Movie|2046|844|en
+./sd/don_camillo/1-Le petit monde de Don CAMILLO.avi|Movie|Le Petit Monde de Don Camillo|11972|fr
+./sd/Marx_Brothers/1933 La soupe au canard (Duck Soup).mkv|Movie|La soupe au canard|3063|fr
+./sd/Fernandel/22-La Cuisine Au Beurre (1963).mkv|Movie|La Cuisine au beurre|70449|fr
+./anime/Walt_Disney/19-LES.101.DALMATIENS.mkv|Movie|Les 101 Dalmatiens|12230|fr
+Amadeus (1984) Theatrical Multi VFI 2160p 4KLight DV HDR Bluray AC3 5.1 X265.mkv|Movie|Amadeus|279|en
+2 Guns (2013) Hybrid Multi VFF 2160p 10 bits 4KLight HDR Bluray DDP5.1 X265.mkv|Movie|2 Guns|136400|en
+Zorro.(FR).2024.S01E01.TRUEFRENCH.1080p.WEB.EAC3.H265-FW.mkv|Show|Zorro (2024)|212286|fr
+The Formula (2014).mkv|Movie|The Formula|270672|en
+300 (2007) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|300|1271|en
+# German umlaut transliteration regression (issue #1775)
+Beschuetze.Sie.S01E01.German.AC3.mkv|Show|Beschütze Sie|201289|de
+Beschütze.Sie.S01E01.German.AC3.mkv|Show|Beschütze Sie|201289|de
+Der.Gaertner.S01E01.German.AC3.mkv|Show|Der Gärtner|241883|de
+Der.Gärtner.S01E01.German.AC3.mkv|Show|Der Gärtner|241883|de
+Die Bruecke (1959).mkv|Movie|Die Brücke|1566|de
+Die Brücke (1959).mkv|Movie|Die Brücke|1566|de
+# TV shows with years in titles (issue #1759)
+The 100 (2014) S01E01.mkv|Show|The 100|48866|en
+1923 (2022) S01E01.mkv|Show|1923|157744|en
+9-1-1 (2018) S01E01.mkv|Show|9-1-1|75219|en
+1923.S01E01.mkv|Show|1923|157744|en
+The.100.2014.S01E01.mkv|Show|The 100|48866|en
+The.100.2014.720p.S01E01.mkv|Show|The 100|48866|en
+Die.Dinosaurier.S01E01.Der.Aufstieg.GERMAN.AAC.DOKU.1080p.WEB.x265.mkv|Show|Die Dinosaurier|313298|de
+Die.Dinosaurier.S01E01.Der.Aufstieg.GERMAN.AAC.DOKU.1080p.WEB.x265.mkv|Show|The Dinosaurs|313298|en
+# French movie scraping issues
+Lilo & Stitch 2, Hawaï, nous avons un problème (2005).mkv|Movie|Lilo & Stitch 2 : Hawaï, nous avons un problème !|20760|fr
+Création des dieux - Le royaume des tempêtes (2023).mkv|Movie|Creation of the Gods I : Kingdom of Storms|856289|fr
+Les Noces Rebelles (2008).mkv|Movie|Les Noces Rebelles|4148|fr
+Tueurs nés (1994).mkv|Movie|Tueurs nés|241|fr
+Viens chez moi, j'habite chez une copine (1981).mkv|Movie|Viens chez moi, j'habite chez une copine|69044|fr
+USS Alabama (1995).mkv|Movie|USS Alabama|8963|fr
+# Indiana Jones et le Cadran de la destinée (2023).mkv|Movie|Indiana Jones et le Cadran de la destinée|335977|fr
+Star Wars, épisode IV - La Guerre des étoiles (1977).mkv|Movie|Star Wars : Épisode IV - Un nouvel espoir|11|fr
+Wonder (2017).mkv|Movie|Wonder|406997|fr
+Barbie (2023).mkv|Movie|Barbie|346698|fr
+Bloodline (2019).mkv|Movie|Bloodline|543917|fr
+Monstres & Cie (2001).mkv|Movie|Monstres & Cie|585|fr
+Monstres Academy (2013).mkv|Movie|Monstres Academy|62211|fr

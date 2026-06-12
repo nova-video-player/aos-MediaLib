@@ -17,6 +17,7 @@ package com.archos.mediascraper.preprocess;
 import android.content.Context;
 import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
+import android.preference.PreferenceManager;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.SearchResult;
@@ -84,8 +85,12 @@ public class ScraperIntegrationTest {
                 String expectedTitle = parts[2];
                 String expectedIdStr = parts[3];
                 int expectedId = Integer.parseInt(expectedIdStr);
+                String language = parts.length >= 5 ? parts[4] : "en";
 
-                System.out.println("Testing URI: " + uriString + " (Type: " + type + ")");
+                System.out.println("Testing URI: " + uriString + " (Type: " + type + ", Lang: " + language + ")");
+
+                // Set language in preferences
+                PreferenceManager.getDefaultSharedPreferences(context).edit().putString("favScraperLang", language).commit();
 
                 try {
                     Uri uri = Uri.parse(uriString);

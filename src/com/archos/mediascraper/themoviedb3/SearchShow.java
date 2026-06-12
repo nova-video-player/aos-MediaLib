@@ -85,7 +85,26 @@ public class SearchShow {
                         response = tmdb.searchService().tv(searchQueryString, 1, "en", year, false).execute();
                         if (response.isSuccessful()) isResponseOk = true;
                     }
+                    if (response.body() == null || response.body().total_results == 0) {
+                        // Fallback for transliterated titles (e.g. German umlauts: 'ae' -> 'ä')
+                        boolean isGerman = (language != null && language.startsWith("de")) ||
+                                           "de".equals(java.util.Locale.getDefault().getLanguage());
+                        if (isGerman) {
+                            String transliterated = com.archos.mediascraper.preprocess.ParseUtils.transliterate(searchQueryString);
+                            if (!transliterated.equals(searchQueryString)) {
+                                if (log.isDebugEnabled()) log.debug("search: no results, retrying with transliterated name: {}", transliterated);
+                                response = tmdb.searchService().tv(transliterated, 1, language, year, false).execute();
+                                if (response.isSuccessful()) isResponseOk = true;
+                                if (response.body() != null && response.body().total_results == 0 && !language.equals("en")) {
+                                    if (log.isDebugEnabled()) log.debug("search: no results in {} for transliterated, retrying in en", language);
+                                    response = tmdb.searchService().tv(transliterated, 1, "en", year, false).execute();
+                                    if (response.isSuccessful()) isResponseOk = true;
+                                }
+                            }
+                        }
+                    }
                     if (response.body() == null || response.body().total_results == 0) notFoundIssue = true;
+                    else notFoundIssue = false;
 
                     //We have a show, put it in cache before returning.
                     if (isResponseOk) {

@@ -59,10 +59,10 @@ public class ParseUtils {
     private static final Pattern YEAR_ANYWHERE_PATTERN = Pattern.compile("(?<![\\d\\p{L}])(\\d{4})(?![\\d\\p{L}])");
 
     private static final Pattern YEAR_PATTERN_END_STRING = Pattern.compile("(.*)[\\s\\p{Punct}]((?:19|20)\\d{2})(?!\\d)$");
-    
+
     // matches "(year)" — uses reluctant quantifier so the first parenthesized year wins
     private static final Pattern PARENTHESIS_YEAR_PATTERN = Pattern.compile("(.*?)[\\s\\p{Punct} ]*\\(((?:19|20)\\d{2})\\)(.*)");
-    
+
     public static final int MIN_YEAR = 1906;
 
     // Strip out everything after empty parenthesis (after year pattern removal)
@@ -215,6 +215,49 @@ public class ParseUtils {
         return name;
     }
 
+    /**
+     * Removes all matches of the given garbage strings from the input without cutting off the remainder.
+     * This is useful when you need to strip garbage but keep trailing information (like a year).
+     */
+    public static String removeGarbage(String input) {
+        if (input == null || input.isEmpty()) return input;
+
+        // Pad with spaces to allow easy matching of " garbage " strings
+        String result = " " + input + " ";
+        String resultLower = result.toLowerCase(Locale.US);
+
+        // Remove case-insensitive garbage
+        for (String rawGarbage : GARBAGE_LOWERCASE) {
+            String garbage = rawGarbage.trim();
+            if (garbage.isEmpty()) continue;
+
+            // Check for garbage wrapped in common separators
+            String[] formats = { "." + garbage + ".", " " + garbage + " ", "-" + garbage + "-", "_" + garbage + "_",
+                                 "." + garbage + " ", " " + garbage + ".", "-" + garbage + " ", " " + garbage + "-" };
+            for (String format : formats) {
+                int index = resultLower.indexOf(format);
+                while (index > -1) {
+                    // Replace the exact length of the garbage string with a single space to preserve separation
+                    String replacement = format.substring(0, 1) + " " + format.substring(format.length() - 1);
+                    result = result.substring(0, index) + replacement + result.substring(index + format.length());
+                    resultLower = result.toLowerCase(Locale.US);
+                    index = resultLower.indexOf(format);
+                }
+            }
+        }
+
+        // Remove case-sensitive garbage
+        for (Pattern p : GARBAGE_CASESENSITIVE_PATTERNS) {
+            Matcher m = p.matcher(result);
+            while (m.find()) {
+                result = m.replaceAll(" ");
+                m = p.matcher(result);
+            }
+        }
+
+        return result.replaceAll("\\s+", " ").trim();
+    }
+
     public static boolean isValidYear(String year, int currentYear) {
         if (year == null || year.isEmpty()) return false;
         try {
@@ -249,6 +292,23 @@ public class ParseUtils {
         return twoPatternExtractor(input, PARENTHESIS_YEAR_PATTERN, 3);
     }
 
+    /**
+     * Replaces common transliterations with their actual characters (e.g. German umlauts).
+     * This is useful as a fallback candidate when searching for titles that might have been
+     * transliterated in filenames to avoid encoding issues.
+     */
+    public static String transliterate(String input) {
+        if (input == null || input.isEmpty()) return input;
+        // German umlauts
+        String result = input.replace("ae", "ä");
+        result = result.replace("oe", "ö");
+        result = result.replace("ue", "ü");
+        result = result.replace("Ae", "Ä");
+        result = result.replace("Oe", "Ö");
+        result = result.replace("Ue", "Ü");
+        return result;
+    }
+
     // Movie preprocessing needs the title before the release year only.
     public static Pair<String, String> parenthesisYearExtractorTitleOnly(String input) {
         if (log.isDebugEnabled()) log.debug("parenthesisYearExtractorTitleOnly input: {}", input);
@@ -266,11 +326,11 @@ public class ParseUtils {
         if (log.isDebugEnabled()) log.debug("extractYearAnywhere input: {}", input);
         String reversed = new StringBuilder(input).reverse().toString();
         Matcher matcher = YEAR_ANYWHERE_PATTERN.matcher(reversed);
-        
+
         while (matcher.find()) {
             String candidateYear = new StringBuilder(matcher.group(1)).reverse().toString();
             int cutIndex = input.length() - matcher.start() - 4;
-            
+
             if (isValidYear(candidateYear, currentYear)) {
                 // Heuristic: only strip if it leaves at least 2 characters.
                 if (cutIndex >= 2) {

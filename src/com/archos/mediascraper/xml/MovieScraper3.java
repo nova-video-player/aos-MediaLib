@@ -121,18 +121,18 @@ public class MovieScraper3 extends BaseScraper2 {
         }
         MovieSearchInfo searchInfo = (MovieSearchInfo) info;
         if (log.isDebugEnabled()) log.debug("getMatches2: movie search:{}", searchInfo.getName());
-        
+
         // get configured language
         String language = Scraper.getLanguage(mContext);
         if (language == null || language.contains("null")) language = Locale.getDefault().getLanguage();
 
         // make sure we have a valid title.
         if (log.isDebugEnabled()) log.debug("movie search:{} year:{} language:{}", searchInfo.getName(), searchInfo.getYear(), language);
-        
+
         // We use unified scoring if the year is not "confident" (i.e. not in parentheses)
         // or if we just want to be more robust for titles containing years.
         boolean useUnifiedScoring = !searchInfo.isYearConfident() && searchInfo.getYear() != null;
-        
+
         List<SearchResult> allResults = new ArrayList<>();
         ScrapeStatus status = ScrapeStatus.NOT_FOUND;
         Throwable reason = null;
@@ -159,12 +159,22 @@ public class MovieScraper3 extends BaseScraper2 {
             // Standard cases: cleaned name with year (if any) first, then fallback to suggestion
             candidates.add(new SearchCandidate(searchInfo.getName(), searchInfo.getYear()));
             candidates.add(new SearchCandidate(searchInfo.getSearchSuggestion(), null));
+
+            // Fallback for transliterated titles (e.g. German umlauts: 'ae' -> 'ä')
+            boolean isGerman = (language != null && language.startsWith("de")) ||
+                               "de".equals(java.util.Locale.getDefault().getLanguage());
+            if (isGerman) {
+                String transliterated = com.archos.mediascraper.preprocess.ParseUtils.transliterate(searchInfo.getName());
+                if (!transliterated.equals(searchInfo.getName())) {
+                    candidates.add(new SearchCandidate(transliterated, searchInfo.getYear()));
+                }
+            }
         }
 
         for (SearchCandidate candidate : candidates) {
             String searchQuery = candidate.query;
             String yearToUse = candidate.year;
-            
+
             if (searchQuery == null || searchQuery.isBlank() || searchQuery.contains("null")) continue;
             if (log.isDebugEnabled()) log.debug("getMatches2: trying candidate '{}' with year {}", searchQuery, yearToUse);
 
@@ -191,7 +201,7 @@ public class MovieScraper3 extends BaseScraper2 {
                 for (int i = 0; i < (searchInfo.aggressiveScan ? 4 : 1); i++ ){
                     if (log.isDebugEnabled()) log.debug("getMatches2: searching TMDB for '{}' with year {}", searchQuery, yearToUse);
                     searchResult = SearchMovie2.search(searchQuery, language, yearToUse, maxItems, getSearchService(), adultScrape);
-                    
+
                     //Check result and try again if we need to.
                     if (searchResult.status == ScrapeStatus.OKAY && (searchResult.result != null && !searchResult.result.isEmpty())) {
                         for (SearchResult result : searchResult.result) {
@@ -246,6 +256,49 @@ public class MovieScraper3 extends BaseScraper2 {
             }
         }
 
+        // Fallback: if still no results, try "Head" of the title (before first punctuation)
+        if (allResults.isEmpty() && status != ScrapeStatus.AUTH_ERROR) {
+            String filename = com.archos.filecorelibrary.FileUtils.getName(searchInfo.getFile());
+            // Strip extension if any
+            if (filename.contains(".")) {
+                filename = filename.substring(0, filename.lastIndexOf('.'));
+            }
+            String headName = getTitleHead(filename);
+            if (headName != null && !headName.equals(filename)) {
+                // Clean the head name (dots -> spaces, strip common junk)
+                String cleanedHead = com.archos.mediascraper.ShowUtils.cleanUpName(headName);
+                // Important: also strip the year from the head if it's there (e.g. "Star Wars 1977")
+                cleanedHead = com.archos.mediascraper.preprocess.ParseUtils.cleanExtractedTitle(cleanedHead);
+
+                if (log.isDebugEnabled()) log.debug("getMatches2: trying title head '{}' (cleaned: '{}')", headName, cleanedHead);
+
+                // Try Head with year first
+                SearchMovieResult searchResult = SearchMovie2.search(cleanedHead, language, searchInfo.getYear(), maxItems, getSearchService(), adultScrape);
+                if (searchResult.status == ScrapeStatus.OKAY && searchResult.result != null && !searchResult.result.isEmpty()) {
+                    for (SearchResult result : searchResult.result) {
+                        result.setScraper(this);
+                        result.setFile(searchInfo.getFile());
+                    }
+                    allResults.addAll(searchResult.result);
+                    status = ScrapeStatus.OKAY;
+                }
+
+                // Try Head without year as a last resort for very long titles
+                if (allResults.isEmpty()) {
+                    if (log.isDebugEnabled()) log.debug("getMatches2: no results for head with year, trying title head '{}' without year", cleanedHead);
+                    searchResult = SearchMovie2.search(cleanedHead, language, null, maxItems, getSearchService(), adultScrape);
+                    if (searchResult.status == ScrapeStatus.OKAY && searchResult.result != null && !searchResult.result.isEmpty()) {
+                        for (SearchResult result : searchResult.result) {
+                            result.setScraper(this);
+                            result.setFile(searchInfo.getFile());
+                        }
+                        allResults.addAll(searchResult.result);
+                        status = ScrapeStatus.OKAY;
+                    }
+                }
+            }
+        }
+
         if (allResults.isEmpty()) {
             return new ScrapeSearchResult(allResults, true, status, reason);
         }
@@ -253,31 +306,61 @@ public class MovieScraper3 extends BaseScraper2 {
         // UNIFIED SCORING:
         // If we have multiple results (likely from both stripped and unstripped queries),
         // we re-calculate the distance against the most complete reference title we have.
-        String referenceName = searchInfo.getOriginalName() != null ? searchInfo.getOriginalName() : searchInfo.getName();
+        String cleanedName = searchInfo.getName();
+        String referenceName = searchInfo.getName(); // Use cleaned name as reference for distance
         if (log.isDebugEnabled()) log.debug("getMatches2: unified scoring against reference '{}'", referenceName);
-        
+
         org.apache.commons.text.similarity.LevenshteinDistance levenshteinDistance = new org.apache.commons.text.similarity.LevenshteinDistance();
         String referenceNameLC = referenceName.toLowerCase();
-        
+        String cleanedNameLC = cleanedName.toLowerCase();
+
         java.util.LinkedHashMap<Integer, SearchResult> uniqueResults = new java.util.LinkedHashMap<>();
         for (SearchResult sr : allResults) {
             if (uniqueResults.containsKey(sr.getId())) continue;
-            
+
             String title = sr.getTitle();
             String originalTitle = sr.getOriginalTitle();
-            int distTitle = title != null ? levenshteinDistance.apply(referenceNameLC, title.toLowerCase()) : Integer.MAX_VALUE;
-            int distOrig = originalTitle != null ? levenshteinDistance.apply(referenceNameLC, originalTitle.toLowerCase()) : Integer.MAX_VALUE;
-            sr.setLevenshteinDistance(Math.min(distTitle, distOrig));
+            String titleLC = title != null ? title.toLowerCase() : "";
+            String originalTitleLC = originalTitle != null ? originalTitle.toLowerCase() : "";
+
+            int distance;
+            // BOOST: Exact match for cleaned name gets priority (distance 0)
+            if (titleLC.equals(cleanedNameLC) || originalTitleLC.equals(cleanedNameLC)) {
+                distance = 0;
+            } else {
+                int distTitle = title != null ? levenshteinDistance.apply(referenceNameLC, titleLC) : Integer.MAX_VALUE;
+                int distOrig = originalTitle != null ? levenshteinDistance.apply(referenceNameLC, originalTitleLC) : Integer.MAX_VALUE;
+                distance = Math.min(distTitle, distOrig);
+            }
+            sr.setLevenshteinDistance(distance);
             if (log.isDebugEnabled()) log.debug("getMatches2: result {} ({}) distance={}", sr.getTitle(), sr.getId(), sr.getLevenshteinDistance());
-            
+
             uniqueResults.put(sr.getId(), sr);
         }
-        
+
+
         List<SearchResult> sortedResults = new ArrayList<>(uniqueResults.values());
         Collections.sort(sortedResults, com.archos.mediascraper.themoviedb3.SearchParserResult.comparator);
 
         //Return the rest we got.
         return new ScrapeSearchResult(sortedResults, true, ScrapeStatus.OKAY, null);
+    }
+
+    private String getTitleHead(String name) {
+        if (name == null) return null;
+        // Split by colon, comma, or " - " (dash surrounded by spaces)
+        int idx = name.indexOf(':');
+        if (idx == -1) idx = name.indexOf(',');
+        if (idx == -1) {
+            idx = name.indexOf(" - ");
+            if (idx != -1) idx += 1; // point to the dash itself
+        }
+        if (idx != -1) {
+            String head = name.substring(0, idx).trim();
+            // Don't return if it's too short (e.g. "I, Robot")
+            if (head.length() > 2) return head;
+        }
+        return name;
     }
 
     @Override
