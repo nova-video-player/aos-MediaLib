@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">Hepsini yeniden tara</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Trakt ile senkronize edilemiyor</string>
+    <string name="trakt_toast_account_locked">Trakt hesabınız kilitlendi. Senkronizasyon devre dışı bırakıldı. Yeniden etkinleştirmek için lütfen ayarlardan kimlik doğrulamasını yapın.</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">SD kart bulunamadı</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,4 +140,6 @@
     <string name="scraping_in_progress">Bilgi edinme işlemi devam ediyor</string>
     <string name="remaining_videos_to_process">İşlenmesi gereken kalan medya dosyaları:</string>
     <string name="video_store_import">Yerel medya dosyalarını içe aktarma</string>
+    <string name="current_video_title">Şu anki:</string>
+    <string name="noresult_video_title">Tanımlanmamış:</string>
 </resources>
