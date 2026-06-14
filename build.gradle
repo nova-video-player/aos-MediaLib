@@ -160,7 +160,7 @@ dependencies {
     // This JDK-specific API (used for TCP keepalive socket options) does not exist in Android runtime
     // See: DefaultHttpClientConnectionOperator line 87 in httpclient5 source
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.5.1'
-    implementation 'org.json:json:20251224'
+    implementation 'org.json:json:20260522'
     // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     //implementation ('com.github.nova-video-player:trakt-java:0.0.1') {
     implementation ('com.uwetrottmann.trakt5:trakt-java:6.20.0') {
@@ -173,7 +173,7 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.22.0'
     implementation 'org.apache.commons:commons-text:1.15.0'
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.3.2'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.4.0'
     // stick with 2.10.0 since errors are showing up in sentry when using 2.11.0
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.13.0'
     api 'org.jupnp:org.jupnp:3.0.4'
@@ -190,10 +190,10 @@ dependencies {
     implementation ('org.eclipse.jetty:jetty-client:9.2.30.v20200428') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation 'io.sentry:sentry:8.42.0'
+    implementation 'io.sentry:sentry:8.43.2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.23.0'
-    testImplementation 'ch.qos.logback:logback-classic:1.5.32'
+    testImplementation 'ch.qos.logback:logback-classic:1.5.34'
     testImplementation 'org.slf4j:slf4j-api:2.0.18'
     testImplementation 'org.robolectric:robolectric:4.16.1'
     testImplementation 'androidx.test:core:1.7.0'
