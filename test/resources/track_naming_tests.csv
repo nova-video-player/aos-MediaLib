@@ -1,0 +1,10 @@
+title,lang,format,disposition,titleFirst,expectedResult
+"English (SDH)",eng,SSA,128,false,"Anglais - <small>Malentendants (SSA)</small>"
+En,eng,SSA,0,false,"Anglais <small>(SSA)</small>"
+,und,TEXT,5,false,"Original <small>(TEXT)</small>"
+,und,TEXT,132,false,"Malentendants <small>(TEXT)</small>"
+,und,TEXT,2,false,"Traduit <small>(TEXT)</small>"
+SDH,fre,TEXT,128,false,"Français - <small>Malentendants (TEXT)</small>"
+"French (Forced)",fre,TEXT,65,false,"Français - <small>Forced (TEXT)</small>"
+Commentary,eng,AC3,8,true,"Commentary - Anglais (AC3)"
+"Audio Description",fre,EAC3,256,true,"Audio Description - Français (EAC3)"

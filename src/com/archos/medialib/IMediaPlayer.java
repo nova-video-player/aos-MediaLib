@@ -367,7 +367,8 @@ public interface IMediaPlayer {
     public static final int METADATA_KEY_AUDIO_TRACK_VBR = 5;
     public static final int METADATA_KEY_AUDIO_TRACK_SUPPORTED = 6;
     public static final int METADATA_KEY_AUDIO_TRACK_LANGUAGE = 7;
-    public static final int METADATA_KEY_AUDIO_TRACK_MAX = 8;
+    public static final int METADATA_KEY_AUDIO_TRACK_DISPOSITION = 8;
+    public static final int METADATA_KEY_AUDIO_TRACK_MAX = 9;
 
     public static final int METADATA_KEY_SUBTITLE_TRACK = 30000;
     public static final int METADATA_KEY_SUBTITLE_TRACK_NAME = 0;
@@ -375,5 +376,6 @@ public interface IMediaPlayer {
     public static final int METADATA_KEY_SUBTITLE_TRACK_IS_GFX = 2;
     public static final int METADATA_KEY_SUBTITLE_TRACK_FORMAT = 3;
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE = 4;
-    public static final int METADATA_KEY_SUBTITLE_TRACK_MAX = 5;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_DISPOSITION = 5;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_MAX = 6;
 }

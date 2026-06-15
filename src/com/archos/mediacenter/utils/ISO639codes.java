@@ -14,7 +14,6 @@
 
 package com.archos.mediacenter.utils;
 
-import static androidx.core.content.res.TypedArrayUtils.getText;
 import static com.archos.mediascraper.StringUtils.capitalizeFirstLetter;
 
 import android.content.Context;
@@ -154,6 +153,25 @@ public class ISO639codes {
         }
     }
 
+    public static String getEnglishLanguageNameForLetterCode(String code) {
+        if (code == null || code.isEmpty()) return "";
+        String iso1 = getISO6391ForLetterCode(code);
+        if (iso1.length() == 2) {
+            return Locale.forLanguageTag(iso1).getDisplayLanguage(Locale.ENGLISH);
+        }
+
+        Locale locale;
+        if (code.length() == 2) {
+            locale = Locale.forLanguageTag(code);
+        } else if (code.length() == 3) {
+            String iso3 = convertIso6392bToIso6393(code);
+            locale = new Locale(iso3);
+        } else {
+            return "";
+        }
+        return locale.getDisplayLanguage(Locale.ENGLISH);
+    }
+
     @SuppressWarnings("deprecation")
     static public String getLanguageNameFor3LetterCode(String code) {
         // handles ISO 639-3 and ISO 639-2b (e.g. fra/fre, deu/ger)
@@ -216,20 +234,24 @@ public class ISO639codes {
     }
 
     static public String getISO6391ForLetterCode(String code) {
-        // TODO: not working "eng" returns "eng" instead of "en"
         String result = "";
         if (code == null) {
             log.error("getISO6391ForLetterCode: null code!");
             return result;
         }
         if (code.length() == 2) result = Locale.forLanguageTag(code).getLanguage();
-        if (code.length() == 3) result = convertIso6392bToIso6393(code);
-        if (result.length() == 3) result = convertISO6393ToISO6391(result);
+        if (code.length() == 3) {
+            String iso3 = convertIso6392bToIso6393(code);
+            result = missingISO6393ToISO6391.get(iso3);
+            if (result == null) {
+                result = convertISO6393ToISO6391(iso3);
+            }
+        }
         if (result.length() == 2) {
             if (log.isDebugEnabled()) log.debug("getISO6391ForLetterCode: code={} result={}", code, result);
             return result;
         } else {
-            log.error("getISO6391ForLetterCode: Invalid code {}", code);
+            if (log.isDebugEnabled()) log.debug("getISO6391ForLetterCode: Invalid code {}", code);
             return "";
         }
     }
@@ -275,14 +297,21 @@ public class ISO639codes {
 
     @SuppressWarnings("deprecation")
     static public String convertISO6393ToISO6391(String code) {
-        // TODO: not working "eng" returns "eng" instead of "en"
         String result = missingISO6393ToISO6391.get(code);
         if (result == null) {
-            Locale locale = new Locale(code);
-            try {
-                result = locale.getLanguage();
-            } catch (MissingResourceException e) {
-                log.error("convertISO6393ToISO6391: No ISO1 found for code {}", code);
+            for (String iso1 : Locale.getISOLanguages()) {
+                Locale locale = Locale.forLanguageTag(iso1);
+                try {
+                    if (locale.getISO3Language().equals(code)) {
+                        result = iso1;
+                        break;
+                    }
+                } catch (MissingResourceException ignored) {
+                    // Continue scanning the system language table.
+                }
+            }
+            if (result == null) {
+                if (log.isDebugEnabled()) log.debug("convertISO6393ToISO6391: No ISO1 found for code {}", code);
                 result = code;
             }
         }
@@ -437,6 +466,156 @@ public class ISO639codes {
         }
         if (log.isDebugEnabled()) log.debug("replaceLanguageCodeInString: input={} -> result={}", string, result);
         return result;
+    }
+
+    public static String generateTrackName(String string, String lang, String langName, String format, int disposition, boolean titleFirst, String dispLabel, String unknownTrackName) {
+        String title = (string != null) ? removeStartingSpacesAndSurroundingParenthesis(string) : "";
+
+        // Handle "undefined" language
+        if (lang != null && (lang.equals("und") || lang.equalsIgnoreCase("unknown"))) {
+            langName = "";
+        }
+
+        // Redundancy Filtering for Primary Selection
+        if (!title.isEmpty()) {
+            String lowerTitle = title.toLowerCase();
+
+            // 1. Check if title is a language code resolving to the same language
+            boolean titleIsLang = false;
+            if (title.length() == 2 || title.length() == 3) {
+                String titleAsLangName = getLanguageNameForLetterCode(title);
+                titleIsLang = titleAsLangName.equalsIgnoreCase(langName);
+            }
+
+            // 2. Check against English name
+            if (!titleIsLang && lang != null) {
+                String engLang = getEnglishLanguageNameForLetterCode(lang);
+                titleIsLang = lowerTitle.equals(engLang.toLowerCase());
+            }
+
+            // 3. Check against raw codes
+            if (!titleIsLang && lang != null) {
+                titleIsLang = lowerTitle.equals(lang.toLowerCase());
+            }
+
+            // 4. Check if title is only language + disposition, e.g. "English (SDH)" or "French (Forced)".
+            boolean titleIsLangWithDisposition = false;
+            if (!titleIsLang && lang != null && dispLabel != null && !dispLabel.isEmpty()) {
+                String lowerDisp = dispLabel.toLowerCase();
+                String lowerLangName = (langName != null) ? langName.toLowerCase() : "";
+                String lowerEngLang = getEnglishLanguageNameForLetterCode(lang).toLowerCase();
+                titleIsLangWithDisposition =
+                        titleMatchesLanguageDisposition(lowerTitle, lowerLangName, lowerDisp) ||
+                        titleMatchesLanguageDisposition(lowerTitle, lowerEngLang, lowerDisp) ||
+                        titleMatchesLanguageDisposition(lowerTitle, lang.toLowerCase(), lowerDisp);
+            }
+
+            // 5. Check for "SDH" tag redundancy
+            boolean titleIsTag = lowerTitle.equals("sdh");
+
+            if (titleIsLang || titleIsLangWithDisposition || titleIsTag) title = ""; // Let Language or Disposition be primary instead of redundant title
+        }
+
+        String primary = "";
+
+        // 1. Primary Label Selection: Title > Language > Disposition > Format
+        if (!title.isEmpty()) {
+            primary = capitalizeFirstLetter(title);
+        } else if (langName != null && !langName.isEmpty()) {
+            primary = langName.startsWith("s_") ? langName : capitalizeFirstLetter(langName);
+        } else if (dispLabel != null && !dispLabel.isEmpty()) {
+            primary = capitalizeFirstLetter(dispLabel);
+        } else {
+            primary = (format != null && !format.isEmpty()) ? format : "";
+        }
+
+        if (primary.isEmpty()) {
+            return unknownTrackName;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(primary);
+
+        // 2. Secondary Info Construction
+        java.util.ArrayList<String> secondary = new java.util.ArrayList<>();
+        String lowerPrimary = primary.toLowerCase();
+
+        // Add Language if not redundant with Primary
+        if (langName != null && !langName.isEmpty() && !primary.equalsIgnoreCase(langName)) {
+            String lowerLangEng = getEnglishLanguageNameForLetterCode(lang).toLowerCase();
+            String lang1 = getISO6391ForLetterCode(lang).toLowerCase();
+            String lang3 = getISO6393ForLetterCode(lang).toLowerCase();
+
+            boolean redundant = lowerPrimary.contains(langName.toLowerCase()) ||
+                               (!lowerLangEng.isEmpty() && lowerPrimary.contains(lowerLangEng)) ||
+                               lowerPrimary.equals(lang1) ||
+                               lowerPrimary.equals(lang3);
+
+            if (!redundant) {
+                String l = langName.startsWith("s_") ? langName : capitalizeFirstLetter(langName);
+                secondary.add(l);
+            }
+        }
+
+        // Add Disposition if not redundant with Primary
+        if (dispLabel != null && !dispLabel.isEmpty() && !primary.equalsIgnoreCase(dispLabel)) {
+            String lowerDisp = dispLabel.toLowerCase();
+            boolean redundant = lowerPrimary.contains(lowerDisp) ||
+                               (lowerDisp.contains("malentendants") && lowerPrimary.contains("(sdh)"));
+            if (!redundant) {
+                secondary.add(capitalizeFirstLetter(dispLabel));
+            }
+        }
+
+        // Add Format if not redundant with Primary
+        if (format != null && !format.isEmpty() && !primary.equalsIgnoreCase(format)) {
+            if (!lowerPrimary.contains(format.toLowerCase())) {
+                secondary.add(format);
+            }
+        }
+
+        // 3. Final Formatting
+        if (secondary.isEmpty()) {
+            return sb.toString();
+        }
+
+        StringBuilder sec = new StringBuilder();
+        for (int i = 0; i < secondary.size(); i++) {
+            if (i > 0) sec.append(" ");
+            if (i == 0) sec.append(secondary.get(i));
+            else sec.append("(").append(secondary.get(i)).append(")");
+        }
+        String secStr = sec.toString();
+        boolean formatOnlySecondary = secondary.size() == 1 &&
+                format != null &&
+                !format.isEmpty() &&
+                secondary.get(0).equals(format);
+        boolean useDashSeparator = !formatOnlySecondary;
+
+        if (titleFirst) { // Audio
+            if (useDashSeparator) {
+                return sb.append(" - ").append(secStr).toString();
+            }
+            return sb.append(" (").append(secStr).append(")").toString();
+        } else { // Subtitles
+            if (useDashSeparator) {
+                return sb.append(" - <small>").append(secStr).append("</small>").toString();
+            }
+            return sb.append(" <small>(").append(secStr).append(")</small>").toString();
+        }
+    }
+
+    public static String generateTrackName(String string, String lang, String format, int disposition, boolean titleFirst, String dispLabel, String unknownTrackName) {
+        String langName = (lang != null && !lang.isEmpty()) ? getLanguageNameForLetterCode(lang) : "";
+        return generateTrackName(string, lang, langName, format, disposition, titleFirst, dispLabel, unknownTrackName);
+    }
+
+    private static boolean titleMatchesLanguageDisposition(String lowerTitle, String lowerLanguage, String lowerDisposition) {
+        if (lowerLanguage == null || lowerLanguage.isEmpty() || lowerDisposition == null || lowerDisposition.isEmpty()) return false;
+        if (lowerTitle.equals(lowerLanguage + " (" + lowerDisposition + ")")) return true;
+        if (lowerTitle.equals(lowerLanguage + " " + lowerDisposition)) return true;
+        if (lowerTitle.equals(lowerLanguage + " - " + lowerDisposition)) return true;
+        return lowerDisposition.contains("malentendants") && lowerTitle.equals(lowerLanguage + " (sdh)");
     }
 
     public static String generateTrackName(String string, String lang, String format, boolean titleFirst) {
