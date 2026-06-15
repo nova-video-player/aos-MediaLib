@@ -49,6 +49,7 @@ import com.uwetrottmann.tmdb2.services.SearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -159,6 +160,11 @@ public class MovieScraper3 extends BaseScraper2 {
             // Standard cases: cleaned name with year (if any) first, then fallback to suggestion
             candidates.add(new SearchCandidate(searchInfo.getName(), searchInfo.getYear()));
             candidates.add(new SearchCandidate(searchInfo.getSearchSuggestion(), null));
+
+            String unaccented = removeDiacritics(searchInfo.getName());
+            if (!unaccented.equals(searchInfo.getName())) {
+                candidates.add(new SearchCandidate(unaccented, searchInfo.getYear()));
+            }
 
             // Fallback for transliterated titles (e.g. German umlauts: 'ae' -> 'ä')
             boolean isGerman = (language != null && language.startsWith("de")) ||
@@ -361,6 +367,11 @@ public class MovieScraper3 extends BaseScraper2 {
             if (head.length() > 2) return head;
         }
         return name;
+    }
+
+    private String removeDiacritics(String name) {
+        if (name == null) return "";
+        return Normalizer.normalize(name, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
     }
 
     @Override
