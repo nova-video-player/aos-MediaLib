@@ -1,11 +1,12 @@
 # URI|Type|ExpectedTitle|ExpectedId|Language
 Blade Runner 2049.mkv|Movie|Blade Runner 2049|335984|en
 The Flash S01E01.mkv|Show|The Flash|60735|en
+./serie/Silo.S01E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv|Show|Silo|125988|en
 2001 A Space Odyssey.mkv|Movie|2001: A Space Odyssey|62|en
 Class of 1999.mkv|Movie|Class of 1999|23535|en
 Scream 2022.mkv|Movie|Scream|646385|en
 The.Incredibles.DVDSCR.XviD.cd1.avi|Movie|The Incredibles|9806|en
-./series/Galactica/Season 1/galactica.ep3.avi|Show|Battlestar Galactica|1972|en
+./series/Galactica/Season 1/galactica.ep3.avi|Show|Galactica 1980|4621|en
 The Matrix (1999).mkv|Movie|The Matrix|603|en
 The Matrix.mkv|Movie|The Matrix|603|en
 upпp://1540402479/0/2/2%2415/2%2415%240/Scream.2022.1080p.BluRay.x264.AAC5.1-[YT.MX].mkv|Movie|Scream|646385|en
@@ -40,6 +41,7 @@ Nineteen Eighty-Four (1984).mkv|Movie|Nineteen Eighty-Four|9314|en
 Amadeus (1984) Theatrical Multi VFI 2160p 4KLight DV HDR Bluray AC3 5.1 X265.mkv|Movie|Amadeus|279|en
 2 Guns (2013) Hybrid Multi VFF 2160p 10 bits 4KLight HDR Bluray DDP5.1 X265.mkv|Movie|2 Guns|136400|en
 Zorro.(FR).2024.S01E01.TRUEFRENCH.1080p.WEB.EAC3.H265-FW.mkv|Show|Zorro (2024)|212286|fr
+Les.traitres.2022.S06E03.2026-04-11.FRENCH.1080p.WEB.H264-THESYNDiCATE.mkv|Show|Les Traîtres|208398|fr
 The Formula (2014).mkv|Movie|The Formula|270672|en
 300 (2007) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|300|1271|en
 # German umlaut transliteration regression (issue #1775)
@@ -55,7 +57,6 @@ The 100 (2014) S01E01.mkv|Show|The 100|48866|en
 9-1-1 (2018) S01E01.mkv|Show|9-1-1|75219|en
 1923.S01E01.mkv|Show|1923|157744|en
 The.100.2014.S01E01.mkv|Show|The 100|48866|en
-The.100.2014.720p.S01E01.mkv|Show|The 100|48866|en
 Die.Dinosaurier.S01E01.Der.Aufstieg.GERMAN.AAC.DOKU.1080p.WEB.x265.mkv|Show|Die Dinosaurier|313298|de
 Die.Dinosaurier.S01E01.Der.Aufstieg.GERMAN.AAC.DOKU.1080p.WEB.x265.mkv|Show|The Dinosaurs|313298|en
 # French movie scraping issues
@@ -72,3 +73,21 @@ Barbie (2023).mkv|Movie|Barbie|346698|fr
 Bloodline (2019).mkv|Movie|Bloodline|543917|fr
 Monstres & Cie (2001).mkv|Movie|Monstres & Cie|585|fr
 Monstres Academy (2013).mkv|Movie|Monstres Academy|62211|fr
+# French movie scraping regressions with full release filenames from issue #1775
+Lilo & Stitch 2, Hawaï, nous avons un problème (2005) Walt Disney.mkv|Movie|Lilo & Stitch 2 : Hawaï, nous avons un problème !|20760|fr
+Star Wars, épisode IV - La Guerre des étoiles (1977) Hybrid MULTi VFI 2160p 10bit 4KLight D BluRay DDP 7.1 x265.mkv|Movie|Star Wars : Épisode IV - Un nouvel espoir|11|fr
+Les Noces Rebelles (2008) TRUEFRENCH BluRay 1080 x265 HEVC AC3 5.1-STARLIGHTER.mkv|Movie|Les Noces Rebelles|4148|fr
+Tueurs nés (1994) MULTI VFF BluRay 1080 x265 HEVC AC3 5.1-STARLIGHTER.mkv|Movie|Tueurs nés|241|fr
+Viens chez moi, j'habite chez une copine (1981) mHD 1080 x264 SDH-BB85.mkv|Movie|Viens chez moi, j'habite chez une copine|69044|fr
+USS Alabama (1995) TRUEFRENCH.Blu-Ray.1080.x265.HEVC.DTS-STARLIGHTER.mkv|Movie|USS Alabama|8963|fr
+Indiana Jones et le Cadran de la destinée (2023) Hybrid MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 7.1 x265.mkv|Movie|Indiana Jones et le Cadran de la destinée|335977|fr
+Stromae Racine Carrée Live (2015) BDRIP 1080 MKV x264 DTS.mkv|Movie|Stromae: Racine carrée Live|372229|fr
+Smile 2 (2024) MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 5.1 Atmos x265-QTZ.mkv|Movie|Smile 2|1100782|fr
+Radiostars (2012) VOF 1080p Blu-ray FHD x264 - VFHD [0033]|Movie|Radiostars|100830|fr
+Wonder (2017) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|Wonder|406997|fr
+Barbie (2023) Hybrid MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 5.1 Atmos x265-QTZ.mkv|Movie|Barbie|346698|fr
+Bloodline (2019) MULTi 1080p HDLight x264 AC3 5.1-EXTREME.mkv|Movie|Bloodline|543917|fr
+X (2022) MULTi VFI 2160p 10bit 4KLight DV HDR10Plus BluRay DDP 5.1 x265-QTZ.mkv|Movie|X|760104|fr
+Chambre 1408 (2007) MULTi VFF 2160p 10bit DV HDR BluRay x265 DTS 5.1-XANDER.mkv|Movie|Chambre 1408|3021|fr
+Monstres & Cie (2001) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|Monstres & Cie|585|fr
+Monstres Academy (2013) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|Monstres Academy|62211|fr
