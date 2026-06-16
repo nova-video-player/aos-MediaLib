@@ -121,6 +121,7 @@ public final class ShowUtils {
      */
     public static Map<String, String> parseShowName(String filename) {
         if (log.isDebugEnabled()) log.debug("parseShowName: {}", filename);
+        filename = cleanTvPatternInput(filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
         Pair<String, String> nameYear;
         Pair<String, String> nameCountry;
@@ -228,7 +229,7 @@ public final class ShowUtils {
             filename = FileUtils.getName(file);
         }
         // remove trailing '/' if it exists
-        filename = removeTrailingSlash(filename);
+        filename = cleanTvPatternInput(removeTrailingSlash(filename));
         if (log.isDebugEnabled()) log.debug("isTvShow: parsing {}", filename);
         for(Pattern regexp: patternsShowFirst) {
             Matcher m = regexp.matcher(filename);
@@ -256,6 +257,10 @@ public final class ShowUtils {
 
     public static boolean isTvShow(String path) {
         return isTvShow(Uri.parse(path), null);
+    }
+
+    private static String cleanTvPatternInput(String filename) {
+        return ParseUtils.removeGarbage(filename);
     }
 
     /**
