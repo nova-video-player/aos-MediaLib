@@ -122,6 +122,7 @@ public final class ShowUtils {
      */
     public static Map<String, String> parseShowName(String filename) {
         if (log.isDebugEnabled()) log.debug("parseShowName: {}", filename);
+        String rawCountryOfOrigin = getCountryOfOrigin(filename).second;
         filename = ParseUtils.cleanTvPatternInput(filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
         Pair<String, String> nameYear;
@@ -145,6 +146,9 @@ public final class ShowUtils {
 
                     name = cleanUpName(name);
                     nameCountry = getCountryOfOrigin(name);
+                    if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                        nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                    }
 
                     if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
                         Pair<String, String> countryForYear = getCountryOfOrigin(nameForYear);
@@ -156,6 +160,9 @@ public final class ShowUtils {
                                 // If we successfully extracted the year from the garbage-stripped string,
                                 // we must update the final name to also be garbage-stripped.
                                 nameCountry = getCountryOfOrigin(cleanUpName(nameYear.first));
+                                if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                                    nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                                }
                             }
                         }
                     }
@@ -189,6 +196,9 @@ public final class ShowUtils {
 
                         name = cleanUpName(name);
                         nameCountry = getCountryOfOrigin(name);
+                        if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                            nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                        }
 
                         if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
                             Pair<String, String> countryForYear = getCountryOfOrigin(nameForYear);
@@ -200,6 +210,9 @@ public final class ShowUtils {
                                     // If we successfully extracted the year from the garbage-stripped string,
                                     // we must update the final name to also be garbage-stripped.
                                     nameCountry = getCountryOfOrigin(cleanUpName(nameYear.first));
+                                    if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                                        nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                                    }
                                 }
                             }
                         }
