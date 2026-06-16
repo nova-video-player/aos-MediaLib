@@ -416,6 +416,10 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
                     values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, videoInfo.subtitleRatio);
                     values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, videoInfo.lastTimePlayed);
                     values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, videoInfo.traktResume);
+                    if (videoInfo.subtitleLanguage != null && !videoInfo.subtitleLanguage.isEmpty())
+                        values.put(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE, videoInfo.subtitleLanguage);
+                    else
+                        values.putNull(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE);
                     resolver.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, values, where, null);
                 }
                 if (log.isDebugEnabled()) log.debug("mExportDb: {} - isLocal: {} isSlowRemote {}", exportDb, FileUtils.isLocal(videoInfo.uri), FileUtils.isSlowRemote(videoInfo.uri));
