@@ -32,7 +32,8 @@ public class ParseUtils {
     private static final Logger log = LoggerFactory.getLogger(ParseUtils.class);
 
     /* ( whitespace | punctuation)+, matches dots, spaces, brackets etc */
-    private static final Pattern MULTI_NON_CHARACTER_PATTERN = Pattern.compile("[\\s\\p{Punct}&&[^']]+");
+    private static final String NON_CHARACTER_SEPARATOR = "[\\s\\p{Punct}&&[^']]+";
+    private static final Pattern MULTI_NON_CHARACTER_PATTERN = Pattern.compile(NON_CHARACTER_SEPARATOR);
     /*
      * Matches dots in between Uppercase letters e.g. in "E.T.", "S.H.I.E.L.D." but not a "a.b.c."
      * Last dot is kept "a.F.O.O.is.foo" => "a.FOO.is.foo"
@@ -141,6 +142,7 @@ public class ParseUtils {
             " truehd ", " atmos ", " uhd ", " hdr10+ ", " hdr10 ", " hdr ", " dolby ", " dts-x ", " dts-hd.ma ",
             " hfr ",
     };
+    private static final Pattern[] GARBAGE_LOWERCASE_PATTERNS = new Pattern[GARBAGE_LOWERCASE.length];
 
     // stuff that could be present in real names is matched with tight case sensitive syntax
     // strings here will only match if separated by any of " .-_"
@@ -155,6 +157,9 @@ public class ParseUtils {
 
     public static final Pattern[] GARBAGE_CASESENSITIVE_PATTERNS = new Pattern[GARBAGE_CASESENSITIVE.length];
     static {
+        for (int i = 0; i < GARBAGE_LOWERCASE.length; i++) {
+            GARBAGE_LOWERCASE_PATTERNS[i] = makeLowercaseGarbagePattern(GARBAGE_LOWERCASE[i]);
+        }
         for (int i = 0; i < GARBAGE_CASESENSITIVE.length; i++) {
             // case sensitive string wrapped in "space or . or _ or -", in the end either separator or end of line
             GARBAGE_CASESENSITIVE_PATTERNS[i] = Pattern.compile("[ ._-]" + GARBAGE_CASESENSITIVE[i] + "(?:[ ._-]|$)");
@@ -200,6 +205,44 @@ public class ParseUtils {
         return input.substring(0, firstGarbage);
     }
 
+    private static Pattern makeLowercaseGarbagePattern(String rawGarbage) {
+        return Pattern.compile("(^|" + NON_CHARACTER_SEPARATOR + ")(" + Pattern.quote(rawGarbage.trim()) + ")(?=$|" + NON_CHARACTER_SEPARATOR + ")", Pattern.CASE_INSENSITIVE);
+    }
+
+    /**
+     * Assumes the useful title/episode signal is before release garbage and cuts
+     * the input at the first recognized garbage token while preserving the
+     * original prefix separators for downstream parsers.
+     */
+    public static String cutOffBeforeFirstGarbage(String input) {
+        if (input == null || input.isEmpty()) return input;
+
+        int firstGarbage = Math.min(
+                firstMatchStart(input, GARBAGE_CASESENSITIVE_PATTERNS, 0),
+                firstMatchStart(input, GARBAGE_LOWERCASE_PATTERNS, 2));
+        return input.substring(0, firstGarbage).trim();
+    }
+
+    private static int firstMatchStart(String input, Pattern[] patterns, int group) {
+        int firstMatch = input.length();
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(input);
+            if (matcher.find() && matcher.start(group) < firstMatch) {
+                firstMatch = matcher.start(group);
+            }
+        }
+        return firstMatch;
+    }
+
+    /**
+     * Cleans input before TV filename regexes are applied. TV matching still
+     * needs season/episode markers, but release garbage starts a tail that
+     * should not participate in TV-vs-movie detection.
+     */
+    public static String cleanTvPatternInput(String input) {
+        return removeInnerAndOutterSeparatorJunk(cutOffBeforeFirstGarbage(input));
+    }
+
     /**
      * Cleans an extracted title fragment (e.g. episode title from filename) by applying
      * the standard garbage-stripping pipeline: case-sensitive patterns, separator cleanup,
@@ -224,26 +267,10 @@ public class ParseUtils {
 
         // Pad with spaces to allow easy matching of " garbage " strings
         String result = " " + input + " ";
-        String resultLower = result.toLowerCase(Locale.US);
 
         // Remove case-insensitive garbage
-        for (String rawGarbage : GARBAGE_LOWERCASE) {
-            String garbage = rawGarbage.trim();
-            if (garbage.isEmpty()) continue;
-
-            // Check for garbage wrapped in common separators
-            String[] formats = { "." + garbage + ".", " " + garbage + " ", "-" + garbage + "-", "_" + garbage + "_",
-                                 "." + garbage + " ", " " + garbage + ".", "-" + garbage + " ", " " + garbage + "-" };
-            for (String format : formats) {
-                int index = resultLower.indexOf(format);
-                while (index > -1) {
-                    // Replace the exact length of the garbage string with a single space to preserve separation
-                    String replacement = format.substring(0, 1) + " " + format.substring(format.length() - 1);
-                    result = result.substring(0, index) + replacement + result.substring(index + format.length());
-                    resultLower = result.toLowerCase(Locale.US);
-                    index = resultLower.indexOf(format);
-                }
-            }
+        for (Pattern pattern : GARBAGE_LOWERCASE_PATTERNS) {
+            result = pattern.matcher(result).replaceAll("$1 ");
         }
 
         // Remove case-sensitive garbage
