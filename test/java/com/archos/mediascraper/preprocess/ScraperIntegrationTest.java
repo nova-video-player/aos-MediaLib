@@ -21,8 +21,6 @@ import android.preference.PreferenceManager;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.SearchResult;
-import com.archos.mediascraper.xml.MovieScraper3;
-import com.archos.mediascraper.xml.ShowScraper4;
 import com.archos.filecorelibrary.FileUtilsQ;
 import com.archos.medialib.R;
 import org.junit.Before;
@@ -43,8 +41,7 @@ import static org.mockito.Mockito.*;
 public class ScraperIntegrationTest {
 
     private Context context;
-    private MovieScraper3 movieScraper;
-    private ShowScraper4 showScraper;
+    private Scraper scraper;
 
     @Before
     public void setUp() {
@@ -55,8 +52,7 @@ public class ScraperIntegrationTest {
         // Initialize FileUtilsQ to ensure static fields like publicAppDirectory are set
         FileUtilsQ.getInstance(context);
         
-        movieScraper = new MovieScraper3(context);
-        showScraper = new ShowScraper4(context);
+        scraper = new Scraper(context);
     }
 
     @Test
@@ -94,17 +90,7 @@ public class ScraperIntegrationTest {
 
                 try {
                     Uri uri = Uri.parse(uriString);
-                    SearchInfo info = null;
-
-                    if ("Movie".equalsIgnoreCase(type)) {
-                        String filename = uri.getLastPathSegment(); 
-                        if (filename == null) filename = uriString;
-                        info = MovieDefaultMatcher.instance().getUserInputMatch(filename, uri);
-                    } else if ("Show".equalsIgnoreCase(type)) {
-                        String filename = uri.getLastPathSegment();
-                        if (filename == null) filename = uriString;
-                        info = TvShowMatcher.instance().getUserInputMatch(filename, uri);
-                    }
+                    SearchInfo info = SearchPreprocessor.instance().parseFileBased(uri, uri);
 
                     if (info == null) {
                         errors.add("SearchInfo is null for " + uriString);
@@ -121,7 +107,7 @@ public class ScraperIntegrationTest {
                         System.out.println(String.format("  -> PREPROCESSED: Name='%s' Year=%s Suggestion='%s'", 
                             movieInfo.getName(), movieInfo.getYear(), movieInfo.getSearchSuggestion()));
                     }
-                    
+
                     // Verify type detection
                     if ("Movie".equalsIgnoreCase(type) && info.isTvShow()) {
                          errors.add("Expected Movie but got TvShow for " + uriString);
@@ -130,25 +116,23 @@ public class ScraperIntegrationTest {
                     }
 
                     // Perform Scrape
-                    ScrapeSearchResult result = null;
-                    if ("Movie".equalsIgnoreCase(type)) {
-                        result = movieScraper.getMatches2(info, 20);
-                    } else {
-                        result = showScraper.getMatches2(info, 20);
-                    }
-                    
+                    ScrapeSearchResult result = scraper.getBestMatches(info, 1);
+
                     if (result == null) {
                         errors.add("Scrape result is null for " + uriString);
                         continue;
                     }
                     
                     if (result.results != null && !result.results.isEmpty()) {
+                        SearchResult topMatch = result.results.get(0);
                         boolean found = false;
+                        int foundPosition = -1;
                         for (SearchResult match : result.results) {
+                            foundPosition++;
                             if (match.getId() == expectedId) {
                                 found = true;
                                 StringBuilder sb = new StringBuilder();
-                                sb.append("  -> MATCH FOUND: ").append(match.getTitle());
+                                sb.append("  -> MATCH FOUND #").append(foundPosition + 1).append(": ").append(match.getTitle());
                                 sb.append(" (ID: ").append(match.getId()).append(")");
                                 if (match.getReleaseOrFirstAiredDate() != null) {
                                     sb.append(" [Release: ").append(new java.text.SimpleDateFormat("yyyy").format(match.getReleaseOrFirstAiredDate())).append("]");
@@ -164,8 +148,11 @@ public class ScraperIntegrationTest {
                                 break;
                             }
                         }
-                        if (!found) {
-                            String errorMsg = "NO ID MATCH for " + uriString + ". Expected ID " + expectedId + ". Top result: " + result.results.get(0).getTitle() + " (" + result.results.get(0).getId() + ")";
+
+                        if (topMatch.getId() != expectedId) {
+                            String errorMsg = "TOP ID MISMATCH for " + uriString + ". Expected ID " + expectedId +
+                                    ". Top result: " + topMatch.getTitle() + " (" + topMatch.getId() + ")" +
+                                    (found ? ". Expected result was at position " + (foundPosition + 1) : ". Expected result was not returned");
                             System.out.println("  -> " + errorMsg);
                             errors.add(errorMsg);
                         }
