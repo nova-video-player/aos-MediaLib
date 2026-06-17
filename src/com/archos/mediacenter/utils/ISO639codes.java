@@ -561,6 +561,7 @@ public class ISO639codes {
         if (dispLabel != null && !dispLabel.isEmpty() && !primary.equalsIgnoreCase(dispLabel)) {
             String lowerDisp = dispLabel.toLowerCase();
             boolean redundant = lowerPrimary.contains(lowerDisp) ||
+                               (isDubDisposition(disposition) && langName != null && !langName.isEmpty()) ||
                                (lowerDisp.contains("malentendants") && lowerPrimary.contains("(sdh)"));
             if (!redundant) {
                 secondary.add(capitalizeFirstLetter(dispLabel));
@@ -616,6 +617,10 @@ public class ISO639codes {
         if (lowerTitle.equals(lowerLanguage + " " + lowerDisposition)) return true;
         if (lowerTitle.equals(lowerLanguage + " - " + lowerDisposition)) return true;
         return lowerDisposition.contains("malentendants") && lowerTitle.equals(lowerLanguage + " (sdh)");
+    }
+
+    private static boolean isDubDisposition(int disposition) {
+        return (disposition & 0x0002) != 0;
     }
 
     public static String generateTrackName(String string, String lang, String format, boolean titleFirst) {
