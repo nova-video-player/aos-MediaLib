@@ -34,8 +34,11 @@ public class DbHolder {
     }
 
     public SQLiteDatabase get() {
+        SQLiteDatabase db = mDb;
         // double checked works if using volatile
-        if (mDb == null) {
+        // also reopen when the cached connection has been closed underneath us
+        // (e.g. media library backup/restore replacing media.db or low memory recycling)
+        if (db == null || !db.isOpen()) {
             // not 100% correct in all cases but it's enough for logging
             if (mLock.isLocked() && !mLock.isHeldByCurrentThread()) {
                 logUiThread();
@@ -43,14 +46,45 @@ public class DbHolder {
 
             mLock.lock();
             try {
-                if (mDb == null) {
-                    mDb = mDbHelper.getWritableDatabase();
+                db = mDb;
+                if (db == null || !db.isOpen()) {
+                    db = openDatabase();
+                    mDb = db;
                 }
             } finally {
                 mLock.unlock();
             }
         }
-        return mDb;
+        return db;
+    }
+
+    public void close() {
+        mLock.lock();
+        try {
+            if (mDb != null) {
+                if (mDb.isOpen()) {
+                    mDb.close();
+                }
+                mDb = null;
+            }
+            mDbHelper.close();
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    private SQLiteDatabase openDatabase() {
+        try {
+            return mDbHelper.getWritableDatabase();
+        } catch (IllegalStateException e) {
+            // "attempt to re-open an already-closed object": the helper's cached
+            // connection was closed concurrently. Reset the helper and reopen a
+            // fresh connection.
+            Log.w(ArchosMediaCommon.TAG_PREFIX + DbHolder.class.getSimpleName(),
+                    "get: database was closed, reopening", e);
+            mDbHelper.close();
+            return mDbHelper.getWritableDatabase();
+        }
     }
 
     private static void logUiThread() {
