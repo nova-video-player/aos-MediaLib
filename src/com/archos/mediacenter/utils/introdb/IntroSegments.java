@@ -93,13 +93,29 @@ public class IntroSegments {
         return false;
     }
 
-    // Auto-skip target: the end (ms) of the first INTRO then RECAP segment that
-    // contains positionMs and has a concrete end to jump to, or null if none.
-    // Credits/outro/preview are intentionally excluded (a null end = end of media).
-    public Long findSkipTarget(long positionMs) {
-        Long target = skipTargetIn(Type.INTRO, positionMs);
-        if (target == null) target = skipTargetIn(Type.RECAP, positionMs);
-        return target;
+    // Types eligible for auto-skip, in priority order: intro, credits, outro, preview.
+    // RECAP is intentionally excluded (users often want the recap).
+    private static final Type[] SKIP_TYPES = { Type.INTRO, Type.CREDITS, Type.OUTRO, Type.PREVIEW };
+
+    // Result of a skip lookup: which segment type matched and the end (ms) to jump to.
+    public static class Skip {
+        public final Type type;
+        public final long endMs;
+        public Skip(Type type, long endMs) {
+            this.type = type;
+            this.endMs = endMs;
+        }
+    }
+
+    // Auto-skip: the first eligible segment that contains positionMs and has a concrete
+    // end to jump to, or null if none. Segments with no concrete end (null endMs = end of
+    // media) are skipped so we never jump to the end of the file.
+    public Skip findSkip(long positionMs) {
+        for (Type type : SKIP_TYPES) {
+            Long target = skipTargetIn(type, positionMs);
+            if (target != null) return new Skip(type, target);
+        }
+        return null;
     }
 
     private Long skipTargetIn(Type type, long positionMs) {
@@ -111,17 +127,47 @@ public class IntroSegments {
         return null;
     }
 
+    // Types in display order, used by the summary/debug renderers. The caller supplies
+    // translatable labels keyed by Type (resolved from string resources in the app module).
+    private static final Type[] DISPLAY_TYPES = { Type.INTRO, Type.RECAP, Type.OUTRO, Type.CREDITS, Type.PREVIEW };
+
     // Human-readable consolidated summary, using the same time format as the
     // leanback resume box (MediaUtils.formatTime). Returns null when empty.
-    public String toDebugString() {
+    public String toDebugString(Map<Type, String> labels) {
         StringBuilder sb = new StringBuilder("IntroDB");
         boolean any = false;
-        any |= appendLines(sb, "Intro", Type.INTRO);
-        any |= appendLines(sb, "Recap", Type.RECAP);
-        any |= appendLines(sb, "Outro", Type.OUTRO);
-        any |= appendLines(sb, "Credit", Type.CREDITS);
-        any |= appendLines(sb, "Preview", Type.PREVIEW);
+        for (Type type : DISPLAY_TYPES)
+            any |= appendLines(sb, labels.get(type), type);
         return any ? sb.toString() : null;
+    }
+
+    // Compact one-line summary for the Play mode tile/menu: "/"-separated, no
+    // header, same time format as toDebugString. A null segment end means end of
+    // media and is rendered using the caller-supplied endLabel. Returns null when empty.
+    public String toSummaryString(Map<Type, String> labels, String endLabel) {
+        StringBuilder sb = new StringBuilder();
+        boolean any = false;
+        for (Type type : DISPLAY_TYPES)
+            any |= appendSummary(sb, labels.get(type), type, endLabel);
+        return any ? sb.toString() : null;
+    }
+
+    private boolean appendSummary(StringBuilder sb, String label, Type type, String endLabel) {
+        boolean any = false;
+        for (Segment s : get(type)) {
+            if (sb.length() > 0) sb.append(" / ");
+            sb.append(label).append(": ")
+                    .append(time(s.startMs)).append(" \u2192 ").append(endTime(s.endMs, endLabel));
+            any = true;
+        }
+        return any;
+    }
+
+    // Like time() but a null end means end of media: show endLabel rather than "unknown".
+    private static String endTime(Long ms, String endLabel) {
+        if (ms == null) return endLabel;
+        String s = MediaUtils.formatTime(ms);
+        return (s == null || s.isEmpty()) ? endLabel : s;
     }
 
     private boolean appendLines(StringBuilder sb, String label, Type type) {
