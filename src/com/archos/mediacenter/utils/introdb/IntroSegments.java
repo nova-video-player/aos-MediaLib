@@ -107,24 +107,41 @@ public class IntroSegments {
         }
     }
 
-    // Auto-skip: the first eligible segment that contains positionMs and has a concrete
-    // end to jump to, or null if none. Segments with no concrete end (null endMs = end of
-    // media) are skipped so we never jump to the end of the file.
+    // Auto-skip: find an eligible segment (priority order) that contains positionMs and has
+    // a concrete end, then extend that end across any other eligible segments that overlap,
+    // so overlapping intervals (e.g. credits + outro) are skipped in a single jump to the
+    // furthest end. Returns null when nothing applies. Segments with no concrete end
+    // (null endMs = end of media) are skipped so we never jump to the end of the file.
     public Skip findSkip(long positionMs) {
         for (Type type : SKIP_TYPES) {
-            Long target = skipTargetIn(type, positionMs);
-            if (target != null) return new Skip(type, target);
+            for (Segment s : get(type)) {
+                if (s.endMs == null) continue;    // need a concrete end to jump to
+                if (s.endMs <= positionMs) continue;
+                if (s.contains(positionMs))
+                    return new Skip(type, mergedEnd(s.endMs));
+            }
         }
         return null;
     }
 
-    private Long skipTargetIn(Type type, long positionMs) {
-        for (Segment s : get(type)) {
-            if (s.endMs == null) continue;        // need a concrete end to jump to
-            if (s.endMs <= positionMs) continue;
-            if (s.contains(positionMs)) return s.endMs;
+    // Grow endMs while any eligible segment starts at or before the current end and ends
+    // later, merging the chain of overlapping skippable segments into a single target.
+    private long mergedEnd(long endMs) {
+        boolean extended = true;
+        while (extended) {
+            extended = false;
+            for (Type type : SKIP_TYPES) {
+                for (Segment s : get(type)) {
+                    if (s.endMs == null) continue;
+                    long start = (s.startMs != null) ? s.startMs : 0L;
+                    if (start <= endMs && s.endMs > endMs) {
+                        endMs = s.endMs;
+                        extended = true;
+                    }
+                }
+            }
         }
-        return null;
+        return endMs;
     }
 
     // Types in display order, used by the summary/debug renderers. The caller supplies
