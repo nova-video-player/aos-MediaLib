@@ -81,6 +81,8 @@ public class VideoDbInfo implements Parcelable {
     public String scraperMovieId = null;
     public String scraperShowId = null;
     public String scraperEpisodeId = null;
+    public String scraperMovieImdbId = null;
+    public String scraperShowImdbId = null;
     public int traktSeen = -1;
     public int traktLibrary = -1;
     public int traktResume = 0; // a negative value means -> has been set but not synchronized with trakt
@@ -122,6 +124,8 @@ public class VideoDbInfo implements Parcelable {
             VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 25
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 26
             VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 27
+            VideoStore.Video.VideoColumns.SCRAPER_M_IMDB_ID,            // 28
+            VideoStore.Video.VideoColumns.SCRAPER_S_IMDB_ID,            // 29
     };
 
     public static final int IDX_ID =                     0;
@@ -152,6 +156,8 @@ public class VideoDbInfo implements Parcelable {
     public static final int IDX_SCRAPER_E_ONLINE_ID =   25;
     public static final int IDX_SCRAPER_ID =            26;
     public static final int IDX_SCRAPER_M_COLLECTION_ID = 27;
+    public static final int IDX_SCRAPER_M_IMDB_ID =     28;
+    public static final int IDX_SCRAPER_S_IMDB_ID =     29;
     public static VideoDbInfo fromId(ContentResolver cr, long id) {
         if (id >= 0) {
             String[] selectionArgs = { String.valueOf(id) };
@@ -238,6 +244,8 @@ public class VideoDbInfo implements Parcelable {
             result.scraperMovieId = c.getString(IDX_SCRAPER_M_ONLINE_ID);
             result.scraperShowId = c.getString(IDX_SCRAPER_S_ONLINE_ID);
             result.scraperEpisodeId = c.getString(IDX_SCRAPER_E_ONLINE_ID);
+            result.scraperMovieImdbId = c.getString(IDX_SCRAPER_M_IMDB_ID);
+            result.scraperShowImdbId = c.getString(IDX_SCRAPER_S_IMDB_ID);
             result.scraperCollectionID = c.getInt(IDX_SCRAPER_M_COLLECTION_ID);
         }
         return result;
