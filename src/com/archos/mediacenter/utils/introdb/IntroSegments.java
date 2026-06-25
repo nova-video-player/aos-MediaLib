@@ -93,9 +93,14 @@ public class IntroSegments {
         return false;
     }
 
-    // Types eligible for auto-skip, in priority order: intro, credits, outro, preview.
-    // RECAP is intentionally excluded (users often want the recap).
+    // Types eligible for the standard auto-skip, in priority order: intro, credits, outro,
+    // preview. RECAP is intentionally excluded here: it is only skipped on demand (binge
+    // mode, episode-to-episode transition) via the includeRecap flag of findSkip.
     private static final Type[] SKIP_TYPES = { Type.INTRO, Type.CREDITS, Type.OUTRO, Type.PREVIEW };
+    private static final Type[] RECAP_ONLY = { Type.RECAP };
+    // Standard types plus recap, recap kept right after intro in priority order.
+    private static final Type[] SKIP_TYPES_WITH_RECAP = { Type.INTRO, Type.RECAP, Type.CREDITS, Type.OUTRO, Type.PREVIEW };
+    private static final Type[] NONE = {};
 
     // Result of a skip lookup: which segment type matched and the end (ms) to jump to.
     public static class Skip {
@@ -107,18 +112,29 @@ public class IntroSegments {
         }
     }
 
+    // Eligible types for this lookup: standard set (intro/credits/outro/preview) and/or recap,
+    // depending on what the caller enabled.
+    private static Type[] eligibleTypes(boolean includeStandard, boolean includeRecap) {
+        if (includeStandard && includeRecap) return SKIP_TYPES_WITH_RECAP;
+        if (includeStandard) return SKIP_TYPES;
+        if (includeRecap) return RECAP_ONLY;
+        return NONE;
+    }
+
     // Auto-skip: find an eligible segment (priority order) that contains positionMs and has
     // a concrete end, then extend that end across any other eligible segments that overlap,
     // so overlapping intervals (e.g. credits + outro) are skipped in a single jump to the
     // furthest end. Returns null when nothing applies. Segments with no concrete end
     // (null endMs = end of media) are skipped so we never jump to the end of the file.
-    public Skip findSkip(long positionMs) {
-        for (Type type : SKIP_TYPES) {
+    // includeStandard covers intro/credits/outro/preview; includeRecap adds recap.
+    public Skip findSkip(long positionMs, boolean includeStandard, boolean includeRecap) {
+        Type[] types = eligibleTypes(includeStandard, includeRecap);
+        for (Type type : types) {
             for (Segment s : get(type)) {
                 if (s.endMs == null) continue;    // need a concrete end to jump to
                 if (s.endMs <= positionMs) continue;
                 if (s.contains(positionMs))
-                    return new Skip(type, mergedEnd(s.endMs));
+                    return new Skip(type, mergedEnd(s.endMs, types));
             }
         }
         return null;
@@ -126,11 +142,11 @@ public class IntroSegments {
 
     // Grow endMs while any eligible segment starts at or before the current end and ends
     // later, merging the chain of overlapping skippable segments into a single target.
-    private long mergedEnd(long endMs) {
+    private long mergedEnd(long endMs, Type[] types) {
         boolean extended = true;
         while (extended) {
             extended = false;
-            for (Type type : SKIP_TYPES) {
+            for (Type type : types) {
                 for (Segment s : get(type)) {
                     if (s.endMs == null) continue;
                     long start = (s.startMs != null) ? s.startMs : 0L;
