@@ -44,6 +44,7 @@ Zorro.(FR).2024.S01E01.TRUEFRENCH.1080p.WEB.EAC3.H265-FW.mkv|Show|Zorro (2024)|2
 Les.traitres.2022.S06E03.2026-04-11.FRENCH.1080p.WEB.H264-THESYNDiCATE.mkv|Show|Les Traîtres|208398|fr
 The Formula (2014).mkv|Movie|The Formula|270672|en
 300 (2007) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|300|1271|en
+300 (2006).mp4|Movie|300|1271|en
 # German umlaut transliteration regression (issue #1775)
 Beschuetze.Sie.S01E01.German.AC3.mkv|Show|Beschütze Sie|201289|de
 Beschütze.Sie.S01E01.German.AC3.mkv|Show|Beschütze Sie|201289|de
@@ -59,6 +60,9 @@ The 100 (2014) S01E01.mkv|Show|The 100|48866|en
 The.100.2014.S01E01.mkv|Show|The 100|48866|en
 Die.Dinosaurier.S01E01.Der.Aufstieg.GERMAN.AAC.DOKU.1080p.WEB.x265.mkv|Show|Die Dinosaurier|313298|de
 Die.Dinosaurier.S01E01.Der.Aufstieg.GERMAN.AAC.DOKU.1080p.WEB.x265.mkv|Show|The Dinosaurs|313298|en
+# TV regressions from issue #1775 comment 4788468141
+Planète Terre II (2016) S01E01 - Islands.mkv|Show|Planète Terre II|68595|fr
+The Falcon and the Winter Soldier S01E01 MULTi VFF 2160p 10bit 4KLight HDR WEBRip EAC3 5.1 x265-QTZ.mkv|Show|The Falcon and the Winter Soldier|88396|fr
 # French movie scraping issues
 Lilo & Stitch 2, Hawaï, nous avons un problème (2005).mkv|Movie|Lilo & Stitch 2 : Hawaï, nous avons un problème !|20760|fr
 Création des dieux - Le royaume des tempêtes (2023).mkv|Movie|Creation of the Gods I : Kingdom of Storms|856289|fr
@@ -83,9 +87,9 @@ USS Alabama (1995) TRUEFRENCH.Blu-Ray.1080.x265.HEVC.DTS-STARLIGHTER.mkv|Movie|U
 Indiana Jones et le Cadran de la destinée (2023) Hybrid MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 7.1 x265.mkv|Movie|Indiana Jones et le Cadran de la destinée|335977|fr
 Stromae Racine Carrée Live (2015) BDRIP 1080 MKV x264 DTS.mkv|Movie|Stromae: Racine carrée Live|372229|fr
 Smile 2 (2024) MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 5.1 Atmos x265-QTZ.mkv|Movie|Smile 2|1100782|fr
-Radiostars (2012) VOF 1080p Blu-ray FHD x264 - VFHD [0033]|Movie|Radiostars|100830|fr
-Wonder (2017) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|Wonder|406997|fr
-Barbie (2023) Hybrid MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 5.1 Atmos x265-QTZ.mkv|Movie|Barbie|346698|fr
+Radiostars (2012) VOF 1080p Blu-ray FHD x264 - VFHD [0033].mkv|Movie|Radiostars|100830|fr
+Wonders of the Sea (2017) MULTi VFI 2160p 10bit 4KLight HDR BluRay DD+5.1 x265-QTZ.mkv|Movie|Wonders of the Sea 3D|476070|fr
+Barbie Skipper - La grande aventure de baby-sitting (2023) MULTi 1080p AMZN WEB-DL DDP5.1 H.264-FCK.mkv|Movie|Barbie : Skipper - La grande aventure de baby-sitting|1093349|fr
 Bloodline (2019) MULTi 1080p HDLight x264 AC3 5.1-EXTREME.mkv|Movie|Bloodline|543917|fr
 X (2022) MULTi VFI 2160p 10bit 4KLight DV HDR10Plus BluRay DDP 5.1 x265-QTZ.mkv|Movie|X|760104|fr
 Chambre 1408 (2007) MULTi VFF 2160p 10bit DV HDR BluRay x265 DTS 5.1-XANDER.mkv|Movie|Chambre 1408|3021|fr

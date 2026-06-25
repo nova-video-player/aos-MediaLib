@@ -157,8 +157,12 @@ public class MovieScraper3 extends BaseScraper2 {
                 candidates.add(new SearchCandidate(searchInfo.getOriginalName(), null));
             }
         } else {
-            // Standard cases: cleaned name with year (if any) first, then fallback to suggestion
+            // Standard cases: cleaned name with year (if any) first, then recover from wrong years
+            // by retrying the cleaned title without the year before falling back to the suggestion.
             candidates.add(new SearchCandidate(searchInfo.getName(), searchInfo.getYear()));
+            if (searchInfo.getYear() != null) {
+                candidates.add(new SearchCandidate(searchInfo.getName(), null));
+            }
             candidates.add(new SearchCandidate(searchInfo.getSearchSuggestion(), null));
 
             String unaccented = removeDiacritics(searchInfo.getName());
@@ -240,8 +244,10 @@ public class MovieScraper3 extends BaseScraper2 {
 
             // If we found results and we're NOT doing unified scoring, we can stop early
             if (!allResults.isEmpty() && !useUnifiedScoring) {
-                if (log.isDebugEnabled()) log.debug("getMatches2: found results for '{}', stopping early", searchQuery);
-                break;
+                if (hasExactTitleMatch(allResults, searchInfo.getName())) {
+                    if (log.isDebugEnabled()) log.debug("getMatches2: found results for '{}', stopping early", searchQuery);
+                    break;
+                }
             }
         }
 
@@ -372,6 +378,23 @@ public class MovieScraper3 extends BaseScraper2 {
     private String removeDiacritics(String name) {
         if (name == null) return "";
         return Normalizer.normalize(name, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
+    }
+
+    private boolean hasExactTitleMatch(List<SearchResult> results, String query) {
+        if (results == null || query == null) return false;
+        String normalizedQuery = normalizeTitleForExactMatch(query);
+        for (SearchResult result : results) {
+            if (normalizedQuery.equals(normalizeTitleForExactMatch(result.getTitle()))
+                    || normalizedQuery.equals(normalizeTitleForExactMatch(result.getOriginalTitle()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeTitleForExactMatch(String title) {
+        if (title == null) return "";
+        return title.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]+", "");
     }
 
     @Override
