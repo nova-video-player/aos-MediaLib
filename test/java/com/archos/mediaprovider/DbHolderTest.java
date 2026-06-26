@@ -133,6 +133,65 @@ public class DbHolderTest {
     }
 
     @Test
+    public void testLockExclusiveClosesAndReopens() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_exclusive.db";
+        context.deleteDatabase(dbName);
+
+        TestHelper helper = new TestHelper(context, dbName);
+        DbHolder holder = new DbHolder(helper);
+
+        SQLiteDatabase db1 = holder.get();
+        assertTrue(db1.isOpen());
+
+        // Acquiring exclusive access must close the cached connection so that any
+        // concurrent get() is forced through the lock instead of returning a stale
+        // open handle to a file that is about to be deleted/replaced.
+        holder.lockExclusive();
+        assertFalse(db1.isOpen());
+        holder.unlockExclusive();
+
+        // After release, the next get() reopens a fresh connection.
+        SQLiteDatabase db2 = holder.get();
+        assertNotNull(db2);
+        assertTrue(db2.isOpen());
+        assertNotSame(db1, db2);
+        assertEquals(2, helper.getDatabaseCallCount.get());
+    }
+
+    @Test
+    public void testGetBlocksDuringExclusiveLock() throws InterruptedException {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_exclusive_block.db";
+        context.deleteDatabase(dbName);
+
+        TestHelper helper = new TestHelper(context, dbName);
+        DbHolder holder = new DbHolder(helper);
+
+        holder.get();
+
+        holder.lockExclusive();
+
+        final AtomicInteger reopened = new AtomicInteger(0);
+        Thread reader = new Thread(() -> {
+            // This must block until unlockExclusive() is called.
+            SQLiteDatabase db = holder.get();
+            if (db != null && db.isOpen()) {
+                reopened.incrementAndGet();
+            }
+        });
+        reader.start();
+
+        // Give the reader a chance to reach get(); it must still be blocked.
+        Thread.sleep(200);
+        assertEquals(0, reopened.get());
+
+        holder.unlockExclusive();
+        reader.join(5000);
+        assertEquals(1, reopened.get());
+    }
+
+    @Test
     public void testExplicitClose() {
         Context context = ApplicationProvider.getApplicationContext();
         String dbName = "test_close.db";

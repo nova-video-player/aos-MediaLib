@@ -73,6 +73,30 @@ public class DbHolder {
         }
     }
 
+    /**
+     * Acquire exclusive access to the database for a destructive operation (e.g.
+     * media library backup/restore that deletes and replaces the underlying file).
+     * Closes the cached connection and the helper so that any concurrent get()
+     * blocks on the lock instead of opening a connection on a file that is being
+     * deleted or rewritten. Must be paired with {@link #unlockExclusive()} in a
+     * finally block. After unlock, the next get() reopens a fresh, consistent
+     * connection.
+     */
+    public void lockExclusive() {
+        mLock.lock();
+        if (mDb != null) {
+            if (mDb.isOpen()) {
+                mDb.close();
+            }
+            mDb = null;
+        }
+        mDbHelper.close();
+    }
+
+    public void unlockExclusive() {
+        mLock.unlock();
+    }
+
     private SQLiteDatabase openDatabase() {
         try {
             return mDbHelper.getWritableDatabase();
