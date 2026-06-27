@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -124,6 +125,9 @@ public class NetworkAutoRefresh extends BroadcastReceiver implements DefaultLife
         if(((pref.getInt(AUTO_RESCAN_PERIOD,0)<=0)
                 &&!intent.getAction().equals(ACTION_FORCE_RESCAN_INDEXED_FOLDERS))
                 || com.archos.mediaprovider.video.NetworkScannerServiceVideo.isScannerAlive()
+                // A batch may be counted but not yet "alive" during the initial delayed-broadcast
+                // window; skip so an overlapping refresh cannot reset a valid active batch.
+                || AutoScrapeService.getNetworkScanCount() > 0
                 ) {
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
             Date dt = new Date();
@@ -141,52 +145,79 @@ public class NetworkAutoRefresh extends BroadcastReceiver implements DefaultLife
         }
         if(NetworkState.isLocalNetworkConnected(context)) {
             PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(AUTO_RESCAN_ERROR, 0).commit();//reset error
-            // Reset network scan counter at the start of a new batch to prevent orphaned counts
-            AutoScrapeService.resetNetworkScanCount();
-            boolean triggeredScan = false;
-            int scanCount = 0;
-            Handler handler = new Handler(Looper.getMainLooper());
+            // Resolve the eligible folders AND run their (potentially failing) protocol setup
+            // up front, before the batch is started. This way the whole batch membership is
+            // known and fully prepared before any member is registered, so a registered member
+            // can never be left without a scheduled request (which would strand the batch).
+            List<Uri> eligible = new ArrayList<>();
             for (Uri uri : toUpdate) {
-                if (log.isDebugEnabled()) log.debug("onReceive: scanning {}", uri);
                 if (shouldSkipScanForInactiveServer(context, uri)) {
                     if (log.isDebugEnabled()) log.debug("onReceive: skip scan for inactive server {}", uri);
                     continue;
                 }
-                if("upnp".equals(uri.getScheme())){ //start upnp service
-                    UpnpServiceManager.startServiceIfNeeded(context);
-                }
-                if("ftp".equalsIgnoreCase(uri.getScheme())||"ftps".equals(uri.getScheme()))
-                    Session.getInstance().removeFTPClient(uri);
-                if("sftp".equalsIgnoreCase(uri.getScheme()))
-                    SFTPSession.getInstance().removeSession(uri);
-                final Uri scanUri = uri;
-                final long delayMs = 100L + (scanCount * 2000L);
-                // Use global application context in the lambda: it fires after pendingResult.finish()
-                // so the receiver's context may already be invalidated.
-                final Context appContext = ArchosUtils.getGlobalContext();
-                handler.postDelayed(() -> {
-                    Intent refreshIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE, scanUri);
-                    refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_ON_FAIL_PREFERENCE, AUTO_RESCAN_ERROR);
-                    refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_END_OF_SCAN_PREFERENCE, AUTO_RESCAN_LAST_SCAN);
-                    refreshIntent.setPackage(appContext.getPackageName());
-                    appContext.sendBroadcast(refreshIntent);
-                }, delayMs);
-                triggeredScan = true;
-                scanCount++;
-                // Increment the network scan counter for each folder
-                AutoScrapeService.incrementNetworkScanCount();
-                if (log.isDebugEnabled()) log.debug("onReceive: queued scan for {} with delay {}ms", uri, delayMs);
-            }
-
-            // Start AutoScrapeService after network scanning to scrape newly found videos
-            if (triggeredScan && AutoScrapeService.isEnable(context)) {
-                if (log.isDebugEnabled()) log.debug("onReceive: starting AutoScrapeService after network scan, total folders: {}", scanCount);
                 try {
-                    AutoScrapeService.startServiceAfterNetworkScan(context);
+                    if("upnp".equals(uri.getScheme())){ //start upnp service
+                        UpnpServiceManager.startServiceIfNeeded(context);
+                    } else if("ftp".equalsIgnoreCase(uri.getScheme())||"ftps".equals(uri.getScheme())) {
+                        Session.getInstance().removeFTPClient(uri);
+                    } else if("sftp".equalsIgnoreCase(uri.getScheme())) {
+                        SFTPSession.getInstance().removeSession(uri);
+                    }
                 } catch (Exception e) {
-                    // Catch any exceptions that might bubble up from startServiceAfterNetworkScan
-                    // to prevent BroadcastReceiver from crashing and causing RuntimeException to propagate
-                    log.error("onReceive: Failed to start AutoScrapeService after network scan", e);
+                    log.warn("onReceive: skipping {} due to protocol setup failure", uri, e);
+                    continue;
+                }
+                eligible.add(uri);
+            }
+            if (eligible.isEmpty()) {
+                if (log.isDebugEnabled()) log.debug("onReceive: no eligible folders to scan");
+            } else {
+                // Begin a new network scan batch with all members registered atomically;
+                // every scan queued below carries this id so only these folders count toward
+                // (and can complete) this batch. A sentinel id means a batch is already active
+                // and this request was rejected, so nothing must be scheduled.
+                final long scanBatchId = AutoScrapeService.startNetworkScanBatch(eligible.size());
+                if (scanBatchId == AutoScrapeService.STANDALONE_SCAN_BATCH_ID) {
+                    if (log.isDebugEnabled()) log.debug("onReceive: a scan batch is already active, skipping this refresh");
+                } else {
+                    int scanCount = 0;
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    for (Uri uri : eligible) {
+                        if (log.isDebugEnabled()) log.debug("onReceive: scanning {}", uri);
+                        final Uri scanUri = uri;
+                        final long delayMs = 100L + (scanCount * 2000L);
+                        // Use global application context in the lambda: it fires after pendingResult.finish()
+                        // so the receiver's context may already be invalidated.
+                        final Context appContext = ArchosUtils.getGlobalContext();
+                        boolean scheduled = handler.postDelayed(() -> {
+                            Intent refreshIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FILE, scanUri);
+                            refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_ON_FAIL_PREFERENCE, AUTO_RESCAN_ERROR);
+                            refreshIntent.putExtra(NetworkScannerServiceVideo.RECORD_END_OF_SCAN_PREFERENCE, AUTO_RESCAN_LAST_SCAN);
+                            refreshIntent.putExtra(NetworkScannerServiceVideo.EXTRA_SCAN_BATCH_ID, scanBatchId);
+                            refreshIntent.setPackage(appContext.getPackageName());
+                            appContext.sendBroadcast(refreshIntent);
+                        }, delayMs);
+                        if (!scheduled) {
+                            // The looper is exiting and this scan will never run: release its slot
+                            // so the batch can still reach zero, and route the completion through
+                            // shared handling so that if this released slot owns the final
+                            // completion (earlier scans already succeeded) post-scan scraping still
+                            // starts instead of being silently dropped.
+                            log.warn("onReceive: failed to schedule scan for {}, releasing its batch slot", scanUri);
+                            AutoScrapeService.handleNetworkScanCompletion(appContext,
+                                    AutoScrapeService.completeNetworkScan(scanBatchId, false, false));
+                            continue;
+                        }
+                        scanCount++;
+                        if (log.isDebugEnabled()) log.debug("onReceive: queued scan for {} with delay {}ms", uri, delayMs);
+                    }
+
+                    // Do not start AutoScrapeService here: the scans were only just queued and
+                    // have not run yet. Starting now scrapes against the not-yet-updated database
+                    // and runs in parallel with scanning, which also defeats the full-disk
+                    // suppression. NetworkScannerServiceVideo starts scraping once, when the last
+                    // scan in the batch actually completes (and skips it if the batch failed).
+                    if (log.isDebugEnabled()) log.debug("onReceive: queued {} scan(s); AutoScrapeService will start on batch completion", scanCount);
                 }
             }
         } else {

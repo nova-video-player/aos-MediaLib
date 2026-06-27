@@ -26,10 +26,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDiskIOException;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteFullException;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -102,6 +106,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final int MESSAGE_DO_UNSCAN = 3;
     public static final String RECORD_ON_FAIL_PREFERENCE = "record_on_fail_preference_extra";
     public static final String RECORD_END_OF_SCAN_PREFERENCE = "record_on_end_preference_extra";
+    // Identifies the network scan batch a scan belongs to (see AutoScrapeService batch accounting).
+    public static final String EXTRA_SCAN_BATCH_ID = "scan_batch_id_extra";
 
     private Handler mHandler;
     private HandlerThread mHandlerThread;
@@ -142,6 +148,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             }
             copyStringExtraIfPresent(broadcast, serviceIntent, RECORD_ON_FAIL_PREFERENCE);
             copyStringExtraIfPresent(broadcast, serviceIntent, RECORD_END_OF_SCAN_PREFERENCE);
+            long batchId = broadcast.getLongExtra(EXTRA_SCAN_BATCH_ID,
+                    com.archos.mediascraper.AutoScrapeService.STANDALONE_SCAN_BATCH_ID);
+            serviceIntent.putExtra(EXTRA_SCAN_BATCH_ID, batchId);
             int pendingScans = com.archos.mediascraper.AutoScrapeService.getNetworkScanCount();
             if (isForeground || pendingScans > 0) {
                 if (log.isDebugEnabled()) log.debug("startIfHandles: starting service (isForeground={}, pendingScans={})", isForeground, pendingScans);
@@ -290,10 +299,24 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         if (ArchosMediaIntent.isVideoScanIntent(action)) {
             Uri data = intent.getData();
             String key = data.toString();
+            long batchId = intent.getLongExtra(EXTRA_SCAN_BATCH_ID,
+                    com.archos.mediascraper.AutoScrapeService.STANDALONE_SCAN_BATCH_ID);
             if (mScanRequests.putIfAbsent(key, mDummy) == null) {
                 Message m = mHandler.obtainMessage(MESSAGE_DO_SCAN, startId, flags, data);
+                Bundle scanData = new Bundle();
+                scanData.putLong(EXTRA_SCAN_BATCH_ID, batchId);
+                m.setData(scanData);
                 mHandler.sendMessage(m);
-            } else if (log.isDebugEnabled()) log.debug("skip scanning {}, already in queue", key);
+            } else {
+                // This URI is already queued, so this request will not run its own doScan().
+                // Release its batch membership here, otherwise the batch counter would never
+                // reach zero and post-scan scraping would never start. Standalone requests
+                // (no batch id) are a no-op for the active batch.
+                if (log.isDebugEnabled()) log.debug("skip scanning {}, already in queue", key);
+                com.archos.mediascraper.AutoScrapeService.NetworkScanCompletion completion =
+                        com.archos.mediascraper.AutoScrapeService.completeNetworkScan(batchId, false, false);
+                com.archos.mediascraper.AutoScrapeService.handleNetworkScanCompletion(this, completion);
+            }
         } else if (ArchosMediaIntent.isVideoRemoveIntent(action)) {
             Uri data = intent.getData();
             String key = data.toString();
@@ -342,10 +365,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 key = uri.toString();
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_DO_SCAN {}", uri);
                 int pendingScans = com.archos.mediascraper.AutoScrapeService.getNetworkScanCount();
+                final long scanBatchId = msg.getData().getLong(EXTRA_SCAN_BATCH_ID,
+                        com.archos.mediascraper.AutoScrapeService.STANDALONE_SCAN_BATCH_ID);
                 if (isForeground || pendingScans > 0) {
                     if (log.isDebugEnabled()) log.debug("handleMessage: processing scan (isForeground={}, pendingScans={})", isForeground, pendingScans);
                     mScanThread = new Thread(() -> {
-                        doScan(uri);
+                        doScan(uri, scanBatchId);
                         // *** Send MESSAGE_KILL after doScan() completes ***
                         if (isHandlerThreadAlive()) {
                             mHandler.post(() -> mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget());
@@ -442,11 +467,56 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final String IN_FOLDER_SELECT = MediaColumns.DATA + " LIKE ?||'%'";
     private static final String SELECT_ID = BaseColumns._ID + "=?";
     /** scans files into our db */
-    private void doScan(Uri what) {
-        if (log.isDebugEnabled()) log.debug("doScan {}", what);
-        mFoundFiles = 0;
+    void doScan(Uri what, long batchId) {
+        if (log.isDebugEnabled()) log.debug("doScan {} (batch {})", what, batchId);
         long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        boolean scanResolved = false;
+        boolean scanHadDbError = false;
+        try {
+            ScanResult result = performScan(what);
+            scanResolved = result.resolved;
+            scanHadDbError = result.hadDbError;
+        } finally {
+            // Always record this scan's completion, even if the scan body threw an unchecked
+            // error, so the batch counter cannot be left permanently non-zero (which would
+            // strand the batch and never start post-scan scraping). The error and success
+            // state are aggregated across the whole batch under a single lock, so the decision
+            // no longer depends on whichever thread happens to finish last.
+            com.archos.mediascraper.AutoScrapeService.NetworkScanCompletion completion =
+                    com.archos.mediascraper.AutoScrapeService.completeNetworkScan(batchId, scanHadDbError, scanResolved);
+            if (log.isDebugEnabled()) {
+                log.debug("doScan: completed network scan, completedBatch={}, batchHadError={}, batchHadSuccess={}",
+                        completion.completedBatch, completion.batchHadError, completion.batchHadSuccess);
+            }
+            com.archos.mediascraper.AutoScrapeService.handleNetworkScanCompletion(this, completion);
+        }
+
+        if (log.isDebugEnabled()) {
+            long end = System.currentTimeMillis();
+            log.debug("doScan took:{}ms", (end - start));
+        }
+    }
+
+    /** Outcome of a single folder scan, used to drive batch completion accounting. */
+    static final class ScanResult {
+        final boolean resolved;
+        final boolean hadDbError;
+        ScanResult(boolean resolved, boolean hadDbError) {
+            this.resolved = resolved;
+            this.hadDbError = hadDbError;
+        }
+    }
+
+    /**
+     * Performs the actual scan of a single folder. Returns whether the target resolved and
+     * indexed without a database error, and whether a database error occurred. Expected
+     * storage failures are handled gracefully; unexpected database errors are reported to
+     * Sentry but still handled so the caller can always complete the batch.
+     */
+    ScanResult performScan(Uri what) {
+        mFoundFiles = 0;
         MetaFile2 f = null;
+        boolean scanHadDbError = false;
         try {
             f = MetaFileFactoryWithUpnp.getMetaFileForUrl(what);
         } catch (Exception e) {
@@ -554,6 +624,37 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 if (traversalHadError && mRecordOnFailPreference != null) {
                     PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();
                 }
+            } catch (SQLiteFullException | SQLiteDiskIOException e) {
+                // Expected storage failure: a bulk insert/update/delete aborted
+                // mid-transaction, typically a full disk (SQLITE_FULL) or a transient
+                // I/O error on low-storage devices. Abort this scan cleanly instead of
+                // crashing the scanner thread: record the failure for diagnostics, flag
+                // the batch so post-scan scraping is skipped, and notify the world it
+                // finished so the UI does not stay stuck.
+                log.error("doScan: aborting scan of {} due to storage error", what, e);
+                scanHadDbError = true;
+                if (mRecordOnFailPreference != null) {
+                    PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();
+                }
+                Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
+                intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                sendBroadcast(intent);
+                nm.cancel(NOTIFICATION_ID);
+            } catch (SQLiteException e) {
+                // Unexpected database error (not a known storage failure). Abort the scan
+                // cleanly so the batch can still complete and the UI is not left stuck,
+                // but explicitly report it to Sentry so we keep visibility on bugs that the
+                // narrow storage handling above intentionally does not mask.
+                log.error("doScan: aborting scan of {} due to unexpected database error", what, e);
+                io.sentry.Sentry.captureException(e);
+                scanHadDbError = true;
+                if (mRecordOnFailPreference != null) {
+                    PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();
+                }
+                Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, what);
+                intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                sendBroadcast(intent);
+                nm.cancel(NOTIFICATION_ID);
             } finally {
                 if (lockAcquired && lock != null && lock.isHeld()) {
                     lock.release();
@@ -563,24 +664,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(mRecordOnFailPreference, -1).commit();//unable to reach server
         }
 
-        // Decrement the counter and trigger scraping only when the last pending network scan completes.
-        int scanCountBefore = com.archos.mediascraper.AutoScrapeService.getNetworkScanCount();
-        com.archos.mediascraper.AutoScrapeService.decrementNetworkScanCount();
-        int remainingScans = com.archos.mediascraper.AutoScrapeService.getNetworkScanCount();
-        if (log.isDebugEnabled()) {
-            log.debug("doScan: decremented network scan count, count before: {}, remaining scans: {}",
-                    scanCountBefore, remainingScans);
-        }
-
-        if (remainingScans == 0 && f != null && com.archos.mediascraper.AutoScrapeService.isEnable(this)) {
-            if (log.isDebugEnabled()) log.debug("doScan: all network scans completed, starting AutoScrapeService");
-            com.archos.mediascraper.AutoScrapeService.startServiceAfterNetworkScan(this);
-        }
-
-        if (log.isDebugEnabled()) {
-            long end = System.currentTimeMillis();
-            if (log.isDebugEnabled()) log.debug("doScan took:{}ms", (end - start));
-        }
+        // resolved successfully when the target was reachable and no database error occurred
+        return new ScanResult((f != null) && !scanHadDbError, scanHadDbError);
     }
 
     // ---------------------------------------------------------------------- //

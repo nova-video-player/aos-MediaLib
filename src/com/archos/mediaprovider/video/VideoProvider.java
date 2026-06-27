@@ -28,6 +28,7 @@ import android.content.UriMatcher;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -1137,10 +1138,14 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
 
         if (match != -1) {
             int result = 0;
-            mVobHandler.onBeginTransaction();
             SQLiteDatabase db = mDbHolder.get();
+            // Start the database transaction first, then enter VOB handling, so that
+            // a failure to begin the transaction cannot leave the VOB handler stuck
+            // in transaction mode with no balancing onEndTransaction().
             db.beginTransactionNonExclusive();
+            boolean commitRequested = false;
             try {
+                mVobHandler.onBeginTransaction();
                 int numValues = values.length;
                 int yield = 100;
                 for (int i = 0; i < numValues; i++) {
@@ -1152,9 +1157,22 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
                 }
                 result = numValues;
                 db.setTransactionSuccessful();
+                commitRequested = true;
             } finally {
-                db.endTransaction();
-                mVobHandler.onEndTransaction();
+                try {
+                    // On the failure path SQLite may have already auto-rolled-back the
+                    // native transaction (disk full, IO error, interrupt); endTransaction
+                    // then throws "cannot rollback - no transaction is active" and would
+                    // mask the real cause, so suppress that secondary failure. On the
+                    // success path endTransaction issues the COMMIT, so let commit
+                    // failures propagate rather than report a success that never committed.
+                    db.endTransaction();
+                } catch (SQLiteException e) {
+                    if (commitRequested) throw e;
+                    log.warn("bulkInsert: endTransaction failed (transaction already aborted)", e);
+                } finally {
+                    mVobHandler.onEndTransaction();
+                }
             }
             if (result > 0)
                 notifyAllContentUri();
@@ -1169,9 +1187,13 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
         if (log.isDebugEnabled()) log.debug("applyBatch");
         ContentProviderResult[] result = null;
         SQLiteDatabase db = mDbHolder.get();
-        mVobHandler.onBeginTransaction();
+        // Start the database transaction first, then enter VOB handling, so that
+        // a failure to begin the transaction cannot leave the VOB handler stuck
+        // in transaction mode with no balancing onEndTransaction().
         db.beginTransactionNonExclusive();
+        boolean commitRequested = false;
         try {
+            mVobHandler.onBeginTransaction();
             final int numOperations = operations.size();
             final ContentProviderResult[] results = new ContentProviderResult[numOperations];
             int yield = 100;
@@ -1184,9 +1206,22 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
             }
             result = results;
             db.setTransactionSuccessful();
+            commitRequested = true;
         } finally {
-            db.endTransaction();
-            mVobHandler.onEndTransaction();
+            try {
+                // On the failure path SQLite may have already auto-rolled-back the
+                // native transaction (disk full, IO error, interrupt); endTransaction
+                // then throws "cannot rollback - no transaction is active" and would
+                // mask the real cause, so suppress that secondary failure. On the
+                // success path endTransaction issues the COMMIT, so let commit
+                // failures propagate rather than report a success that never committed.
+                db.endTransaction();
+            } catch (SQLiteException e) {
+                if (commitRequested) throw e;
+                log.warn("applyBatch: endTransaction failed (transaction already aborted)", e);
+            } finally {
+                mVobHandler.onEndTransaction();
+            }
         }
         if (result != null) {
             notifyAllContentUri();

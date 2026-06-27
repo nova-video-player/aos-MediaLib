@@ -124,6 +124,21 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     private volatile static boolean isForeground = true;
     private static boolean isForceAfterNetworkScan = false;
     private static int networkScanCount = 0;
+    // True when any scan in the current network scan batch hit a database error
+    // (e.g. full disk). Guarded by networkScanLock together with networkScanCount so
+    // the count and the error state of a batch are always observed consistently.
+    private static boolean networkScanBatchHadError = false;
+    // True when at least one scan in the current batch resolved and indexed successfully.
+    // Post-scan scraping is started based on this batch outcome rather than on whichever
+    // thread happened to finish the batch last (which may itself have failed to resolve).
+    private static boolean networkScanBatchHadSuccess = false;
+    // Identifies the batch a scan belongs to. Only scans carrying the current batch id
+    // affect the active batch; standalone scans (STANDALONE_SCAN_BATCH_ID) and stale
+    // completions from an older batch are ignored so they cannot decrement or complete a
+    // batch they never joined.
+    public static final long STANDALONE_SCAN_BATCH_ID = 0L;
+    private static long currentNetworkScanBatchId = STANDALONE_SCAN_BATCH_ID;
+    private static long nextNetworkScanBatchId = 1L;
     private static final Object networkScanLock = new Object();
     private static final String PREF_IS_SCRAPE_DIRTY = "is_scrape_dirty";
     private static final long OBSERVER_REFRESH_THROTTLE_MS = 1500L;
@@ -155,41 +170,148 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         context.startService(intent);
     }
 
+    /**
+     * Begins a new network scan batch with all its members registered atomically, clearing
+     * any leftover state from a previous one, and returns the id that every member of this
+     * batch must carry. Registering the full membership up front (instead of incrementing as
+     * each scan is scheduled) guarantees no early scan can observe a partially-built batch,
+     * complete it, and make later registrations stale. Each member then reports back exactly
+     * once via {@link #completeNetworkScan(long, boolean, boolean)} (a member whose request is
+     * rejected, e.g. as a duplicate, releases its slot with the same call).
+     *
+     * @param memberCount the number of scans that belong to this batch (must be &gt; 0)
+     * @return the new batch id, or {@link #STANDALONE_SCAN_BATCH_ID} if a batch is already
+     *         active and this request was therefore rejected
+     */
+    public static long startNetworkScanBatch(int memberCount) {
+        synchronized (networkScanLock) {
+            if (networkScanCount > 0) {
+                // A batch is still in progress: refuse to replace it so an overlapping
+                // auto-refresh cannot wipe out a valid active batch's accounting. The caller
+                // must check the sentinel return and not schedule anything.
+                log.warn("startNetworkScanBatch: a batch with {} pending scans is already active; rejecting new batch request", networkScanCount);
+                return STANDALONE_SCAN_BATCH_ID;
+            }
+            networkScanCount = Math.max(0, memberCount);
+            networkScanBatchHadError = false;
+            networkScanBatchHadSuccess = false;
+            isForceAfterNetworkScan = false;
+            currentNetworkScanBatchId = nextNetworkScanBatchId++;
+            if (currentNetworkScanBatchId == STANDALONE_SCAN_BATCH_ID) {
+                // never hand out the sentinel value as a real batch id
+                currentNetworkScanBatchId = nextNetworkScanBatchId++;
+            }
+            if (log.isDebugEnabled()) log.debug("startNetworkScanBatch: batch id {} with {} members", currentNetworkScanBatchId, networkScanCount);
+            return currentNetworkScanBatchId;
+        }
+    }
+
     public static void resetNetworkScanCount() {
         synchronized (networkScanLock) {
             if (networkScanCount > 0) {
                 log.warn("resetNetworkScanCount: resetting orphaned counter from {} to 0", networkScanCount);
             }
             networkScanCount = 0;
+            networkScanBatchHadError = false;
+            networkScanBatchHadSuccess = false;
+            currentNetworkScanBatchId = STANDALONE_SCAN_BATCH_ID;
             isForceAfterNetworkScan = false;
         }
     }
 
-    public static void incrementNetworkScanCount() {
-        synchronized (networkScanLock) {
-            networkScanCount++;
-            if (log.isDebugEnabled()) log.debug("incrementNetworkScanCount: count is now {}", networkScanCount);
+    /** Result of {@link #completeNetworkScan(long, boolean, boolean)}. */
+    public static class NetworkScanCompletion {
+        /** true if this caller was the one that finished the batch (count reached 0). */
+        public final boolean completedBatch;
+        /** true if any scan in the just-completed batch hit a database error. */
+        public final boolean batchHadError;
+        /** true if any scan in the just-completed batch resolved and indexed successfully. */
+        public final boolean batchHadSuccess;
+        NetworkScanCompletion(boolean completedBatch, boolean batchHadError, boolean batchHadSuccess) {
+            this.completedBatch = completedBatch;
+            this.batchHadError = batchHadError;
+            this.batchHadSuccess = batchHadSuccess;
         }
     }
 
-    public static void decrementNetworkScanCount() {
+    /**
+     * Atomically records the completion of one network scan. A scan only affects the
+     * batch whose id it carries: a standalone scan ({@link #STANDALONE_SCAN_BATCH_ID})
+     * completes as its own one-off batch, and a completion from a stale/older batch is
+     * ignored. For a member of the active batch this decrements the count and, when it
+     * reaches zero, reports that this caller owns the completion together with the
+     * aggregated error and success state of the whole batch. Keeping the decrement and
+     * the flags under a single lock prevents two threads from both observing zero and
+     * racing on post-scan handling.
+     *
+     * @param batchId the batch this scan belongs to, or {@link #STANDALONE_SCAN_BATCH_ID}
+     * @param hadError true if this particular scan aborted on a database error
+     * @param resolvedSuccessfully true if this scan resolved its target and indexed without error
+     * @return completion state; only the caller with {@code completedBatch == true}
+     *         should run end-of-batch work
+     */
+    public static NetworkScanCompletion completeNetworkScan(long batchId, boolean hadError, boolean resolvedSuccessfully) {
         synchronized (networkScanLock) {
+            if (batchId == STANDALONE_SCAN_BATCH_ID) {
+                // standalone scan that was never counted: it is its own completed batch so
+                // post-scan handling runs once, without touching the active batch's state.
+                if (log.isDebugEnabled()) log.debug("completeNetworkScan: standalone scan, hadError={}, resolved={}", hadError, resolvedSuccessfully);
+                return new NetworkScanCompletion(true, hadError, resolvedSuccessfully);
+            }
+            if (batchId != currentNetworkScanBatchId) {
+                // stale completion from an older batch: ignore so it cannot complete or
+                // corrupt the current batch's accounting.
+                log.warn("completeNetworkScan: ignoring stale completion for batch {} (current {})", batchId, currentNetworkScanBatchId);
+                return new NetworkScanCompletion(false, false, false);
+            }
+            if (hadError) networkScanBatchHadError = true;
+            if (resolvedSuccessfully) networkScanBatchHadSuccess = true;
+            boolean completedBatch;
             if (networkScanCount > 0) {
                 networkScanCount--;
-                if (log.isDebugEnabled()) log.debug("decrementNetworkScanCount: count is now {}", networkScanCount);
-                if (networkScanCount == 0) {
-                    if (log.isDebugEnabled()) log.debug("decrementNetworkScanCount: all network scans complete, resetting force flag");
-                    isForceAfterNetworkScan = false;
-                }
+                if (log.isDebugEnabled()) log.debug("completeNetworkScan: count is now {}", networkScanCount);
+                completedBatch = (networkScanCount == 0);
             } else {
-                if (log.isDebugEnabled()) log.debug("decrementNetworkScanCount: count is already 0, this might be a standalone scan");
+                // member of the current batch but the count is already 0: treat as the
+                // batch completion so post-scan handling still runs once.
+                if (log.isDebugEnabled()) log.debug("completeNetworkScan: count already 0 for current batch");
+                completedBatch = true;
             }
+            boolean batchHadError = false;
+            boolean batchHadSuccess = false;
+            if (completedBatch) {
+                isForceAfterNetworkScan = false;
+                batchHadError = networkScanBatchHadError;
+                batchHadSuccess = networkScanBatchHadSuccess;
+                networkScanBatchHadError = false;
+                networkScanBatchHadSuccess = false;
+                currentNetworkScanBatchId = STANDALONE_SCAN_BATCH_ID;
+            }
+            return new NetworkScanCompletion(completedBatch, batchHadError, batchHadSuccess);
         }
     }
 
     public static int getNetworkScanCount() {
         synchronized (networkScanLock) {
             return networkScanCount;
+        }
+    }
+
+    /**
+     * Runs the shared end-of-batch handling for a {@link NetworkScanCompletion}. Every caller
+     * that obtains a completion (a finished scan, a rejected duplicate, or a scan whose request
+     * could never be scheduled) must route it here so the batch outcome is acted on exactly once,
+     * regardless of which member happened to own the final completion. Only the owning caller
+     * ({@code completedBatch == true}) triggers post-scan work; on a clean batch with at least one
+     * successful index it starts the auto-scrape service.
+     */
+    public static void handleNetworkScanCompletion(Context context, NetworkScanCompletion completion) {
+        if (!completion.completedBatch) return;
+        if (completion.batchHadError) {
+            log.warn("handleNetworkScanCompletion: skipping AutoScrapeService, a database error occurred during this scan batch");
+        } else if (completion.batchHadSuccess && isEnable(context)) {
+            if (log.isDebugEnabled()) log.debug("handleNetworkScanCompletion: batch completed successfully, starting AutoScrapeService");
+            startServiceAfterNetworkScan(context);
         }
     }
 
