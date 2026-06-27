@@ -1885,7 +1885,11 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         }
         if (oldVersion < 51 && newVersion >= 51) { // add UNIQUE constraints to movie poster/backdrop tables
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding UNIQUE constraints to movie poster/backdrop tables to prevent duplicates", 51);
+            // The video view references both tables rebuilt by migration 51. Some SQLite versions
+            // validate every view during ALTER TABLE RENAME and reject the temporarily broken view.
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 51);
+            db.execSQL(CREATE_VIDEO_VIEW_V50);
         }
         if (oldVersion < 52 && newVersion >= 52) { // migrate UPNP/HTTP unique_id to new hash format
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - migrating UPNP/HTTP unique_id to new hash format", 52);

@@ -86,6 +86,44 @@ public class DatabaseMigrationTest {
     }
 
     @Test
+    public void testMigrationV51RebuildsArtworkTablesAndRestoresVideoView() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v51.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper50 = new VideoOpenHelper(context, dbName, 50);
+        SQLiteDatabase db = helper50.getWritableDatabase();
+        db.execSQL("INSERT INTO movie_posters " +
+                "(_id, movie_id, m_po_thumb_url, m_po_thumb_file, m_po_large_url, m_po_large_file) " +
+                "VALUES (1, NULL, NULL, 'duplicate-poster.jpg', NULL, NULL)");
+        db.execSQL("INSERT INTO movie_posters " +
+                "(_id, movie_id, m_po_thumb_url, m_po_thumb_file, m_po_large_url, m_po_large_file) " +
+                "VALUES (2, NULL, NULL, 'duplicate-poster.jpg', NULL, NULL)");
+        db.execSQL("INSERT INTO movie_backdrops " +
+                "(_id, movie_id, m_bd_thumb_url, m_bd_thumb_file, m_bd_large_url, m_bd_large_file) " +
+                "VALUES (1, NULL, NULL, 'duplicate-backdrop.jpg', NULL, NULL)");
+        db.execSQL("INSERT INTO movie_backdrops " +
+                "(_id, movie_id, m_bd_thumb_url, m_bd_thumb_file, m_bd_large_url, m_bd_large_file) " +
+                "VALUES (2, NULL, NULL, 'duplicate-backdrop.jpg', NULL, NULL)");
+        db.close();
+
+        VideoOpenHelper helper51 = new VideoOpenHelper(context, dbName, 51);
+        SQLiteDatabase upgradedDb = helper51.getWritableDatabase();
+
+        assertEquals(51, upgradedDb.getVersion());
+        assertTrue(getSchemaSql(upgradedDb, "table", "movie_posters").contains("UNIQUE"));
+        assertTrue(getSchemaSql(upgradedDb, "table", "movie_backdrops").contains("UNIQUE"));
+        assertTrue(getSchemaSql(upgradedDb, "view", "video").startsWith("CREATE VIEW video"));
+        assertEquals("1", querySingleString(upgradedDb, "SELECT count(*) FROM movie_posters"));
+        assertEquals("1", querySingleString(upgradedDb, "SELECT count(*) FROM movie_backdrops"));
+        assertEquals("0", querySingleString(upgradedDb, "SELECT count(*) FROM video"));
+        assertEquals("ok", querySingleString(upgradedDb, "PRAGMA integrity_check"));
+
+        upgradedDb.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
     public void testFreshCreateCurrentSchema() {
         Context context = ApplicationProvider.getApplicationContext();
         String dbName = "test_create_current.db";
