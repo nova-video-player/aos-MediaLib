@@ -1651,15 +1651,16 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     }
 
     private final Context mContext;
+    private final int mTargetVersion;
 
     public VideoOpenHelper(Context context) {
-        super(context, DATABASE_NAME, new CustomCursorFactory(), DATABASE_VERSION);
-        mContext = context;
+        this(context, DATABASE_NAME, DATABASE_VERSION);
     }
 
     protected VideoOpenHelper(Context context, String name, int version) {
         super(context, name, new CustomCursorFactory(), version);
         mContext = context;
+        mTargetVersion = version;
     }
 
     /**
@@ -1751,7 +1752,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
 
         db.execSQL(ScraperTables.VIEW_SEASONS_CREATE);
 
-        onUpgrade(db, DATABASE_CREATE_VERSION, DATABASE_VERSION);
+        onUpgrade(db, DATABASE_CREATE_VERSION, mTargetVersion);
     }
 
     // Lifecycle:: onConfigure, onCreate/Upgrade/Downgrade/BeforeDelete then onOpen
@@ -1765,34 +1766,31 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             // triggers database deletion
             deleteDatabase();
         }
-        if (oldVersion < 37) {
+        if (oldVersion < 37 && newVersion >= 37) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 37);
             db.execSQL(CREATE_VIDEO_VIEW_V37);
         }
-        if (oldVersion < 38) {
+        if (oldVersion < 38 && newVersion >= 38) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 38);
             db.execSQL(CREATE_VIDEO_VIEW_V38);
         }
-        if (oldVersion < 39) {
-            // drop triggers first before recreation
-            SQLiteUtils.dropTrigger(db, "movie_delete");
-            SQLiteUtils.dropTrigger(db, "episode_delete");
-            SQLiteUtils.dropTrigger(db, "show_delete");
+        if (oldVersion < 39 && newVersion >= 39) {
             ScraperTables.upgradeTo(db, 39);
         }
-        if (oldVersion < 40) {
+        if (oldVersion < 40 && newVersion >= 40) {
             ScraperTables.upgradeTo(db, 40);
         }
-        if (oldVersion < 41) {
+        if (oldVersion < 41 && newVersion >= 41) {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             db.execSQL(CREATE_VIDEO_VIEW_V41);
         }
-        if (oldVersion < 43) { // needed for 42 and 43 due to cleanup issue
-            SQLiteUtils.dropTrigger(db, "after_update_uri_files_scanned");
-            SQLiteUtils.dropTrigger(db, "after_delete_files_scanned");
-            SQLiteUtils.dropTrigger(db, "after_insert_files_scanned");
+        if (oldVersion < 43 && newVersion >= 42) { // needed for 42 and 43 due to cleanup issue
+            SQLiteUtils.dropTriggersCompat(db,
+                    "after_update_uri_files_scanned",
+                    "after_delete_files_scanned",
+                    "after_insert_files_scanned");
             // move away smb files to 2e9 _ids since Android 13 as of January 2022 (with apex) can use insanely high 1e9 file _ids
             // Note that PRAGMA foreign_keys = "ON" to allow ON UPDATE CASCADE does not work in onUpgrade --> need to propagate modifications by hand
             // move smb files away from latest google local storage insane _id (1e9) at 2e9+ for video_id that are in files for episode, movie, subtitles, videothumbnails
@@ -1836,16 +1834,16 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             // cleanup: delete network videos in files not in files_scanned
             db.execSQL("DELETE FROM files WHERE (_data NOT IN (SELECT _data FROM files_scanned)) AND (_data LIKE 'smb://%' OR _data LIKE 'upnp://%' OR _data LIKE 'ftp://%' OR _data LIKE 'sftp://%' OR _data LIKE 'ftps://%');");
         }
-        if (oldVersion < 44) { // assign correct storage_id for /storage/AAAA-BBBB instead of 1
+        if (oldVersion < 44 && newVersion >= 44) { // assign correct storage_id for /storage/AAAA-BBBB instead of 1
             processStorageIdInDB(db);
         }
-        if (oldVersion < 45) { // add performance indexes for core video functionality
+        if (oldVersion < 45 && newVersion >= 45) { // add performance indexes for core video functionality
             db.execSQL(CREATE_VIDEO_IDX_LAST_PLAYED);
             db.execSQL(CREATE_VIDEO_IDX_DATE_ADDED);
             // Scraper-related indexes are handled by ScraperTables.upgradeTo()
             ScraperTables.upgradeTo(db, 45);
         }
-        if (oldVersion < 46) { // add critical filtering and search indexes
+        if (oldVersion < 46 && newVersion >= 46) { // add critical filtering and search indexes
             // Core filtering indexes - CRITICAL for all loader performance
             db.execSQL(CREATE_FILES_HIDDEN_BY_USER_IDX);
             db.execSQL(CREATE_FILES_BOOKMARK_IDX);
@@ -1862,49 +1860,49 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             // Scraper-related indexes are handled by ScraperTables.upgradeTo()
             ScraperTables.upgradeTo(db, 46);
         }
-        if (oldVersion < 47) { // add WatchingUpNextLoader performance optimizations
+        if (oldVersion < 47 && newVersion >= 47) { // add WatchingUpNextLoader performance optimizations
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - optimizing WatchingUpNextLoader performance", 47);
             ScraperTables.upgradeTo(db, 47);
         }
-        if (oldVersion < 48) { // add network scanner performance indexes
+        if (oldVersion < 48 && newVersion >= 48) { // add network scanner performance indexes
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding indexes for network scanner performance", 48);
             db.execSQL(CREATE_FILES_SCANNED_IDX_UNIQUE_ID);
             db.execSQL(CREATE_FILES_SCANNED_IDX_DATA);
         }
-        if (oldVersion < 49) { // add movie release_date column
+        if (oldVersion < 49 && newVersion >= 49) { // add movie release_date column
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding movie release_date column for improved sorting", 49);
             ScraperTables.upgradeTo(db, 49);
             // Recreate video view to include m_release_date column
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             db.execSQL(CREATE_VIDEO_VIEW_V49);
         }
-        if (oldVersion < 50) { // add subtitle language column for subtitle track validation
+        if (oldVersion < 50 && newVersion >= 50) { // add subtitle language column for subtitle track validation
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding subtitle language column for subtitle track validation", 50);
             db.execSQL("ALTER TABLE " + FILES_TABLE_NAME +
                     " ADD COLUMN Archos_subtitleLanguage TEXT DEFAULT (NULL)");
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             db.execSQL(CREATE_VIDEO_VIEW_V50);
         }
-        if (oldVersion < 51) { // add UNIQUE constraints to movie poster/backdrop tables
+        if (oldVersion < 51 && newVersion >= 51) { // add UNIQUE constraints to movie poster/backdrop tables
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding UNIQUE constraints to movie poster/backdrop tables to prevent duplicates", 51);
             ScraperTables.upgradeTo(db, 51);
         }
-        if (oldVersion < 52) { // migrate UPNP/HTTP unique_id to new hash format
+        if (oldVersion < 52 && newVersion >= 52) { // migrate UPNP/HTTP unique_id to new hash format
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - migrating UPNP/HTTP unique_id to new hash format", 52);
             migrateUniqueIdHashFormat(db);
         }
-        if (oldVersion < 53) { // reset stale mini-thumb magic to allow regeneration
+        if (oldVersion < 53 && newVersion >= 53) { // reset stale mini-thumb magic to allow regeneration
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - resetting stale mini_thumb_magic to regenerate missing thumbnails", 53);
             db.execSQL("UPDATE " + FILES_TABLE_NAME + " " +
                     "SET mini_thumb_magic = 0, Archos_thumbTry = 0 " +
                     "WHERE mini_thumb_magic IS NOT NULL AND mini_thumb_magic <> 0 " +
                     "AND _id NOT IN (SELECT video_id FROM " + VIDEOTHUMBNAIL_TABLE_NAME + " WHERE _data IS NOT NULL AND trim(_data) != '')");
         }
-        if (oldVersion < 54) { // add performance indexes for metadata protection
+        if (oldVersion < 54 && newVersion >= 54) { // add performance indexes for metadata protection
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding performance indexes for metadata protection", 54);
             ScraperTables.upgradeTo(db, 54);
         }
-        if (oldVersion < 55) { // recreate triggers with 0/0 reset
+        if (oldVersion < 55 && newVersion >= 55) { // recreate triggers with 0/0 reset
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - recreating triggers with 0/0 reset to fix unscraped trap", 55);
             ScraperTables.upgradeTo(db, 55);
         }

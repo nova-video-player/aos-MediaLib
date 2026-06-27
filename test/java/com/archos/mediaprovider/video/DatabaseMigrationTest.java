@@ -18,6 +18,94 @@ import org.robolectric.annotation.Config;
 public class DatabaseMigrationTest {
 
     @Test
+    public void testUpgradeFromEverySupportedVersion() {
+        Context context = ApplicationProvider.getApplicationContext();
+        int currentVersion = com.archos.mediaprovider.video.VideoOpenHelper.getDatabaseVersion();
+
+        for (int sourceVersion = 36; sourceVersion < currentVersion; sourceVersion++) {
+            String dbName = "test_upgrade_v" + sourceVersion + ".db";
+            context.deleteDatabase(dbName);
+
+            VideoOpenHelper sourceHelper = new VideoOpenHelper(context, dbName, sourceVersion);
+            sourceHelper.getWritableDatabase().close();
+
+            VideoOpenHelper currentHelper = new VideoOpenHelper(context, dbName, currentVersion);
+            SQLiteDatabase db = currentHelper.getWritableDatabase();
+
+            assertEquals("Failed upgrade from version " + sourceVersion, currentVersion, db.getVersion());
+            assertEquals("Integrity failure after upgrading version " + sourceVersion,
+                    "ok", querySingleString(db, "PRAGMA integrity_check"));
+            assertTrue(triggerExists(db, "movie_delete"));
+            assertTrue(triggerExists(db, "show_delete"));
+            assertTrue(triggerExists(db, "episode_delete"));
+            assertEquals(0, getWritableSchema(db));
+
+            db.close();
+            context.deleteDatabase(dbName);
+        }
+    }
+
+    @Test
+    public void testCreateAtVersion50StopsBeforeV51() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_create_v50.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper = new VideoOpenHelper(context, dbName, 50);
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+        assertEquals(50, db.getVersion());
+        assertFalse(getSchemaSql(db, "table", "movie_posters").contains("UNIQUE"));
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.RELEASE_DATE));
+        assertTrue(columnExists(db, "files", "Archos_subtitleLanguage"));
+
+        db.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
+    public void testMigrationV43RecreatesScannerTriggers() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v43.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper41 = new VideoOpenHelper(context, dbName, 41);
+        helper41.getWritableDatabase().close();
+
+        VideoOpenHelper helper43 = new VideoOpenHelper(context, dbName, 43);
+        SQLiteDatabase db = helper43.getWritableDatabase();
+
+        assertEquals(43, db.getVersion());
+        assertTrue(triggerExists(db, "after_insert_files_scanned"));
+        assertTrue(triggerExists(db, "after_delete_files_scanned"));
+        assertTrue(triggerExists(db, "after_update_uri_files_scanned"));
+        assertEquals("writable_schema should be disabled after migration", 0, getWritableSchema(db));
+
+        db.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
+    public void testFreshCreateCurrentSchema() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_create_current.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper = new VideoOpenHelper(context, dbName, com.archos.mediaprovider.video.VideoOpenHelper.getDatabaseVersion());
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+        assertEquals(com.archos.mediaprovider.video.VideoOpenHelper.getDatabaseVersion(), db.getVersion());
+        assertTrue(triggerExists(db, "movie_delete"));
+        assertTrue(triggerExists(db, "show_delete"));
+        assertTrue(triggerExists(db, "episode_delete"));
+        assertEquals("ok", querySingleString(db, "PRAGMA integrity_check"));
+        assertEquals("writable_schema should be disabled after creation", 0, getWritableSchema(db));
+
+        db.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
     public void testMigrationV55() {
         Context context = ApplicationProvider.getApplicationContext();
         String dbName = "test_migration.db";
@@ -66,6 +154,7 @@ public class DatabaseMigrationTest {
         assertFalse("episode_delete should NOT contain v_actor_deletable (v39 optimization)", checkTriggerContains(upgradedDb, "episode_delete", "v_actor_deletable"));
         
         upgradedDb.close();
+        context.deleteDatabase(dbName);
     }
 
     private boolean checkTriggerContains(SQLiteDatabase db, String triggerName, String expectedContent) {
@@ -84,6 +173,34 @@ public class DatabaseMigrationTest {
         boolean exists = cursor.moveToFirst();
         cursor.close();
         return exists;
+    }
+
+    private boolean columnExists(SQLiteDatabase db, String tableName, String columnName) {
+        Cursor cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+        while (cursor.moveToNext()) {
+            if (columnName.equals(cursor.getString(cursor.getColumnIndexOrThrow("name")))) {
+                cursor.close();
+                return true;
+            }
+        }
+        cursor.close();
+        return false;
+    }
+
+    private String getSchemaSql(SQLiteDatabase db, String type, String name) {
+        Cursor cursor = db.rawQuery("SELECT sql FROM sqlite_master WHERE type=? AND name=?", new String[]{type, name});
+        assertTrue("Missing schema object " + name, cursor.moveToFirst());
+        String sql = cursor.getString(0);
+        cursor.close();
+        return sql;
+    }
+
+    private String querySingleString(SQLiteDatabase db, String sql) {
+        Cursor cursor = db.rawQuery(sql, null);
+        assertTrue(cursor.moveToFirst());
+        String value = cursor.getString(0);
+        cursor.close();
+        return value;
     }
 
     private int getWritableSchema(SQLiteDatabase db) {

@@ -16,6 +16,8 @@ package com.archos.mediaprovider.video;
 
 import android.database.sqlite.SQLiteDatabase;
 
+import com.archos.mediaprovider.SQLiteUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1304,25 +1306,12 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX PRODUCES_SHOW_idx ON PRODUCES_SHOW(studio_produces)");
             db.execSQL("CREATE INDEX files_scraper_idx ON files(ArchosMediaScraper_id, ArchosMediaScraper_type)");
             db.execSQL("CREATE INDEX MOVIE_cover_idx ON MOVIE(cover_movie)");
-            // create new triggers that does not call each time a clean of v_.*_deletable tables: do it once at startup
-            // for some reasons sometimes the triggers are not dropped, thus make sure it is deleted
-            db.execSQL("pragma writable_schema = ON");
-            if (log.isDebugEnabled()) log.debug("upgradeTo: removing trigger movie_delete");
-            db.execSQL("delete from sqlite_master where name = 'movie_delete'");
-            if (log.isDebugEnabled()) log.debug("upgradeTo: removing trigger show_delete");
-            db.execSQL("delete from sqlite_master where name = 'show_delete'");
-            if (log.isDebugEnabled()) log.debug("upgradeTo: removing trigger episode_delete");
-            db.execSQL("delete from sqlite_master where name = 'episode_delete'");
-            db.execSQL("pragma writable_schema = OFF");
-            //db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
-            //db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            //db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            if (log.isDebugEnabled()) log.debug("upgradeTo: creating episode_delete trigger {}", EPISODE_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
-            if (log.isDebugEnabled()) log.debug("upgradeTo: creating show_delete trigger {}", SHOW_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
-            if (log.isDebugEnabled()) log.debug("upgradeTo: creating movie_delete trigger {}", MOVIE_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
+            // Replace the deletion triggers without the per-delete cleanup of v_.*_deletable views.
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] {"episode_delete", "show_delete", "movie_delete"},
+                    EPISODE_DELETE_TRIGGER_CREATE_v2,
+                    SHOW_DELETE_TRIGGER_CREATE_v2,
+                    MOVIE_DELETE_TRIGGER_CREATE_v2);
             if (log.isDebugEnabled()) log.debug("upgradeTo: all good");
         }
         if (toVersion == 40) {
@@ -1453,24 +1442,12 @@ public final class ScraperTables {
         }
         if (toVersion == 55) {
             if (log.isDebugEnabled()) log.debug("upgradeTo: {} - recreating movie/show/episode deletion triggers with 0/0 reset", toVersion);
-            // Clear the connection's schema cache, then remove rows that older Android SQLite
-            // versions may leave behind after DROP TRIGGER. This mirrors the v39 migration.
-            db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
-            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            db.execSQL("PRAGMA writable_schema = ON");
-            try {
-                db.execSQL("DELETE FROM sqlite_master WHERE name = 'movie_delete'");
-                db.execSQL("DELETE FROM sqlite_master WHERE name = 'show_delete'");
-                db.execSQL("DELETE FROM sqlite_master WHERE name = 'episode_delete'");
-            } finally {
-                db.execSQL("PRAGMA writable_schema = OFF");
-            }
-
             // Keep the v39 performance optimization while applying the -1 -> 0 reset.
-            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] {"episode_delete", "show_delete", "movie_delete"},
+                    EPISODE_DELETE_TRIGGER_CREATE_v2,
+                    SHOW_DELETE_TRIGGER_CREATE_v2,
+                    MOVIE_DELETE_TRIGGER_CREATE_v2);
         }
     }
 }
