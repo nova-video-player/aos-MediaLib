@@ -91,7 +91,7 @@ public class Trakt {
     // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
     public static final int PLAYBACK_HISTORY_SIZE = 200;
     // page size for paginated endpoints (watched/collection/list); 1000 is the Trakt hard cap
-    private static final int PAGE_LIMIT = 1000;
+    private static final int PAGE_LIMIT = 200;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";

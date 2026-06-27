@@ -315,7 +315,7 @@ return exec(mTraktV2.sync().playback(lastSync, null, null, PLAYBACK_HISTORY_SIZE
 
 ### Paginated Full Library and List Sync
 
-The full watched, collection, and user-list sync paths use trakt-java's paginated APIs. `PAGE_LIMIT = 1000` is the number of items requested per page, not a maximum page count. The loop starts at page 1 and stops when Trakt returns fewer than 1000 items.
+The full watched, collection, and user-list sync paths use trakt-java's paginated APIs. `PAGE_LIMIT = 200` is the number of items requested per page, not a maximum page count. The loop starts at page 1 and stops when Trakt returns fewer than 200 items.
 
 Current mappings:
 ```java
