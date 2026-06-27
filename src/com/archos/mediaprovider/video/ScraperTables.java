@@ -1453,14 +1453,24 @@ public final class ScraperTables {
         }
         if (toVersion == 55) {
             if (log.isDebugEnabled()) log.debug("upgradeTo: {} - recreating movie/show/episode deletion triggers with 0/0 reset", toVersion);
-            // Drop and recreate triggers to apply the -1 -> 0 fix for shared file records
-            // Use the _v2 variants to maintain the performance optimizations from v39 (no deletable-view cleanup inside triggers)
-            db.execSQL("DROP TRIGGER IF EXISTS movie_delete");
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL("DROP TRIGGER IF EXISTS show_delete");
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL("DROP TRIGGER IF EXISTS episode_delete");
+            // Clear the connection's schema cache, then remove rows that older Android SQLite
+            // versions may leave behind after DROP TRIGGER. This mirrors the v39 migration.
+            db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
+            db.execSQL(SHOW_DELETE_TRIGGER_DROP);
+            db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
+            db.execSQL("PRAGMA writable_schema = ON");
+            try {
+                db.execSQL("DELETE FROM sqlite_master WHERE name = 'movie_delete'");
+                db.execSQL("DELETE FROM sqlite_master WHERE name = 'show_delete'");
+                db.execSQL("DELETE FROM sqlite_master WHERE name = 'episode_delete'");
+            } finally {
+                db.execSQL("PRAGMA writable_schema = OFF");
+            }
+
+            // Keep the v39 performance optimization while applying the -1 -> 0 reset.
             db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
+            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
+            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
         }
     }
 }

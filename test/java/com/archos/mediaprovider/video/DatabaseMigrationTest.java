@@ -55,6 +55,8 @@ public class DatabaseMigrationTest {
         // 4. Verify the triggers are updated to 0/0 AND maintain v39 performance contract
         assertTrue("movie_delete should contain 0 after migration", checkTriggerContains(upgradedDb, "movie_delete", "ArchosMediaScraper_id=0"));
         assertTrue("episode_delete should contain 0 after migration", checkTriggerContains(upgradedDb, "episode_delete", "ArchosMediaScraper_id=0"));
+        assertTrue("show_delete should be recreated after migration", triggerExists(upgradedDb, "show_delete"));
+        assertEquals("writable_schema should be disabled after migration", 0, getWritableSchema(upgradedDb));
         
         assertFalse("movie_delete should NOT contain -1 after migration", checkTriggerContains(upgradedDb, "movie_delete", "-1"));
         
@@ -75,6 +77,21 @@ public class DatabaseMigrationTest {
         }
         if (cursor != null) cursor.close();
         return false;
+    }
+
+    private boolean triggerExists(SQLiteDatabase db, String triggerName) {
+        Cursor cursor = db.rawQuery("SELECT 1 FROM sqlite_master WHERE type='trigger' AND name=?", new String[]{triggerName});
+        boolean exists = cursor.moveToFirst();
+        cursor.close();
+        return exists;
+    }
+
+    private int getWritableSchema(SQLiteDatabase db) {
+        Cursor cursor = db.rawQuery("PRAGMA writable_schema", null);
+        cursor.moveToFirst();
+        int enabled = cursor.getInt(0);
+        cursor.close();
+        return enabled;
     }
 
     private static class VideoOpenHelper extends com.archos.mediaprovider.video.VideoOpenHelper {
