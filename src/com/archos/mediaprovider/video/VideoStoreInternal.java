@@ -43,6 +43,7 @@ import android.net.Uri;
     }
 
     /* package */ static final String KEY_SCANNER = "scanner_update";
+    /* package */ static final String KEY_IMPORT_RECONCILE_PATH = "import_reconcile_path";
     /* package */ static final String FILES_EXTRA_COLUMN_SCAN_STATE = "scan_state";
     /* package */ static final String SCAN_STATE_UNSCANNED = "0";
     /** anything above 0 is scanned */

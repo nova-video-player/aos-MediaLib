@@ -57,8 +57,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.archos.filecorelibrary.FileUtils.isNetworkShare;
@@ -125,13 +127,16 @@ public class VideoStoreImportImpl {
 
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            LocalReconciliationResult reconciliation = reconcilePrimaryStorageRows(
+                    mCr, Environment.getExternalStorageDirectory().getPath());
             // External storage is available, proceed with your operation
             // delete everything that was not replaced, ! only if it is on primary local storage !
             String existingFiles = getRemoteIdList(mCr);
-            int del = 0;
+            int del = reconciliation.removed;
             updateVolumeHiddenStates(existingFiles);
             int countEnd = getLocalCount(mCr);
-            log.info("full import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
+            log.info("full import +:" + copy + " ~:" + reconciliation.updated + " -:" + del
+                    + " " + countStart + "=>" + countEnd);
             // then trigger scan of new data
             doScan(mCr, mContext, mBlackList);
             // ...
@@ -158,8 +163,12 @@ public class VideoStoreImportImpl {
             // 2. copy all remote files with higher id than our max id
             String maxLocal = getMaxId(mCr);
             int copy = copyData(mCr, maxLocal);
+            LocalReconciliationResult reconciliation = reconcilePrimaryStorageRows(
+                    mCr, Environment.getExternalStorageDirectory().getPath());
+            del = reconciliation.removed;
             int countEnd = getLocalCount(mCr);
-            log.info("part import +:" + copy + " -:" + del + " " + countStart + "=>" + countEnd);
+            log.info("part import +:" + copy + " ~:" + reconciliation.updated + " -:" + del
+                    + " " + countStart + "=>" + countEnd);
             // then trigger scan of new data
             doScan(mCr, mContext, mBlackList);
         } else {
@@ -169,6 +178,126 @@ public class VideoStoreImportImpl {
 
         ImportState.VIDEO.setState(State.IDLE);
         if (log.isDebugEnabled()) log.debug("doIncrementalImport: ImportState.VIDEO.setState(State.IDLE)");
+    }
+
+    static final class LocalReconciliationResult {
+        int updated;
+        int removed;
+    }
+
+    /**
+     * Reconciles path changes for primary shared storage without replacing file rows. MediaStore
+     * keeps an item's id for an in-volume move, so updating both tables in place preserves scraper
+     * metadata and playback state. Removable storage is deliberately excluded from this cleanup.
+     */
+    static LocalReconciliationResult reconcilePrimaryStorageRows(ContentResolver cr,
+            String primaryPath) {
+        LocalReconciliationResult result = new LocalReconciliationResult();
+        if (cr == null || TextUtils.isEmpty(primaryPath)) return result;
+
+        String primaryPrefix = primaryPath.endsWith("/") ? primaryPath : primaryPath + "/";
+        Map<Long, String> importedPaths = new HashMap<>();
+        Map<String, Long> importedIdsByPath = new HashMap<>();
+        Cursor imported = null;
+        Cursor mediaStore = null;
+        boolean mediaStorePassComplete = false;
+
+        try {
+            imported = cr.query(VideoStoreInternal.FILES_IMPORT,
+                    new String[] { BaseColumns._ID, MediaColumnsDATA },
+                    MediaColumnsDATA + " LIKE ?", new String[] { primaryPrefix + "%" }, null);
+            if (imported == null) return result;
+            while (imported.moveToNext() && !mIsImportInterrupted) {
+                long id = imported.getLong(0);
+                String path = imported.getString(1);
+                if (isPrimaryStoragePath(primaryPrefix, path)) {
+                    importedPaths.put(id, path);
+                    importedIdsByPath.put(path, id);
+                }
+            }
+            if (mIsImportInterrupted) return result;
+
+            String[] projection = Build.VERSION.SDK_INT > Build.VERSION_CODES.O
+                    ? FILES_PROJECTION_AP : FILES_PROJECTION_BP;
+            String selection = (Build.VERSION.SDK_INT > Build.VERSION_CODES.O
+                    ? NOT_NETWORKINDEXED_AP : NOT_NETWORKINDEXED_BP)
+                    + " AND " + MediaColumnsDATA + " LIKE ?";
+            mediaStore = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
+                    projection, selection, new String[] { primaryPrefix + "%" }, BaseColumns._ID));
+            if (mediaStore == null) return result;
+
+            while (mediaStore.moveToNext() && !mIsImportInterrupted) {
+                long id = mediaStore.getLong(mediaStore.getColumnIndexOrThrow(BaseColumns._ID));
+                String newPath = mediaStore.getString(
+                        mediaStore.getColumnIndexOrThrow(MediaColumnsDATA));
+                if (!isPrimaryStoragePath(primaryPrefix, newPath)) continue;
+
+                String oldPath = importedPaths.remove(id);
+                if (oldPath == null || oldPath.equals(newPath)) continue;
+
+                Long conflictingId = importedIdsByPath.get(newPath);
+                if (conflictingId != null && conflictingId.longValue() != id) {
+                    log.error("reconcilePrimaryStorageRows: refusing path update for id {} from {} to {}; path belongs to id {}",
+                            id, oldPath, newPath, conflictingId);
+                    continue;
+                }
+
+                ContentValues importedValues = new ContentValues(mediaStore.getColumnCount() + 2);
+                DatabaseUtils.cursorRowToContentValues(mediaStore, importedValues);
+                importedValues.remove(BaseColumns._ID);
+                importedValues.put(VideoStore.Files.FileColumns.STORAGE_ID,
+                        VolumeState.STORAGE_ID_PRIMARY_VOLUME);
+                importedValues.put("volume_hidden", 0);
+
+                ContentValues fileValues = new ContentValues(importedValues);
+                fileValues.put(VideoStoreInternal.KEY_IMPORT_RECONCILE_PATH, true);
+                ArrayList<ContentProviderOperation> operations = new ArrayList<>(2);
+                operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES_IMPORT)
+                        .withSelection(BaseColumns._ID + "=?", new String[] { String.valueOf(id) })
+                        .withValues(importedValues)
+                        .build());
+                operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                        .withSelection("remote_id=?", new String[] { String.valueOf(id) })
+                        .withValues(fileValues)
+                        .build());
+                try {
+                    cr.applyBatch(VideoStore.AUTHORITY, operations);
+                    importedIdsByPath.remove(oldPath);
+                    importedIdsByPath.put(newPath, id);
+                    result.updated++;
+                    log.info("reconcilePrimaryStorageRows: updated id {} path {} -> {}", id,
+                            oldPath, newPath);
+                } catch (RemoteException | OperationApplicationException e) {
+                    log.error("reconcilePrimaryStorageRows: failed to update id {} path {} -> {}",
+                            id, oldPath, newPath, e);
+                }
+            }
+            mediaStorePassComplete = !mIsImportInterrupted;
+        } catch (RuntimeException e) {
+            log.error("reconcilePrimaryStorageRows: failed to reconcile primary storage", e);
+        } finally {
+            if (imported != null) imported.close();
+            if (mediaStore != null) mediaStore.close();
+        }
+
+        if (!mediaStorePassComplete) return result;
+
+        for (Map.Entry<Long, String> stale : importedPaths.entrySet()) {
+            String path = stale.getValue();
+            if (!isPrimaryStoragePath(primaryPrefix, path) || new File(path).exists()) continue;
+            int removed = cr.delete(VideoStoreInternal.FILES_IMPORT, BaseColumns._ID + "=?",
+                    new String[] { String.valueOf(stale.getKey()) });
+            if (removed > 0) {
+                result.removed += removed;
+                log.info("reconcilePrimaryStorageRows: removed inaccessible local row id {} path {}",
+                        stale.getKey(), path);
+            }
+        }
+        return result;
+    }
+
+    static boolean isPrimaryStoragePath(String primaryPrefix, String path) {
+        return path != null && path.startsWith(primaryPrefix);
     }
 
     private static final String[] ID_DATA_PROJ = new String[] {
