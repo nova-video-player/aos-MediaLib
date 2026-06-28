@@ -460,6 +460,25 @@ public class ScraperProvider extends ContentProvider {
 
     private static final String[] ID_PROJ = { BaseColumns._ID };
     private static final String[] ID_PROJ_COLLECTION = { ScraperStore.MovieCollections.ID };
+
+    private static long findMovieCollection(SQLiteDatabase db, ContentValues values) {
+        Long collectionId = values.getAsLong(ScraperStore.MovieCollections.ID);
+        if (collectionId == null) {
+            log.error("findMovieCollection: missing collection id");
+            return -1;
+        }
+
+        long result = -1;
+        try (Cursor cursor = db.query(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
+                ID_PROJ_COLLECTION, ScraperStore.MovieCollections.ID + "=?",
+                new String[] { String.valueOf(collectionId) }, null, null, null)) {
+            if (cursor.moveToFirst()) {
+                result = cursor.getLong(0);
+            }
+        }
+        return result;
+    }
+
     private static long findScraperImage(SQLiteDatabase db, String table, ScraperImage.Type type, ContentValues cv) {
         String selection = type.largeFileColumn + "=?";
         String[] selectionArgs = { cv.getAsString(type.largeFileColumn) };
@@ -499,8 +518,8 @@ public class ScraperProvider extends ContentProvider {
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Movie.URI.ID, cr, ADDITIONAL_MOVIE);
                 break;
             case SHOW:
-                rowId = db.insert(ScraperTables.SHOW_TABLE_NAME,
-                        ScraperStore.Show.ID, values);
+                rowId = db.insertWithOnConflict(ScraperTables.SHOW_TABLE_NAME,
+                        ScraperStore.Show.ID, values, SQLiteDatabase.CONFLICT_IGNORE);
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.Show.URI.ID, cr, ADDITIONAL_SHOW);
                 break;
             case EPISODE:
@@ -720,12 +739,10 @@ public class ScraperProvider extends ContentProvider {
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.ShowBackdrops.URI.BASE, cr);
                 break;
             case MOVIE_COLLECTION:
-                // see MOVIE_POSTERS
-                rowId = db.insert(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
-                        ScraperStore.MovieCollections.ID, values);
+                rowId = db.insertWithOnConflict(ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
+                        ScraperStore.MovieCollections.ID, values, SQLiteDatabase.CONFLICT_IGNORE);
                 if (rowId < 0) {
-                    rowId = findScraperImage(db, ScraperTables.MOVIE_COLLECTION_TABLE_NAME,
-                            ScraperImage.Type.COLLECTION_BACKDROP, values);
+                    rowId = findMovieCollection(db, values);
                 }
                 noteUri = createUriAndNotify(rowId, db, ScraperStore.MovieCollections.URI.BASE, cr);
                 break;

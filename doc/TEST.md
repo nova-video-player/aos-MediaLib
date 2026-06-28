@@ -158,6 +158,24 @@ Class command:
 These tests exercise batch accounting and Robolectric service-start intents.
 They do not perform real scraping or database insertion.
 
+### Auto-scrape persistence
+
+Class commands:
+
+```bash
+./gradlew --offline :MediaLib:testDebugUnitTest \
+  --tests 'com.archos.mediascraper.AutoScrapeServicePersistenceTest' \
+  --tests 'com.archos.mediascraper.EpisodeTagsPersistenceTest' \
+  --tests 'com.archos.mediascraper.ShowTagsPersistenceTest' \
+  --tests 'com.archos.mediaprovider.video.ScraperProviderInsertTest'
+```
+
+These tests cover single scrape-worker ownership, the bounded persistence
+retry limit, retryable save failures, parent-show failure propagation,
+concurrent show insertion recovery, and idempotent show/collection inserts.
+They do not inject a real mid-scrape SQLite failure; the retry-round tests
+exercise the deterministic coordination and state decisions directly.
+
 ### Movie filename preprocessing
 
 Class command:
@@ -192,8 +210,9 @@ results. Review the CSV when changing scraper matching behavior.
 - Any MediaLib change: run the full suite.
 - Database or provider change: run `DatabaseMigrationTest`, `DbHolderTest`, and
   `VideoProviderTransactionTest` before the full suite.
-- Network scanner or auto-scrape change: run `NetworkScannerServiceVideoTest`
-  and `AutoScrapeServiceNetworkScanTest` before the full suite.
+- Network scanner or auto-scrape change: run `NetworkScannerServiceVideoTest`,
+  `AutoScrapeServiceNetworkScanTest`, and the auto-scrape persistence classes
+  before the full suite.
 - Filename parsing or scraper change: run `MovieScraperFileTest`,
   `ScraperIntegrationTest`, and `TrackNamingTest` as applicable, then the full
   suite.

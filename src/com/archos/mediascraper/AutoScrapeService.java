@@ -62,7 +62,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by alexandre on 20/05/15.
@@ -78,6 +81,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static final int PARAM_MOVIES = 4;
+    private static final int PARAM_PERSISTENCE_RETRY = 5;
+    private static final int MAX_AUTOSCRAPE_ROUNDS = 4;
     private static final Logger log = LoggerFactory.getLogger(AutoScrapeService.class);
 
     public static final String PREFERENCE_LAST_TIME_VIDEO_SCRAPED_UTC = "last_time_video_scraped_utc";
@@ -102,7 +107,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
             VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID,
             VideoStore.Video.VideoColumns.SCRAPER_E_SEASON
     };
-    private Thread mThread;
+    private static final AtomicReference<Thread> sScrapeWorker = new AtomicReference<>();
     private boolean restartOnNextRound = false;
     private AutoScraperBinder mBinder;
     private Thread mExportingThread;
@@ -317,16 +322,16 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
 
     public void cleanup() {
         if (log.isDebugEnabled()) log.debug("cleanup");
-        if (mThread != null && mThread.isAlive()) {
+        Thread scrapeWorker = sScrapeWorker.get();
+        if (scrapeWorker != null && scrapeWorker.isAlive()) {
             saveDirtyState(true);
         }
         LoaderUtils.setScrapeInProgress(false);
         isForeground = false;
         // Note: isForceAfterNetworkScan is now managed by networkScanCount
         // Stop the scraping thread if it's running
-        if (mThread != null) {
-            mThread.interrupt();
-            mThread = null;
+        if (scrapeWorker != null) {
+            scrapeWorker.interrupt();
         }
         // Stop the exporting thread if it's running
         if (mExportingThread != null) {
@@ -675,8 +680,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         if (rescrapAlreadySearched) sRescanAll = true;
         if (onlyNotFound) sRescanOnlyNotFound = true;
 
-        if(mThread==null || !mThread.isAlive()) {
-            mThread = new Thread() {
+        Thread worker = new Thread() {
 
                 public int mNetworkOrScrapErrors; //when errors equals to number of files to scrap, stop looping.
                 boolean notScraped;
@@ -698,7 +702,10 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                         if (NfoWriter.isNfoAutoExportEnabled(AutoScrapeService.this))
                             exportContext = new NfoWriter.ExportContext();
 
+                        Set<Long> pendingPersistenceRetryIds = new HashSet<>();
+                        int completedScrapeRounds = 0;
                         do {
+                            completedScrapeRounds++;
                             // Upgradable parameters check at each iteration
                             boolean shouldRescrapAll = sRescanAll;
                             boolean shouldRescanOnlyNotFound = sRescanOnlyNotFound;
@@ -708,12 +715,27 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                                     shouldRescrapAll ? PARAM_ALL :
                                                             PARAM_NOT_SCRAPED;
 
+                            Set<Long> persistenceRetryIds = new HashSet<>(pendingPersistenceRetryIds);
+                            pendingPersistenceRetryIds.clear();
+                            boolean persistenceRetryRound = !persistenceRetryIds.isEmpty();
+                            int cursorStatusParam = persistenceRetryRound
+                                    ? PARAM_PERSISTENCE_RETRY : scrapStatusParam;
+                            if (persistenceRetryRound) {
+                                log.warn("startScraping: retrying {} database persistence failures (round {}/{})",
+                                        persistenceRetryIds.size(), completedScrapeRounds, MAX_AUTOSCRAPE_ROUNDS);
+                            }
+
                             // Get total number of rows first
-                            if (cursor != null) cursor.close();
-                            cursor = getFileListCursor(scrapStatusParam, null, null, null);
-                            int numberOfRows = cursor.getCount();
-                            cursor.close();
-                            cursor = null;
+                            int numberOfRows;
+                            if (persistenceRetryRound) {
+                                numberOfRows = persistenceRetryIds.size();
+                            } else {
+                                if (cursor != null) cursor.close();
+                                cursor = getFileListCursor(cursorStatusParam, null, null, null);
+                                numberOfRows = cursor.getCount();
+                                cursor.close();
+                                cursor = null;
+                            }
 
                             mNetworkOrScrapErrors = 0;
                             sNumberOfFilesScraped = 0;
@@ -736,7 +758,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             boolean hasMoreRows = true;
                             while (hasMoreRows && isEnable(AutoScrapeService.this) && (isForeground || isForceAfterNetworkScan) && !Thread.currentThread().isInterrupted()) {
                                 if (cursor != null) cursor.close();
-                                cursor = getFileListCursorAfterId(scrapStatusParam, lastSeenId, WINDOW_SIZE);
+                                cursor = getFileListCursorAfterId(cursorStatusParam, lastSeenId, WINDOW_SIZE);
                                 hasMoreRows = false;
 
                             while (isEnable(AutoScrapeService.this) && (isForeground || isForceAfterNetworkScan) && !Thread.currentThread().isInterrupted()) {
@@ -745,7 +767,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 } catch (SQLiteBlobTooBigException e) {
                                     // Break out of this batch and skip the problematic row.
                                     // Query only _ID column to avoid CursorWindow overflow on the skip query.
-                                    long skippedId = getNextIdAfter(scrapStatusParam, lastSeenId);
+                                    long skippedId = getNextIdAfter(cursorStatusParam, lastSeenId);
                                     if (skippedId != -1) {
                                         log.warn("startScraping: CursorWindow overflow, skipping _ID={}", skippedId, e);
                                         lastSeenId = skippedId;
@@ -759,6 +781,11 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                     break;
                                 }
                                 hasMoreRows = true;
+                                long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
+                                lastSeenId = ID;
+                                if (persistenceRetryRound && !persistenceRetryIds.contains(ID)) {
+                                    continue;
+                                }
                                 // THIS IS THE HARD STOP, call setScrapeInProgress(false) from another place
                                 //in the app, like remove shortcut and I will stop the scrape for you.
                                 //Also checks network. We can scrape off 5G, but cant load local NFOs (obviously)
@@ -772,13 +799,12 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
 
                                 // for now there is no error and file is not scraped
                                 notScraped = true;
+                                boolean persistenceFailed = false;
 
                                 //Get the information we need about the current file, for use later in the scrape.
                                 String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
                                 Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
                                 Uri scrapUri = title == null || title.isEmpty() || title.equalsIgnoreCase("null") ? fileUri : Uri.parse("/" + title + ".mp4") ;
-                                long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-                                lastSeenId = ID;
 
                                 //This get the info to reparse for UPNP, and grab the correct details.
                                 boolean reparseInfo = fileUri.toString().toLowerCase().startsWith("upnp");
@@ -815,15 +841,23 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                             }
 
                                             if (log.isTraceEnabled()) log.trace("startScraping: NFO tags.save ID={}", ID);
-                                            tags.save(AutoScrapeService.this, ID);
+                                            if (Thread.currentThread().isInterrupted()) return;
+                                            long savedId = tags.save(AutoScrapeService.this, ID);
                                             DeleteFileCallback.DO_NOT_DELETE.clear();
+                                            if (savedId < 0) {
+                                                log.warn("startScraping: NFO save failed for ID {}", ID);
+                                                persistenceFailed = true;
+                                                pendingPersistenceRetryIds.add(ID);
+                                            }
                                         } else {
                                             if (log.isTraceEnabled()) log.trace("startScraping: oh oh NFO ID = -1 ");
                                         }
                                         //found NFO thus still no error but scraped
-                                        notScraped = false;
-                                        sNumberOfFilesScraped++;
-                                        noScrapeError = true;
+                                        notScraped = persistenceFailed;
+                                        if (!persistenceFailed) {
+                                            sNumberOfFilesScraped++;
+                                        }
+                                        noScrapeError = !persistenceFailed;
                                         if (tags.getPosters() == null && tags.getDefaultPoster() == null &&
                                                 (!(tags instanceof EpisodeTags) || ((EpisodeTags) tags).getShowTags().getPosters() == null)) {//special case for episodes : check show
                                             if (tags.getTitle() != null && !tags.getTitle().isEmpty()) { //if a title is specified in nfo, use it to scrap file
@@ -840,7 +874,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 }
 
                                 //No NFO Tags, we need to scrape.
-                                if ((notScraped && noScrapeError) || (shouldRescrapAll & noScrapeError)) { //look for online details
+                                if (!persistenceFailed && ((notScraped && noScrapeError) || (shouldRescrapAll & noScrapeError))) { //look for online details
                                     if (log.isTraceEnabled()) log.trace("startScraping: NFO NOT found");
                                     ScrapeDetailResult result = null;
                                     boolean searchOnline = true;
@@ -911,6 +945,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                         if (log.isTraceEnabled()) log.trace("startScraping: online result.tag.save ID={}", ID);
 
                                         //Save the tags to the database.
+                                        if (Thread.currentThread().isInterrupted()) return;
                                         long savedId = result.tag.save(AutoScrapeService.this, ID);
                                         if (savedId != -1) {
                                             DeleteFileCallback.DO_NOT_DELETE.clear();
@@ -939,6 +974,9 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                             log.warn("startScraping: save failed for ID {}", ID);
                                             notScraped = true;
                                             noScrapeError = false;
+                                            persistenceFailed = true;
+                                            pendingPersistenceRetryIds.add(ID);
+                                            DeleteFileCallback.DO_NOT_DELETE.clear();
                                         }
                                     } else if (result != null) {
                                         //not scraped, check for errors
@@ -958,7 +996,10 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 sTotalNumberOfFilesRemainingToProcess--;
 
                                 //OK, this has to be an OR, because my VTS override actually tests the logic!
-                                if (notScraped || !noScrapeError) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
+                                if (persistenceFailed) {
+                                    log.error("startScraping: keeping file {} retryable after database save failure", fileUri);
+                                    mNetworkOrScrapErrors++;
+                                } else if (shouldMarkAsNotFound(persistenceFailed, notScraped, noScrapeError)) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
                                     //Show the error on the notification
                                     //Using the file name stripped as the title here, the search suggestion used to scrape.
                                     nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sTotalNumberOfFilesRemainingToProcess  + "\n" + getString(R.string.noresult_video_title) + " " + title).build());
@@ -982,23 +1023,40 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             //Close cursor, and we will next open another one for the loop.
                             if (cursor != null) { cursor.close(); cursor = null; }
 
-                            // Load another cursor and get the row count
-                            cursor = getFileListCursor(scrapStatusParam, null, null, null);
-                            numberOfRows = cursor.getCount();
-                            cursor.close();
-                            cursor = null;
+                            if (!persistenceRetryRound) {
+                                // Load another cursor and get the row count
+                                cursor = getFileListCursor(scrapStatusParam, null, null, null);
+                                numberOfRows = cursor.getCount();
+                                cursor.close();
+                                cursor = null;
+                            }
 
                             // Restart only if we did not account for all rows still matching this mode.
                             // For PARAM_SCRAPED_NOT_FOUND, files that fail to scrape are written back
                             // with ARCHOS_MEDIA_SCRAPER_ID=-1 (same value), so they remain in the re-query.
                             // Do not restart in this case — all files have been attempted and the
                             // remaining ones simply cannot be identified; restarting causes an infinite loop.
-                            if (scrapStatusParam == PARAM_SCRAPED_NOT_FOUND) {
+                            if (!pendingPersistenceRetryIds.isEmpty()) {
+                                restartOnNextRound = true;
+                            } else if (persistenceRetryRound || scrapStatusParam == PARAM_SCRAPED_NOT_FOUND) {
                                 restartOnNextRound = false;
                             } else {
                                 restartOnNextRound = (sNumberOfFilesScraped + sNumberOfFilesNotScraped + numberOfBlobRowsSkipped != numberOfRows);
                             }
-                        } while (restartOnNextRound && (isForeground || isForceAfterNetworkScan) && !Thread.currentThread().isInterrupted() && PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this).getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP,true));
+                        } while (shouldRunAnotherScrapeRound(completedScrapeRounds, restartOnNextRound)
+                                && (isForeground || isForceAfterNetworkScan)
+                                && !Thread.currentThread().isInterrupted()
+                                && PreferenceManager.getDefaultSharedPreferences(AutoScrapeService.this)
+                                        .getBoolean(AutoScrapeService.KEY_ENABLE_AUTO_SCRAP, true));
+
+                        if (restartOnNextRound && completedScrapeRounds >= MAX_AUTOSCRAPE_ROUNDS) {
+                            log.warn("startScraping: stopping after the hard limit of {} rounds",
+                                    MAX_AUTOSCRAPE_ROUNDS);
+                        }
+                        if (!pendingPersistenceRetryIds.isEmpty()) {
+                            log.error("startScraping: {} database persistence failures remain after the bounded retry",
+                                    pendingPersistenceRetryIds.size());
+                        }
 
                         //Refresh the Channels in the UI
                         mHandler.post(new Runnable() {
@@ -1018,28 +1076,58 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             TraktService.onNewVideo(AutoScrapeService.this); // should be done only at the end to not resync in loop
                         }
                     } finally {
-                        if (log.isDebugEnabled()) log.debug("startScraping: finally cleanup");
-                        if (cursor != null) cursor.close();
-                        // Reset static flags
-                        scrapeOnlyMovies = false;
-                        sRescanAll = false;
-                        sRescanOnlyNotFound = false;
-                        //Global Scrape in Progress, so the browser can skip thumbs in scrape and not waste space in storage
-                        LoaderUtils.setScrapeInProgress(false);
+                        Thread current = Thread.currentThread();
+                        try {
+                            if (log.isDebugEnabled()) log.debug("startScraping: finally cleanup");
+                            if (cursor != null) cursor.close();
+                            // Reset static flags
+                            scrapeOnlyMovies = false;
+                            sRescanAll = false;
+                            sRescanOnlyNotFound = false;
+                            //Global Scrape in Progress, so the browser can skip thumbs in scrape and not waste space in storage
+                            LoaderUtils.setScrapeInProgress(false);
 
-                        // Notify UI that scraping is complete so boxes can be refreshed
-                        Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, null);
-                        intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-                        sendBroadcast(intent);
+                            // Notify UI that scraping is complete so boxes can be refreshed
+                            Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, null);
+                            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                            sendBroadcast(intent);
 
-                        //Kill notification.
-                        nm.cancel(NOTIFICATION_ID);
-                        stopSelf();
+                            //Kill notification.
+                            nm.cancel(NOTIFICATION_ID);
+                            stopSelf();
+                        } finally {
+                            releaseScrapeWorker(current);
+                        }
                     }
                 }
             };
-            mThread.start();
+        if (!claimScrapeWorker(worker)) {
+            if (log.isDebugEnabled()) log.debug("startScraping: a scrape worker is already active");
+            return;
         }
+        try {
+            worker.start();
+        } catch (RuntimeException e) {
+            releaseScrapeWorker(worker);
+            throw e;
+        }
+    }
+
+    static boolean claimScrapeWorker(Thread worker) {
+        return sScrapeWorker.compareAndSet(null, worker);
+    }
+
+    static void releaseScrapeWorker(Thread worker) {
+        sScrapeWorker.compareAndSet(worker, null);
+    }
+
+    static boolean shouldMarkAsNotFound(boolean persistenceFailed, boolean notScraped,
+            boolean noScrapeError) {
+        return !persistenceFailed && (notScraped || !noScrapeError);
+    }
+
+    static boolean shouldRunAnotherScrapeRound(int completedRounds, boolean restartRequested) {
+        return restartRequested && completedRounds < MAX_AUTOSCRAPE_ROUNDS;
     }
 
     private static final String WHERE_BASE =
@@ -1073,6 +1161,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                 return WHERE_SCRAPED_NOT_FOUND;
             case PARAM_MOVIES:
                 return WHERE_MOVIES;
+            case PARAM_PERSISTENCE_RETRY:
+                return WHERE_BASE;
             default:
                 return WHERE_BASE;
         }

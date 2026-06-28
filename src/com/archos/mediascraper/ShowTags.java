@@ -224,10 +224,20 @@ public class ShowTags extends VideoTags {
                 Uri inserted = cr.insert(uri, values);
                 long result = inserted == null ? -1 : ContentUris.parseId(inserted);
                 if (result == -1) {
-                    log.error("insert Show failed");
-                    return -1;
+                    // Another scrape worker may have inserted the show after our lookup.
+                    // Re-read by the stable online id, then by the unique display name.
+                    updateInfo(ONLINEID_SELECTION, new String[] { String.valueOf(mOnlineId) }, cr);
+                    if (!showFound) {
+                        updateInfo(NAME_SELECTION, new String[] { finalTitle }, cr);
+                    }
+                    if (!showFound) {
+                        log.error("insert Show failed and no existing row was found");
+                        return -1;
+                    }
+                    if (log.isDebugEnabled()) log.debug("insert Show raced with an existing row, reusing showId {}", showId);
+                } else {
+                    showId = result;
                 }
-                showId = result;
             }
         }
 

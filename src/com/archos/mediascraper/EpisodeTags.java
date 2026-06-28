@@ -131,6 +131,11 @@ public class EpisodeTags extends BaseTags {
         //---------------------------------------------------
         long showId = mShowTags.save(context, videoId);
 
+        if (showId < 0) {
+            log.error("Save aborted for episode {}: parent show could not be persisted", mTitle);
+            return -1;
+        }
+
         if (log.isDebugEnabled()) log.debug("Save called for episode {} showId {} onlineId {}", mTitle, showId, mOnlineId);
 
         //---------------------------------------------------------------------------------------
