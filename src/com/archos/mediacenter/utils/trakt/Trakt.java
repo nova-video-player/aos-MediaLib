@@ -734,19 +734,7 @@ public class Trakt {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         long lastSyncUtcSeconds = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_TIME_SYNC_TO_DB_PROGRESS, 1);
 
-        // Enhancement 0: Coarse-grained quick check using existing timestamps
-        // Avoids detailed checks and API calls if we know nothing changed
-        long movieTime = getLastTimeMovieWatched(prefs);
-        long showTime = getLastTimeShowWatched(prefs);
-        long coarseLastActivityUtc = Math.max(movieTime, showTime);
-
-        if (coarseLastActivityUtc > 0 && coarseLastActivityUtc <= lastSyncUtcSeconds) {
-            if (log.isDebugEnabled()) log.debug("getPlaybackStatus: coarse-grained check shows no activity since last sync (lastActivity={}, lastSync={}), skipping playback sync",
-                    coarseLastActivityUtc, lastSyncUtcSeconds);
-            return handleRet(null, null, new ArrayList<>(), ObjectType.MOVIES);
-        }
-
-        // Enhancement 1: Skip sync if no resume point activity since last sync (use paused_at timestamps)
+        // Skip sync if no resume point activity since last sync (use paused_at timestamps)
         long lastActivityMoviePausedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_MOVIE_PAUSED, 0);
         long lastActivityEpisodePausedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_PAUSED, 0);
         long lastActivityPausedUtc = Math.max(lastActivityMoviePausedUtc, lastActivityEpisodePausedUtc);
@@ -803,19 +791,7 @@ public class Trakt {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         long lastSyncUtcSeconds = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_TIME_SYNC_TO_DB_WATCHED, 1);
 
-        // Enhancement 0: Coarse-grained quick check using existing timestamps
-        // Avoids detailed checks and API calls if we know nothing changed
-        long movieTime = getLastTimeMovieWatched(prefs);
-        long showTime = getLastTimeShowWatched(prefs);
-        long coarseLastActivityUtc = Math.max(movieTime, showTime);
-
-        if (coarseLastActivityUtc > 0 && coarseLastActivityUtc <= lastSyncUtcSeconds) {
-            if (log.isDebugEnabled()) log.debug("getWatchedStatus: coarse-grained check shows no activity since last sync (lastActivity={}, lastSync={}), skipping watched status sync",
-                    coarseLastActivityUtc, lastSyncUtcSeconds);
-            return handleRet(null, null, new ArrayList<>(), ObjectType.MOVIES);
-        }
-
-        // Enhancement 1: Skip sync if no watched activity since last sync (use watched_at timestamps)
+        // Skip sync if no watched activity since last sync (use watched_at timestamps)
         long lastActivityMovieWatchedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_MOVIE_WATCHED, 0);
         long lastActivityEpisodeWatchedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_WATCHED, 0);
         long lastActivityWatchedUtc = Math.max(lastActivityMovieWatchedUtc, lastActivityEpisodeWatchedUtc);

@@ -264,17 +264,6 @@ PREFERENCE_TRAKT_LAST_TIME_SYNC_WATCHED           → When watched status last s
 
 The system uses a cascading decision tree to avoid unnecessary API calls:
 
-**Enhancement 0: Coarse-Grained Quick Check** (IMPLEMENTED ✅)
-```java
-// Immediate early-exit using existing timestamps
-long movieTime = getLastTimeMovieWatched(prefs);
-long showTime = getLastTimeShowWatched(prefs);
-if (Math.max(movieTime, showTime) <= lastSyncTime) {
-    return empty;  // Skip all processing, no API calls
-}
-```
-**Benefit**: Catches completely idle Trakt activity with minimal overhead
-
 **Enhancement 1: Granular Activity Discrimination** (IMPLEMENTED ✅)
 ```java
 // Discriminate between paused_at (resume) and watched_at timestamps
@@ -362,17 +351,15 @@ PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_PAUSED     → When episode resume change
 **Solution Flow**:
 ```
 Device B opens Nova:
-1. Coarse check: Is Trakt idle? NO → proceed
-2. Granular check: Are there paused_at changes? YES → proceed
-3. Index check: Has new content been indexed? NO (B hasn't scanned yet) → use incremental
-4. Incremental sync: Fetches from lastSync
+1. Granular check: Are there paused_at changes? YES → proceed
+2. Index check: Has new content been indexed? NO (B hasn't scanned yet) → use incremental
+3. Incremental sync: Fetches from lastSync
    → Misses MovieX activity (not yet in local DB) ❌ BUG!
 
 With Enhancement 2 (Index-aware):
 1-2. Same as above
-3. Index check: Has new content been indexed? NO (same as above)
-4. Device B scans SMB (new content indexed)
-5. Next sync:
+3. Device B scans SMB (new content indexed)
+4. Next sync:
    - Index check: YES! (new content > lastSync) → Force FULL sync ✅
    - Catches MovieX activity from Device A ✅
    - Updates resume point and watched status ✅
@@ -386,7 +373,6 @@ With Enhancement 2 (Index-aware):
 - Chunked processing for large libraries
 
 ### Selective Sync (Enhanced)
-- **Coarse-grained check**: Immediate exit if no Trakt activity (no preference lookups needed)
 - **Granular timestamp discrimination**: Skip unrelated sync operations based on activity type
 - **Index-aware safeguard**: Force full sync when new content detected locally
 - **Incremental sync**: Delta-sync from last timestamp when safe
@@ -466,7 +452,6 @@ PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE           → Most recent episode activit
 - ✅ Watched movies avoid deprecated `ExtendedMoviesWatched.FULL`
 
 **Multi-Tier Skip Logic**:
-- ✅ **Enhancement 0**: Coarse-grained quick check (existing timestamps)
 - ✅ **Enhancement 1**: Granular activity discrimination (paused_at vs watched_at)
 - ✅ **Enhancement 2**: Index-aware full sync safeguard (detects new local content)
 - ✅ **Enhancement 3**: Incremental sync (delta from last timestamp)
@@ -640,10 +625,9 @@ ORDER BY ARCHOS_LAST_TIME_PLAYED DESC LIMIT 100
    - Device timestamp precedence properly handled
 
 3. ✅ **Bandwidth Optimization**: Only sync changed resume points and timestamps
-   - Multi-tier skip logic (Enhancements 0-3)
+   - Multi-tier skip logic
    - Granular activity discrimination (paused_at vs watched_at)
    - Incremental API calls with fallback
-   - Coarse-grained quick check prevents unnecessary API calls
 
 4. ✅ **Error Recovery**: Graceful handling of network interruptions during sync
    - Retry logic with up to 3 attempts and a fixed 2s delay on non-auth failures

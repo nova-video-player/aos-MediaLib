@@ -1566,8 +1566,10 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                 flag |= FLAG_SYNC_TO_DB_WATCHED | FLAG_SYNC_SHOWS; // need to sync watched states and shows
             }
 
-            // otherwise we do a full memory depth sync to get all resume points possibly on new videos
-            if (lastActivity.movies.paused_at.toEpochSecond()>movieTime||lastActivity.episodes.paused_at.toEpochSecond()>showTime) { // new resume points more recent than last sync
+            // Compare resume activity to the resume download watermark, not watched-state watermarks.
+            long lastProgressSyncUtcSeconds = mPreferences.getLong(PREFERENCE_TRAKT_LAST_TIME_SYNC_TO_DB_PROGRESS, 1);
+            if (lastActivity.movies.paused_at.toEpochSecond() > lastProgressSyncUtcSeconds ||
+                    lastActivity.episodes.paused_at.toEpochSecond() > lastProgressSyncUtcSeconds) { // new resume points more recent than last sync
                 if (log.isDebugEnabled()) log.debug("getFlagsFromTraktLastActivity: new activity on progress on trakt side detected either for movie or show");
                 flag |= FLAG_SYNC_PROGRESS; // need to sync resume points
             }
