@@ -80,6 +80,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int PLOT = 34;
     private static final int RELEASEDATE = 35;
     private static final int TRAILER = 36;
+    private static final int UNIQUEID = 37;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -101,6 +102,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("fanart", FANART);
         STRINGS.addKey("studio", STUDIO);
         STRINGS.addKey("tmdbid", TMDBID);
+        STRINGS.addKey("uniqueid", UNIQUEID);
         STRINGS.addKey("trailer", TRAILER);
         STRINGS.addKey("runtime", RUNTIME);
         STRINGS.addKey("lastplayed", LASTPLAYED);
@@ -133,6 +135,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private int mInSetId;
     private String mInSetName, mInSetOverview, mInSetPosterLarge, mInSetPosterThumb, mInSetBackdropLarge, mInSetBackdropThumb;
     private boolean mInFileinfo, mInStreamdetails, mInVideo;
+    private String mUniqueIdType;
+    private long mUniqueIdTmdb;
+    private String mUniqueIdImdb;
 
     @Override
     protected void startFile() {
@@ -160,6 +165,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         mInSetPosterThumb = null;
         mInSetBackdropLarge = null;
         mInSetBackdropThumb = null;
+        mUniqueIdType = null;
+        mUniqueIdTmdb = 0;
+        mUniqueIdImdb = null;
     }
 
     @Override
@@ -176,7 +184,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
             }
         } else {
             if (mCanParse)
-                return startMovie(hierarchyLevel, localName);
+                return startMovie(hierarchyLevel, localName, attributes);
         }
         return false;
     }
@@ -193,10 +201,13 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         // empty
     }
 
-    private boolean startMovie(int hierarchyLevel, String localName) {
+    private boolean startMovie(int hierarchyLevel, String localName, Attributes attributes) {
         switch (hierarchyLevel) {
             case 1:
                 switch (STRINGS.match(localName)) {
+                    case UNIQUEID:
+                        mUniqueIdType = attributes.getValue("", "type");
+                        return true;
                     // these are text nodes, return true to get text
                     case TITLE:
                     case RATING:
@@ -348,6 +359,17 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case TMDBID:
                         mMovie.setOnlineId(getLong());
+                        break;
+                    case UNIQUEID:
+                        if ("tmdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdTmdb = getLong();
+                        } else if ("imdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdImdb = getString();
+                        } else {
+                            // consume buffered text for unknown types (e.g. tvdb)
+                            getString();
+                        }
+                        mUniqueIdType = null;
                         break;
                     case TRAILER:
                         addTrailer(getString());
@@ -503,6 +525,14 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     public MovieTags getResult(Context context, Uri movieFile) {
         if (DBG) Log.d(TAG, "getResult: processing " + movieFile.getPath());
         if (mCanParse) {
+            // type-aware <uniqueid> takes precedence over legacy <id>(imdb)/<tmdbid>,
+            // applied here so it wins regardless of element order
+            if (mUniqueIdTmdb > 0) {
+                mMovie.setOnlineId(mUniqueIdTmdb);
+            }
+            if (mUniqueIdImdb != null && !mUniqueIdImdb.isEmpty()) {
+                mMovie.setImdbId(mUniqueIdImdb);
+            }
             if (!mMoviePosterUrls.isEmpty()) {
                 ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mMoviePosterUrls.size());
                 for (String url : mMoviePosterUrls) {

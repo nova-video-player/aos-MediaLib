@@ -44,6 +44,30 @@ public class NfoEpisodeHandlerTest {
         assertEquals(47, tags.getRuntime(TimeUnit.MINUTES));
     }
 
+    @Test
+    public void readsTmdbUniqueId() throws Exception {
+        EpisodeTags tags = parse("<episodedetails><title>Pilot</title>"
+                + "<uniqueid type=\"tmdb\" default=\"true\">76118</uniqueid></episodedetails>");
+
+        assertEquals(76118, tags.getOnlineId());
+    }
+
+    @Test
+    public void tmdbUniqueIdWinsOverLegacyTmdbId() throws Exception {
+        EpisodeTags tags = parse("<episodedetails><title>Pilot</title>"
+                + "<tmdbid>999</tmdbid><uniqueid type=\"tmdb\">76118</uniqueid></episodedetails>");
+
+        assertEquals(76118, tags.getOnlineId());
+    }
+
+    @Test
+    public void imdbUniqueIdWinsOverLegacyImdbIdRegardlessOfOrder() throws Exception {
+        EpisodeTags tags = parse("<episodedetails><title>Pilot</title>"
+                + "<uniqueid type=\"imdb\">tt9999999</uniqueid><imdbid>tt0000001</imdbid></episodedetails>");
+
+        assertEquals("tt9999999", tags.getImdbId());
+    }
+
     private static EpisodeTags parse(String xml) throws Exception {
         NfoEpisodeHandler handler = new NfoEpisodeHandler();
         NfoParser.getNewParser().parse(new ByteArrayInputStream(
