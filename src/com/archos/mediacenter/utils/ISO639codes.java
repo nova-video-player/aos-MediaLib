@@ -180,13 +180,20 @@ public class ISO639codes {
         if (languageName.equals(code)) {
             // it has not been found thus perhaps it is ISO 639-2b and conversion is needed
             String iso6393Code = convertIso6392bToIso6393(code);
-            if (iso6393Code != null) {
+            if (iso6393Code != null && !iso6393Code.equals(code)) {
                 locale = new Locale(iso6393Code);
                 languageName = locale.getDisplayLanguage();
-            } else {
-                // there is something missing make it obvious and fallback to original 3 letter code
-                languageName = code;
-                if (log.isDebugEnabled()) log.debug("getLanguageNameFor3LetterCode: No language name found for code {}", code);
+            }
+            if (languageName.equals(code) || (iso6393Code != null && languageName.equals(iso6393Code))) {
+                // If still not found, try converting ISO 639-3/2 code to ISO 639-1 (e.g. zho -> zh)
+                String iso1 = convertISO6393ToISO6391(iso6393Code != null ? iso6393Code : code);
+                if (iso1 != null && !iso1.equals(code) && !iso1.equals(iso6393Code)) {
+                    languageName = convertISO6391ToLanguageName(iso1);
+                } else {
+                    // there is something missing make it obvious and fallback to original 3 letter code
+                    languageName = code;
+                    if (log.isDebugEnabled()) log.debug("getLanguageNameFor3LetterCode: No language name found for code {}", code);
+                }
             }
         }
         return languageName;
