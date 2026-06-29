@@ -144,7 +144,12 @@ public class ShowIdEpisodes {
                         && !language.equals("en")) { // missing overview in native language
                     if (globalEpisodes.get(tvEpisode.id) == null) { // missing: get whole serie
                         if (log.isDebugEnabled()) log.debug("getEpisodes: description in {} missing for tvEpisode.name s{}e{} fallback in en for the whole season", language, tvEpisode.season_number, tvEpisode.episode_number);
-                        ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, tvEpisode.season_number, "en", adultScrape, tmdb);
+                        String fallbackSeasonKey = seasonKey;
+                        int lastPipe = seasonKey.lastIndexOf("|");
+                        if (lastPipe != -1) {
+                            fallbackSeasonKey = seasonKey.substring(0, lastPipe + 1) + "en";
+                        }
+                        ShowIdSeasonSearchResult globalSeasonIdSearchResult = ShowIdSeasonSearch.getSeasonShowResponse(fallbackSeasonKey, showId, tvEpisode.season_number, "en", adultScrape, tmdb);
                         // stack all episodes in en to find later the overview and name
                         if (globalSeasonIdSearchResult.status == ScrapeStatus.OKAY) {
                             if (globalSeasonIdSearchResult.tvSeason != null && globalSeasonIdSearchResult.tvSeason.episodes != null) {

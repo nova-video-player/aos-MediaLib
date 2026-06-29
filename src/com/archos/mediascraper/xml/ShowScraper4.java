@@ -480,7 +480,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 SparseArray<ScraperImage> seasonPosters = sSeasonPosterCache.get(showKey);
                 if (seasonPosters == null && showTags != null) {
                     List<ScraperImage> postersFromDb = showTags.getAllPostersInDb(mContext);
-                    if (!postersFromDb.isEmpty()) {
+                    if (postersFromDb != null && !postersFromDb.isEmpty()) {
                         seasonPosters = buildSeasonPosterMap(postersFromDb, resultLanguage);
                         sSeasonPosterCache.put(showKey, seasonPosters);
                         if (log.isDebugEnabled()) log.debug("getDetailsInternal: cached season posters for show {}", showId);

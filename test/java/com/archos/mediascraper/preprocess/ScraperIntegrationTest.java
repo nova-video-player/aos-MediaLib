@@ -145,6 +145,19 @@ public class ScraperIntegrationTest {
                                     }
                                 }
                                 System.out.println(sb.toString());
+                                if (match.isTvShow()) {
+                                    android.os.Bundle options = new android.os.Bundle();
+                                    options.putInt(Scraper.ITEM_REQUEST_SEASON, match.getOriginSearchSeason());
+                                    options.putInt(Scraper.ITEM_REQUEST_EPISODE, match.getOriginSearchEpisode());
+                                    com.archos.mediascraper.ScrapeDetailResult detailResult = scraper.getDetails(match, options);
+                                    if (detailResult != null && detailResult.tag != null) {
+                                        if (detailResult.tag instanceof com.archos.mediascraper.EpisodeTags) {
+                                            com.archos.mediascraper.EpisodeTags epTag = (com.archos.mediascraper.EpisodeTags) detailResult.tag;
+                                            System.out.println(String.format("  -> DETAILS: Title='%s' Plot='%s' Picture='%s' Poster='%s'",
+                                                epTag.getTitle(), epTag.getPlot(), epTag.getEpisodePicture(), epTag.getDefaultPoster() != null ? epTag.getDefaultPoster().getLargeUrl() : "null"));
+                                        }
+                                    }
+                                }
                                 break;
                             }
                         }
