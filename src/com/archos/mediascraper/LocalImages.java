@@ -267,14 +267,20 @@ public class LocalImages {
     private static final String[] MATCH_LIST_BD_STATIC = {
         "fanart.png",
         "fanart.jpg",
+        "background.png",
+        "background.jpg",
     };
 
     /**
      * Tries to find a backdrop / fanart image for given video.
      * If videoTitle is given also tries to find an image that is based on
-     * that title in addition to filename based images
+     * that title in addition to filename based images.
+     * When searchParentFolder is true (shows/episodes), static fanart is also
+     * looked up in the parent show folder to support episodes in season
+     * subdirectories. It must stay false for movies so a film does not wrongly
+     * inherit a sibling-spanning Movies/fanart.jpg.
      */
-    public static Uri findBackdrop(Uri video, String videoTitle) {
+    public static Uri findBackdrop(Uri video, String videoTitle, boolean searchParentFolder) {
         if (video == null)
             return null;
 
@@ -301,10 +307,27 @@ public class LocalImages {
                 if (result != null)
                     return result;
             }
-            for (String extension : MATCH_LIST_BD_STATIC) {
-                result = getIfAvailable(parent, nameNoExt + extension);
+            // static names like fanart.jpg / background.jpg are not based on the
+            // filename, probe them directly in the parent folder
+            for (String filename : MATCH_LIST_BD_STATIC) {
+                result = getIfAvailable(parent, filename);
                 if (result != null)
                     return result;
+            }
+            // episodes can be in season subfolders like
+            // smb://server/share/TvShows/The Simpsons/Season 01/TheSimpsons.S01E01.avi
+            // so check the parent show folder for static fanart too. Only do this
+            // for shows/episodes: movies share a parent (e.g. Movies/) with unrelated
+            // films and must not inherit a sibling-spanning fanart.jpg.
+            if (searchParentFolder) {
+                Uri grandParent = FileUtils.getParentUrl(parent);
+                if (grandParent != null) {
+                    for (String filename : MATCH_LIST_BD_STATIC) {
+                        result = getIfAvailable(grandParent, filename);
+                        if (result != null)
+                            return result;
+                    }
+                }
             }
         }
         return result;

@@ -55,6 +55,7 @@ public class NfoShowHandler extends BasicHandler {
     private static final int IMDBID = 15;
     private static final int DIRECTOR = 16;
     private static final int WRITER = 17;
+    private static final int YEAR = 18;
 
     static {
         STRINGS.addKey("tvshow", ROOT);
@@ -75,6 +76,7 @@ public class NfoShowHandler extends BasicHandler {
         STRINGS.addKey("imdbid", IMDBID);
         STRINGS.addKey("director", DIRECTOR);
         STRINGS.addKey("writer", WRITER);
+        STRINGS.addKey("year", YEAR);
     }
 
     private ShowTags mResult;
@@ -86,6 +88,7 @@ public class NfoShowHandler extends BasicHandler {
     private boolean mInActor;
     private boolean mInFanart;
     private int mPosterSeason;
+    private int mYear;
 
     @Override
     protected void startFile() {
@@ -102,6 +105,7 @@ public class NfoShowHandler extends BasicHandler {
         mInActor = false;
         mInFanart = false;
         mPosterSeason = 0;
+        mYear = 0;
     }
 
     @Override
@@ -144,6 +148,7 @@ public class NfoShowHandler extends BasicHandler {
                     case IMDBID:
                     case DIRECTOR:
                     case WRITER:
+                    case YEAR:
                         return true;
                     case THUMB:
                         mPosterSeason = parseInt(attributes.getValue("", "season"));
@@ -218,6 +223,9 @@ public class NfoShowHandler extends BasicHandler {
                     case WRITER:
                         mResult.addWriterIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
                         break;
+                    case YEAR:
+                        mYear = parseInt(getString());
+                        break;
                     case ACTOR:
                         mInActor = false;
                         mResult.addActorIfAbsent(mActorName, mActorRole);
@@ -265,6 +273,14 @@ public class NfoShowHandler extends BasicHandler {
 
     public ShowTags getResult(Context context, Uri movieFile) {
         if (mCanParse) {
+            // <premiered> is the authoritative date; fall back to a bare <year>
+            // only when no usable premiered date was parsed
+            if (mYear > 0) {
+                java.util.Date premiered = mResult.getPremiered();
+                if (premiered == null || premiered.getTime() == 0) {
+                    mResult.setPremiered(String.format(java.util.Locale.ROOT, "%04d-01-01", Integer.valueOf(mYear)));
+                }
+            }
             String seed = mResult.getTitle();
             if (seed == null) {
                 // fallback to something useful

@@ -293,7 +293,7 @@ public class NfoParser {
                         }
 
                         // check if we can add local image to backdrops
-                        Uri backdrop = LocalImages.findBackdrop(nfo.videoFile, null);
+                        Uri backdrop = LocalImages.findBackdrop(nfo.videoFile, null, false);
                         if (backdrop != null) {
                             movieTags.addDefaultBackdrop(context, backdrop, nfo.videoFile);
                         }
@@ -395,7 +395,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show backdrop
-                Uri backdrop = LocalImages.findBackdrop(videoFile, showTitle);
+                Uri backdrop = LocalImages.findBackdrop(videoFile, showTitle, true);
                 if (backdrop != null) {
                     result.addDefaultBackdrop(context, backdrop);
                 }
