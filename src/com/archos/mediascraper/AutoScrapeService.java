@@ -544,6 +544,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                         index += processedInBatch;
                         cursor.close();
                     } while (index < numberOfRows && (isForeground || isForceAfterNetworkScan) && !Thread.currentThread().isInterrupted());
+                    // exports are dispatched asynchronously; wait for them before finishing
+                    NfoWriter.awaitPendingExports();
                     LoaderUtils.setScrapeInProgress(false);
                     cursor.close();
                 }
@@ -858,12 +860,9 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                             sNumberOfFilesScraped++;
                                         }
                                         noScrapeError = !persistenceFailed;
-                                        if (tags.getPosters() == null && tags.getDefaultPoster() == null &&
-                                                (!(tags instanceof EpisodeTags) || ((EpisodeTags) tags).getShowTags().getPosters() == null)) {//special case for episodes : check show
-                                            if (tags.getTitle() != null && !tags.getTitle().isEmpty()) { //if a title is specified in nfo, use it to scrap file
-                                                scrapUri = Uri.parse("/" + tags.getTitle() + ".mp4");
-                                                if (log.isTraceEnabled()) log.trace("startScraping: no posters using title {}", tags.getTitle());
-                                            }
+                                        if (hasNoUsableNfoPoster(tags)) {
+                                            scrapUri = getMissingNfoPosterScrapeUri(tags, fileUri, scrapUri);
+                                            if (log.isTraceEnabled()) log.trace("startScraping: no posters, using scrape uri {}", scrapUri);
                                             if (log.isTraceEnabled()) log.trace("startScraping: no posters ");
                                             //poster not found thus not scraped and no error
                                             notScraped = true;
@@ -1079,6 +1078,16 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                         Thread current = Thread.currentThread();
                         try {
                             if (log.isDebugEnabled()) log.debug("startScraping: finally cleanup");
+                            // Flush NFO exports queued during scraping before the service stops.
+                            // This runs on every exit path (normal completion and early returns).
+                            // If scraping was interrupted (user-requested stop) abandon the queued
+                            // exports for a prompt shutdown rather than blocking on them; the NFOs
+                            // are re-derivable on the next scrape.
+                            if (current.isInterrupted()) {
+                                if (log.isDebugEnabled()) log.debug("startScraping: interrupted, abandoning queued NFO exports");
+                            } else {
+                                NfoWriter.awaitPendingExports();
+                            }
                             if (cursor != null) cursor.close();
                             // Reset static flags
                             scrapeOnlyMovies = false;
@@ -1128,6 +1137,30 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
 
     static boolean shouldRunAnotherScrapeRound(int completedRounds, boolean restartRequested) {
         return restartRequested && completedRounds < MAX_AUTOSCRAPE_ROUNDS;
+    }
+
+    static boolean hasNoUsableNfoPoster(BaseTags tags) {
+        boolean noTagPoster = (tags.getPosters() == null || tags.getPosters().isEmpty())
+                && tags.getDefaultPoster() == null;
+        if (!(tags instanceof EpisodeTags)) {
+            return noTagPoster;
+        }
+        EpisodeTags episodeTags = (EpisodeTags) tags;
+        ShowTags showTags = episodeTags.getShowTags();
+        boolean noShowPoster = showTags == null || showTags.getPosters() == null
+                || showTags.getPosters().isEmpty();
+        return noTagPoster && noShowPoster;
+    }
+
+    static Uri getMissingNfoPosterScrapeUri(BaseTags tags, Uri fileUri, Uri currentScrapeUri) {
+        if (tags instanceof EpisodeTags) {
+            return fileUri;
+        }
+        String title = tags.getTitle();
+        if (title != null && !title.isEmpty()) {
+            return Uri.parse("/" + title + ".mp4");
+        }
+        return currentScrapeUri;
     }
 
     private static final String WHERE_BASE =

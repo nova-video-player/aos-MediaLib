@@ -15,13 +15,18 @@
 package com.archos.mediascraper;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import android.net.Uri;
 
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+
+import java.util.Collections;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 33)
@@ -88,5 +93,41 @@ public class AutoScrapeServicePersistenceTest {
     @Test
     public void completedRoundDoesNotRestartWithoutARequest() {
         assertFalse(AutoScrapeService.shouldRunAnotherScrapeRound(1, false));
+    }
+
+    @Test
+    public void nullAndEmptyPosterListsBothMeanNoArtwork() {
+        MovieTags nullPosters = new MovieTags();
+        MovieTags emptyPosters = new MovieTags();
+        emptyPosters.setPosters(Collections.emptyList());
+
+        assertTrue(AutoScrapeService.hasNoUsableNfoPoster(nullPosters));
+        assertTrue(AutoScrapeService.hasNoUsableNfoPoster(emptyPosters));
+    }
+
+    @Test
+    public void episodeWithoutPosterUsesOriginalFileUri() {
+        EpisodeTags tags = new EpisodeTags();
+        ShowTags showTags = new ShowTags();
+        showTags.setTitle("Example Show");
+        tags.setShowTags(showTags);
+        tags.setTitle("Pilot");
+        Uri fileUri = Uri.parse("smb://server/Example.Show.S01E01.mkv");
+
+        Uri result = AutoScrapeService.getMissingNfoPosterScrapeUri(tags, fileUri,
+                Uri.parse("/Pilot.mp4"));
+
+        assertEquals(fileUri, result);
+    }
+
+    @Test
+    public void movieWithoutPosterUsesNfoTitle() {
+        MovieTags tags = new MovieTags();
+        tags.setTitle("Curated Title");
+
+        Uri result = AutoScrapeService.getMissingNfoPosterScrapeUri(tags,
+                Uri.parse("smb://server/file.mkv"), Uri.parse("/old.mp4"));
+
+        assertEquals(Uri.parse("/Curated Title.mp4"), result);
     }
 }

@@ -45,6 +45,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class NfoWriter {
@@ -144,17 +147,22 @@ public class NfoWriter {
                 }
                 serializer.endTag("", "actor");
             }
-            serializer.startTag("", "set");
-            {
-                textTag(serializer, "id", tag.getCollectionId());
-                textTag(serializer, "name", tag.getCollectionName());
-                textTag(serializer, "overview", tag.getCollectionDescription());
-                textTag(serializer, "posterLarge", tag.getCollectionPosterLargeUrl());
-                textTag(serializer, "posterThumb", tag.getCollectionPosterThumbUrl());
-                textTag(serializer, "backdropLarge", tag.getCollectionBackdropLargeUrl());
-                textTag(serializer, "backdropThumb", tag.getCollectionBackdropThumbUrl());
+            // only emit the collection block when the movie actually belongs to a set,
+            // otherwise we write a hollow <set/> element on every movie
+            String collectionName = tag.getCollectionName();
+            if (tag.getCollectionId() > 0 || (collectionName != null && !collectionName.isEmpty())) {
+                serializer.startTag("", "set");
+                {
+                    textTag(serializer, "id", tag.getCollectionId());
+                    textTag(serializer, "name", collectionName);
+                    textTag(serializer, "overview", tag.getCollectionDescription());
+                    textTag(serializer, "posterLarge", tag.getCollectionPosterLargeUrl());
+                    textTag(serializer, "posterThumb", tag.getCollectionPosterThumbUrl());
+                    textTag(serializer, "backdropLarge", tag.getCollectionBackdropLargeUrl());
+                    textTag(serializer, "backdropThumb", tag.getCollectionBackdropThumbUrl());
+                }
+                serializer.endTag("", "set");
             }
-            serializer.endTag("", "set");
             List<ScraperImage> posters = tag.getPosters();
             if (posters != null) {
                 for (ScraperImage image : posters) {
@@ -319,7 +327,7 @@ public class NfoWriter {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("exportInternal: caught exception for uri {}", exportTarget, e);
         }
     }
 
@@ -352,17 +360,23 @@ public class NfoWriter {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("exportInternal: caught exception for uri {}", exportTarget, e);
         }
 
     }
 
-    private static void exportInternal(Uri video, ShowTags tag, ExportContext exportContext) throws IOException {
+    static void exportInternal(Uri video, ShowTags tag, ExportContext exportContext) throws IOException {
         String videoName = FileUtils.getFileNameWithoutExtension(video);
         Uri parent = FileUtils.getParentUrl(video);
         String showTitle = StringUtils.fileSystemEncode(tag.getTitle());
         // relocate uri for local files to writeable location to comply with API30
         Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(Uri.withAppendedPath(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION));
+        // a single show NFO is shared by every episode; skip if already exported in this context
+        String exportKey = exportTarget.toString();
+        if (exportContext != null && exportContext.contains(exportKey)) {
+            if (log.isTraceEnabled()) log.trace("exportInternal: show nfo already exported {}", exportKey);
+            return;
+        }
         if (log.isDebugEnabled()) log.debug("exportInternal: {} -> {}", video, exportTarget);
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget, null);
@@ -378,6 +392,10 @@ public class NfoWriter {
                 writer = null;
                 exportImage(tag.getDefaultPoster(), parent,  showTitle + NfoParser.POSTER_EXTENSION);
                 exportImage(tag.getDefaultBackdrop(), parent, showTitle + NfoParser.BACKDROP_EXTENSION);
+                // Mark exported only after the show NFO itself was written successfully, so a
+                // failed NFO write can be retried by a later episode. Dedup is keyed on the NFO:
+                // image copies are best-effort (exportImage swallows failures) and are not retried.
+                if (exportContext != null) exportContext.put(exportKey);
             } finally {
                 if (writer != null) {
                     // writer is only != null if writing nfo has thrown an exception
@@ -392,8 +410,15 @@ public class NfoWriter {
 
     }
 
+    // single worker so concurrent exports cannot write the same show NFO/poster at once
+    private static final ExecutorService EXPORT_EXECUTOR = Executors.newSingleThreadExecutor();
+
+    static void enqueueExportTask(Runnable task) {
+        EXPORT_EXECUTOR.execute(task);
+    }
+
     public static void export(Uri video, BaseTags tag, ExportContext exportContext) throws IOException {
-        new Thread(() -> {
+        enqueueExportTask(() -> {
             try {
                 if (tag instanceof MovieTags) {
                     exportInternal(video, (MovieTags)tag);
@@ -404,9 +429,24 @@ public class NfoWriter {
                     exportInternal(video, etag.getShowTags(), exportContext);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("export: failed for {}", video, e);
             }
-        }).start();
+        });
+    }
+
+    /** Blocks until every export queued before this call has finished. Call from a
+     *  background thread before a batch/scrape service reports completion or stops,
+     *  otherwise queued exports can be lost when the process is terminated. */
+    public static void awaitPendingExports() {
+        try {
+            // the executor is single-threaded and FIFO, so once this barrier task runs
+            // all previously submitted exports have completed
+            EXPORT_EXECUTOR.submit(() -> { }).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            log.error("awaitPendingExports: barrier task failed", e);
+        }
     }
 
     private static void exportImage(ScraperImage image, Uri folder,

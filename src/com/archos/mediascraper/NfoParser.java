@@ -142,11 +142,30 @@ public class NfoParser {
 
     static SAXParser getNewParser() {
         SAXParserFactory parserFactory = SAXParserFactory.newInstance();
+        // Handlers match element names through SAX localName. Make that contract
+        // explicit; otherwise standard JVM parsers return an empty localName.
+        parserFactory.setNamespaceAware(true);
+        // NFO files are untrusted external content (network shares, USB, downloaded
+        // libraries). Disable DOCTYPEs/external entities/external DTD loading to avoid
+        // XXE, SSRF and entity-expansion attacks. NFO files never legitimately need them.
+        setFeatureQuietly(parserFactory, "http://apache.org/xml/features/disallow-doctype-decl", true);
+        setFeatureQuietly(parserFactory, "http://xml.org/sax/features/external-general-entities", false);
+        setFeatureQuietly(parserFactory, "http://xml.org/sax/features/external-parameter-entities", false);
+        setFeatureQuietly(parserFactory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         try {
             return parserFactory.newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {
             log.error("Exception", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void setFeatureQuietly(SAXParserFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        } catch (ParserConfigurationException | SAXException e) {
+            // feature not supported on this XML stack, ignore
+            log.debug("setFeatureQuietly: {} not supported", feature);
         }
     }
 
@@ -185,30 +204,20 @@ public class NfoParser {
         if (videoParent == null)
             return result;
 
-        // check for our custom .arcnfo files, no show nfo since that is determined by parsed show title
+        // check for our custom .arcnfo files first
         Uri movieNfoFile = Uri.withAppendedPath(videoParent, videoNameNoExt + CUSTOM_NFO_EXTENSION);
         if (fileOk(movieNfoFile)) {
             result.videoNfo = movieNfoFile;
+            // a custom .archos.nfo episode resolves its show through the parsed show title,
+            // but a regular tvshow.nfo may still be the only show metadata available, so look it up too
+            result.showNfo = findShowNfo(videoParent);
         } else {
             // 1. there should be a "videoname.nfo" file
             Uri nfoFile = Uri.withAppendedPath(videoParent, videoNameNoExt + NFO_EXTENSION);
             if (fileOk(nfoFile)) {
                 result.videoNfo = nfoFile;
                 // 2. there could be a tvshow.nfo file in this or the parent folder if it is a tv show
-                Uri showNfoFile = Uri.withAppendedPath(videoParent, TV_SHOW_NFO);
-                if (fileOk(showNfoFile)) {
-                    result.showNfo = showNfoFile;
-                } else {
-                    // check in parent folder, "Simpsons/Season 1/Ep1.avi" could have
-                    // "Simpsons/tvshow.nfo"
-                    Uri parentParent = FileUtils.getParentUrl(videoParent);
-                    if (parentParent != null) {
-                        showNfoFile = Uri.withAppendedPath(parentParent, TV_SHOW_NFO);
-                        if (fileOk(showNfoFile)) {
-                            result.showNfo = showNfoFile;
-                        }
-                    }
-                }
+                result.showNfo = findShowNfo(videoParent);
             } else {
                 // 3. single movies in directories could be represented by a movie.nfo file
                 movieNfoFile = Uri.withAppendedPath(videoParent, MOVIE_NFO);
@@ -220,6 +229,21 @@ public class NfoParser {
         return result;
     }
 
+    /** Locates a tvshow.nfo in the given folder, falling back to its parent folder
+     * ("Simpsons/Season 1/Ep1.avi" -> "Simpsons/tvshow.nfo"). Returns null if none. */
+    private static Uri findShowNfo(Uri videoParent) {
+        Uri showNfoFile = Uri.withAppendedPath(videoParent, TV_SHOW_NFO);
+        if (fileOk(showNfoFile))
+            return showNfoFile;
+        Uri parentParent = FileUtils.getParentUrl(videoParent);
+        if (parentParent != null) {
+            showNfoFile = Uri.withAppendedPath(parentParent, TV_SHOW_NFO);
+            if (fileOk(showNfoFile))
+                return showNfoFile;
+        }
+        return null;
+    }
+
     private static boolean fileOk(Uri file) {
         if(file==null)
             return false;
@@ -227,7 +251,7 @@ public class NfoParser {
         try {
             metaFile2 = MetaFileFactoryWithUpnp.getMetaFileForUrl(file);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("fileOk: failed to stat {}", file, e);
         }
         return metaFile2 != null && metaFile2.isFile();
     }
@@ -247,13 +271,17 @@ public class NfoParser {
             if (importContext == null)
                 importContext = new ImportContext();
             InputStream nfoInputStream = null;
+            NfoRootHandler rootHandler = null;
             try {
                 // relocate uri for local files to writeable location to comply with API30
                 nfoInputStream = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.relocateNfoAppPublicDirForNfoJpgFiles(nfo.videoNfo), null).getInputStream();
-                NfoRootHandler rootHandler = importContext.getRootHandler();
+                rootHandler = importContext.getRootHandler();
+                // clear before parsing: handlers are reused across files in a shared
+                // ImportContext, and a previous parse aborted by an exception can leave
+                // stale movie/episode state behind
+                rootHandler.clear();
                 importContext.getParser().parse(nfoInputStream, rootHandler);
                 BaseTags tag = rootHandler.getResult(context, nfo.videoFile);
-                rootHandler.clear();
                 if (tag != null) {
                     if (tag instanceof MovieTags) {
                         MovieTags movieTags = (MovieTags) tag;
@@ -312,6 +340,10 @@ public class NfoParser {
             } catch (Exception e) {
                 log.error("Failed to read the NFO file.", e);
             } finally {
+                // always clear so a partial result from an aborted parse cannot leak
+                // into the next file that reuses this ImportContext; only touch the handler
+                // if it was actually obtained so a construction failure stays fail-soft
+                if (rootHandler != null) rootHandler.clear();
                 if(nfoInputStream!=null)
                     try {
                         nfoInputStream.close();
@@ -377,13 +409,15 @@ public class NfoParser {
 
     private static ShowTags parseShowNfo(Uri nfoFile, Uri videoFile, Context context, ImportContext importContext) {
         InputStream nfoInputStream = null;
+        NfoShowHandler showHandler = null;
         try {
             nfoInputStream = FileEditorFactoryWithUpnp.getFileEditorForUrl(nfoFile, null).getInputStream();
-            NfoShowHandler showHandler = importContext.getShowHandler();
+            showHandler = importContext.getShowHandler();
             SAXParser parser = importContext.getParser();
+            // clear before parsing in case a previous parse left stale state behind
+            showHandler.clear();
             parser.parse(nfoInputStream, showHandler);
             ShowTags result = showHandler.getResult(context, videoFile);
-            showHandler.clear();
             return result;
         } catch (SAXException e) {
             // could not parse
@@ -392,6 +426,9 @@ public class NfoParser {
             // could not read file
             log.error("Failed to read the NFO file.", e);
         }finally {
+            // always clear so an aborted parse cannot leak into the next show parse;
+            // only if the handler was obtained, to keep a construction failure fail-soft
+            if (showHandler != null) showHandler.clear();
             if(nfoInputStream!=null)
                 try {
                     nfoInputStream.close();

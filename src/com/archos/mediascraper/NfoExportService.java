@@ -177,6 +177,8 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
         nb.setContentText(getString(R.string.nfo_export_exporting_all));
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
+        // exports are dispatched asynchronously; wait for them before reporting done/stopping
+        NfoWriter.awaitPendingExports();
         removeAllTask();
         stopSelf();
     }
@@ -197,6 +199,8 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
             nm.notify(NOTIFICATION_ID, nb.build());
             handleCursor(getInDirectoryCursor(data));
         }
+        // exports are dispatched asynchronously; wait for them before reporting done/stopping
+        NfoWriter.awaitPendingExports();
         removeDirTask(data);
         stopSelf();
     }
