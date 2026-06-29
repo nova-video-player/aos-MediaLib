@@ -15,10 +15,7 @@
 package com.archos.mediascraper;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-import android.net.Uri;
 
 import org.junit.After;
 import org.junit.Test;
@@ -96,6 +93,40 @@ public class AutoScrapeServicePersistenceTest {
     }
 
     @Test
+    public void savedPosterlessNfoSuppressesOnlineIdentification() {
+        // saved NFO, no poster => notScraped stays false; must not go online (#1782)
+        assertFalse(AutoScrapeService.shouldIdentifyOnline(
+                true /*nfoPersisted*/, false /*persistenceFailed*/,
+                false /*notScraped*/, true /*noScrapeError*/, false /*shouldRescrapAll*/));
+    }
+
+    @Test
+    public void savedNfoSurvivesRescrapeAll() {
+        // "rescrape all" must not overwrite an authoritative persisted NFO
+        assertFalse(AutoScrapeService.shouldIdentifyOnline(
+                true /*nfoPersisted*/, false /*persistenceFailed*/,
+                false /*notScraped*/, true /*noScrapeError*/, true /*shouldRescrapAll*/));
+    }
+
+    @Test
+    public void missingNfoTriggersOnlineIdentification() {
+        // no NFO persisted: notScraped + noScrapeError => identify online
+        assertTrue(AutoScrapeService.shouldIdentifyOnline(
+                false /*nfoPersisted*/, false /*persistenceFailed*/,
+                true /*notScraped*/, true /*noScrapeError*/, false /*shouldRescrapAll*/));
+    }
+
+    @Test
+    public void failedNfoPersistenceDoesNotAttemptOnlineAndStaysRetryable() {
+        // a failed save must not be overwritten online...
+        assertFalse(AutoScrapeService.shouldIdentifyOnline(
+                false /*nfoPersisted*/, true /*persistenceFailed*/,
+                true /*notScraped*/, true /*noScrapeError*/, true /*shouldRescrapAll*/));
+        // ...and remains retryable rather than marked as not-found
+        assertFalse(AutoScrapeService.shouldMarkAsNotFound(true, true, false));
+    }
+
+    @Test
     public void nullAndEmptyPosterListsBothMeanNoArtwork() {
         MovieTags nullPosters = new MovieTags();
         MovieTags emptyPosters = new MovieTags();
@@ -106,28 +137,15 @@ public class AutoScrapeServicePersistenceTest {
     }
 
     @Test
-    public void episodeWithoutPosterUsesOriginalFileUri() {
+    public void episodeWithShowPosterIsNotConsideredMissingArtwork() {
         EpisodeTags tags = new EpisodeTags();
         ShowTags showTags = new ShowTags();
         showTags.setTitle("Example Show");
+        showTags.setPosters(Collections.singletonList(
+                new ScraperImage(ScraperImage.Type.SHOW_POSTER, "Example Show")));
         tags.setShowTags(showTags);
         tags.setTitle("Pilot");
-        Uri fileUri = Uri.parse("smb://server/Example.Show.S01E01.mkv");
 
-        Uri result = AutoScrapeService.getMissingNfoPosterScrapeUri(tags, fileUri,
-                Uri.parse("/Pilot.mp4"));
-
-        assertEquals(fileUri, result);
-    }
-
-    @Test
-    public void movieWithoutPosterUsesNfoTitle() {
-        MovieTags tags = new MovieTags();
-        tags.setTitle("Curated Title");
-
-        Uri result = AutoScrapeService.getMissingNfoPosterScrapeUri(tags,
-                Uri.parse("smb://server/file.mkv"), Uri.parse("/old.mp4"));
-
-        assertEquals(Uri.parse("/Curated Title.mp4"), result);
+        assertFalse(AutoScrapeService.hasNoUsableNfoPoster(tags));
     }
 }

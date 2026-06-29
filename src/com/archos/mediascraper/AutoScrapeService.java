@@ -802,6 +802,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 // for now there is no error and file is not scraped
                                 notScraped = true;
                                 boolean persistenceFailed = false;
+                                // a structurally valid NFO whose tags were persisted is authoritative
+                                boolean nfoPersisted = false;
 
                                 //Get the information we need about the current file, for use later in the scrape.
                                 String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
@@ -850,30 +852,33 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                                 log.warn("startScraping: NFO save failed for ID {}", ID);
                                                 persistenceFailed = true;
                                                 pendingPersistenceRetryIds.add(ID);
+                                            } else {
+                                                nfoPersisted = true;
                                             }
                                         } else {
                                             if (log.isTraceEnabled()) log.trace("startScraping: oh oh NFO ID = -1 ");
                                         }
-                                        //found NFO thus still no error but scraped
-                                        notScraped = persistenceFailed;
-                                        if (!persistenceFailed) {
+                                        // Only a persisted NFO counts as scraped. ID == -1 never saves,
+                                        // so it must stay "not scraped" and fall through to online identification.
+                                        notScraped = !nfoPersisted;
+                                        if (nfoPersisted) {
                                             sNumberOfFilesScraped++;
                                         }
                                         noScrapeError = !persistenceFailed;
-                                        if (hasNoUsableNfoPoster(tags)) {
-                                            scrapUri = getMissingNfoPosterScrapeUri(tags, fileUri, scrapUri);
-                                            if (log.isTraceEnabled()) log.trace("startScraping: no posters, using scrape uri {}", scrapUri);
-                                            if (log.isTraceEnabled()) log.trace("startScraping: no posters ");
-                                            //poster not found thus not scraped and no error
-                                            notScraped = true;
-                                            noScrapeError = true;
+                                        // A successfully persisted NFO is authoritative for identity and
+                                        // season/episode ordering. A missing poster must NOT re-enable the
+                                        // online identification path, because that re-identify+save overwrites
+                                        // the curated NFO data (see #1782). Only log the missing artwork; an
+                                        // artwork-only fetch can be added later without re-identifying.
+                                        if (nfoPersisted && hasNoUsableNfoPoster(tags)) {
+                                            if (log.isTraceEnabled()) log.trace("startScraping: NFO saved but no usable poster, keeping NFO data authoritative for {}", fileUri);
                                         }
                                         if (log.isTraceEnabled()) log.trace("startScraping: NFO found, notScaped {}, noScrapeError {} for {}", notScraped, noScrapeError, fileUri);
                                     }
                                 }
 
                                 //No NFO Tags, we need to scrape.
-                                if (!persistenceFailed && ((notScraped && noScrapeError) || (shouldRescrapAll & noScrapeError))) { //look for online details
+                                if (shouldIdentifyOnline(nfoPersisted, persistenceFailed, notScraped, noScrapeError, shouldRescrapAll)) { //look for online details
                                     if (log.isTraceEnabled()) log.trace("startScraping: NFO NOT found");
                                     ScrapeDetailResult result = null;
                                     boolean searchOnline = true;
@@ -1139,6 +1144,20 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         return restartRequested && completedRounds < MAX_AUTOSCRAPE_ROUNDS;
     }
 
+    /**
+     * Decides whether the online identification (re-identify + save) path should run.
+     * A persisted NFO is authoritative for identity and season/episode ordering, so it
+     * suppresses online identification even during "rescrape all" (see #1782). A failed
+     * NFO persistence does not trigger an online attempt either; it stays retryable.
+     */
+    static boolean shouldIdentifyOnline(boolean nfoPersisted, boolean persistenceFailed,
+            boolean notScraped, boolean noScrapeError, boolean shouldRescrapAll) {
+        if (nfoPersisted || persistenceFailed) {
+            return false;
+        }
+        return (notScraped && noScrapeError) || (shouldRescrapAll && noScrapeError);
+    }
+
     static boolean hasNoUsableNfoPoster(BaseTags tags) {
         boolean noTagPoster = (tags.getPosters() == null || tags.getPosters().isEmpty())
                 && tags.getDefaultPoster() == null;
@@ -1150,17 +1169,6 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         boolean noShowPoster = showTags == null || showTags.getPosters() == null
                 || showTags.getPosters().isEmpty();
         return noTagPoster && noShowPoster;
-    }
-
-    static Uri getMissingNfoPosterScrapeUri(BaseTags tags, Uri fileUri, Uri currentScrapeUri) {
-        if (tags instanceof EpisodeTags) {
-            return fileUri;
-        }
-        String title = tags.getTitle();
-        if (title != null && !title.isEmpty()) {
-            return Uri.parse("/" + title + ".mp4");
-        }
-        return currentScrapeUri;
     }
 
     private static final String WHERE_BASE =
