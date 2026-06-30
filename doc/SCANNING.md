@@ -1,10 +1,15 @@
-# Network scan & autoscrape coordination (spec)
+# Media scanning, import & autoscrape coordination (spec)
 
-How a network (remote) re-index runs end to end: from the periodic refresh
-trigger, through per-folder scanning and database writes, to the single
-autoscrape that fires once the whole batch finishes cleanly. This documents the
-runtime contract enforced by the indexing write-path — not the schema
-(see `DATABASE_UPDATE.md`) nor the scrape matching heuristics (see `SCRAPE.md`).
+This document specifies two indexing paths:
+
+1. how a network (remote) re-index runs from the periodic refresh trigger to the
+   single autoscrape fired after clean batch completion; and
+2. how `VideoStoreImportImpl` mirrors Android MediaStore, including primary and
+   removable-volume lifecycle rules.
+
+It documents runtime contracts enforced by the indexing write paths, not schema
+migration procedure (see `DATABASE_UPDATE.md`) or scrape matching heuristics (see
+`SCRAPE.md`).
 
 Sentry: NOVA-VIDEO-PLAYER-15A7
 
@@ -31,6 +36,9 @@ Key files:
 - `src/com/archos/mediaprovider/video/NetworkScannerServiceVideo.java` — per-folder scan + completion reporting.
 - `src/com/archos/mediascraper/AutoScrapeService.java` — batch accounting + completion routing.
 - `src/com/archos/mediaprovider/video/VideoProvider.java` — transactional DB writes the scans depend on.
+- `src/com/archos/mediaprovider/video/VideoStoreImportImpl.java` — MediaStore import, path reconciliation, and volume visibility.
+- `src/com/archos/mediaprovider/video/VideoStoreImportService.java` — mount/unmount import scheduling and delayed cleanup.
+- `src/com/archos/mediaprovider/video/VideoOpenHelper.java` — `files_import`, `files`, and volume lifecycle triggers.
 
 ## 2. Batch model & invariants
 
@@ -212,7 +220,250 @@ device filesystem, reproduce every Android SQLite version, or simulate process d
 with pending Android service redelivery. Validate those conditions on representative
 devices when changing their behavior.
 
-## 8. Cross-references
+## 8. Local MediaStore import and removable storage
+
+Network shares use `NetworkScannerServiceVideo`; local primary storage, SD cards,
+and USB storage are discovered through Android MediaStore and mirrored by
+`VideoStoreImportImpl`. MediaStore is the discovery source, but Nova's database is
+the durable owner of scraper metadata, artwork relationships, playback state, and
+user state.
+
+```
+Android MediaStore files
+       ↓ full/incremental import
+files_import                    imported MediaStore identity and volume state
+       ↓ insert/delete/visibility triggers
+files                           stable Nova file row and playback/scraper state
+       ↓ remote_id relationships
+movie / episode / artwork       scraped metadata
+```
+
+### 8.1 Identity and table ownership
+
+`files_import` mirrors columns supplied by MediaStore, including MediaStore `_id`,
+path, size, timestamps, parent, and Nova's `storage_id` / `volume_hidden` state.
+`files` is the application-facing file table. On initial import its `_id` and
+`remote_id` equal the MediaStore `_id`. They have different declared relationships,
+but existing views and triggers assume that the three imported identities remain
+equal:
+
+- `files._id` is Nova's application-facing file identity. Playback state is stored
+  on this row; subtitles reference this key with `ON UPDATE CASCADE`, while
+  `videothumbnails.video_id` uses it without a foreign key.
+- `files.remote_id` tracks the current imported identity. Movie and episode
+  `video_id` foreign keys reference it with `ON UPDATE CASCADE`.
+- `files_import._id` is the current MediaStore identity used to decide whether a row
+  has already been imported.
+
+Do not solve a move by deleting and reinserting the `files` row. Deletion can
+cascade through movie/episode rows and their poster/backdrop relationships. Update
+the existing row in place. For a new-id remap, update all three ids together: leaving
+`files._id` at the old value breaks the `volume_hidden` trigger and the video views,
+which join movie/episode `video_id` against `files._id` even though their foreign keys
+reference `files.remote_id`.
+
+### 8.2 Full and incremental import
+
+Both import modes query `MediaStore.Files` and then scan imported rows whose media
+metadata is incomplete:
+
+- full import enumerates all eligible MediaStore rows;
+- incremental import first loads the highest imported id and copies newer ids;
+- both update mounted/unmounted volume visibility and run path reconciliation;
+- `copyData` skips a MediaStore row when its `_id` already exists in `files_import`.
+
+That final rule is why path reconciliation is required: an unchanged MediaStore id
+with a changed path would otherwise be skipped forever, leaving Nova pointed at the
+old path.
+
+The current stable-id reconciliation runs after `copyData`. Any future reconciliation
+that pairs an old id with a newly assigned MediaStore id must run **before**
+`copyData`, or the new row will already have been inserted and a safe merge will be
+more complicated.
+
+### 8.3 Volume hide, remount, and retention lifecycle
+
+An unavailable removable volume is not equivalent to deleted media. Nova keeps its
+rows and changes visibility instead:
+
+1. On unmount or absence, matching `files_import` rows receive a non-zero
+   `volume_hidden` timestamp.
+2. The update trigger propagates that state to `files`, removing the media from
+   normal visible queries without deleting metadata.
+3. On remount, rows belonging to the mounted storage id/path are unhidden and an
+   import refreshes the volume.
+4. For a mounted volume, a row missing from MediaStore is checked with
+   `File.exists()` before it is hidden. This protects against MediaStore indexing
+   delay immediately after mount.
+5. The `hide_volume_cmd` cleanup policy may delete rows that have remained hidden
+   for more than one month when cleanup for that volume runs.
+
+The retention window is intentional. It preserves scraper and playback state across
+normal unplug/replug cycles and provides the old row needed to reconcile a file that
+was moved while the device was disconnected.
+
+Android-version handling differs internally: older releases can use MediaStore's
+`storage_id`; newer releases use mounted path prefixes because that projection is no
+longer available. The lifecycle contract above must remain the same on both paths.
+`ExtStorageManager`'s SD/USB/other lists are the mounted-readable source on recent
+Android versions. Do not recheck those paths through its legacy `IMountService`
+reflection: hidden-API restrictions can report `MEDIA_REMOVED` for a mounted volume.
+If no removable storage hash is available, reconciliation preserves MediaStore's
+projected or the existing row's `storage_id`; it must not substitute the primary
+volume id.
+
+### 8.4 Primary versus removable-storage policy
+
+| Storage state | Path update | Missing-row policy |
+| --- | --- | --- |
+| Primary storage mounted | Reconcile matching MediaStore ids in place | Delete only after a complete MediaStore pass and `File.exists() == false`. |
+| Removable storage mounted | Reconcile matching MediaStore ids in place | Never delete unmatched rows during reconciliation; use hide/unhide lifecycle. |
+| Removable storage unmounted | Do not reconcile | Hide and retain; never infer deletion from absence. |
+
+The removable policy is stricter because `File.exists() == false` is expected while
+a drive is disconnected. Introducing removal into that path would turn an ordinary
+unplug into destructive metadata cleanup.
+
+### 8.5 Stable-id move reconciliation (implemented)
+
+When MediaStore preserves `_id` and only `_data` changes, reconciliation updates
+`files_import` and `files` in one provider batch. This preserves Nova's file id,
+scraper rows, poster/backdrop choices, bookmarks, and playback state. It covers:
+
+- moves on primary storage observed by the same Android device; and
+- moves on a mounted SD/USB volume when that device's MediaStore preserves the id.
+
+The raw `files` provider normally strips `_data` updates. Import reconciliation uses
+an internal marker that is honored only for calls from Nova's own UID, then removed
+before the SQL update. Do not weaken this boundary: `VideoProvider` is exported.
+
+### 8.6 Offline same-volume moves with a new MediaStore id
+
+Moving a file while its USB/SD volume is attached to a PC or another Android device
+is not an observed rename from the TV's perspective. MediaStore state is local to
+each Android device and is not stored on the removable filesystem. When the volume
+returns, the TV may expose the new path under a new MediaStore id and later remove
+the old id. The pre-copy new-id reconciliation phase associates conservative,
+same-volume matches before normal import can create a replacement Nova row.
+
+Moving a drive with a phone file manager has the same limitation when Nova runs on
+the TV: updating the phone's MediaStore does not update the TV's MediaStore. If the
+file manager and Nova run on the same device while the volume remains mounted, the
+implemented stable-id path may apply.
+
+The implementation matches a unique normalized filename and exact size with
+modification time within three seconds. It deliberately does not reconcile moves
+between different volumes, renamed files, ambiguous matches, or replacement files
+whose size or timestamp changed.
+
+Do not validate issue #1759 solely with a stable-id test. Validate both:
+
+- mounted same-device folder move; and
+- offline move followed by unmount/remount and a newly assigned MediaStore id.
+
+### 8.7 New-id reconciliation design and constraints
+
+This must be a separate **pre-copy reconciliation phase**, not an extension of the
+current post-copy stable-id pass. Running before `copyData` is a correctness
+requirement: `files.remote_id` is unique with `ON CONFLICT IGNORE`, so once the new
+row has been inserted, an attempted old-to-new remap can be silently ignored.
+
+The implemented phase uses conservative identity matching:
+
+1. For each mounted volume, collect old imported rows whose id is absent from the
+   current MediaStore result and whose old path no longer exists.
+2. Collect new MediaStore rows. Normally their ids are absent from `files_import`;
+   an already imported destination is considered only for guarded repair.
+3. Match only an unambiguous one-to-one pair on the same volume. An initial identity
+   may use normalized filename, exact size, and modification time within three
+   seconds, matching the scanner's existing FAT/exFAT tolerance. Ambiguous matches
+   must fall back to normal import without metadata transfer.
+4. Require the destination id to be free, or prove that an existing destination is
+   unscraped and carries no bookmark, playback, favorite, Trakt, hidden, custom
+   title, movie, or episode state. Provider operations require expected update
+   counts so `ON CONFLICT IGNORE` cannot masquerade as success.
+5. In one transaction with foreign-key enforcement active:
+   - update the existing `files` row's `_id`, `remote_id`, path, and imported columns
+     to the new MediaStore identity;
+   - let movie/episode references cascade through `remote_id`;
+   - let subtitle references cascade through `_id`;
+   - manually update `videothumbnails.video_id`, which has no foreign key; and
+   - update `files_import._id`, path, and imported columns to the same identity.
+   Bookmarks, playback state, Trakt state, and scraper ids remain on the updated
+   `files` row.
+6. Run `copyData` only after this remapping, so it sees the new id as imported.
+
+The runtime database enables `PRAGMA foreign_keys = ON` in `VideoOpenHelper.onOpen`.
+Real-database tests verify that setting on the provider connection and run
+`PRAGMA foreign_key_check` after remapping. An interrupt or failed operation must
+roll back the entire remap.
+
+Additional safety rules:
+
+- the old volume must be mounted and the old path confirmed absent;
+- never interpret an unmounted source volume as proof of a move;
+- never transfer state when multiple old or new rows share the candidate identity;
+- never delete unmatched removable rows;
+- do not apply move reconciliation to a replacement file whose size or identity
+  changed; replacing an inferior copy is a separate workflow;
+- repairing an already duplicated old/new pair must not delete a newly scraped row
+  or trigger artwork cleanup without first deciding which row owns valid metadata.
+
+Repair is not necessarily forward-only. A previously affected removable file can be
+recovered while its old scraped row is still retained and hidden: if the destination
+row is demonstrably unscraped and the old/new identity match is unique, delete the
+unscraped duplicate and remap the retained row in one transaction. If cleanup has
+already deleted the old movie/episode/artwork rows, there is nothing left to
+preserve and the entry must be scraped again. If both rows contain meaningful user
+or scraper state, skip automatic repair.
+
+Filename/size/mtime matching covers common same-volume offline folder moves but not
+all renamed/copied files. A durable content signature (for example, size plus hashes
+of bounded chunks from the beginning and end of the file) is the stronger long-term
+identity. It requires schema migration, backfill, and I/O-cost analysis before use.
+
+### 8.8 Local-import invariants
+
+- Absence of a removable volume never means its files were deleted.
+- `files._id`, `files.remote_id`, and `files_import._id` remain equal for imported
+  rows; a new-id remap updates all three atomically.
+- Primary cleanup requires both a complete MediaStore pass and filesystem absence.
+- Removable reconciliation updates known moves but does not delete unmatched rows.
+- Import interruption or query failure must disable cleanup for that pass.
+- Path conflicts and ambiguous identity matches are logged and left untouched.
+- Full and incremental imports must enforce identical reconciliation guarantees.
+
+### 8.9 Validation and diagnostics
+
+`VideoStoreImportReconciliationTest` covers stable-id primary and removable moves,
+primary deletion after confirmed absence, retention during MediaStore lag, the
+no-delete removable guarantee, caller authorization, and ambiguous new-id matching.
+
+`VideoStoreIdRemapDatabaseTest` uses a real Robolectric SQLite database and the
+provider transaction path to cover:
+
+- unique old/new match updating all three ids while preserving the `files` row's
+  scraper, playback, bookmark, and Trakt values;
+- movie/episode `video_id` and subtitle ids following their foreign-key cascades;
+- `videothumbnails.video_id` being updated explicitly;
+- volume hide/unhide still reaching the remapped row;
+- ambiguous duplicate identity producing no remap;
+- transaction rollback leaving both identities consistent;
+- repair of a retained scraped source plus an already inserted unscraped destination;
+- refusal to replace a destination that already carries user state;
+- `PRAGMA foreign_key_check` returning no rows after each scenario;
+
+Mounted-volume discovery and `File.exists()` remain device integration behavior;
+validate an old path that still exists, an unmounted source volume, and an actual
+unmount/offline-move/remount cycle on hardware. Migration from every supported
+database version is required if a content-signature column is introduced later.
+
+Import summaries log inserted (`+`), reconciled (`~`), and removed (`-`) counts.
+Device validation should capture MediaStore `_id`/`_data` and Nova
+`files._id`/`remote_id`/`_data` before and after each move; a path-only log cannot
+distinguish stable-id from new-id behavior.
+
+## 9. Cross-references
 
 - `TEST.md` → "Network scanner service", "Video provider transactions",
   "Auto-scrape network scan coordination" — the regression tests for sections 2–5.

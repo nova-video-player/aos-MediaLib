@@ -42,6 +42,9 @@ import org.robolectric.annotation.Config;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 33)
@@ -134,6 +137,40 @@ public class VideoStoreImportReconciliationTest {
     }
 
     @Test
+    public void discoveredUsbVolumeIsNotFilteredByLegacyMountState() {
+        String usb = "/storage/39F3-140A";
+
+        Set<String> paths = VideoStoreImportImpl.collectDiscoveredRemovableStoragePaths(
+                PRIMARY, Collections.emptyList(), Arrays.asList(usb),
+                Collections.emptyList());
+
+        assertEquals(Collections.singleton(usb), paths);
+    }
+
+    @Test
+    public void changedIdMoveWithAmbiguousIdentityIsNotRemapped() throws Exception {
+        String removable = "/storage/ABCD-1234";
+        ContentResolver resolver = mock(ContentResolver.class);
+        MatrixCursor imported = importIdentityCursor();
+        imported.addRow(new Object[] {
+                44L, removable + "/FolderA/Movie.mkv", "Movie.mkv", 1234L, 200L
+        });
+        MatrixCursor media = mediaCursor(84L, removable + "/FolderB/Movie.mkv");
+        media.addRow(new Object[] {
+                85L, removable + "/FolderC/Movie.mkv", "Movie.mkv", 1234L,
+                100L, 202L, "bucket", "FolderC", 0, 1
+        });
+        stubQueries(resolver, imported, media);
+
+        VideoStoreImportImpl.LocalReconciliationResult result =
+                VideoStoreImportImpl.reconcileChangedMediaStoreIds(
+                        resolver, removable, 1234);
+
+        assertEquals(0, result.updated);
+        verify(resolver, never()).applyBatch(anyString(), any());
+    }
+
+    @Test
     public void existingPrimaryFileIsRetainedWhenMediaStoreTemporarilyOmitsIt() throws Exception {
         File primary = temporaryFolder.newFolder("primary");
         File video = new File(primary, "Movie.mkv");
@@ -178,12 +215,37 @@ public class VideoStoreImportReconciliationTest {
         assertEquals(false, externalUpdate.containsKey("_data"));
         assertEquals(false, externalUpdate.containsKey(
                 VideoStoreInternal.KEY_IMPORT_RECONCILE_PATH));
+
+        ContentValues idReconciliation = new ContentValues();
+        idReconciliation.put("_id", 84L);
+        idReconciliation.put("_data", PRIMARY + "/Movies/Remapped.mkv");
+        idReconciliation.put(VideoStoreInternal.KEY_IMPORT_RECONCILE_ID, true);
+        VideoProvider.sanitizeImportedFileUpdate(idReconciliation, true);
+        assertEquals(84L, idReconciliation.getAsLong("_id").longValue());
+        assertEquals(PRIMARY + "/Movies/Remapped.mkv",
+                idReconciliation.getAsString("_data"));
+        assertEquals(false, idReconciliation.containsKey(
+                VideoStoreInternal.KEY_IMPORT_RECONCILE_ID));
+
+        ContentValues externalIdUpdate = new ContentValues();
+        externalIdUpdate.put("_id", 85L);
+        externalIdUpdate.put("_data", PRIMARY + "/Movies/External-remap.mkv");
+        externalIdUpdate.put(VideoStoreInternal.KEY_IMPORT_RECONCILE_ID, true);
+        VideoProvider.sanitizeImportedFileUpdate(externalIdUpdate, false);
+        assertEquals(false, externalIdUpdate.containsKey("_id"));
+        assertEquals(false, externalIdUpdate.containsKey("_data"));
     }
 
     private static MatrixCursor importedCursor(long id, String path) {
         MatrixCursor cursor = new MatrixCursor(new String[] { "_id", "_data" });
         cursor.addRow(new Object[] { id, path });
         return cursor;
+    }
+
+    private static MatrixCursor importIdentityCursor() {
+        return new MatrixCursor(new String[] {
+                "_id", "_data", "_display_name", "_size", "date_modified"
+        });
     }
 
     private static MatrixCursor mediaCursor(long id, String path) {

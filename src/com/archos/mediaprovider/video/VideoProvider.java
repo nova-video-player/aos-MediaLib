@@ -773,11 +773,16 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
     }
 
     static void sanitizeImportedFileUpdate(ContentValues values, boolean callerIsSelf) {
-        boolean reconcileImportedPath = callerIsSelf && values.containsKey(
+        boolean reconcileImportedId = callerIsSelf && values.containsKey(
+                VideoStoreInternal.KEY_IMPORT_RECONCILE_ID);
+        boolean reconcileImportedPath = reconcileImportedId || callerIsSelf && values.containsKey(
                 VideoStoreInternal.KEY_IMPORT_RECONCILE_PATH);
+        values.remove(VideoStoreInternal.KEY_IMPORT_RECONCILE_ID);
         values.remove(VideoStoreInternal.KEY_IMPORT_RECONCILE_PATH);
         values.remove(VideoStoreInternal.KEY_SCANNER);
-        values.remove(BaseColumns._ID);
+        if (!reconcileImportedId) {
+            values.remove(BaseColumns._ID);
+        }
         if (!reconcileImportedPath) {
             values.remove(MediaColumns.DATA);
         }
