@@ -98,7 +98,7 @@ public class VideoStoreImportReconciliationTest {
     }
 
     @Test
-    public void removableStorageRowIsUntouched() throws Exception {
+    public void primaryReconciliationDoesNotTouchRemovableStorageRows() throws Exception {
         ContentResolver resolver = mock(ContentResolver.class);
         MatrixCursor imported = importedCursor(44L, "/storage/ABCD-1234/Movies/Movie.mkv");
         MatrixCursor media = new MatrixCursor(MEDIA_COLUMNS);
@@ -111,6 +111,26 @@ public class VideoStoreImportReconciliationTest {
         assertEquals(0, result.removed);
         verify(resolver, never()).delete(any(Uri.class), anyString(), any(String[].class));
         verify(resolver, never()).applyBatch(anyString(), any());
+    }
+
+    @Test
+    public void movedFileOnMountedRemovableStorageIsUpdatedWithoutDeletingMissingRows()
+            throws Exception {
+        String removable = "/storage/ABCD-1234";
+        ContentResolver resolver = mock(ContentResolver.class);
+        MatrixCursor imported = importedCursor(44L, removable + "/FolderA/Movie.mkv");
+        MatrixCursor media = mediaCursor(44L, removable + "/FolderB/Movie.mkv");
+        imported.addRow(new Object[] { 45L, removable + "/FolderA/Missing.mkv" });
+        stubQueries(resolver, imported, media);
+
+        VideoStoreImportImpl.LocalReconciliationResult result =
+                VideoStoreImportImpl.reconcileStorageRows(
+                        resolver, removable, 1234, false);
+
+        assertEquals(1, result.updated);
+        assertEquals(0, result.removed);
+        verify(resolver).applyBatch(eq(VideoStore.AUTHORITY), any());
+        verify(resolver, never()).delete(any(Uri.class), anyString(), any(String[].class));
     }
 
     @Test
