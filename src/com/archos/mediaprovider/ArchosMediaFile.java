@@ -132,10 +132,11 @@ public class ArchosMediaFile {
     public static final int FILE_TYPE_SRR           = 1207;
     public static final int FILE_TYPE_MPL           = 1208;
     public static final int FILE_TYPE_TXT           = 1209;
+    public static final int FILE_TYPE_SUP           = 1210;
 
     // keep in sync with com.archos.mediacenter.video.utils.VideoUtils.SUBTITLES_ARRAY
     private static final int FIRST_SUBTITLE_FILE_TYPE = FILE_TYPE_SRT;
-    private static final int LAST_SUBTITLE_FILE_TYPE = FILE_TYPE_TXT;
+    private static final int LAST_SUBTITLE_FILE_TYPE = FILE_TYPE_SUP;
 
     private static final int FILE_TYPE_ANY_VIDEO = 1300;
 
@@ -279,6 +280,7 @@ public class ArchosMediaFile {
         addFileType("MPL", FILE_TYPE_MPL, "text/plain");
         addFileType("SRR", FILE_TYPE_SRR, "text/plain");
         addFileType("TXT", FILE_TYPE_TXT, "text/plain");
+        addFileType("SUP", FILE_TYPE_SUP, "application/pgs");
 
         addFileType("WTV", FILE_TYPE_WTV, "video/wtv");
 
