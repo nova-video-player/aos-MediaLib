@@ -29,7 +29,7 @@ configurations {
 
 android {
     namespace = 'com.archos.medialib'
-    compileSdk = 36
+    compileSdk = 37
     gradle.startParameter.getTaskNames().each { task ->
         if (task.contains("Open")) {
             groupOpen = true
@@ -61,7 +61,7 @@ android {
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 35
+        targetSdkVersion 36
         multiDexEnabled = true
     }
 
@@ -150,7 +150,7 @@ dependencies {
     implementation project(':FileCoreLibrary')
     implementation 'androidx.lifecycle:lifecycle-process:2.11.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
-    implementation 'androidx.core:core:1.18.0'
+    implementation 'androidx.core:core:1.19.0'
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
     implementation 'androidx.media:media:1.8.0'
     implementation 'androidx.fragment:fragment:1.8.9'
@@ -164,7 +164,7 @@ dependencies {
     implementation 'org.json:json:20260522'
     // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     //implementation ('com.github.nova-video-player:trakt-java:0.0.1') {
-    implementation ('com.uwetrottmann.trakt5:trakt-java:6.20.0') {
+    implementation ('com.uwetrottmann.trakt5:trakt-java:6.20.1') {
         exclude group: 'org.threeten', module: 'threetenbp'
     }
     implementation 'com.jakewharton.threetenabp:threetenabp:1.4.9'
@@ -191,10 +191,10 @@ dependencies {
     implementation ('org.eclipse.jetty:jetty-client:9.2.30.v20200428') {
         exclude group: 'org.eclipse.jetty.orbit', module: 'javax.servlet'
     }
-    implementation 'io.sentry:sentry:8.46.0'
+    implementation 'io.sentry:sentry:8.49.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.23.0'
-    testImplementation 'ch.qos.logback:logback-classic:1.5.37'
+    testImplementation 'ch.qos.logback:logback-classic:1.5.38'
     testImplementation 'org.slf4j:slf4j-api:2.0.18'
     testImplementation 'org.robolectric:robolectric:4.16.1'
     testImplementation 'androidx.test:core:1.7.0'
