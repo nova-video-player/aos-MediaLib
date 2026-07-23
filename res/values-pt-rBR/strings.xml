@@ -12,14 +12,14 @@
     <!-- Do not translate. Duration format for duration < 1 hour -->
     <!-- Do not translate. Duration format for duration >= 1 hour -->
     <!-- Notification Message when Indexing Network -->
-    <string name="network_scan_msg">Indexação de Arquivos de Mídia</string>
+    <string name="network_scan_msg">Indexando Arquivos de Mídia</string>
     <string name="network_unscan_msg">Removendo arquivos de mídia da biblioteca</string>
     <!-- .nfo export options -->
     <string name="nfo_export_category">Exportar informações de mídia</string>
-    <string name="nfo_export_auto_title">Exportação automática após a busca</string>
-    <string name="nfo_export_manual_title">Exportar vídeos já pesquisados</string>
-    <string name="nfo_export_auto_summary">Exportar automaticamente arquivos .nfo após busca online bem-sucedida</string>
-    <string name="nfo_export_manual_summary">Exportar arquivos .nfo de cada vídeo já pesquisado</string>
+    <string name="nfo_export_auto_title">Exportar automaticamente após a busca</string>
+    <string name="nfo_export_manual_title">Exportar vídeos com metadados</string>
+    <string name="nfo_export_auto_summary">Exporte automaticamente arquivos .nfo após busca online bem-sucedida.</string>
+    <string name="nfo_export_manual_summary">Exporte arquivos .nfo de todos os vídeos já coletados.</string>
     <string name="nfo_export_button">Exportar .nfo</string>
     <string name="nfo_export_folder">Exportar tudo desta pasta para .nfo</string>
     <string name="nfo_export_all">Exportar toda a biblioteca para .nfo</string>
@@ -141,5 +141,5 @@
     <string name="remaining_videos_to_process">Arquivos de mídia restantes a serem processados:</string>
     <string name="video_store_import">Importando arquivos de mídia locais</string>
     <string name="current_video_title">Atual:</string>
-    <string name="noresult_video_title">Não identificados:</string>
+    <string name="noresult_video_title">Sem metadados:</string>
 </resources>
