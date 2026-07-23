@@ -28,6 +28,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
 import android.provider.MediaStore;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -253,6 +254,17 @@ public class VideoStoreIdRemapDatabaseTest {
                 database.query(VideoOpenHelper.FILES_IMPORT_TABLE_NAME,
                         invocation.getArgument(1), invocation.getArgument(2),
                         invocation.getArgument(3), null, null, null));
+        when(resolver.query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
+                any(Bundle.class), isNull())).thenAnswer(invocation -> {
+                    Bundle queryArgs = invocation.getArgument(2);
+                    return database.query(VideoOpenHelper.FILES_IMPORT_TABLE_NAME,
+                            invocation.getArgument(1),
+                            queryArgs.getString(ContentResolver.QUERY_ARG_SQL_SELECTION),
+                            queryArgs.getStringArray(
+                                    ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS),
+                            null, null, "_id ASC",
+                            String.valueOf(queryArgs.getInt(ContentResolver.QUERY_ARG_LIMIT)));
+                });
         when(resolver.query(eq(VideoStoreInternal.FILES), any(String[].class),
                 anyString(), any(String[].class), isNull())).thenAnswer(invocation ->
                 database.query(VideoOpenHelper.FILES_TABLE_NAME,
@@ -262,7 +274,7 @@ public class VideoStoreIdRemapDatabaseTest {
 
     private void stubMediaStore(Cursor cursor) {
         when(resolver.query(eq(MediaStore.Files.getContentUri("external")),
-                any(String[].class), anyString(), any(String[].class), anyString()))
+                any(String[].class), any(Bundle.class), isNull()))
                 .thenReturn(cursor);
     }
 

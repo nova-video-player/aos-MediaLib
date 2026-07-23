@@ -15,12 +15,14 @@
 package com.archos.mediaprovider.video;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +32,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 
 import org.junit.Rule;
@@ -44,6 +47,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @RunWith(RobolectricTestRunner.class)
@@ -171,6 +175,171 @@ public class VideoStoreImportReconciliationTest {
     }
 
     @Test
+    public void changedIdMoveAcrossMountedUsbVolumesUsesOneSnapshotPass() throws Exception {
+        String sourceStorage = "/storage/AAAA-1111";
+        String destinationStorage = "/storage/BBBB-2222";
+        String oldPath = sourceStorage + "/Movies/Movie.mkv";
+        String newPath = destinationStorage + "/Movies/Movie.mkv";
+        ContentResolver resolver = mock(ContentResolver.class);
+
+        when(resolver.query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
+                any(Bundle.class), isNull())).thenAnswer(invocation -> {
+                    String prefix = invocation.<Bundle>getArgument(2)
+                            .getStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS)[0];
+                    MatrixCursor cursor = importIdentityCursor();
+                    if (prefix.startsWith(sourceStorage)) {
+                        cursor.addRow(new Object[] {
+                                44L, oldPath, "Movie.mkv", 1234L, 200L
+                        });
+                    }
+                    return cursor;
+        });
+        when(resolver.query(eq(MediaStore.Files.getContentUri("external")),
+                any(String[].class), any(Bundle.class), isNull()))
+                .thenAnswer(invocation -> {
+                    String prefix = invocation.<Bundle>getArgument(2)
+                            .getStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS)[0];
+                    return prefix.startsWith(destinationStorage)
+                            ? mediaCursor(84L, newPath) : new MatrixCursor(MEDIA_COLUMNS);
+                });
+
+        List<VideoStoreImportImpl.StorageLocation> locations = Arrays.asList(
+                new VideoStoreImportImpl.StorageLocation(sourceStorage, 1111, false),
+                new VideoStoreImportImpl.StorageLocation(destinationStorage, 2222, false));
+        VideoStoreImportImpl.ReconciliationSnapshot snapshot =
+                VideoStoreImportImpl.loadMountedStorageSnapshot(resolver, locations);
+        VideoStoreImportImpl.LocalReconciliationResult result =
+                VideoStoreImportImpl.reconcileStorageSnapshot(resolver, snapshot);
+
+        assertEquals(1, result.updated);
+        assertEquals(0, result.removed);
+        verify(resolver, times(2)).query(eq(VideoStoreInternal.FILES_IMPORT),
+                any(String[].class), any(Bundle.class), isNull());
+        verify(resolver, times(2)).query(eq(MediaStore.Files.getContentUri("external")),
+                any(String[].class), any(Bundle.class), isNull());
+        verify(resolver).applyBatch(eq(VideoStore.AUTHORITY), any());
+    }
+
+    @Test
+    public void snapshotUsesKeysetPaginationForBothIdentitySources() {
+        String removable = "/storage/ABCD-1234";
+        ContentResolver resolver = mock(ContentResolver.class);
+
+        when(resolver.query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
+                any(Bundle.class), isNull())).thenAnswer(invocation -> {
+                    Bundle queryArgs = invocation.getArgument(2);
+                    String[] selectionArgs = queryArgs.getStringArray(
+                            ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS);
+                    long afterId = Long.parseLong(selectionArgs[1]);
+                    MatrixCursor cursor = importIdentityCursor();
+                    if (afterId < 0) {
+                        for (long id = 1; id <= 2500; id++) {
+                            cursor.addRow(new Object[] {
+                                    id, removable + "/Movies/Movie-" + id + ".mkv",
+                                    "Movie-" + id + ".mkv", 1234L, 200L
+                            });
+                        }
+                        // Providers can ignore QUERY_ARG_LIMIT. The loader must stop consuming
+                        // this cursor at 2,500 and request the remainder with a keyset boundary.
+                        cursor.addRow(new Object[] {
+                                3000L, removable + "/Movies/New.mkv",
+                                "New.mkv", 1234L, 200L
+                        });
+                    } else if (afterId == 2500) {
+                        // Simulates the next surviving row after concurrent changes below the
+                        // keyset boundary. OFFSET pagination could shift and skip this row.
+                        cursor.addRow(new Object[] {
+                                3000L, removable + "/Movies/New.mkv",
+                                "New.mkv", 1234L, 200L
+                        });
+                    }
+                    return cursor;
+                });
+        when(resolver.query(eq(MediaStore.Files.getContentUri("external")),
+                any(String[].class), any(Bundle.class), isNull()))
+                .thenAnswer(invocation -> {
+                    Bundle queryArgs = invocation.getArgument(2);
+                    String[] selectionArgs = queryArgs.getStringArray(
+                            ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS);
+                    long afterId = Long.parseLong(selectionArgs[1]);
+                    MatrixCursor cursor = new MatrixCursor(MEDIA_COLUMNS);
+                    if (afterId < 0) {
+                        for (long id = 1; id <= 2500; id++) {
+                            cursor.addRow(new Object[] {
+                                    id, removable + "/Movies/Movie-" + id + ".mkv",
+                                    "Movie-" + id + ".mkv", 1234L, 100L, 200L,
+                                    "bucket", "Movies", 0, 1
+                            });
+                        }
+                        cursor.addRow(new Object[] {
+                                3000L, removable + "/Movies/New.mkv", "New.mkv",
+                                1234L, 100L, 200L, "bucket", "Movies", 0, 1
+                        });
+                    } else if (afterId == 2500) {
+                        cursor.addRow(new Object[] {
+                                3000L, removable + "/Movies/New.mkv", "New.mkv",
+                                1234L, 100L, 200L, "bucket", "Movies", 0, 1
+                        });
+                    }
+                    return cursor;
+                });
+
+        VideoStoreImportImpl.ReconciliationSnapshot snapshot =
+                VideoStoreImportImpl.loadMountedStorageSnapshot(resolver,
+                        Collections.singletonList(
+                                new VideoStoreImportImpl.StorageLocation(
+                                        removable, 1234, false)));
+
+        assertTrue(snapshot.complete);
+        assertEquals(2501, snapshot.importedIds.size());
+        assertTrue(snapshot.importedIds.contains(3000L));
+        assertEquals(2501, snapshot.mediaStoreIds.size());
+        assertTrue(snapshot.mediaStoreIds.contains(3000L));
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Bundle> importedQueryArgs = ArgumentCaptor.forClass(Bundle.class);
+        verify(resolver, times(2)).query(eq(VideoStoreInternal.FILES_IMPORT),
+                any(String[].class), importedQueryArgs.capture(), isNull());
+        String[] secondSelectionArgs = importedQueryArgs.getAllValues().get(1).getStringArray(
+                ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS);
+        assertEquals("2500", secondSelectionArgs[1]);
+        assertTrue(importedQueryArgs.getAllValues().get(1)
+                .getString(ContentResolver.QUERY_ARG_SQL_SELECTION).contains("_id>?"));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Bundle> mediaStoreQueryArgs = ArgumentCaptor.forClass(Bundle.class);
+        verify(resolver, times(2)).query(eq(MediaStore.Files.getContentUri("external")),
+                any(String[].class), mediaStoreQueryArgs.capture(), isNull());
+        assertEquals("2500", mediaStoreQueryArgs.getAllValues().get(1)
+                .getStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS)[1]);
+    }
+
+    @Test
+    @Config(sdk = 29)
+    public void snapshotUsesLegacySortLimitBeforeAndroidR() {
+        String removable = "/storage/ABCD-1234";
+        ContentResolver resolver = mock(ContentResolver.class);
+        when(resolver.query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
+                anyString(), any(String[].class), anyString()))
+                .thenReturn(importedCursor(42L, removable + "/Movies/Movie.mkv"));
+        when(resolver.query(eq(MediaStore.Files.getContentUri("external")),
+                any(String[].class), anyString(), any(String[].class), anyString()))
+                .thenReturn(new MatrixCursor(MEDIA_COLUMNS));
+
+        VideoStoreImportImpl.ReconciliationSnapshot snapshot =
+                VideoStoreImportImpl.loadMountedStorageSnapshot(resolver,
+                        Collections.singletonList(
+                                new VideoStoreImportImpl.StorageLocation(
+                                        removable, 1234, false)));
+
+        assertTrue(snapshot.complete);
+        assertEquals(Collections.singleton(42L), snapshot.importedIds);
+        verify(resolver).query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
+                eq("_data LIKE ? AND _id>?"),
+                eq(new String[] { removable + "/%", "-1" }),
+                eq("_id ASC LIMIT 2500"));
+    }
+
+    @Test
     public void existingPrimaryFileIsRetainedWhenMediaStoreTemporarilyOmitsIt() throws Exception {
         File primary = temporaryFolder.newFolder("primary");
         File video = new File(primary, "Movie.mkv");
@@ -258,9 +427,9 @@ public class VideoStoreImportReconciliationTest {
 
     private static void stubQueries(ContentResolver resolver, Cursor imported, Cursor media) {
         when(resolver.query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
-                anyString(), any(String[].class), isNull())).thenReturn(imported);
+                any(Bundle.class), isNull())).thenReturn(imported);
         when(resolver.query(eq(MediaStore.Files.getContentUri("external")),
-                any(String[].class), anyString(), any(String[].class), anyString()))
+                any(String[].class), any(Bundle.class), isNull()))
                 .thenReturn(media);
     }
 }

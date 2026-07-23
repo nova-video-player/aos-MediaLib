@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -122,12 +123,27 @@ public class VideoStoreImportImpl {
         if (log.isDebugEnabled()) log.debug("doFullImport: ImportState.VIDEO.setState {}", (countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT));
         ImportState.VIDEO.setState(countStart == 0 ? State.INITIAL_IMPORT : State.REGULAR_IMPORT);
 
-        // replace everything with new data
-        int copy = copyData(mCr, null);
-
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            LocalReconciliationResult reconciliation = reconcileMountedStorageRows();
+            LocalReconciliationResult reconciliation;
+            int copy;
+            if (countStart == 0) {
+                // Keep the paged importer for an empty database: every MediaStore row is new and
+                // retaining the complete dataset for reconciliation would waste memory.
+                reconciliation = new LocalReconciliationResult();
+                copy = copyData(mCr, null);
+            } else {
+                ReconciliationSnapshot snapshot = loadMountedStorageSnapshot(
+                        mCr, getMountedStorageLocations());
+                if (snapshot.complete) {
+                    reconciliation = reconcileStorageSnapshot(mCr, snapshot);
+                    copy = copySnapshotData(mCr, snapshot, null);
+                } else {
+                    log.warn("doFullImport: reconciliation snapshot incomplete; using paged importer");
+                    reconciliation = new LocalReconciliationResult();
+                    copy = copyData(mCr, null);
+                }
+            }
             // External storage is available, proceed with your operation
             // delete everything that was not replaced, ! only if it is on primary local storage !
             String existingFiles = getRemoteIdList(mCr);
@@ -155,14 +171,26 @@ public class VideoStoreImportImpl {
 
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            // Capture the old maximum before remapping; a remapped high id must not cause
+            // copyData to skip lower new MediaStore ids from the same import pass.
+            String maxLocal = getMaxId(mCr);
+            ReconciliationSnapshot snapshot = loadMountedStorageSnapshot(
+                    mCr, getMountedStorageLocations());
+            LocalReconciliationResult reconciliation;
+            int copy;
+            // Copy only MediaStore ids newer than the maximum captured before reconciliation.
+            if (snapshot.complete) {
+                reconciliation = reconcileStorageSnapshot(mCr, snapshot);
+                copy = copySnapshotData(mCr, snapshot, maxLocal);
+            } else {
+                log.warn("doIncrementalImport: reconciliation snapshot incomplete; using paged importer");
+                reconciliation = new LocalReconciliationResult();
+                copy = copyData(mCr, maxLocal);
+            }
             String existingFiles = getRemoteIdList(mCr);
             int del = 0;
             updateVolumeHiddenStates(existingFiles);
 
-            // 2. copy all remote files with higher id than our max id
-            String maxLocal = getMaxId(mCr);
-            int copy = copyData(mCr, maxLocal);
-            LocalReconciliationResult reconciliation = reconcileMountedStorageRows();
             del = reconciliation.removed;
             int countEnd = getLocalCount(mCr);
             log.info("part import +:" + copy + " ~:" + reconciliation.updated + " -:" + del
@@ -188,25 +216,601 @@ public class VideoStoreImportImpl {
         }
     }
 
-    private LocalReconciliationResult reconcileMountedStorageRows() {
-        LocalReconciliationResult result = reconcilePrimaryStorageRows(
-                mCr, Environment.getExternalStorageDirectory().getPath());
+    private static final long MEDIASTORE_MTIME_TOLERANCE_SECONDS = 3;
+    private static final String[] IMPORT_IDENTITY_PROJECTION = {
+            BaseColumns._ID,
+            MediaColumnsDATA,
+            MediaColumns.DISPLAY_NAME,
+            MediaColumns.SIZE,
+            MediaColumns.DATE_MODIFIED
+    };
+
+    static final class StorageLocation {
+        final String path;
+        final Integer storageId;
+        final boolean primary;
+
+        StorageLocation(String path, Integer storageId, boolean primary) {
+            this.path = path;
+            this.storageId = storageId;
+            this.primary = primary;
+        }
+    }
+
+    private static class ImportIdentity {
+        final long id;
+        final String path;
+        final String normalizedName;
+        final long size;
+        final long modified;
+
+        ImportIdentity(long id, String path, String displayName, long size, long modified) {
+            this.id = id;
+            this.path = path;
+            this.normalizedName = normalizeDisplayName(displayName, path);
+            this.size = size;
+            this.modified = modified;
+        }
+
+        boolean canMatch() {
+            return !TextUtils.isEmpty(normalizedName) && size > 0 && modified > 0;
+        }
+    }
+
+    private static final class MediaStoreIdentity extends ImportIdentity {
+        final ContentValues values;
+        final StorageLocation location;
+
+        MediaStoreIdentity(long id, String path, String displayName, long size, long modified,
+                ContentValues values, StorageLocation location) {
+            super(id, path, displayName, size, modified);
+            this.values = values;
+            this.location = location;
+        }
+    }
+
+    static final class ReconciliationSnapshot {
+        final Map<Long, ImportIdentity> importedById = new HashMap<>();
+        final Map<Long, StorageLocation> importedLocations = new HashMap<>();
+        final Map<String, Long> importedIdsByPath = new HashMap<>();
+        final Map<Long, MediaStoreIdentity> mediaStoreById = new HashMap<>();
+        final Set<Long> importedIds = new HashSet<>();
+        final Set<Long> mediaStoreIds = new HashSet<>();
+        boolean complete = true;
+    }
+
+    private static final class IdentityKey {
+        final String name;
+        final long size;
+
+        IdentityKey(ImportIdentity identity) {
+            name = identity.normalizedName;
+            size = identity.size;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (!(object instanceof IdentityKey)) return false;
+            IdentityKey other = (IdentityKey) object;
+            return size == other.size && name.equals(other.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * name.hashCode() + Long.valueOf(size).hashCode();
+        }
+    }
+
+    private List<StorageLocation> getMountedStorageLocations() {
+        List<StorageLocation> locations = new ArrayList<>();
+        String primaryPath = Environment.getExternalStorageDirectory().getPath();
+        if (isMountedReadable(Environment.getExternalStorageState())) {
+            locations.add(new StorageLocation(primaryPath,
+                    VolumeState.STORAGE_ID_PRIMARY_VOLUME, true));
+        }
+
         ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager();
-        Set<String> removablePaths = new HashSet<>();
-        removablePaths.addAll(storageManager.getExtSdcards());
-        removablePaths.addAll(storageManager.getExtUsbStorages());
-        removablePaths.addAll(storageManager.getExtOtherStorages());
+        Set<String> removablePaths = collectDiscoveredRemovableStoragePaths(primaryPath,
+                storageManager.getExtSdcards(), storageManager.getExtUsbStorages(),
+                storageManager.getExtOtherStorages());
+        if (log.isDebugEnabled()) {
+            log.debug("getMountedStorageLocations: discovered mounted removable paths {}",
+                    removablePaths);
+        }
 
         for (String path : removablePaths) {
-            if (TextUtils.isEmpty(path)
-                    || !isMountedReadable(ExtStorageManager.getVolumeState(path))) {
+            // ExtStorageManager only exposes mounted-readable volumes. Do not recheck through
+            // its legacy IMountService reflection: hidden-API restrictions return MEDIA_REMOVED
+            // on recent Android versions even while the volume is mounted.
+            Integer storageId = storageManager.getStorageId(path);
+            if (storageId == null && log.isDebugEnabled()) {
+                log.debug("getMountedStorageLocations: no resolved storage id for {}; preserving the MediaStore/existing value",
+                        path);
+            }
+            locations.add(new StorageLocation(path, storageId, false));
+        }
+        return locations;
+    }
+
+    static Set<String> collectDiscoveredRemovableStoragePaths(String primaryPath,
+            List<String> sdCards, List<String> usbStorages, List<String> otherStorages) {
+        Set<String> paths = new HashSet<>();
+        if (sdCards != null) paths.addAll(sdCards);
+        if (usbStorages != null) paths.addAll(usbStorages);
+        if (otherStorages != null) paths.addAll(otherStorages);
+        paths.remove(primaryPath);
+        paths.remove(null);
+        paths.remove("");
+        return paths;
+    }
+
+    static ReconciliationSnapshot loadMountedStorageSnapshot(ContentResolver cr,
+            List<StorageLocation> locations) {
+        ReconciliationSnapshot snapshot = new ReconciliationSnapshot();
+        resetVisibleStorageIds();
+        if (cr == null || locations == null || locations.isEmpty()) {
+            snapshot.complete = false;
+            return snapshot;
+        }
+
+        for (StorageLocation location : locations) {
+            if (mIsImportInterrupted) {
+                snapshot.complete = false;
+                break;
+            }
+            loadStorageSnapshot(cr, location, snapshot);
+            if (!snapshot.complete) break;
+        }
+        return snapshot;
+    }
+
+    private static void loadStorageSnapshot(ContentResolver cr, StorageLocation location,
+            ReconciliationSnapshot snapshot) {
+        if (location == null || TextUtils.isEmpty(location.path)) return;
+        String storagePrefix = location.path.endsWith("/")
+                ? location.path : location.path + "/";
+        try {
+            loadImportedIdentityPages(cr, location, storagePrefix, snapshot);
+            if (!snapshot.complete || mIsImportInterrupted) return;
+
+            String[] projection = Build.VERSION.SDK_INT > Build.VERSION_CODES.O
+                    ? FILES_PROJECTION_AP : FILES_PROJECTION_BP;
+            String selection = (Build.VERSION.SDK_INT > Build.VERSION_CODES.O
+                    ? NOT_NETWORKINDEXED_AP : NOT_NETWORKINDEXED_BP)
+                    + " AND " + MediaColumnsDATA + " LIKE ?"
+                    + " AND " + BaseColumns._ID + ">?";
+            if (!TextUtils.isEmpty(BLACKLIST)) selection += BLACKLIST;
+            loadMediaStoreIdentityPages(cr, location, storagePrefix, projection, selection,
+                    snapshot);
+        } catch (RuntimeException e) {
+            snapshot.complete = false;
+            log.error("loadStorageSnapshot: failed to read storage {}", location.path, e);
+        }
+    }
+
+    /**
+     * Loads imported identities with keyset pagination. Unlike OFFSET pagination, insertions or
+     * deletions below the last observed id cannot shift the boundary and skip or duplicate later
+     * rows.
+     */
+    private static void loadImportedIdentityPages(ContentResolver cr, StorageLocation location,
+            String storagePrefix, ReconciliationSnapshot snapshot) {
+        long lastSeenId = -1;
+        while (!mIsImportInterrupted) {
+            Cursor imported = null;
+            int rowsRead = 0;
+            long pageLastId = lastSeenId;
+            try {
+                String selection = MediaColumnsDATA + " LIKE ? AND " + BaseColumns._ID + ">?";
+                String[] selectionArgs = {
+                        storagePrefix + "%", String.valueOf(lastSeenId)
+                };
+                imported = queryIdentityPage(cr, VideoStoreInternal.FILES_IMPORT,
+                        IMPORT_IDENTITY_PROJECTION, selection, selectionArgs);
+                if (imported == null) {
+                    snapshot.complete = false;
+                    return;
+                }
+                // Some providers have been observed to ignore QUERY_ARG_LIMIT. Enforce the
+                // boundary here as well so one CursorWindow never grows into an unbounded pass.
+                while (rowsRead < WINDOW_SIZE && imported.moveToNext()
+                        && !mIsImportInterrupted) {
+                    rowsRead++;
+                    ImportIdentity identity = readImportIdentity(imported);
+                    pageLastId = identity.id;
+                    if (!isStoragePath(storagePrefix, identity.path)) continue;
+                    snapshot.importedById.put(identity.id, identity);
+                    snapshot.importedLocations.put(identity.id, location);
+                    snapshot.importedIdsByPath.put(identity.path, identity.id);
+                    snapshot.importedIds.add(identity.id);
+                }
+            } finally {
+                if (imported != null) imported.close();
+            }
+            if (mIsImportInterrupted) {
+                snapshot.complete = false;
+                return;
+            }
+            if (rowsRead < WINDOW_SIZE) return;
+            if (pageLastId <= lastSeenId) {
+                snapshot.complete = false;
+                log.error("loadImportedIdentityPages: non-advancing page for storage {} after id {}",
+                        location.path, lastSeenId);
+                return;
+            }
+            lastSeenId = pageLastId;
+        }
+        snapshot.complete = false;
+    }
+
+    private static void loadMediaStoreIdentityPages(ContentResolver cr, StorageLocation location,
+            String storagePrefix, String[] projection, String selection,
+            ReconciliationSnapshot snapshot) {
+        long lastSeenId = -1;
+        while (!mIsImportInterrupted) {
+            Cursor mediaStore = null;
+            int rowsRead = 0;
+            long pageLastId = lastSeenId;
+            try {
+                String[] selectionArgs = {
+                        storagePrefix + "%", String.valueOf(lastSeenId)
+                };
+                mediaStore = CustomCursor.wrap(queryIdentityPage(cr,
+                        MediaStore.Files.getContentUri("external"), projection, selection,
+                        selectionArgs));
+                if (mediaStore == null) {
+                    snapshot.complete = false;
+                    return;
+                }
+                // Keep the client-side cap because some MediaStore implementations ignore the
+                // requested limit even though the selection and ordering are honored.
+                while (rowsRead < WINDOW_SIZE && mediaStore.moveToNext()
+                        && !mIsImportInterrupted) {
+                    rowsRead++;
+                    MediaStoreIdentity identity = readMediaStoreIdentity(mediaStore, location);
+                    pageLastId = identity.id;
+                    if (!isStoragePath(storagePrefix, identity.path)) continue;
+                    snapshot.mediaStoreById.put(identity.id, identity);
+                    snapshot.mediaStoreIds.add(identity.id);
+                    recordVisibleStorageId(location.storageId);
+                }
+            } finally {
+                if (mediaStore != null) mediaStore.close();
+            }
+            if (mIsImportInterrupted) {
+                snapshot.complete = false;
+                return;
+            }
+            if (rowsRead < WINDOW_SIZE) return;
+            if (pageLastId <= lastSeenId) {
+                snapshot.complete = false;
+                log.error("loadMediaStoreIdentityPages: non-advancing page for storage {} after id {}",
+                        location.path, lastSeenId);
+                return;
+            }
+            lastSeenId = pageLastId;
+        }
+        snapshot.complete = false;
+    }
+
+    private static Cursor queryIdentityPage(ContentResolver cr, Uri uri, String[] projection,
+            String selection, String[] selectionArgs) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            Bundle queryArgs = new Bundle();
+            queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection);
+            queryArgs.putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs);
+            queryArgs.putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS,
+                    new String[] { BaseColumns._ID });
+            queryArgs.putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                    ContentResolver.QUERY_SORT_DIRECTION_ASCENDING);
+            queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, WINDOW_SIZE);
+            return cr.query(uri, projection, queryArgs, null);
+        }
+        return cr.query(uri, projection, selection, selectionArgs,
+                BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE);
+    }
+
+    /**
+     * Applies stable-id path updates and conservative changed-id remaps from one shared snapshot.
+     * Candidate matching spans every mounted location, allowing USB-to-USB moves when filename,
+     * size and modification time identify a unique source and destination.
+     */
+    static LocalReconciliationResult reconcileStorageSnapshot(ContentResolver cr,
+            ReconciliationSnapshot snapshot) {
+        LocalReconciliationResult result = new LocalReconciliationResult();
+        if (cr == null || snapshot == null || !snapshot.complete || mIsImportInterrupted) {
+            return result;
+        }
+
+        Set<Long> remappedSourceIds = new HashSet<>();
+        reconcileStableIds(cr, snapshot, result);
+        reconcileChangedIds(cr, snapshot, result, remappedSourceIds);
+        removeMissingPrimaryRows(cr, snapshot, result, remappedSourceIds);
+        return result;
+    }
+
+    private static void reconcileStableIds(ContentResolver cr, ReconciliationSnapshot snapshot,
+            LocalReconciliationResult result) {
+        for (MediaStoreIdentity destination : snapshot.mediaStoreById.values()) {
+            if (mIsImportInterrupted) return;
+            ImportIdentity source = snapshot.importedById.get(destination.id);
+            if (source == null || TextUtils.equals(source.path, destination.path)) continue;
+
+            Long conflictingId = snapshot.importedIdsByPath.get(destination.path);
+            if (conflictingId != null && conflictingId.longValue() != destination.id) {
+                log.error("reconcileStableIds: refusing path update for id {} from {} to {}; path belongs to id {}",
+                        destination.id, source.path, destination.path, conflictingId);
                 continue;
             }
-            Integer storageId = storageManager.getStorageId(path);
-            if (storageId == null) storageId = storageManager.getStorageId3(path);
-            result.add(reconcileStorageRows(mCr, path, storageId, false));
+
+            ContentValues importedValues = new ContentValues(destination.values);
+            ContentValues fileValues = new ContentValues(importedValues);
+            fileValues.put(VideoStoreInternal.KEY_IMPORT_RECONCILE_PATH, true);
+            ArrayList<ContentProviderOperation> operations = new ArrayList<>(2);
+            operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES_IMPORT)
+                    .withSelection(BaseColumns._ID + "=? AND " + MediaColumnsDATA + "=?",
+                            new String[] { String.valueOf(source.id), source.path })
+                    .withValues(importedValues)
+                    .withExpectedCount(1)
+                    .build());
+            operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                    .withSelection("remote_id=? AND " + MediaColumnsDATA + "=?",
+                            new String[] { String.valueOf(source.id), source.path })
+                    .withValues(fileValues)
+                    .withExpectedCount(1)
+                    .build());
+            try {
+                cr.applyBatch(VideoStore.AUTHORITY, operations);
+                snapshot.importedIdsByPath.remove(source.path);
+                snapshot.importedIdsByPath.put(destination.path, destination.id);
+                result.updated++;
+                log.info("reconcileStableIds: updated id {} path {} -> {}", destination.id,
+                        source.path, destination.path);
+            } catch (RemoteException | OperationApplicationException | RuntimeException e) {
+                log.error("reconcileStableIds: failed id {} path {} -> {}", destination.id,
+                        source.path, destination.path, e);
+            }
         }
-        return result;
+    }
+
+    private static void reconcileChangedIds(ContentResolver cr, ReconciliationSnapshot snapshot,
+            LocalReconciliationResult result, Set<Long> remappedSourceIds) {
+        Map<IdentityKey, List<ImportIdentity>> oldBuckets = new HashMap<>();
+        Map<IdentityKey, List<MediaStoreIdentity>> newBuckets = new HashMap<>();
+        for (ImportIdentity identity : snapshot.importedById.values()) {
+            if (!snapshot.mediaStoreIds.contains(identity.id) && identity.canMatch()
+                    && !new File(identity.path).exists()) {
+                addToBucket(oldBuckets, new IdentityKey(identity), identity);
+            }
+        }
+        for (MediaStoreIdentity identity : snapshot.mediaStoreById.values()) {
+            if (identity.canMatch()) {
+                addToBucket(newBuckets, new IdentityKey(identity), identity);
+            }
+        }
+
+        Set<Long> remappedDestinationIds = new HashSet<>();
+        for (Map.Entry<IdentityKey, List<ImportIdentity>> entry : oldBuckets.entrySet()) {
+            if (mIsImportInterrupted) return;
+            List<MediaStoreIdentity> destinations = newBuckets.get(entry.getKey());
+            if (destinations == null) continue;
+            for (ImportIdentity source : entry.getValue()) {
+                MediaStoreIdentity destination = uniqueDestination(source, entry.getValue(),
+                        destinations);
+                if (destination == null || !remappedDestinationIds.add(destination.id)) continue;
+
+                ImportIdentity importedDestination = snapshot.importedById.get(destination.id);
+                boolean repairDuplicate = importedDestination != null;
+                if (repairDuplicate && (!TextUtils.equals(importedDestination.path, destination.path)
+                        || !isDisposableDestination(cr, destination.id, destination.path))) {
+                    remappedDestinationIds.remove(destination.id);
+                    log.warn("reconcileChangedIds: destination id {} already owns state; skipping {} -> {}",
+                            destination.id, source.path, destination.path);
+                    continue;
+                }
+                try {
+                    cr.applyBatch(VideoStore.AUTHORITY, buildChangedIdRemapOperations(source,
+                            destination, repairDuplicate));
+                    remappedSourceIds.add(source.id);
+                    snapshot.importedIds.remove(source.id);
+                    snapshot.importedIds.add(destination.id);
+                    result.updated++;
+                    log.info("reconcileChangedIds: remapped id {} -> {} path {} -> {}{}",
+                            source.id, destination.id, source.path, destination.path,
+                            repairDuplicate ? " (repaired duplicate)" : "");
+                } catch (RemoteException | OperationApplicationException | RuntimeException e) {
+                    remappedDestinationIds.remove(destination.id);
+                    log.error("reconcileChangedIds: failed id {} -> {} path {} -> {}",
+                            source.id, destination.id, source.path, destination.path, e);
+                }
+            }
+        }
+    }
+
+    private static void removeMissingPrimaryRows(ContentResolver cr,
+            ReconciliationSnapshot snapshot, LocalReconciliationResult result,
+            Set<Long> remappedSourceIds) {
+        if (mIsImportInterrupted) return;
+        for (ImportIdentity identity : snapshot.importedById.values()) {
+            StorageLocation location = snapshot.importedLocations.get(identity.id);
+            if (location == null || !location.primary || snapshot.mediaStoreIds.contains(identity.id)
+                    || remappedSourceIds.contains(identity.id) || new File(identity.path).exists()) {
+                continue;
+            }
+            int removed = cr.delete(VideoStoreInternal.FILES_IMPORT, BaseColumns._ID + "=?",
+                    new String[] { String.valueOf(identity.id) });
+            if (removed > 0) {
+                snapshot.importedIds.remove(identity.id);
+                result.removed += removed;
+                log.info("removeMissingPrimaryRows: removed inaccessible row id {} path {}",
+                        identity.id, identity.path);
+            }
+        }
+    }
+
+    static LocalReconciliationResult reconcileChangedMediaStoreIds(ContentResolver cr,
+            String storagePath, Integer storageId) {
+        StorageLocation location = new StorageLocation(storagePath, storageId, false);
+        ReconciliationSnapshot snapshot = loadMountedStorageSnapshot(cr,
+                java.util.Collections.singletonList(location));
+        return reconcileStorageSnapshot(cr, snapshot);
+    }
+
+    private static ImportIdentity readImportIdentity(Cursor cursor) {
+        return new ImportIdentity(
+                cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(MediaColumnsDATA)),
+                getCursorString(cursor, MediaColumns.DISPLAY_NAME),
+                getCursorLong(cursor, MediaColumns.SIZE),
+                getCursorLong(cursor, MediaColumns.DATE_MODIFIED));
+    }
+
+    private static String getCursorString(Cursor cursor, String column) {
+        int index = cursor.getColumnIndex(column);
+        return index < 0 || cursor.isNull(index) ? null : cursor.getString(index);
+    }
+
+    private static long getCursorLong(Cursor cursor, String column) {
+        int index = cursor.getColumnIndex(column);
+        return index < 0 || cursor.isNull(index) ? 0 : cursor.getLong(index);
+    }
+
+    private static MediaStoreIdentity readMediaStoreIdentity(Cursor cursor,
+            StorageLocation location) {
+        ContentValues values = new ContentValues(cursor.getColumnCount() + 2);
+        DatabaseUtils.cursorRowToContentValues(cursor, values);
+        long id = values.getAsLong(BaseColumns._ID);
+        String path = values.getAsString(MediaColumnsDATA);
+        String displayName = values.getAsString(MediaColumns.DISPLAY_NAME);
+        long size = getLong(values, MediaColumns.SIZE);
+        long modified = getLong(values, MediaColumns.DATE_MODIFIED);
+        values.remove(BaseColumns._ID);
+        if (location.storageId != null) {
+            values.put(VideoStore.Files.FileColumns.STORAGE_ID, location.storageId);
+        }
+        values.put("volume_hidden", 0);
+        return new MediaStoreIdentity(id, path, displayName, size, modified, values, location);
+    }
+
+    private static long getLong(ContentValues values, String key) {
+        Long value = values.getAsLong(key);
+        return value == null ? 0 : value;
+    }
+
+    private static String normalizeDisplayName(String displayName, String path) {
+        String name = displayName;
+        if (TextUtils.isEmpty(name) && !TextUtils.isEmpty(path)) name = new File(path).getName();
+        return TextUtils.isEmpty(name) ? null : name.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static <T> void addToBucket(Map<IdentityKey, List<T>> buckets,
+            IdentityKey key, T value) {
+        List<T> values = buckets.get(key);
+        if (values == null) {
+            values = new ArrayList<>();
+            buckets.put(key, values);
+        }
+        values.add(value);
+    }
+
+    private static MediaStoreIdentity uniqueDestination(ImportIdentity source,
+            List<ImportIdentity> sources, List<MediaStoreIdentity> destinations) {
+        MediaStoreIdentity match = null;
+        for (MediaStoreIdentity destination : destinations) {
+            if (!modifiedTimesMatch(source.modified, destination.modified)) continue;
+            if (match != null) return null;
+            match = destination;
+        }
+        if (match == null) return null;
+
+        int sourceMatches = 0;
+        for (ImportIdentity candidate : sources) {
+            if (modifiedTimesMatch(candidate.modified, match.modified)) sourceMatches++;
+        }
+        return sourceMatches == 1 ? match : null;
+    }
+
+    private static boolean modifiedTimesMatch(long first, long second) {
+        return first > 0 && second > 0
+                && Math.abs(first - second) <= MEDIASTORE_MTIME_TOLERANCE_SECONDS;
+    }
+
+    private static final String DISPOSABLE_DESTINATION_WHERE =
+            "_id=? AND remote_id=? AND _data=? "
+            + "AND ifnull(ArchosMediaScraper_id,0)<=0 "
+            + "AND ifnull(ArchosMediaScraper_type,0)<=0 "
+            + "AND ifnull(bookmark,0)=0 AND ifnull(Archos_bookmark,0)=0 "
+            + "AND ifnull(Archos_lastTimePlayed,0)=0 "
+            + "AND ifnull(Archos_favorite_track,0)=0 "
+            + "AND ifnull(Archos_traktSeen,0)=0 AND ifnull(Archos_traktLibrary,0)=0 "
+            + "AND ifnull(Archos_traktResume,0)=0 AND ifnull(Archos_hiddenByUser,0)=0 "
+            + "AND ifnull(Archos_title,'')='' "
+            + "AND NOT EXISTS (SELECT 1 FROM movie WHERE video_id=files.remote_id) "
+            + "AND NOT EXISTS (SELECT 1 FROM episode WHERE video_id=files.remote_id)";
+
+    private static boolean isDisposableDestination(ContentResolver cr, long id, String path) {
+        Cursor cursor = null;
+        try {
+            cursor = cr.query(VideoStoreInternal.FILES, new String[] { BaseColumns._ID },
+                    DISPOSABLE_DESTINATION_WHERE,
+                    new String[] { String.valueOf(id), String.valueOf(id), path }, null);
+            return cursor != null && cursor.moveToFirst() && cursor.getCount() == 1;
+        } catch (RuntimeException e) {
+            log.error("isDisposableDestination: failed for id {} path {}", id, path, e);
+            return false;
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+    }
+
+    static ArrayList<ContentProviderOperation> buildChangedIdRemapOperations(
+            ImportIdentity source, MediaStoreIdentity destination, boolean repairDuplicate) {
+        ArrayList<ContentProviderOperation> operations = new ArrayList<>();
+
+        if (repairDuplicate) {
+            String destinationGuard = BaseColumns._ID + "=? AND " + MediaColumnsDATA + "=? "
+                    + "AND EXISTS (SELECT 1 FROM files WHERE "
+                    + DISPOSABLE_DESTINATION_WHERE + ")";
+            operations.add(ContentProviderOperation.newDelete(VideoStoreInternal.FILES_IMPORT)
+                    .withSelection(destinationGuard, new String[] {
+                            String.valueOf(destination.id), destination.path,
+                            String.valueOf(destination.id), String.valueOf(destination.id),
+                            destination.path })
+                    .withExpectedCount(1)
+                    .build());
+        }
+
+        ContentValues fileValues = new ContentValues(destination.values);
+        fileValues.put(BaseColumns._ID, destination.id);
+        fileValues.put("remote_id", destination.id);
+        fileValues.put(VideoStoreInternal.KEY_IMPORT_RECONCILE_ID, true);
+        operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
+                .withSelection(BaseColumns._ID + "=? AND remote_id=? AND "
+                                + MediaColumnsDATA + "=?",
+                        new String[] { String.valueOf(source.id), String.valueOf(source.id),
+                                source.path })
+                .withValues(fileValues)
+                .withExpectedCount(1)
+                .build());
+
+        ContentValues thumbnailValues = new ContentValues();
+        thumbnailValues.put("video_id", destination.id);
+        operations.add(ContentProviderOperation.newUpdate(
+                        VideoStoreInternal.getRawUri(VideoOpenHelper.VIDEOTHUMBNAIL_TABLE_NAME))
+                .withSelection("video_id=?", new String[] { String.valueOf(source.id) })
+                .withValues(thumbnailValues)
+                .build());
+
+        ContentValues importedValues = new ContentValues(destination.values);
+        importedValues.put(BaseColumns._ID, destination.id);
+        operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES_IMPORT)
+                .withSelection(BaseColumns._ID + "=? AND " + MediaColumnsDATA + "=?",
+                        new String[] { String.valueOf(source.id), source.path })
+                .withValues(importedValues)
+                .withExpectedCount(1)
+                .build());
+        return operations;
     }
 
     /**
@@ -221,109 +825,10 @@ public class VideoStoreImportImpl {
 
     static LocalReconciliationResult reconcileStorageRows(ContentResolver cr, String storagePath,
             Integer storageId, boolean removeMissingRows) {
-        LocalReconciliationResult result = new LocalReconciliationResult();
-        if (cr == null || TextUtils.isEmpty(storagePath)) return result;
-
-        String storagePrefix = storagePath.endsWith("/") ? storagePath : storagePath + "/";
-        Map<Long, String> importedPaths = new HashMap<>();
-        Map<String, Long> importedIdsByPath = new HashMap<>();
-        Cursor imported = null;
-        Cursor mediaStore = null;
-        boolean mediaStorePassComplete = false;
-
-        try {
-            imported = cr.query(VideoStoreInternal.FILES_IMPORT,
-                    new String[] { BaseColumns._ID, MediaColumnsDATA },
-                    MediaColumnsDATA + " LIKE ?", new String[] { storagePrefix + "%" }, null);
-            if (imported == null) return result;
-            while (imported.moveToNext() && !mIsImportInterrupted) {
-                long id = imported.getLong(0);
-                String path = imported.getString(1);
-                if (isStoragePath(storagePrefix, path)) {
-                    importedPaths.put(id, path);
-                    importedIdsByPath.put(path, id);
-                }
-            }
-            if (mIsImportInterrupted) return result;
-
-            String[] projection = Build.VERSION.SDK_INT > Build.VERSION_CODES.O
-                    ? FILES_PROJECTION_AP : FILES_PROJECTION_BP;
-            String selection = (Build.VERSION.SDK_INT > Build.VERSION_CODES.O
-                    ? NOT_NETWORKINDEXED_AP : NOT_NETWORKINDEXED_BP)
-                    + " AND " + MediaColumnsDATA + " LIKE ?";
-            mediaStore = CustomCursor.wrap(cr.query(MediaStore.Files.getContentUri("external"),
-                    projection, selection, new String[] { storagePrefix + "%" }, BaseColumns._ID));
-            if (mediaStore == null) return result;
-
-            while (mediaStore.moveToNext() && !mIsImportInterrupted) {
-                long id = mediaStore.getLong(mediaStore.getColumnIndexOrThrow(BaseColumns._ID));
-                String newPath = mediaStore.getString(
-                        mediaStore.getColumnIndexOrThrow(MediaColumnsDATA));
-                if (!isStoragePath(storagePrefix, newPath)) continue;
-
-                String oldPath = importedPaths.remove(id);
-                if (oldPath == null || oldPath.equals(newPath)) continue;
-
-                Long conflictingId = importedIdsByPath.get(newPath);
-                if (conflictingId != null && conflictingId.longValue() != id) {
-                    log.error("reconcileStorageRows: refusing path update for id {} from {} to {}; path belongs to id {}",
-                            id, oldPath, newPath, conflictingId);
-                    continue;
-                }
-
-                ContentValues importedValues = new ContentValues(mediaStore.getColumnCount() + 2);
-                DatabaseUtils.cursorRowToContentValues(mediaStore, importedValues);
-                importedValues.remove(BaseColumns._ID);
-                if (storageId != null) {
-                    importedValues.put(VideoStore.Files.FileColumns.STORAGE_ID, storageId);
-                }
-                importedValues.put("volume_hidden", 0);
-
-                ContentValues fileValues = new ContentValues(importedValues);
-                fileValues.put(VideoStoreInternal.KEY_IMPORT_RECONCILE_PATH, true);
-                ArrayList<ContentProviderOperation> operations = new ArrayList<>(2);
-                operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES_IMPORT)
-                        .withSelection(BaseColumns._ID + "=?", new String[] { String.valueOf(id) })
-                        .withValues(importedValues)
-                        .build());
-                operations.add(ContentProviderOperation.newUpdate(VideoStoreInternal.FILES)
-                        .withSelection("remote_id=?", new String[] { String.valueOf(id) })
-                        .withValues(fileValues)
-                        .build());
-                try {
-                    cr.applyBatch(VideoStore.AUTHORITY, operations);
-                    importedIdsByPath.remove(oldPath);
-                    importedIdsByPath.put(newPath, id);
-                    result.updated++;
-                    log.info("reconcileStorageRows: updated id {} path {} -> {}", id,
-                            oldPath, newPath);
-                } catch (RemoteException | OperationApplicationException e) {
-                    log.error("reconcileStorageRows: failed to update id {} path {} -> {}",
-                            id, oldPath, newPath, e);
-                }
-            }
-            mediaStorePassComplete = !mIsImportInterrupted;
-        } catch (RuntimeException e) {
-            log.error("reconcileStorageRows: failed to reconcile storage {}", storagePath, e);
-        } finally {
-            if (imported != null) imported.close();
-            if (mediaStore != null) mediaStore.close();
-        }
-
-        if (!mediaStorePassComplete || !removeMissingRows) return result;
-
-        for (Map.Entry<Long, String> stale : importedPaths.entrySet()) {
-            String path = stale.getValue();
-            if (!isStoragePath(storagePrefix, path) || new File(path).exists()) continue;
-            int removed = cr.delete(VideoStoreInternal.FILES_IMPORT, BaseColumns._ID + "=?",
-                    new String[] { String.valueOf(stale.getKey()) });
-            if (removed > 0) {
-                result.removed += removed;
-                log.info("reconcileStorageRows: removed inaccessible local row id {} path {}",
-                        stale.getKey(), path);
-            }
-        }
-        return result;
+        StorageLocation location = new StorageLocation(storagePath, storageId, removeMissingRows);
+        ReconciliationSnapshot snapshot = loadMountedStorageSnapshot(cr,
+                java.util.Collections.singletonList(location));
+        return reconcileStorageSnapshot(cr, snapshot);
     }
 
     static boolean isStoragePath(String storagePrefix, String path) {
@@ -769,6 +1274,29 @@ public class VideoStoreImportImpl {
     private static synchronized void disableRemoteStorageIdTracking() {
         sRemoteProjectionHasStorageId = false;
         sLastVisibleStorageIds.clear();
+    }
+
+    /** Inserts unmatched MediaStore rows already collected by reconciliation. */
+    private static int copySnapshotData(ContentResolver cr, ReconciliationSnapshot snapshot,
+            String minId) {
+        if (cr == null || snapshot == null || !snapshot.complete || mIsImportInterrupted) return 0;
+        long minimum = parseLong(minId, Long.MIN_VALUE);
+        BulkInserter inserter = new BulkInserter(VideoStoreInternal.FILES_IMPORT, cr, 2000);
+        int pending = 0;
+        for (MediaStoreIdentity identity : snapshot.mediaStoreById.values()) {
+            if (mIsImportInterrupted) break;
+            if (identity.id <= minimum || snapshot.importedIds.contains(identity.id)) continue;
+            ContentValues values = new ContentValues(identity.values);
+            values.put(BaseColumns._ID, identity.id);
+            inserter.add(values);
+            snapshot.importedIds.add(identity.id);
+            pending++;
+        }
+        int imported = inserter.execute();
+        if (log.isDebugEnabled()) {
+            log.debug("copySnapshotData: queued {} and inserted {} rows", pending, imported);
+        }
+        return imported;
     }
 
     private static int copyData(ContentResolver cr, String minId) {
