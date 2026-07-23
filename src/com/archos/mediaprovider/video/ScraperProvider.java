@@ -480,13 +480,16 @@ public class ScraperProvider extends ContentProvider {
     }
 
     private static long findScraperImage(SQLiteDatabase db, String table, ScraperImage.Type type, ContentValues cv) {
-        String selection = type.largeFileColumn + "=?";
-        String[] selectionArgs = { cv.getAsString(type.largeFileColumn) };
+        String largeFile = cv.getAsString(type.largeFileColumn);
+        Long ownerId = cv.getAsLong(type.remoteIdColumn);
 
-        if (selectionArgs[0] == null) {
-            log.error("findScraperImage: selectionArgs[0] is null for table: {}, type: {}", table, type);
+        if (largeFile == null || ownerId == null) {
+            log.error("findScraperImage: missing large file or owner for table: {}, type: {}", table, type);
             return -1;
         }
+
+        String selection = type.remoteIdColumn + "=? AND " + type.largeFileColumn + "=?";
+        String[] selectionArgs = { String.valueOf(ownerId), largeFile };
 
         long result = -1;
         Cursor cursor;

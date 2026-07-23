@@ -16,6 +16,7 @@ package com.archos.mediaprovider.video;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import android.app.Application;
@@ -97,5 +98,34 @@ public class ScraperProviderInsertTest {
         assertNull(second);
         assertEquals(1L, DatabaseUtils.queryNumEntries(dbHolder.get(),
                 ScraperTables.SHOW_TABLE_NAME));
+    }
+
+    @Test
+    public void artworkConflictLookupIsScopedToItsOwner() {
+        dbHolder.get().execSQL("INSERT INTO files(_id,remote_id,_data) VALUES(1,1,'movie-1.mkv')");
+        dbHolder.get().execSQL("INSERT INTO files(_id,remote_id,_data) VALUES(2,2,'movie-2.mkv')");
+        dbHolder.get().execSQL("INSERT INTO MOVIE(_id,video_id,name_movie) VALUES(101,1,'Movie 1')");
+        dbHolder.get().execSQL("INSERT INTO MOVIE(_id,video_id,name_movie) VALUES(102,2,'Movie 2')");
+
+        ContentValues firstOwner = new ContentValues();
+        firstOwner.put(ScraperStore.MoviePosters.MOVIE_ID, 101L);
+        firstOwner.put(ScraperStore.MoviePosters.THUMB_FILE, "shared-thumb.jpg");
+        firstOwner.put(ScraperStore.MoviePosters.LARGE_FILE, "shared-large.jpg");
+
+        Uri first = provider.insert(ScraperStore.MoviePosters.URI.BASE, firstOwner);
+        Uri duplicate = provider.insert(ScraperStore.MoviePosters.URI.BASE, firstOwner);
+
+        ContentValues secondOwner = new ContentValues(firstOwner);
+        secondOwner.put(ScraperStore.MoviePosters.MOVIE_ID, 102L);
+        Uri sharedBySecondOwner =
+                provider.insert(ScraperStore.MoviePosters.URI.BASE, secondOwner);
+
+        assertNotNull(first);
+        assertNotNull(duplicate);
+        assertNotNull(sharedBySecondOwner);
+        assertEquals(ContentUris.parseId(first), ContentUris.parseId(duplicate));
+        assertNotEquals(ContentUris.parseId(first), ContentUris.parseId(sharedBySecondOwner));
+        assertEquals(2L, DatabaseUtils.queryNumEntries(dbHolder.get(),
+                ScraperTables.MOVIE_POSTERS_TABLE_NAME));
     }
 }

@@ -46,7 +46,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 55;
+    private static final int DATABASE_VERSION = 56;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1883,7 +1883,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             db.execSQL(CREATE_VIDEO_VIEW_V50);
         }
-        if (oldVersion < 51 && newVersion >= 51) { // add UNIQUE constraints to movie poster/backdrop tables
+        if (oldVersion < 51 && newVersion >= 51 && newVersion < 56) { // add global UNIQUE constraints to movie poster/backdrop tables
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding UNIQUE constraints to movie poster/backdrop tables to prevent duplicates", 51);
             // The video view references both tables rebuilt by migration 51. Some SQLite versions
             // validate every view during ALTER TABLE RENAME and reject the temporarily broken view.
@@ -1909,6 +1909,16 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         if (oldVersion < 55 && newVersion >= 55) { // recreate triggers with 0/0 reset
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - recreating triggers with 0/0 reset to fix unscraped trap", 55);
             ScraperTables.upgradeTo(db, 55);
+        }
+        if (oldVersion < 56 && newVersion >= 56) { // make artwork rows owner-specific
+            if (log.isDebugEnabled()) log.debug("onUpgrade: {} - migrating artwork tables to owner-aware uniqueness", 56);
+            // Direct upgrades from v36-v50 intentionally skip v51 above: its global
+            // deduplication can discard one owner's artwork before this migration can
+            // preserve it. Databases already on v51-v55 are repaired from the selected
+            // image rows and the direct cover/backdrop columns.
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
+            ScraperTables.upgradeTo(db, 56);
+            db.execSQL(CREATE_VIDEO_VIEW_V50);
         }
     }
 
