@@ -59,6 +59,32 @@ public class LocalImagesTest {
     }
 
     @Test
+    public void findsSeasonPosterInVideoFolder() throws Exception {
+        File showDir = temp.newFolder("Show");
+        File episode = new File(showDir, "Show.S01E01.mkv");
+        File poster = new File(showDir, "season01-poster.jpg");
+        poster.createNewFile();
+
+        Uri result = LocalImages.findSeasonPoster(Uri.fromFile(episode), "Show", 1);
+
+        assertEquals(poster.getAbsolutePath(), result.getPath());
+    }
+
+    @Test
+    public void findsShowRootSeasonPosterFromSeasonFolder() throws Exception {
+        File showDir = temp.newFolder("Show");
+        File seasonDir = new File(showDir, "Season 01");
+        seasonDir.mkdirs();
+        File episode = new File(seasonDir, "Show.S01E01.mkv");
+        File poster = new File(showDir, "season01-poster.jpg");
+        poster.createNewFile();
+
+        Uri result = LocalImages.findSeasonPoster(Uri.fromFile(episode), "Show", 1);
+
+        assertEquals(poster.getAbsolutePath(), result.getPath());
+    }
+
+    @Test
     public void movieDoesNotInheritGrandparentFanart() throws Exception {
         File moviesDir = temp.newFolder("Movies");
         File filmDir = new File(moviesDir, "Film");

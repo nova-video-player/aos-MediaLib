@@ -226,6 +226,11 @@ public class LocalImages {
                 seasonFileNoExt + ".jpg",
                 seasonFileNoExt + ".png",
         };
+        // modern Kodi/Jellyfin convention: "season03-poster.(jpg/png)", stored in the show root
+        String[] seasonPosterFiles = {
+                seasonFileNoExt + "-poster.jpg",
+                seasonFileNoExt + "-poster.png",
+        };
 
         if (parent != null) {
             // 1. check if our custom file exists
@@ -240,14 +245,31 @@ public class LocalImages {
                 if (result != null)
                     return result;
             }
-            // 3. episodes can be in season subfolders like
+            // 3. check seasonXX-poster files (covers a flat layout with no season subfolder)
+            for (String filename : seasonPosterFiles) {
+                Uri result = getIfAvailable(parent, filename);
+                if (result != null)
+                    return result;
+            }
+            // 4. episodes can be in season subfolders like
             // smb://server/share/TvShows/The Simpsons/Season 01/TheSimpsons.S01E01.avi
             // so check for images like
+            // smb://server/share/TvShows/The Simpsons/season01-poster.jpg
             // smb://server/share/TvShows/The Simpsons/season01.tbn
 
             // relocate uri for local files to writeable location to comply with API30
             Uri grandParent = FileUtils.getParentUrl(FileUtils.relocateNfoAppPublicDir(parent));
             if (grandParent != null) {
+                for (String filename : seasonPosterFiles) {
+                    Uri result = getIfAvailable(grandParent, filename);
+                    if (result != null)
+                        return result;
+                }
+                for (String filename : seasonFiles) {
+                    Uri result = getIfAvailable(grandParent, filename);
+                    if (result != null)
+                        return result;
+                }
                 Uri result = getIfAvailable(grandParent, parent.getLastPathSegment() + ".tbn");
                 if (result != null)
                     return result;
