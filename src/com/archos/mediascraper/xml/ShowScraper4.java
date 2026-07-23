@@ -160,8 +160,10 @@ public class ShowScraper4 extends BaseScraper2 {
         List<SearchCandidate> candidates = new ArrayList<>();
         // Prefer cleaned name with year filter (if any) first
         candidates.add(new SearchCandidate(searchInfo.getShowName(), searchInfo.getFirstAiredYear()));
-        // Fallback to suggestion (name + year) without year filter (if year exists)
         if (searchInfo.getFirstAiredYear() != null && !searchInfo.getFirstAiredYear().isEmpty()) {
+            // Fallback: try cleaned name without year filter if year search returns no results
+            candidates.add(new SearchCandidate(searchInfo.getShowName(), null));
+            // Fallback to suggestion (name + year) without year filter
             candidates.add(new SearchCandidate(searchInfo.getShowName() + " " + searchInfo.getFirstAiredYear(), null));
         }
 

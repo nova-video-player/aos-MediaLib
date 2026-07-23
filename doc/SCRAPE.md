@@ -62,6 +62,9 @@ Example:
 
 Release/language tags such as `FRENCH`, `TRUEFRENCH`, `MULTI`, `VFF`, and `VOF` are treated as release garbage, not country-of-origin hints. They can describe audio/release language and are not reliable evidence of TMDb origin. For example, `Les.traitres.2022.S06E03.2026-04-11.FRENCH.1080p.WEB.H264-THESYNDiCATE.mkv` matches the French show through title/year/language search, not through a country-origin filter.
 
+### 2.4 TV Path Year Extraction & Season Folders
+When extracting a show year from directory path segments, the matcher distinguishes show directories from season directories (e.g., `S02 (1988)` or `Season 1 (2020)`). Years found in season-specific folders are treated as secondary fallbacks so that a parent show directory year (e.g., `DuckTales (1987)`) takes precedence as the show's first air date year. Furthermore, if a year filter yields no results on TMDb, `ShowScraper4` retries searching the show name without a year constraint.
+
 ---
 
 ## 3. Year Extraction Strategy (The "Leeroy" Engine)

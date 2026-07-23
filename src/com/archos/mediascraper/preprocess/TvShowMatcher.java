@@ -72,6 +72,36 @@ class TvShowMatcher implements InputMatcher {
             String episode = showName.get(ShowUtils.EPNUM);
             String year = showName.get(ShowUtils.YEAR);
             String countryOfOrigin = showName.get(ShowUtils.ORIGIN);
+
+            if (year == null && file != null) {
+                java.util.List<String> segments = file.getPathSegments();
+                if (segments != null) {
+                    int size = segments.size();
+                    String seasonYear = null;
+                    for (int i = 2; i <= 4; i++) {
+                        if (size - i >= 0) {
+                            String segment = segments.get(size - i);
+                            Pair<String, String> p = ParseUtils.parenthesisYearExtractor(segment);
+                            if (p.second == null || !ParseUtils.isValidYear(p.second)) {
+                                p = ParseUtils.yearExtractorEndString(segment);
+                            }
+                            if (p.second != null && ParseUtils.isValidYear(p.second)) {
+                                boolean isSeasonFolder = segment.matches("(?i)^(?:s|seas|season|saison)[\\s._-]*\\d+.*");
+                                if (isSeasonFolder) {
+                                    if (seasonYear == null) seasonYear = p.second;
+                                } else {
+                                    year = p.second;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (year == null && seasonYear != null) {
+                        year = seasonYear;
+                    }
+                }
+            }
+
             int seasonInt = StringUtils.parseInt(season, 0);
             int episodeInt = StringUtils.parseInt(episode, 0);
             return new TvShowSearchInfo(file, showTitle, seasonInt, episodeInt, year, countryOfOrigin);

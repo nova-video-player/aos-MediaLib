@@ -86,6 +86,25 @@ public class SearchShow {
                         if (response.isSuccessful()) isResponseOk = true;
                     }
                     if (response.body() == null || response.body().total_results == 0) {
+                        // Fallback for "and" vs "&" (e.g. "Asterix and Obelix" -> "Asterix & Obelix")
+                        String alternate = null;
+                        if (searchQueryString.toLowerCase().contains(" and ")) {
+                            alternate = searchQueryString.replaceAll("(?i)\\band\\b", "&");
+                        } else if (searchQueryString.contains("&")) {
+                            alternate = searchQueryString.replace("&", "and");
+                        }
+                        if (alternate != null) {
+                            if (log.isDebugEnabled()) log.debug("search: no results, retrying with alternate name: {}", alternate);
+                            response = tmdb.searchService().tv(alternate, 1, language, year, false).execute();
+                            if (response.isSuccessful()) isResponseOk = true;
+                            if (response.body() != null && response.body().total_results == 0 && !language.equals("en")) {
+                                if (log.isDebugEnabled()) log.debug("search: no results in {} for alternate, retrying in en", language);
+                                response = tmdb.searchService().tv(alternate, 1, "en", year, false).execute();
+                                if (response.isSuccessful()) isResponseOk = true;
+                            }
+                        }
+                    }
+                    if (response.body() == null || response.body().total_results == 0) {
                         // Fallback for transliterated titles (e.g. German umlauts: 'ae' -> 'ä')
                         boolean isGerman = (language != null && language.startsWith("de")) ||
                                            "de".equals(java.util.Locale.getDefault().getLanguage());
