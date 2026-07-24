@@ -136,6 +136,8 @@ public class ISO639codes {
         iso63922bToIso6393.put("mac", "mkd");
         iso63922bToIso6393.put("mao", "mri");
         iso63922bToIso6393.put("may", "msa");
+        // ISO 639-3 extlang of zho not natively resolved by Locale, normalize to macrolanguage code
+        iso63922bToIso6393.put("cmn", "zho"); // Mandarin Chinese
     }
 
     static public String getLanguageNameForLetterCode(String code) {
@@ -418,6 +420,62 @@ public class ISO639codes {
         // check if string is of the form "language" or "description (language)"
         String pattern = "^" + language + "$|^.* \\(" + language + "\\)$";
         return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(string).matches();
+    }
+
+    // Chinese sub-variant favorite codes (see missingISO6391ToISO6393) and the free-text title
+    // keywords (English + Chinese) used to best-effort disambiguate Mandarin/Cantonese/Taiwan,
+    // since ISO 639 has no distinct code for these variants (all commonly tagged "chi"/"zho").
+    private static final String[] CHINESE_MAINLAND_KEYWORDS = {"mandarin", "mainland", "simplified", "putonghua", "国语", "普通话", "简体", "大陆"};
+    private static final String[] CHINESE_HK_KEYWORDS = {"cantonese", "hong kong", "hongkong", "粤语", "廣東話", "广东话", "香港"};
+    private static final String[] CHINESE_TW_KEYWORDS = {"taiwan", "taiwanese", "台灣", "台湾", "繁體", "繁体"};
+
+    private static String[] chineseVariantKeywordsFor(String favoriteLanguageCode) {
+        if (favoriteLanguageCode == null) return null;
+        switch (favoriteLanguageCode) {
+            case "zh-cn": return CHINESE_MAINLAND_KEYWORDS;
+            case "zh-ca":
+            case "zh-hk": return CHINESE_HK_KEYWORDS;
+            case "zh-tw": return CHINESE_TW_KEYWORDS;
+            default: return null;
+        }
+    }
+
+    // Normalizes any favorite/track language code (2-letter, 3-letter, or OpenSubtitles-style
+    // pseudo-code like "zh-cn") to a comparable ISO 639-1 code, ignoring any variant suffix.
+    private static String baseISO6391Code(String code) {
+        if (code == null || code.isEmpty()) return "";
+        String base = code.contains("-") ? code.substring(0, code.indexOf('-')) : code;
+        if (base.length() == 2 || base.length() == 3) {
+            return getISO6391ForLetterCode(base);
+        }
+        return "";
+    }
+
+    /**
+     * Returns true if the track's raw ISO 639 language code matches the user's favorite audio
+     * language, comparing normalized ISO 639-1 codes instead of rendered/localized display
+     * strings (which vary with the naming rules and UI locale, unlike codes).
+     */
+    public static boolean isFavoriteLanguageMatch(String favoriteLanguageCode, String trackLanguageCode) {
+        if (favoriteLanguageCode == null || trackLanguageCode == null) return false;
+        String favBase = baseISO6391Code(favoriteLanguageCode);
+        String trackBase = baseISO6391Code(trackLanguageCode);
+        return !favBase.isEmpty() && favBase.equals(trackBase);
+    }
+
+    /**
+     * Best-effort heuristic: for Chinese sub-variant favorites (Mainland/Hong Kong/Taiwan, which
+     * have no dedicated ISO 639 code), checks whether the track's free-text title contains a
+     * known keyword for that variant.
+     */
+    public static boolean titleMatchesChineseVariant(String favoriteLanguageCode, String trackTitle) {
+        String[] keywords = chineseVariantKeywordsFor(favoriteLanguageCode);
+        if (keywords == null || trackTitle == null || trackTitle.isEmpty()) return false;
+        String title = trackTitle.toLowerCase(Locale.ROOT);
+        for (String keyword : keywords) {
+            if (title.contains(keyword.toLowerCase(Locale.ROOT))) return true;
+        }
+        return false;
     }
 
     public static String removeStartingSpacesAndSurroundingParenthesis(String string) {
