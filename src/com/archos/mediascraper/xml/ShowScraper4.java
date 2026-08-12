@@ -341,10 +341,19 @@ public class ShowScraper4 extends BaseScraper2 {
 
                     // if there is no title or description research in en
                     if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().trim().length() == 0 || showTags.getTitle().trim().length() == 0) {
-                        showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey, showId, "en", adultScrape, getTmdb());
-                        if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
-                            return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                        else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                        // use an "en" scoped key: showKey (built with resultLanguage) is already cached
+                        // with the localized (empty) result, reusing it here would just return that same
+                        // cached entry instead of querying tmdb in English
+                        String fallbackShowKey = cleanShowName + "|en";
+                        ShowIdTvSearchResult enShowIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(fallbackShowKey, showId, "en", adultScrape, getTmdb());
+                        if (enShowIdTvSearchResult.status == ScrapeStatus.OKAY) {
+                            ShowTags enShowTags = ShowIdParser.getResult(enShowIdTvSearchResult.tvShow, result.getYear(), mContext);
+                            // merge only the missing fields, preserve the rest of the localized showTags (images, etc.)
+                            if (showTags.getPlot() == null || showTags.getPlot().trim().length() == 0) showTags.setPlot(enShowTags.getPlot());
+                            if (showTags.getTitle() == null || showTags.getTitle().trim().length() == 0) showTags.setTitle(enShowTags.getTitle());
+                        } else {
+                            if (log.isDebugEnabled()) log.debug("getDetailsInternal: en fallback for show {} failed with status {}", showId, enShowIdTvSearchResult.status);
+                        }
                     }
 
                     // now we have the number of seasons if we need getAllEpisodes
