@@ -90,7 +90,8 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.IMDB_ID,         // 5
         ScraperStore.Show.ONLINE_ID,       // 6
         ScraperStore.Show.POSTER_ID,       // 7
-        ScraperStore.Show.BACKDROP_ID      // 8
+        ScraperStore.Show.BACKDROP_ID,     // 8
+        ScraperStore.Show.PLOT             // 9
     };
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
@@ -616,6 +617,7 @@ public class ShowTags extends VideoTags {
                 String storedBD = cursor.getString(4);
                 String storedImdb = cursor.getString(5);
                 long storedOnlineId = cursor.getLong(6);
+                String storedPlot = cursor.getString(9);
 
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
@@ -632,7 +634,8 @@ public class ShowTags extends VideoTags {
                                 newFloatIsBetter(storedRating, mRating) ||
                                 newStringIsBetter(storedCRating, mContentRating) ||
                                 newStringIsBetter(storedImdb, mImdbId) ||
-                                newLongIsBetter(storedOnlineId, mOnlineId);
+                                newLongIsBetter(storedOnlineId, mOnlineId) ||
+                                newStringIsBetter(storedPlot, mPlot);
 
                 if (log.isDebugEnabled()) log.debug("updateInfo: show found in db: updateCover {}, updateBackdrop {} baseInfoChanged {}",
                         updateCover, updateBackdrop, baseInfoChanged);

@@ -116,6 +116,36 @@ public class NfoParserTest {
         assertEquals("Example Show", episodeTags.getShowTags().getTitle());
     }
 
+    @Test
+    public void episodeRetriesParentTvShowNfoWhenDiscoveryDidNotFindIt() throws Exception {
+        File showFolder = temporaryFolder.newFolder("x-men-show");
+        File seasonFolder = new File(showFolder, "S01");
+        assertTrue(seasonFolder.mkdir());
+        File video = write(seasonFolder, "X-Men - S01E01.mkv", "");
+        File episode = write(seasonFolder, "X-Men - S01E01.nfo",
+                "<episodedetails><title>Night of the Sentinels</title>"
+                        + "<showtitle>X-Men</showtitle><season>1</season><episode>1</episode>"
+                        + "<plot>Episode plot</plot><uniqueid type=\"tmdb\">76118</uniqueid>"
+                        + "</episodedetails>");
+        write(showFolder, "tvshow.nfo",
+                "<tvshow><title>X-Men</title><plot>Show plot</plot><year>1992</year>"
+                        + "<uniqueid type=\"tmdb\">1423</uniqueid></tvshow>");
+
+        NfoParser.NfoFile nfo = nfoFile(video, seasonFolder, episode);
+        // Reproduce the SMB trace: episode discovery succeeded but the earlier show-NFO stat did not.
+        assertNull(nfo.showNfo);
+
+        BaseTags parsed = NfoParser.getTagForFile(nfo, context, new NfoParser.ImportContext());
+
+        assertNotNull(parsed);
+        assertTrue(parsed instanceof EpisodeTags);
+        EpisodeTags episodeTags = (EpisodeTags) parsed;
+        assertEquals("Episode plot", episodeTags.getPlot());
+        assertEquals(76118, episodeTags.getOnlineId());
+        assertEquals("Show plot", episodeTags.getShowTags().getPlot());
+        assertEquals(1423, episodeTags.getShowTags().getOnlineId());
+    }
+
     private static NfoParser.NfoFile nfoFile(File video, File folder, File nfo) {
         NfoParser.NfoFile result = new NfoParser.NfoFile();
         result.videoFile = Uri.fromFile(video);

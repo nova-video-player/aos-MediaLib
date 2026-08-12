@@ -20,8 +20,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.DisplayMetrics;
@@ -36,6 +34,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ScraperImage {
 
@@ -446,6 +448,13 @@ public class ScraperImage {
     }
 
     private static final MultiLock<String> sLock = new MultiLock<String>();
+    /** Local artwork targets already refreshed during the current scrape pass. */
+    private static final Set<String> sRefreshedLocalFiles = ConcurrentHashMap.newKeySet();
+
+    /** Start a new scrape pass: each distinct local target may be refreshed once again. */
+    public static void resetLocalArtworkRefreshState() {
+        sRefreshedLocalFiles.clear();
+    }
 
     public final boolean download(Context context) {
         // fallback to thumbnail if there is no full poster/backdrop e.g. when thetvdb is fubar
@@ -488,7 +497,9 @@ public class ScraperImage {
         try {
             if (log.isDebugEnabled()) log.debug("download: download {}", mType.name());
             // maybe large file exists already
-            if (fileIfExists(file) != null) {
+            boolean localSource = isLocalImageUrl(url);
+            boolean refreshLocal = file != null && localSource && !sRefreshedLocalFiles.contains(file);
+            if (fileIfExists(file) != null && !refreshLocal) {
                 if (log.isDebugEnabled()) log.debug("download: using existing file.");
                 success = true;
             } else if (url == null) {
@@ -505,6 +516,7 @@ public class ScraperImage {
                 if (log.isDebugEnabled()) log.debug("download: file does not exist: download it!");
                 // rescaling happens here only if rescaling type different from NONE and size of the image higher than maxWidth x maxHeight
                 success = saveSizedImage(context, url, file, mType, thumb, maxWidth, maxHeight, fake);
+                if (success && localSource) sRefreshedLocalFiles.add(file);
             }
         } finally {
             sLock.unlock(lockString);
@@ -520,6 +532,12 @@ public class ScraperImage {
                 return f;
         }
         return null;
+    }
+
+    private static boolean isLocalImageUrl(String url) {
+        if (url == null || url.isEmpty()) return false;
+        String lower = url.toLowerCase(Locale.ROOT);
+        return !lower.startsWith("http://") && !lower.startsWith("https://");
     }
 
     private static boolean saveSizedImage(Context context, String url, String targetName, Type type,

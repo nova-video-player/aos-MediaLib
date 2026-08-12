@@ -1120,6 +1120,9 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
             return;
         }
         try {
+            // Give every scrape pass one opportunity to replace each generated local-artwork file.
+            // Shared show/season targets are deduplicated for the rest of the pass by ScraperImage.
+            ScraperImage.resetLocalArtworkRefreshState();
             worker.start();
         } catch (RuntimeException e) {
             releaseScrapeWorker(worker);
