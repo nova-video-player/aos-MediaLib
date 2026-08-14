@@ -33,7 +33,7 @@ public class NetworkScannerUtil {
 
     private static final Logger log = LoggerFactory.getLogger(NetworkScannerUtil.class);
 
-    private static final Integer JOBID_NETSCANNER = 0;
+    static final int JOBID_NETSCANNER = 0;
 
     // schedule the start of the service every 10 - 30 seconds
     public static void scheduleJob(Context context) {
@@ -48,7 +48,14 @@ public class NetworkScannerUtil {
     public static void scheduleNewRescan(Context context, int startingTimeOfDay, int periode, boolean setPreference){
         if (log.isDebugEnabled()) log.debug("scheduleNewRescan: resetting alarm starting at {}h, period: {}h", String.valueOf(startingTimeOfDay / 1000 / 60 / 60), String.valueOf(periode / 1000 / 60 / 60));
 
-        //start rescan if lastscan + period < current time (when has booted after scheduled time)
+        // Make the complete schedule visible before the job can run and read it back.
+        if(setPreference) {
+            if (log.isDebugEnabled()) log.debug("scheduleNewRescan: preference");
+            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                    .putInt(NetworkAutoRefresh.AUTO_RESCAN_STARTING_TIME_PREF, startingTimeOfDay)
+                    .putInt(NetworkAutoRefresh.AUTO_RESCAN_PERIOD, periode)
+                    .apply();
+        }
 
         ComponentName serviceComponent = new ComponentName(context, NetworkRefreshJob.class);
         JobInfo.Builder jobBuilder = new JobInfo.Builder(JOBID_NETSCANNER, serviceComponent);
@@ -66,16 +73,22 @@ public class NetworkScannerUtil {
             c.set(Calendar.SECOND,0);
             c.set(Calendar.MILLISECOND,0);
             long nextStart = c.getTimeInMillis()+startingTimeOfDay;
-            while(nextStart < System.currentTimeMillis())
+            long now = System.currentTimeMillis();
+            while(nextStart <= now)
                 nextStart+=periode;
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.SSS");
             Date dt = new Date(nextStart);
             String S = sdf.format(dt);
             if (log.isDebugEnabled()) log.debug("scheduleNewRescan: periode {}", periode/1000/60/60);
             if (log.isDebugEnabled()) log.debug("scheduleNewRescan: launching at {}", S);
-            if (log.isDebugEnabled()) log.debug("scheduleNewRescan: launching in {} minutes", (nextStart - System.currentTimeMillis()) / 1000 / 60);
+            if (log.isDebugEnabled()) log.debug("scheduleNewRescan: launching in {} minutes", (nextStart - now) / 1000 / 60);
 
-            jobBuilder.setOverrideDeadline(nextStart - System.currentTimeMillis());
+            long delay = Math.max(1L, nextStart - System.currentTimeMillis());
+            // A deadline is only the latest run time. Without minimum latency an otherwise
+            // unconstrained job is eligible immediately, which made this job reschedule itself
+            // in a tight start/cancel loop on Android TV 13.
+            jobBuilder.setMinimumLatency(delay);
+            jobBuilder.setOverrideDeadline(delay);
 
             // could be nice: trigger when device is idle but introduces some non deterministic behavior that could be understood as bug
             //jobBuilder.setRequiresDeviceIdle(true);
@@ -88,11 +101,6 @@ public class NetworkScannerUtil {
         } else {
             jobScheduler.cancel(JOBID_NETSCANNER);
             if (log.isDebugEnabled()) log.debug("scheduleNewRescan: job canceled");
-        }
-        if(setPreference) {
-            if (log.isDebugEnabled()) log.debug("scheduleNewRescan: preference");
-            PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(NetworkAutoRefresh.AUTO_RESCAN_STARTING_TIME_PREF,startingTimeOfDay).apply();
-            PreferenceManager.getDefaultSharedPreferences(context).edit().putInt(NetworkAutoRefresh.AUTO_RESCAN_PERIOD, periode).apply();
         }
     }
 }

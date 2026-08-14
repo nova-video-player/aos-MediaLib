@@ -18,27 +18,15 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Context;
 import android.content.Intent;
-
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.ProcessLifecycleOwner;
-
-import com.archos.environment.ArchosUtils;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NetworkRefreshJob extends JobService implements DefaultLifecycleObserver {
+public class NetworkRefreshJob extends JobService {
 
     private static final Logger log = LoggerFactory.getLogger(NetworkRefreshJob.class);
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        if (log.isDebugEnabled()) log.debug("onCreate");
-        // Register as a lifecycle observer
-        ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
-    }
 
     @Override
     public boolean onStartJob(JobParameters params) {
@@ -46,28 +34,19 @@ public class NetworkRefreshJob extends JobService implements DefaultLifecycleObs
         Context context = getApplicationContext();
         Intent intent = new Intent(context, NetworkAutoRefresh.class);
         intent.setAction(NetworkAutoRefresh.ACTION_RESCAN_INDEXED_FOLDERS);
-        intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+        intent.setPackage(context.getPackageName());
         context.sendBroadcast(intent);
-        // reschedule the job for next period
-        NetworkScannerUtil.scheduleJob(getApplicationContext());
-        return true;
+
+        // Sending the broadcast completes this job's work, so return false. Queue the next
+        // one-shot job on the service's main looper: JobService acknowledges this completion
+        // after onStartJob returns, before this runnable replaces job ID 0.
+        new Handler(Looper.getMainLooper()).post(() -> NetworkScannerUtil.scheduleJob(context));
+        return false;
     }
 
     @Override
     public boolean onStopJob(JobParameters params) {
-        return true;
-    }
-
-    @Override
-    public void onStop(LifecycleOwner owner) {
-        // App in background
-        if (log.isDebugEnabled()) log.debug("onStop: LifecycleOwner app in background");
-        stopSelf();
-    }
-
-    @Override
-    public void onStart(LifecycleOwner owner) {
-        // App in foreground
-        if (log.isDebugEnabled()) log.debug("onStart: LifecycleOwner app in foreground");
+        // A schedule change or explicit cancellation must not create an immediate retry loop.
+        return false;
     }
 }
