@@ -423,11 +423,12 @@ public class ISO639codes {
     }
 
     // Chinese sub-variant favorite codes (see missingISO6391ToISO6393) and the free-text title
-    // keywords (English + Chinese) used to best-effort disambiguate Mandarin/Cantonese/Taiwan,
-    // since ISO 639 has no distinct code for these variants (all commonly tagged "chi"/"zho").
+    // keywords (English + Chinese) used to best-effort disambiguate Mandarin/Cantonese/Taiwan
+    // audio tracks, or Simplified/Traditional subtitle tracks, since ISO 639 has no distinct
+    // code for these variants (all commonly tagged "chi"/"zho").
     private static final String[] CHINESE_MAINLAND_KEYWORDS = {"mandarin", "mainland", "simplified", "putonghua", "国语", "普通话", "简体", "大陆"};
-    private static final String[] CHINESE_HK_KEYWORDS = {"cantonese", "hong kong", "hongkong", "粤语", "廣東話", "广东话", "香港"};
-    private static final String[] CHINESE_TW_KEYWORDS = {"taiwan", "taiwanese", "台灣", "台湾", "繁體", "繁体"};
+    private static final String[] CHINESE_HK_KEYWORDS = {"cantonese", "hong kong", "hongkong", "traditional", "粤语", "廣東話", "广东话", "香港", "繁體", "繁体"};
+    private static final String[] CHINESE_TW_KEYWORDS = {"taiwan", "taiwanese", "traditional", "台灣", "台湾", "繁體", "繁体"};
 
     private static String[] chineseVariantKeywordsFor(String favoriteLanguageCode) {
         if (favoriteLanguageCode == null) return null;
@@ -436,8 +437,25 @@ public class ISO639codes {
             case "zh-ca":
             case "zh-hk": return CHINESE_HK_KEYWORDS;
             case "zh-tw": return CHINESE_TW_KEYWORDS;
-            default: return null;
         }
+        // A bare "zh"/"zho"/"chi" favorite (e.g. the default value derived from
+        // Locale.getDefault().getISO3Language() when the user never set an explicit preference)
+        // carries no sub-variant info by itself since getISO3Language() drops the country: a
+        // zh_CN, zh_TW or zh_HK system locale all yield the same "zho". Fall back to the system
+        // locale's country to infer the intended variant in that case.
+        if ("zh".equals(baseISO6391Code(favoriteLanguageCode))) {
+            String country = Locale.getDefault().getCountry();
+            if (country != null) {
+                switch (country) {
+                    case "TW": return CHINESE_TW_KEYWORDS;
+                    case "HK":
+                    case "MO": return CHINESE_HK_KEYWORDS;
+                    case "CN":
+                    case "SG": return CHINESE_MAINLAND_KEYWORDS;
+                }
+            }
+        }
+        return null;
     }
 
     // Normalizes any favorite/track language code (2-letter, 3-letter, or OpenSubtitles-style
@@ -466,7 +484,8 @@ public class ISO639codes {
     /**
      * Best-effort heuristic: for Chinese sub-variant favorites (Mainland/Hong Kong/Taiwan, which
      * have no dedicated ISO 639 code), checks whether the track's free-text title contains a
-     * known keyword for that variant.
+     * known keyword for that variant. Used both for audio tracks (Mandarin/Cantonese/Taiwan
+     * spoken-language hints) and subtitle tracks (Simplified/Traditional script hints).
      */
     public static boolean titleMatchesChineseVariant(String favoriteLanguageCode, String trackTitle) {
         String[] keywords = chineseVariantKeywordsFor(favoriteLanguageCode);
@@ -476,6 +495,18 @@ public class ISO639codes {
             if (title.contains(keyword.toLowerCase(Locale.ROOT))) return true;
         }
         return false;
+    }
+
+    /**
+     * Shared priority rule for audio/subtitle default-track auto-selection among tracks matching
+     * the favorite language: a Chinese-variant title match wins, else the track flagged "default"
+     * by the container, else the first language-matching track. Any argument may be null if no
+     * such track was found while scanning the candidates. Returns null if all three are null.
+     */
+    public static Integer selectPreferredTrack(Integer variantMatchTrack, Integer defaultMatchTrack, Integer languageMatchTrack) {
+        if (variantMatchTrack != null) return variantMatchTrack;
+        if (defaultMatchTrack != null) return defaultMatchTrack;
+        return languageMatchTrack;
     }
 
     public static String removeStartingSpacesAndSurroundingParenthesis(String string) {
