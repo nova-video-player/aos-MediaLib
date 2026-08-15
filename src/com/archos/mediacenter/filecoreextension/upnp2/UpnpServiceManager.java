@@ -143,29 +143,10 @@ public class UpnpServiceManager {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getOldValue() != evt.getNewValue()) {
                             if (log.isDebugEnabled()) log.debug("NetworkState for {} changed:{} -> {}", evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
-                            //we need to restart upnp service on network state change
-                            if (mAndroidUpnpService!=null&&mState==State.RUNNING&&mHasStarted) {
-                                if (log.isDebugEnabled()) log.debug("restarting");
-                                mDevices.clear();
-                                informListenersOfDeviceListUpdate(mListeners);
-                                mAndroidUpnpService.getRegistry().removeListener(mRegistryListener);
-                                // Release multicast lock before unbinding
-                                if (mMulticastLock != null && mMulticastLock.isHeld()) {
-                                    mMulticastLock.release();
-                                    if (log.isDebugEnabled()) log.debug("MulticastLock released before restart");
-                                }
-                                try {
-                                    // Only unbind if service was actually connected to prevent crashes in AndroidUpnpServiceImpl
-                                    if (mServiceConnected) {
-                                        mContext.unbindService(mServiceConnection);
-                                        mServiceConnected = false;
-                                    }
-                                } catch (java.lang.IllegalArgumentException e) {
-                                    //this is bad, but I haven't found any other way to avoid "java.lang.IllegalArgumentException: Service not registered"
-                                }
-                                mState = State.NOT_RUNNING;
-                                start();
-                            }
+                            // Network callbacks run on a HandlerThread while service connection callbacks run
+                            // on the main thread. Serialize the restart with the service lifecycle so the
+                            // binder cannot be cleared between checking and using it.
+                            mUiHandler.post(UpnpServiceManager.this::restartAfterNetworkChange);
                         }
                     }
                 };
@@ -174,6 +155,37 @@ public class UpnpServiceManager {
             mState = State.NOT_RUNNING;
             if (log.isDebugEnabled()) log.debug("State NOT_RUNNING");
         }
+    }
+
+    private void restartAfterNetworkChange() {
+        AndroidUpnpService upnpService = mAndroidUpnpService;
+        if (upnpService == null || mState != State.RUNNING || !mHasStarted) {
+            return;
+        }
+
+        if (log.isDebugEnabled()) log.debug("restarting");
+        mDevices.clear();
+        informListenersOfDeviceListUpdate(mListeners);
+        Registry registry = upnpService.getRegistry();
+        if (registry != null) {
+            registry.removeListener(mRegistryListener);
+        }
+        // Release multicast lock before unbinding
+        if (mMulticastLock != null && mMulticastLock.isHeld()) {
+            mMulticastLock.release();
+            if (log.isDebugEnabled()) log.debug("MulticastLock released before restart");
+        }
+        try {
+            // Only unbind if service was actually connected to prevent crashes in AndroidUpnpServiceImpl
+            if (mServiceConnected) {
+                mContext.unbindService(mServiceConnection);
+                mServiceConnected = false;
+            }
+        } catch (java.lang.IllegalArgumentException e) {
+            //this is bad, but I haven't found any other way to avoid "java.lang.IllegalArgumentException: Service not registered"
+        }
+        mState = State.NOT_RUNNING;
+        start();
     }
 
     /**
