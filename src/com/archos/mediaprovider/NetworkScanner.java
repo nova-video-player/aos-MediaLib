@@ -52,9 +52,24 @@ public class NetworkScanner {
 
     /** sends broadcast that triggers mediacenter-video removal of files */
     public static void removeVideos(Context context, Uri uri) {
+        removeVideos(context, uri, false);
+    }
+
+    /** Removes videos after an indexed root was deleted. */
+    public static void removeIndexedVideos(Context context, String location) {
+        if (location != null) removeIndexedVideos(context, Uri.parse(location));
+    }
+
+    /** Removes videos after an indexed root was deleted. */
+    public static void removeIndexedVideos(Context context, Uri uri) {
+        removeVideos(context, uri, true);
+    }
+
+    private static void removeVideos(Context context, Uri uri, boolean indexedRootRemoved) {
         if (context != null && uri != null) {
             if (DBG) Log.d(TAG, "removeVideos uri:" + uri);
             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_REMOVE_FILE, uri);
+            intent.putExtra(ArchosMediaIntent.EXTRA_INDEXED_ROOT_REMOVED, indexedRootRemoved);
             intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
             context.sendBroadcast(intent);
         }

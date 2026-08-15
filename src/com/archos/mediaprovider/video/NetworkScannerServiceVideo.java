@@ -57,6 +57,7 @@ import com.archos.mediacenter.filecoreextension.UriUtils;
 import com.archos.mediacenter.filecoreextension.upnp2.MetaFileFactoryWithUpnp;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpFile2;
 import com.archos.mediacenter.filecoreextension.upnp2.UpnpServiceManager;
+import com.archos.mediacenter.utils.ShortcutDbAdapter;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaCommon;
 import com.archos.mediaprovider.ArchosMediaFile;
@@ -148,6 +149,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             }
             copyStringExtraIfPresent(broadcast, serviceIntent, RECORD_ON_FAIL_PREFERENCE);
             copyStringExtraIfPresent(broadcast, serviceIntent, RECORD_END_OF_SCAN_PREFERENCE);
+            serviceIntent.putExtra(ArchosMediaIntent.EXTRA_INDEXED_ROOT_REMOVED,
+                    broadcast.getBooleanExtra(ArchosMediaIntent.EXTRA_INDEXED_ROOT_REMOVED, false));
             long batchId = broadcast.getLongExtra(EXTRA_SCAN_BATCH_ID,
                     com.archos.mediascraper.AutoScrapeService.STANDALONE_SCAN_BATCH_ID);
             serviceIntent.putExtra(EXTRA_SCAN_BATCH_ID, batchId);
@@ -319,9 +322,14 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             }
         } else if (ArchosMediaIntent.isVideoRemoveIntent(action)) {
             Uri data = intent.getData();
-            String key = data.toString();
+            boolean indexedRootRemoved = intent.getBooleanExtra(
+                    ArchosMediaIntent.EXTRA_INDEXED_ROOT_REMOVED, false);
+            String key = unscanRequestKey(data, indexedRootRemoved);
             if (mUnScanRequests.putIfAbsent(key, mDummy) == null) {
                 Message m = mHandler.obtainMessage(MESSAGE_DO_UNSCAN, startId, flags, data);
+                Bundle removeData = new Bundle();
+                removeData.putBoolean(ArchosMediaIntent.EXTRA_INDEXED_ROOT_REMOVED, indexedRootRemoved);
+                m.setData(removeData);
                 mHandler.sendMessage(m);
             } else if (log.isDebugEnabled()) log.debug("skip unscanning {}, already in queue", key);
         }
@@ -384,11 +392,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 break;
             case MESSAGE_DO_UNSCAN:
                 uri = (Uri) msg.obj;
-                key = uri.toString();
+                final boolean indexedRootRemoved = msg.getData().getBoolean(
+                        ArchosMediaIntent.EXTRA_INDEXED_ROOT_REMOVED, false);
+                key = unscanRequestKey(uri, indexedRootRemoved);
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_DO_UNSCAN {}", uri);
                 if (isForeground) {
                     mRemoveFilesThread = new Thread(() -> {
-                        doRemoveFiles(uri);
+                        doRemoveFiles(uri, indexedRootRemoved);
                         // *** Send MESSAGE_KILL after doRemoveFiles() completes ***
                         if (isHandlerThreadAlive()) {
                             mHandler.post(() -> mHandler.obtainMessage(MESSAGE_KILL, msg.arg1, msg.arg2).sendToTarget());
@@ -410,13 +420,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     // -----------------------------------------------------------------------//
 
     /** removes files from our db */
-    private void doRemoveFiles(Uri data) {
+    private void doRemoveFiles(Uri data, boolean indexedRootRemoved) {
         if (log.isDebugEnabled()) log.debug("doRemoveFiles {}", data);
         if (data == null) return;
         ContentResolver cr = getContentResolver();
 
         String path = data.toString();
-        String[] selectionArgs = { path };
         // send out a sticky broadcast telling the world that we started scanning
         Intent scannerIntent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_STARTED, data);
         scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
@@ -424,7 +433,18 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         // also show a notification.
         nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.network_unscan_msg)).setContentText(path).build());
 
-        int deleted = cr.delete(VideoStoreInternal.FILES_SCANNED, IN_FOLDER_SELECT, selectionArgs);
+        int deleted;
+        List<Uri> remainingRoots = indexedRootRemoved
+                ? ShortcutDbAdapter.VIDEO.getIndexedUris(this) : new ArrayList<>();
+        boolean endpointStillIndexed = remainingRoots == null
+                || hasRootOnSameEndpoint(data, remainingRoots);
+        RemovalSelection removal = buildRemovalSelection(data,
+                remainingRoots != null ? remainingRoots : new ArrayList<>());
+        deleted = removal == null ? 0 : cr.delete(VideoStoreInternal.FILES_SCANNED,
+                removal.selection, removal.args);
+        if (indexedRootRemoved && !endpointStillIndexed) {
+            removeServerIfOrphaned(cr, data);
+        }
         if (log.isDebugEnabled()) log.debug("removed: {}", deleted);
 
         // send a "done" notification
@@ -434,6 +454,122 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         
         // and cancel the Notification
         nm.cancel(NOTIFICATION_ID);
+    }
+
+    private void removeServerIfOrphaned(ContentResolver cr, Uri removedRoot) {
+        List<Pair<Long, Uri>> matchingServers = new ArrayList<>();
+        Cursor servers = cr.query(VideoStore.SmbServer.getContentUri(),
+                new String[]{BaseColumns._ID, MediaColumns.DATA}, null, null, null);
+        if (servers == null) return;
+        try {
+            while (servers.moveToNext()) {
+                long id = servers.getLong(0);
+                Uri server = Uri.parse(servers.getString(1));
+                if (sameNetworkEndpoint(removedRoot, server)) {
+                    matchingServers.add(Pair.create(id, server));
+                }
+            }
+        } finally {
+            servers.close();
+        }
+        for (Pair<Long, Uri> server : matchingServers) {
+            Cursor files = cr.query(VideoStoreInternal.FILES,
+                    new String[]{BaseColumns._ID},
+                    FileColumns.ARCHOS_SMB_SERVER + "=?",
+                    new String[]{Long.toString(server.first)}, null);
+            if (files == null) continue;
+            boolean orphaned;
+            try {
+                orphaned = !files.moveToFirst();
+            } finally {
+                files.close();
+            }
+            if (orphaned) {
+                cr.delete(VideoStore.SmbServer.getContentUri(server.first), null, null);
+                log.info("Removed orphaned network server {}", server.second);
+            }
+        }
+    }
+
+    private static boolean hasRootOnSameEndpoint(Uri removedRoot, List<Uri> roots) {
+        for (Uri root : roots) {
+            if (sameNetworkEndpoint(removedRoot, root)) return true;
+        }
+        return false;
+    }
+
+    private static boolean sameNetworkEndpoint(Uri first, Uri second) {
+        if (first == null || second == null || first.getScheme() == null
+                || second.getScheme() == null || first.getHost() == null
+                || second.getHost() == null) return false;
+        return first.getScheme().equalsIgnoreCase(second.getScheme())
+                && first.getHost().equalsIgnoreCase(second.getHost())
+                && effectivePort(first) == effectivePort(second);
+    }
+
+    private static int effectivePort(Uri uri) {
+        if (uri.getPort() != -1) return uri.getPort();
+        String scheme = uri.getScheme();
+        if ("smb".equalsIgnoreCase(scheme)) return 445;
+        if ("ftp".equalsIgnoreCase(scheme)) return 21;
+        if ("sftp".equalsIgnoreCase(scheme)) return 22;
+        if ("http".equalsIgnoreCase(scheme)) return 80;
+        if ("https".equalsIgnoreCase(scheme)) return 443;
+        return -1;
+    }
+
+    private static RemovalSelection buildRemovalSelection(Uri removedRoot, List<Uri> remainingRoots) {
+        String removed = trimTrailingSlash(removedRoot.toString());
+        List<String> protectedRoots = new ArrayList<>();
+        for (Uri root : remainingRoots) {
+            if (!sameNetworkEndpoint(removedRoot, root)) continue;
+            String candidate = trimTrailingSlash(root.toString());
+            if (isSameOrDescendant(removed, candidate)) return null;
+            if (isSameOrDescendant(candidate, removed)) protectedRoots.add(candidate);
+        }
+
+        StringBuilder selection = new StringBuilder("(")
+                .append(MediaColumns.DATA).append("=? OR ")
+                .append(MediaColumns.DATA).append(" LIKE ? ESCAPE '\\')");
+        List<String> args = new ArrayList<>();
+        args.add(removed);
+        args.add(escapeLike(removed) + "/%");
+        for (String root : protectedRoots) {
+            selection.append(" AND NOT (").append(MediaColumns.DATA).append("=? OR ")
+                    .append(MediaColumns.DATA).append(" LIKE ? ESCAPE '\\')");
+            args.add(root);
+            args.add(escapeLike(root) + "/%");
+        }
+        return new RemovalSelection(selection.toString(), args.toArray(new String[0]));
+    }
+
+    private static boolean isSameOrDescendant(String path, String root) {
+        return path.equals(root) || path.startsWith(root + "/");
+    }
+
+    private static String trimTrailingSlash(String value) {
+        while (value.endsWith("/") && value.length() > value.indexOf("://") + 3) {
+            value = value.substring(0, value.length() - 1);
+        }
+        return value;
+    }
+
+    private static String escapeLike(String value) {
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    private static String unscanRequestKey(Uri uri, boolean indexedRootRemoved) {
+        return uri.toString() + (indexedRootRemoved ? "#indexed-root" : "#file");
+    }
+
+    private static final class RemovalSelection {
+        final String selection;
+        final String[] args;
+
+        RemovalSelection(String selection, String[] args) {
+            this.selection = selection;
+            this.args = args;
+        }
     }
 
     /** Utility class to build a comma separated string of ids */
