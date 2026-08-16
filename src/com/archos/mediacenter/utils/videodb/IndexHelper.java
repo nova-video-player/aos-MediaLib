@@ -55,6 +55,8 @@ import java.util.concurrent.Executors;
 public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loader.OnLoadCompleteListener<Cursor> {
 
     private static final Logger log = LoggerFactory.getLogger(IndexHelper.class);
+    // Preserve write order across player lifecycle, metadata, network and Trakt updates.
+    private static final ExecutorService VIDEO_INFO_WRITER = Executors.newSingleThreadExecutor();
     private final Context mContext;
     private final LoaderManager mLoaderManager;
     private final int mLoaderManagerId;
@@ -399,38 +401,39 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
     public void writeVideoInfo(VideoDbInfo videoInfo, boolean exportDb) {
         if (log.isDebugEnabled()) log.debug("writeVideoInfo {}", exportDb);
-        ExecutorService exec = Executors.newSingleThreadExecutor();
-        exec.execute(() -> {
+        if (videoInfo == null) return;
+        // Callers share and continue mutating VideoDbInfo on the main thread. Snapshot it before
+        // crossing the asynchronous boundary so each queued write represents one coherent state.
+        final VideoDbInfo snapshot = new VideoDbInfo(videoInfo);
+        VIDEO_INFO_WRITER.execute(() -> {
             try {
-                if (log.isDebugEnabled()) log.debug("position: {} - id: {}", videoInfo.resume, videoInfo.id);
-                if (videoInfo.id != -1) {
-                    int playerParams = VideoStore.paramsFromTracks(videoInfo.audioTrack, videoInfo.subtitleTrack);
-                    final String where = VideoStore.Video.VideoColumns._ID + " = " + videoInfo.id;
+                if (log.isDebugEnabled()) log.debug("position: {} - id: {}", snapshot.resume, snapshot.id);
+                if (snapshot.id != -1) {
+                    int playerParams = VideoStore.paramsFromTracks(snapshot.audioTrack, snapshot.subtitleTrack);
+                    final String where = VideoStore.Video.VideoColumns._ID + " = " + snapshot.id;
                     ContentResolver resolver = mContext.getContentResolver();
                     ContentValues values = new ContentValues(8);
-                    values.put(VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK, videoInfo.bookmark);
-                    values.put(VideoStore.Video.VideoColumns.BOOKMARK, videoInfo.resume);
-                    values.put(VideoStore.Video.VideoColumns.DURATION, videoInfo.duration);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK, snapshot.bookmark);
+                    values.put(VideoStore.Video.VideoColumns.BOOKMARK, snapshot.resume);
+                    values.put(VideoStore.Video.VideoColumns.DURATION, snapshot.duration);
                     values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS, playerParams);
-                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, videoInfo.subtitleDelay);
-                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, videoInfo.subtitleRatio);
-                    values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, videoInfo.lastTimePlayed);
-                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, videoInfo.traktResume);
-                    if (videoInfo.subtitleLanguage != null && !videoInfo.subtitleLanguage.isEmpty())
-                        values.put(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE, videoInfo.subtitleLanguage);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, snapshot.subtitleDelay);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, snapshot.subtitleRatio);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, snapshot.lastTimePlayed);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, snapshot.traktResume);
+                    if (snapshot.subtitleLanguage != null && !snapshot.subtitleLanguage.isEmpty())
+                        values.put(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE, snapshot.subtitleLanguage);
                     else
                         values.putNull(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE);
                     resolver.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, values, where, null);
                 }
-                if (log.isDebugEnabled()) log.debug("mExportDb: {} - isLocal: {} isSlowRemote {}", exportDb, FileUtils.isLocal(videoInfo.uri), FileUtils.isSlowRemote(videoInfo.uri));
-                if (exportDb && !FileUtils.isLocal(videoInfo.uri) && videoInfo.duration > 0
-                        && UriUtils.isCompatibleWithRemoteDB(videoInfo.uri)) {
-                    XmlDb.getInstance().writeXmlRemote(videoInfo);
+                if (log.isDebugEnabled()) log.debug("mExportDb: {} - isLocal: {} isSlowRemote {}", exportDb, FileUtils.isLocal(snapshot.uri), FileUtils.isSlowRemote(snapshot.uri));
+                if (exportDb && !FileUtils.isLocal(snapshot.uri) && snapshot.duration > 0
+                        && UriUtils.isCompatibleWithRemoteDB(snapshot.uri)) {
+                    XmlDb.getInstance().writeXmlRemote(snapshot);
                 }
             } catch (Exception e) {
                 log.error("writeVideoInfo failed", e);
-            } finally {
-                exec.shutdown();
             }
         });
     }
