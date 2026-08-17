@@ -141,7 +141,11 @@ public class RemoteStateService extends Service implements UpnpServiceManager.Li
         if (!isForeground) return;
         Intent intent = new Intent(context, RemoteStateService.class);
         intent.setAction(ACTION_CHECK_SMB);
-        context.startService(intent);
+        try {
+            context.startService(intent);
+        } catch (IllegalStateException e) {
+            log.warn("start: Failed to start RemoteStateService despite lifecycle check - timing issue", e);
+        }
     }
 
     public static void stop(Context context) {
