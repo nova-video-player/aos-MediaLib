@@ -63,7 +63,17 @@ Example:
 Release/language tags such as `FRENCH`, `TRUEFRENCH`, `MULTI`, `VFF`, and `VOF` are treated as release garbage, not country-of-origin hints. They can describe audio/release language and are not reliable evidence of TMDb origin. For example, `Les.traitres.2022.S06E03.2026-04-11.FRENCH.1080p.WEB.H264-THESYNDiCATE.mkv` matches the French show through title/year/language search, not through a country-origin filter.
 
 ### 2.4 TV Path Year Extraction & Season Folders
-When extracting a show year from directory path segments, the matcher distinguishes show directories from season directories (e.g., `S02 (1988)` or `Season 1 (2020)`). Years found in season-specific folders are treated as secondary fallbacks so that a parent show directory year (e.g., `DuckTales (1987)`) takes precedence as the show's first air date year. Furthermore, if a year filter yields no results on TMDb, `ShowScraper4` retries searching the show name without a year constraint.
+When the filename itself carries no year, `TvShowMatcher` looks for one in the last three path segments (the file's immediate parent, grandparent, and great-grandparent directories) using the same guarded backwards "anywhere" scan used for movies (Section 3.2). This lets a year embedded mid-segment be picked up, e.g. `神雕侠侣.1995.S01`, not just years that are parenthesized or trail the whole segment.
+
+Because directory segments can also be generic, non-show organizational folders (e.g. a user sorting downloads by year into `download-2026/`), a year is only trusted from a segment when there is structural evidence that segment is actually part of the show's own `Show/Season/Episode` layout:
+
+- The segment is itself a season folder (matches `S02`, `Season 1`, etc. at its start), or
+- The segment is the **immediate parent** of a season folder (i.e. the show folder, e.g. `DuckTales (1987)/S02 (1988)/...`), or
+- The segment embeds a season token itself alongside the year (e.g. `神雕侠侣.1995.S01`).
+
+This evidence is intentionally scoped to direct parent/child adjacency, not "anywhere in the scanned window": a season folder two levels above the file (e.g. `download-2026/The 100/S02/episode.mkv`) does not lend its evidence to `download-2026`, only to its own immediate parent (`The 100`). Without this scoping, unrelated ancestor folders that merely contain a 4-digit number could leak a spurious year into the TMDb search filter.
+
+If a year is found in both a season folder and its parent show folder, the show folder's year takes precedence as the show's first air date year; the season folder's year is a secondary fallback. Furthermore, if a year filter yields no results on TMDb, `ShowScraper4` retries searching the show name without a year constraint.
 
 ---
 

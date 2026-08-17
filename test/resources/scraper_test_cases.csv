@@ -102,3 +102,12 @@ Asterix.and.Obelix.The.Big.Fight.S01E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv|Sh
 ./电视剧/火与水：阿凡达电影制作特辑/火与水：阿凡达电影制作特辑.S01/火与水：阿凡达电影制作特辑.Fire.and.Water.Making.the.Avatar.Films.S01E01.1080p.HD中字.mp4|Show|火与水：阿凡达电影制作特辑|303109|zh-TW
 Over your dead body (2026).mkv|Movie|Over Your Dead Body|1390300|en
 DuckTales (1987)/S02 (1988)/Ducktales - S02E01 - Time is Money 1, Marking Time.mp4|Show|DuckTales|720|en
+# TV regression from issue #1775 comment (Return of the Condor Heroes 1995, aka 神鵰俠侶): TMDb's English title "The Condor Heroes 95" differs a lot from the filename-derived title, while other year/country remakes share the near-identical title "The Return of the Condor Heroes"
+./电视剧/神雕侠侣[高码版][全32集][国粤多音轨+中文字幕].1995.2160p.HQ.WEB-DL.H265.AAC.2Audio-BlackTV/神雕侠侣.1995.S01/Return.of.the.Condor.Heroes.S01E01.1995.2160p.HQ.WEB-DL.H265.AAC.2Audio-BlackTV.mkv|Show|The Condor Heroes 95|31955|en
+# Download-organized-by-year folders should not be mistaken for the show's premiere year
+./downloads/2026/The 100 S01E01.mkv|Show|The 100|48866|en
+./downloads/downloads-2026/The 100 S01E01.mkv|Show|The 100|48866|en
+./downloads/2026/DuckTales (1987)/S02 (1988)/Ducktales - S02E01 - Time is Money 1, Marking Time.mp4|Show|DuckTales|720|en
+# A real season folder (S02) two levels above the file should not lend its "in a show dir" evidence
+# to an unrelated ancestor folder one level further up (download-2026 is not the show's own folder)
+./downloads/download-2026/The 100/S02/The 100 S02E01.mkv|Show|The 100|48866|en
