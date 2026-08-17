@@ -201,6 +201,15 @@ public interface IMediaPlayer {
 
     public static final int MEDIA_INFO_METADATA_UPDATE = MediaPlayer.MEDIA_INFO_METADATA_UPDATE;
 
+    /** AVOS-specific: {@code extra} contains the applied playback speed multiplied by 1000. */
+    public static final int MEDIA_INFO_AUDIO_SPEED_APPLIED = 803;
+
+    /** AVOS-specific asynchronous track-selection results; {@code extra} is the requested track. */
+    public static final int MEDIA_INFO_AUDIO_TRACK_APPLIED = 10001;
+    public static final int MEDIA_INFO_AUDIO_TRACK_FAILED = 10002;
+    public static final int MEDIA_INFO_SUBTITLE_TRACK_APPLIED = 10003;
+    public static final int MEDIA_INFO_SUBTITLE_TRACK_FAILED = 10004;
+
     // avos specific error
 
     public static final int MEDIA_ERROR_VE_NO_ERROR = 1000;
