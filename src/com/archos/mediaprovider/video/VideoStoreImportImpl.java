@@ -90,14 +90,10 @@ public class VideoStoreImportImpl {
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;
-        File sdCardFile = context.getExternalFilesDir(null);
-        // sdCardFile seen on sentry (3744020792) to be null on MIBOX4 android 9
-        if (sdCardFile != null) {
-            sdCardPath = sdCardFile.getPath();
-        } else {
-            // take a wild probable guess
-            sdCardPath ="/storage/emulated/0";
-        }
+        // sdCardPath resolution needs a filesystem stat that can block for a long time on some
+        // devices (seen causing main thread ANR on Android 15, issue 1860): defer it to
+        // ensureSdCardPath() called from the background ImportWorker thread instead of doing it
+        // here since this constructor runs on the main thread (VideoStoreImportService.onCreate).
         mCr = mContext.getContentResolver();
         mBlackList = Blacklist.getInstance(context);
         mMediaRetrieverServiceClient = new MediaRetrieverServiceClient(context);
@@ -117,6 +113,21 @@ public class VideoStoreImportImpl {
         mMediaRetrieverServiceClient.unbindAndDestroy();
     }
 
+    // resolves sdCardPath once, must be called from the background ImportWorker thread only
+    // (getExternalFilesDir can block on filesystem canonicalization on some devices)
+    private void ensureSdCardPath() {
+        if (sdCardPath.isEmpty()) {
+            File sdCardFile = mContext.getExternalFilesDir(null);
+            // sdCardFile seen on sentry (3744020792) to be null on MIBOX4 android 9
+            if (sdCardFile != null) {
+                sdCardPath = sdCardFile.getPath();
+            } else {
+                // take a wild probable guess
+                sdCardPath = "/storage/emulated/0";
+            }
+        }
+    }
+
     public void doFullImport() {
         mIsImportInterrupted = false;
         int countStart = getLocalCount(mCr);
@@ -125,6 +136,7 @@ public class VideoStoreImportImpl {
 
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            ensureSdCardPath();
             LocalReconciliationResult reconciliation;
             int copy;
             if (countStart == 0) {
@@ -171,6 +183,7 @@ public class VideoStoreImportImpl {
 
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            ensureSdCardPath();
             // Capture the old maximum before remapping; a remapped high id must not cause
             // copyData to skip lower new MediaStore ids from the same import pass.
             String maxLocal = getMaxId(mCr);
