@@ -318,15 +318,22 @@ public class UpnpServiceManager {
 
             // Listen for discovery stuff
             if (mAndroidUpnpService != null) {
-                mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
-                mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+                try {
+                    mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
+                    mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+                } catch (Exception e) {
+                    log.error("onServiceConnected: failed to start UPnP service", e);
+                    mState = State.ERROR;
+                }
             } else {
                 log.error("onServiceConnected: mAndroidUpnpService is null!");
             }
 
             // Start searching for servers periodically
             mUiHandler.removeCallbacks(mPeriodicSearchRunnable); // better safe than sorry
-            mUiHandler.post(mPeriodicSearchRunnable); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            if (mState == State.RUNNING) {
+                mUiHandler.post(mPeriodicSearchRunnable); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            }
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -487,23 +494,33 @@ public class UpnpServiceManager {
      * @return
      */
     protected int execute(ActionCallback callback) {
-        if (mState!=State.RUNNING) {
+        if (mState != State.RUNNING || mAndroidUpnpService == null) {
             return -1;
         }
-
-        mAndroidUpnpService.getControlPoint().execute(callback);
-        return 0;
+        try {
+            mAndroidUpnpService.getControlPoint().execute(callback);
+            return 0;
+        } catch (Exception e) {
+            log.error("execute: failed", e);
+            return -1;
+        }
     }
 
-    private Runnable  mPeriodicSearchRunnable = new Runnable() {
+    private Runnable mPeriodicSearchRunnable = new Runnable() {
         @Override
         public void run() {
-            if (mAndroidUpnpService!=null) {
+            if (mAndroidUpnpService != null && mState == State.RUNNING) {
                 if (log.isDebugEnabled()) log.debug("mPeriodicSearchRunnable search");
-                mAndroidUpnpService.getControlPoint().search(new UDADeviceTypeHeader(new UDADeviceType("MediaServer")));
+                try {
+                    mAndroidUpnpService.getControlPoint().search(new UDADeviceTypeHeader(new UDADeviceType("MediaServer")));
+                } catch (Exception e) {
+                    log.error("mPeriodicSearchRunnable search failed", e);
+                }
             }
             // program next search
-            mUiHandler.postDelayed(mPeriodicSearchRunnable, SERVER_SEARCH_PERIOD_MS); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            if (mState == State.RUNNING) {
+                mUiHandler.postDelayed(mPeriodicSearchRunnable, SERVER_SEARCH_PERIOD_MS); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            }
         }
     };
     public String getDeviceFriendlyName(String key){
