@@ -142,3 +142,10 @@ DuckTales (1987)/S02 (1988)/Ducktales - S02E01 - Time is Money 1, Marking Time.m
 # fetch + remap) that resolves this to TMDb's absolute episode 70 under the hood while
 # keeping the returned tag numbered s2e8 to match the local file's own numbering.
 ./transmission/Hunter x Hunter (2011) Bluray ripp x265 Multi Phoenix/Saison 02/Hunter x Hunter (2011) S02E08.mkv|Show|Hunter x Hunter|46298|fr|46298
+# Firefly (TMDb id 1437): season 1 legitimately has only 11 numbered episodes there, so
+# "Heart of Gold" (aired 2003 after the original 2002 series was cancelled) is listed by
+# TMDb only under season 0 (Specials, episode 3), not as a numbered season 1 episode, even
+# though the file is locally filed as S01E12. Exercises the season-0 title-match fallback in
+# ShowScraper4.getDetailsInternal that retries a failed season/episode + fuzzy-title lookup
+# against season 0, keeping the returned tag numbered s1e12 to match the local file.
+./Firefly/Firefly-s01/Firefly-s01e12-Heart_of_Gold.avi|Show|Firefly|1437|en

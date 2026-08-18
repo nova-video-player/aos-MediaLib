@@ -238,6 +238,13 @@ In all three cases, once the absolute episode is resolved, its `episodeKey` (bui
 
 This is self-limiting by construction: shows with normal per-season TMDb numbering always have a first episode numbered `1`, so the fallback never triggers for them.
 
+### 7.5 Season 0 (Specials) Title-Match Fallback
+Some episodes are moved by TMDb into Season 0 (Specials) entirely, rather than kept as a numbered episode of the season they locally belong to on disk — e.g. *Firefly* (TMDb id 1437) "Heart of Gold" aired after the original 2002 series was cancelled and is listed by TMDb only as Season 0 Episode 3, even though season 1 genuinely has just 11 numbered episodes there and the file is locally filed as `S01E12`. Neither a direct `episodeKey` lookup nor 7.1's fuzzy title match against season 1 can ever succeed for such a file, since the correct episode simply isn't present in that season's data.
+
+After `buildTag()` returns its empty-placeholder tag (no title/plot, indicating both the direct lookup and 7.1's fuzzy match failed), `ShowScraper4.getDetailsInternal()` retries the extracted episode title hint against TMDb's season 0, using the same language-then-English fallback pattern as the existing `SxxE00` remap (Section 6): fetch season 0, run `fuzzyMatchEpisodeByTitle()` against it, and on a confident match fetch that episode's full metadata via `ShowIdEpisodes.getEpisodes()`. The result is a freshly-built `EpisodeTags` (not shared with `sEpisodeCache`, so it can be mutated directly, unlike 7.4's cloning requirement), which is then renumbered back to the file's own local season/episode (`s1e12`) before being returned, so the on-disk organization is preserved while the content comes from TMDb's special.
+
+This fallback only triggers when the requested season is not already `0` (avoiding redundant work when the `SxxE00` remap already handled it) and only after both the direct lookup and the within-season fuzzy match have failed, so it adds no extra TMDb cost for the overwhelming majority of episodes that resolve normally.
+
 ---
 
 ## 8. The Preprocessing Pipeline (Sequence)

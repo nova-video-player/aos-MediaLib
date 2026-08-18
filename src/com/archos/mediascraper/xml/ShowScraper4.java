@@ -682,6 +682,57 @@ public class ShowScraper4 extends BaseScraper2 {
             episodeTitleHint = ShowUtils.extractEpisodeTitle(filenameForTitle, keySeasonValue, keyEpisodeValue);
         }
         EpisodeTags returnValue = buildTag(allEpisodes, episodeKey, requestedEpisode, requestedSeason, showTags, episodeTitleHint);
+        if (returnValue.getTitle() == null && requestedSeason != 0 && episodeTitleHint != null && !episodeTitleHint.isEmpty()) {
+            // requested episode was found neither by number nor by title within its own
+            // requested season: some episodes only ever aired as specials and TMDb lists them
+            // solely under season 0, even though locally they may be filed under a regular
+            // season (e.g. Firefly's "Heart of Gold", filed on disk as S01E12 but classified by
+            // TMDb only as S00E03, since season 1 legitimately has just 11 episodes there).
+            // Retry the title match against season 0 before giving up, keeping the file's own
+            // season/episode numbering on the returned tag (mirrors the SxxE00 remap above,
+            // except here the local file is not itself numbered as a special).
+            if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} '{}' not found by number or title, trying season 0 fallback", requestedSeason, requestedEpisode, episodeTitleHint);
+            int matchedSpecial = -1;
+            String season0Key = cleanShowName + "|" + showId + "|0|all|" + resultLanguage;
+            ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key, showId, 0, resultLanguage, adultScrape, getTmdb());
+            if (season0Result.status == ScrapeStatus.OKAY && season0Result.tvSeason != null && season0Result.tvSeason.episodes != null) {
+                matchedSpecial = fuzzyMatchEpisodeByTitle(episodeTitleHint, season0Result.tvSeason.episodes);
+            }
+            if (matchedSpecial < 0 && !"en".equals(resultLanguage)) {
+                String season0KeyEn = cleanShowName + "|" + showId + "|0|all|en";
+                ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn, showId, 0, "en", adultScrape, getTmdb());
+                if (season0ResultEn.status == ScrapeStatus.OKAY && season0ResultEn.tvSeason != null && season0ResultEn.tvSeason.episodes != null) {
+                    matchedSpecial = fuzzyMatchEpisodeByTitle(episodeTitleHint, season0ResultEn.tvSeason.episodes);
+                    season0Result = season0ResultEn;
+                }
+            }
+            if (matchedSpecial >= 0) {
+                TvEpisode matchedTvEpisode = null;
+                for (TvEpisode ep : season0Result.tvSeason.episodes) {
+                    if (ep.episode_number != null && ep.episode_number == matchedSpecial) {
+                        matchedTvEpisode = ep;
+                        break;
+                    }
+                }
+                if (matchedTvEpisode != null) {
+                    List<TvEpisode> specialList = new ArrayList<>();
+                    specialList.add(matchedTvEpisode);
+                    Map<Integer, TvSeason> specialSeasons = new HashMap<>();
+                    specialSeasons.put(0, season0Result.tvSeason);
+                    Map<String, EpisodeTags> specialEpisodes = ShowIdEpisodes.getEpisodes(season0Key, showId, specialList, specialSeasons, showTags, resultLanguage, adultScrape, getTmdb(), mContext);
+                    String specialKey = showId + "|0|" + matchedSpecial + "|" + resultLanguage;
+                    EpisodeTags specialTag = specialEpisodes.get(specialKey);
+                    if (specialTag != null) {
+                        log.info("getDetailsInternal: matched s{}e{} '{}' to season 0 special e{} via title fallback for show {}", requestedSeason, requestedEpisode, episodeTitleHint, matchedSpecial, showId);
+                        specialTag.setSeason(requestedSeason);
+                        specialTag.setEpisode(requestedEpisode);
+                        returnValue = specialTag;
+                    }
+                }
+            } else {
+                if (log.isDebugEnabled()) log.debug("getDetailsInternal: no season 0 fallback match found for '{}'", episodeTitleHint);
+            }
+        }
         if (absoluteNumberingRemap) {
             // buildTag() returns the very instance stored in allEpisodes (and hence in
             // sEpisodeCache): mutating it in place would permanently corrupt the shared cache
