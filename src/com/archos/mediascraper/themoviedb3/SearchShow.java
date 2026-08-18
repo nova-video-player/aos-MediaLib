@@ -59,7 +59,9 @@ public class SearchShow {
             }
 
             String searchQueryString = searchInfo.getShowName();
-            showKey = ShowUtils.cleanUpName(searchQueryString.toLowerCase()) + "|" + language;
+            // include year: tmdb searchService().tv() applies server-side year filtering, so the
+            // cached response content depends on year and must not be shared across different years
+            showKey = ShowUtils.cleanUpName(searchQueryString.toLowerCase()) + "|" + year + "|" + language;
             if (log.isDebugEnabled()) log.debug("SearchShowResult: cache showKey {}", showKey);
             response = showCache.get(showKey);
             if (log.isTraceEnabled()) debugLruCache(showCache);

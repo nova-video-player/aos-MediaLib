@@ -247,7 +247,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 int matchedEpisode = -1;
 
                 // Try matching in the configured language first
-                String season0Key = cleanShowName0 + "|0|all|" + resultLanguage0;
+                String season0Key = cleanShowName0 + "|" + showId + "|0|all|" + resultLanguage0;
                 ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key, showId, 0, resultLanguage0, adultScrape, getTmdb());
                 if (season0Result.status == ScrapeStatus.OKAY && season0Result.tvSeason != null && season0Result.tvSeason.episodes != null) {
                     matchedEpisode = fuzzyMatchEpisodeByTitle(episodeTitle, season0Result.tvSeason.episodes);
@@ -257,7 +257,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 // (filename titles are almost always in English)
                 if (matchedEpisode < 0 && !"en".equals(resultLanguage0)) {
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: no match in {}, retrying season 0 in English", resultLanguage0);
-                    String season0KeyEn = cleanShowName0 + "|0|all|en";
+                    String season0KeyEn = cleanShowName0 + "|" + showId + "|0|all|en";
                     ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn, showId, 0, "en", adultScrape, getTmdb());
                     if (season0ResultEn.status == ScrapeStatus.OKAY && season0ResultEn.tvSeason != null && season0ResultEn.tvSeason.episodes != null) {
                         matchedEpisode = fuzzyMatchEpisodeByTitle(episodeTitle, season0ResultEn.tvSeason.episodes);
@@ -284,8 +284,8 @@ public class ShowScraper4 extends BaseScraper2 {
 
         //Build the Show and Episode keys.
         String cleanShowName = ShowUtils.cleanUpName(result.getOriginalTitle().toLowerCase());
-        String showKey = cleanShowName + "|" + resultLanguage;
-        String seasonKey =  cleanShowName + "|" + keySeasonValue  + "|all|" + resultLanguage;
+        String showKey = cleanShowName + "|" + showId + "|" + resultLanguage;
+        String seasonKey =  cleanShowName + "|" + showId + "|" + keySeasonValue  + "|all|" + resultLanguage;
         String episodeKey = showId + "|" + keySeasonValue + "|" + keyEpisodeValue + "|" + resultLanguage;
 
         if (log.isDebugEnabled()) log.debug("getDetailsInternal: {}({}) {} in {} (basicShow={}/basicEpisode={})",
@@ -344,7 +344,7 @@ public class ShowScraper4 extends BaseScraper2 {
                         // use an "en" scoped key: showKey (built with resultLanguage) is already cached
                         // with the localized (empty) result, reusing it here would just return that same
                         // cached entry instead of querying tmdb in English
-                        String fallbackShowKey = cleanShowName + "|en";
+                        String fallbackShowKey = cleanShowName + "|" + showId + "|en";
                         ShowIdTvSearchResult enShowIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(fallbackShowKey, showId, "en", adultScrape, getTmdb());
                         if (enShowIdTvSearchResult.status == ScrapeStatus.OKAY) {
                             ShowTags enShowTags = ShowIdParser.getResult(enShowIdTvSearchResult.tvShow, result.getYear(), mContext);
