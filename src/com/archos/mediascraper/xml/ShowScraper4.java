@@ -20,7 +20,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.os.Parcel;
 import android.text.TextUtils;
 import android.util.LruCache;
 import android.util.SparseArray;
@@ -350,8 +349,8 @@ public class ShowScraper4 extends BaseScraper2 {
         ShowTags showTags = null;
         ShowIdImagesResult searchImages = null;
         // set when the single-episode lookup below had to be remapped to TMDb's absolute
-        // episode numbering (see comment there); used to restore the local season/episode
-        // numbering on the returned EpisodeTags once metadata has been fetched
+        // episode numbering (see comment there); guards against redoing the same detection
+        // once it has already succeeded for this request
         boolean absoluteNumberingRemap = false;
 
         if (log.isDebugEnabled()) log.debug("getDetailsInternal: probing cache for showKey {}", showKey);
@@ -688,9 +687,10 @@ public class ShowScraper4 extends BaseScraper2 {
             // solely under season 0, even though locally they may be filed under a regular
             // season (e.g. Firefly's "Heart of Gold", filed on disk as S01E12 but classified by
             // TMDb only as S00E03, since season 1 legitimately has just 11 episodes there).
-            // Retry the title match against season 0 before giving up, keeping the file's own
-            // season/episode numbering on the returned tag (mirrors the SxxE00 remap above,
-            // except here the local file is not itself numbered as a special).
+            // Retry the title match against season 0 before giving up. The returned tag keeps
+            // TMDb's own season/episode numbering (S00Exx), same as the SxxE00 remap above,
+            // so it groups correctly under Specials and season/next-episode logic downstream
+            // (which key purely off the stored season/episode) stays consistent with TMDb.
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} '{}' not found by number or title, trying season 0 fallback", requestedSeason, requestedEpisode, episodeTitleHint);
             int matchedSpecial = -1;
             String season0Key = cleanShowName + "|" + showId + "|0|all|" + resultLanguage;
@@ -724,8 +724,6 @@ public class ShowScraper4 extends BaseScraper2 {
                     EpisodeTags specialTag = specialEpisodes.get(specialKey);
                     if (specialTag != null) {
                         log.info("getDetailsInternal: matched s{}e{} '{}' to season 0 special e{} via title fallback for show {}", requestedSeason, requestedEpisode, episodeTitleHint, matchedSpecial, showId);
-                        specialTag.setSeason(requestedSeason);
-                        specialTag.setEpisode(requestedEpisode);
                         returnValue = specialTag;
                     }
                 }
@@ -733,25 +731,12 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (log.isDebugEnabled()) log.debug("getDetailsInternal: no season 0 fallback match found for '{}'", episodeTitleHint);
             }
         }
-        if (absoluteNumberingRemap) {
-            // buildTag() returns the very instance stored in allEpisodes (and hence in
-            // sEpisodeCache): mutating it in place would permanently corrupt the shared cache
-            // entry with this request's local season/episode, breaking later lookups/remaps
-            // for other episodes of the same cached season. Clone before overriding so only
-            // the value handed back to the caller reflects the local file's own per-season
-            // numbering (matches how the rest of the season is organized on disk), even though
-            // the fetched metadata came from TMDb's absolute episode_number.
-            Parcel parcel = Parcel.obtain();
-            try {
-                returnValue.writeToParcel(parcel, 0);
-                parcel.setDataPosition(0);
-                returnValue = EpisodeTags.CREATOR.createFromParcel(parcel);
-            } finally {
-                parcel.recycle();
-            }
-            returnValue.setSeason(requestedSeason);
-            returnValue.setEpisode(requestedEpisode);
-        }
+        // Note: when absoluteNumberingRemap is set, returnValue already carries TMDb's own
+        // absolute episode_number (set by ShowIdEpisodes.getEpisodes from the matched
+        // TvEpisode) rather than the file's local per-season numbering. This is intentional:
+        // it keeps the stored season/episode consistent with TMDb (matching how TMDb's own
+        // season page numbers these episodes) so downstream season grouping and next-episode
+        // navigation, which key purely off the stored season/episode, stay self-consistent.
         if (log.isDebugEnabled()) log.debug("getDetailsInternal : ScrapeStatus.OKAY {} {} {}", returnValue.getShowTitle(), returnValue.getShowId(), returnValue.getTitle());
         Bundle extraOut = buildBundle(allEpisodes, options);
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
