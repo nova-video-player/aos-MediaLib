@@ -198,6 +198,60 @@ public class ShowScraper4 extends BaseScraper2 {
         }
     }
 
+    // Number of ranked candidates to consider for the title-collision fallback below.
+    // Costs no extra TMDB request: the initial tv() search already returns up to 20 results in
+    // one page, trimming to maxItems is done client-side in SearchParserResult.getResults().
+    private static final int CASCADE_CANDIDATE_LIMIT = 5;
+
+    /**
+     * TV-specific auto-scrape entry point used by {@link Scraper#getAutoDetails}. Mirrors
+     * {@link BaseScraper2#search} (which is final and shared with movies, so it cannot be
+     * overridden here) but adds one behavior: when the top-ranked candidate's requested
+     * season/episode cannot genuinely be found (see buildTag()), retries against the next
+     * candidates that are exactly tied in Levenshtein distance with the top one, e.g. two shows
+     * sharing the exact same title such as a classic show and its reboot.
+     * <p>
+     * This is deliberately restricted to distance-tied candidates and only triggers extra TMDB
+     * requests in the failure branch, to avoid mis-attributing episodes to an unrelated,
+     * lower-ranked show and to avoid any extra cost in the (overwhelmingly common) success case.
+     */
+    public ScrapeDetailResult searchWithTitleCollisionFallback(SearchInfo info) {
+        if (info == null || !(info instanceof TvShowSearchInfo)) {
+            log.error("searchWithTitleCollisionFallback: bad search info");
+            return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR, null);
+        }
+        ScrapeSearchResult searchResult = getMatches2(info, CASCADE_CANDIDATE_LIMIT);
+        if (!searchResult.isOkay() || searchResult.results == null || searchResult.results.isEmpty()) {
+            return new ScrapeDetailResult(null, searchResult.isMovie, null, searchResult.status, searchResult.reason);
+        }
+
+        TvShowSearchInfo tvSearchInfo = (TvShowSearchInfo) info;
+        Bundle bundle = new Bundle();
+        bundle.putInt(Scraper.ITEM_REQUEST_BASIC_VIDEO, 1);
+        bundle.putInt(Scraper.ITEM_REQUEST_SEASON, tvSearchInfo.getSeason());
+        bundle.putInt(Scraper.ITEM_REQUEST_EPISODE, tvSearchInfo.getEpisode());
+        // keeping whole season boosts the perf since there is only one request for tmdb
+        bundle.putInt(Scraper.ITEM_REQUEST_ALL_EPISODES, tvSearchInfo.getSeason());
+
+        int topDistance = searchResult.results.get(0).getLevenshteinDistance();
+        ScrapeDetailResult result = null;
+        for (SearchResult candidate : searchResult.results) {
+            if (candidate.getLevenshteinDistance() != topDistance) break; // only tied candidates
+            result = getDetails(candidate, bundle);
+            boolean genuineMatch = result != null && result.tag instanceof EpisodeTags
+                    && ((EpisodeTags) result.tag).getTitle() != null;
+            if (genuineMatch) {
+                if (log.isDebugEnabled()) log.debug("searchWithTitleCollisionFallback: genuine match for '{}' (id {})", candidate.getTitle(), candidate.getId());
+                return result;
+            }
+            log.info("searchWithTitleCollisionFallback: no genuine episode match for '{}' (id {}), trying next tied candidate", candidate.getTitle(), candidate.getId());
+        }
+        // no tied candidate yielded a genuine match: return the last attempted result (top
+        // candidate's placeholder), preserving existing behavior for legitimately-not-found
+        // episodes of the correct show
+        return result;
+    }
+
     @Override
     protected ScrapeDetailResult getDetailsInternal(SearchResult result, Bundle options) {
         // result is the global tvShow

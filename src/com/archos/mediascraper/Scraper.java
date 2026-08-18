@@ -114,7 +114,7 @@ public class Scraper {
         info.scrapeFromDB = scrapeFromDB;
 
         if (info.isTvShow())
-            return mShowScraper.search(info);
+            return mShowScraper.searchWithTitleCollisionFallback(info);
         return mMovieScraper.search(info);
     }
 
