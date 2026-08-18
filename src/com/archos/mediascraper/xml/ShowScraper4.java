@@ -521,7 +521,12 @@ public class ShowScraper4 extends BaseScraper2 {
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
-        EpisodeTags returnValue = buildTag(allEpisodes, episodeKey, requestedEpisode, requestedSeason, showTags);
+        String episodeTitleHint = null;
+        if (result.getFile() != null) {
+            String filenameForTitle = FileUtils.getFileNameWithoutExtension(result.getFile());
+            episodeTitleHint = ShowUtils.extractEpisodeTitle(filenameForTitle, keySeasonValue, keyEpisodeValue);
+        }
+        EpisodeTags returnValue = buildTag(allEpisodes, episodeKey, requestedEpisode, requestedSeason, showTags, episodeTitleHint);
         if (log.isDebugEnabled()) log.debug("getDetailsInternal : ScrapeStatus.OKAY {} {} {}", returnValue.getShowTitle(), returnValue.getShowId(), returnValue.getTitle());
         Bundle extraOut = buildBundle(allEpisodes, options);
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
@@ -564,12 +569,18 @@ public class ShowScraper4 extends BaseScraper2 {
         }
     }
 
-    private EpisodeTags buildTag(Map<String, EpisodeTags> allEpisodes, String episodeKey, int epnum, int season, ShowTags showTags) {
+    private EpisodeTags buildTag(Map<String, EpisodeTags> allEpisodes, String episodeKey, int epnum, int season, ShowTags showTags, String episodeTitleHint) {
         if (log.isDebugEnabled()) log.debug("buildTag allEpisodes.size={} epnum={}, season={}, showId={}", allEpisodes.size(), epnum, season, showTags.getId());
         EpisodeTags episodeTag = null;
         if (!allEpisodes.isEmpty()) {
             if (log.isDebugEnabled()) log.debug("buildTag: allEpisodes not empty trying to find {}", episodeKey);
             episodeTag = allEpisodes.get(episodeKey);
+        }
+        if (episodeTag == null && !allEpisodes.isEmpty()) {
+            // requested season/episode number was not found in the already-fetched season:
+            // try to recover it by matching the filename's episode title against the fetched
+            // episodes instead, without any extra TMDB request
+            episodeTag = fuzzyMatchEpisodeByTitle(episodeTitleHint, allEpisodes.values());
         }
         if (episodeTag == null) {
             if (log.isDebugEnabled()) log.debug("buildTag: shoot episode not in allEpisodes");
@@ -688,6 +699,54 @@ public class ShowScraper4 extends BaseScraper2 {
         }
 
         return -1;
+    }
+
+    /**
+     * Fuzzy-matches an extracted episode title against an already-fetched season's episodes.
+     * Used as a fallback when the requested season/episode number does not exist in the
+     * fetched season data (e.g. local filename numbering diverges from TMDB's), so the
+     * episode can still be recovered without any additional TMDB request.
+     * Uses Levenshtein distance on lowercased titles with a threshold of 40% of the longer string length.
+     *
+     * @param extractedTitle the cleaned episode title from the filename
+     * @param episodes the already-fetched episodes for the requested season
+     * @return the matched EpisodeTags, or null if no confident match found
+     */
+    private static EpisodeTags fuzzyMatchEpisodeByTitle(String extractedTitle, java.util.Collection<EpisodeTags> episodes) {
+        if (extractedTitle == null || extractedTitle.isEmpty() || episodes == null || episodes.isEmpty()) {
+            return null;
+        }
+
+        LevenshteinDistance ld = new LevenshteinDistance();
+        String normalizedTitle = extractedTitle.toLowerCase(java.util.Locale.ROOT).trim();
+        int bestDistance = Integer.MAX_VALUE;
+        EpisodeTags bestMatch = null;
+
+        for (EpisodeTags ep : episodes) {
+            if (ep.getTitle() == null) continue;
+            String epName = ep.getTitle().toLowerCase(java.util.Locale.ROOT).trim();
+
+            int distance = ld.apply(normalizedTitle, epName);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestMatch = ep;
+            }
+        }
+
+        if (bestMatch != null) {
+            int maxLen = Math.max(normalizedTitle.length(), bestMatch.getTitle().trim().length());
+            int threshold = (int) Math.ceil(maxLen * 0.4);
+            if (bestDistance <= threshold) {
+                if (log.isDebugEnabled()) log.debug("fuzzyMatchEpisodeByTitle: matched '{}' to episode {} '{}' with distance {}/{}",
+                        extractedTitle, bestMatch.getEpisode(), bestMatch.getTitle(), bestDistance, threshold);
+                return bestMatch;
+            } else {
+                if (log.isDebugEnabled()) log.debug("fuzzyMatchEpisodeByTitle: best match for '{}' was episode {} '{}' but distance {} exceeds threshold {}",
+                        extractedTitle, bestMatch.getEpisode(), bestMatch.getTitle(), bestDistance, threshold);
+            }
+        }
+
+        return null;
     }
 
     public static boolean isShowAlreadyKnown(Integer showId, Context context) {
