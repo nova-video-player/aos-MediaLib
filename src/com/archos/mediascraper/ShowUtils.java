@@ -284,13 +284,14 @@ public final class ShowUtils {
      * @return the cleaned episode title, or null if not found or empty
      */
     public static String extractEpisodeTitle(String filename, int season, int episode) {
-        // build SxxExx pattern to find in filename (case insensitive)
-        String sxePattern = String.format(Locale.ROOT, "S%02dE%02d", season, episode);
-        int idx = filename.toUpperCase(Locale.ROOT).indexOf(sxePattern.toUpperCase(Locale.ROOT));
-        if (idx < 0) return null;
+        // build SxxExx pattern to find in filename (case insensitive), tolerating extra
+        // leading zeros in the episode number (e.g. "S01E018" for episode 18)
+        String sxePattern = String.format(Locale.ROOT, "S%02dE0*%d(?!\\d)", season, episode);
+        Matcher matcher = Pattern.compile(sxePattern, Pattern.CASE_INSENSITIVE).matcher(filename);
+        if (!matcher.find()) return null;
 
         // take everything after SxxExx
-        String remainder = filename.substring(idx + sxePattern.length());
+        String remainder = filename.substring(matcher.end());
         if (remainder.isEmpty()) return null;
 
         // strip leading separators
@@ -298,7 +299,22 @@ public final class ShowUtils {
         if (remainder.isEmpty()) return null;
 
         String cleaned = ParseUtils.cleanExtractedTitle(remainder);
-        return (cleaned == null || cleaned.isEmpty()) ? null : cleaned;
+        if (cleaned == null || cleaned.isEmpty() || !isPlausibleEpisodeTitle(cleaned)) return null;
+        return cleaned;
+    }
+
+    /**
+     * Guards fuzzy title matching (see ShowScraper4#fuzzyMatchEpisodeByTitle) from running
+     * against leftover release-tag garbage that the static GARBAGE_* lists in ParseUtils don't
+     * happen to cover (e.g. unlisted release group names, resolution/codec remnants). A genuine
+     * episode title is expected to have some actual wording, not just a short, mostly non-letter
+     * token.
+     */
+    private static boolean isPlausibleEpisodeTitle(String title) {
+        String trimmed = title.trim();
+        if (trimmed.length() < 3) return false;
+        // require at least two consecutive letters somewhere, rejects tokens like "5.1", "264", "H265"
+        return trimmed.matches(".*\\p{L}{2,}.*");
     }
 
     public static String urlEncode(String input) {
