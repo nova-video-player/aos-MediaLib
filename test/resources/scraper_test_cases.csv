@@ -13,7 +13,10 @@ upпp://1540402479/0/2/2%2415/2%2415%240/Scream.2022.1080p.BluRay.x264.AAC5.1-[Y
 Wadjda (2013) MULTI VFi 1080p Bluray EAC3 5.1 x265-k7.mkv|Movie|Wadjda|129112|en
 # 4-digit SSEE format (issue #1419): compact SSEE episodes must be identified as TV shows
 Battlestar Galactica - 0208 - Final cut.mp4|Show|Battlestar Galactica|1972|en
-Battlestar Galactica - 0100 - Blood and Chrome.mp4|Show|Battlestar Galactica|1972|en
+# S01E00: TMDb has no episode 0 in show 1972's season 1 (nor a "Blood and Chrome" entry in season 0);
+# "Battlestar Galactica: Blood and Chrome" is its own separate TMDb entity. This line only validates
+# the SSEE search-ranking regression (issue #1419), not real episode-level scraping, hence "skip".
+Battlestar Galactica - 0100 - Blood and Chrome.mp4|Show|Battlestar Galactica|1972|en|skip
 # 4-digit collision risks: these must remain identified as movies, not SSEE episodes
 # 1408: room number (< MIN_YEAR 1906, no separator before digits at filename start)
 1408 (2007).mkv|Movie|1408|3021|en
@@ -97,6 +100,19 @@ Monstres & Cie (2001) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.
 Monstres Academy (2013) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|Movie|Monstres Academy|62211|fr
 Asterix.and.Obelix.The.Big.Fight.S01E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv|Show|Asterix & Obelix: The Big Fight|122781|en
 ./transmission/Doctor Who Classic (1963)/Saison 1/Doctor Who - S01E015 - Marco Polo (2) - The Singing Sands (Recon).mkv|Show|Doctor Who|121|en
+# Zero-padded episode number (S01E018) + episode-title fuzzy fallback + showId-scoped episode cache (issue reported for classic Doctor Who vs 2005 reboot title collision)
+# Path carries a season/show folder year hint (1963), disambiguated at search time via path year extraction (commit 00a7ae9), not via the buildTag fallback
+smb://192.168.0.10:445/download/transmission/Doctor Who Classic (1963)/Saison 1/Doctor Who - S01E018 - Marco Polo (5) - Rider from Shang-Tu (Recon).mkv|Show|Doctor Who|121|en
+# Same episode with no disambiguating folder/year hint: search ranking ties at Levenshtein distance 0 between
+# classic (121) and the 2005 reboot (57243) and the popularity tie-break picks the reboot. This is a known,
+# accepted limitation (see SCRAPE.md 5.1: popularity tie-break is required to correctly resolve cases like Silo
+# 2023 vs 2017). Documented here so the showId-scoped episode cache (ShowScraper4) and year-scoped search cache
+# (SearchShow) fixes don't silently mask it again: episode lookup against 57243's season 1 (only 13 episodes)
+# correctly fails to find a match via the buildTag fuzzy-title fallback rather than returning classic show data.
+# The 6th column documents the real auto-scrape (Scraper.getAutoDetails) outcome: the title-collision cascade
+# fallback (ShowScraper4.searchWithTitleCollisionFallback) retries the tied-distance candidate 121 and finds a
+# genuine episode there, so the real end-to-end scrape correctly resolves to the classic show.
+/download/Doctor Who - S01E018 - Marco Polo (5) - Rider from Shang-Tu (Recon).mkv|Show|Doctor Who|57243|en|121
 ./电视剧/火与水：阿凡达电影制作特辑/火与水：阿凡达电影制作特辑.S01/火与水：阿凡达电影制作特辑.Fire.and.Water.Making.the.Avatar.Films.S01E01.1080p.HD中字.mp4|Show|火与水：阿凡达电影制作特辑|303109|zh
 ./电视剧/火与水：阿凡达电影制作特辑/火与水：阿凡达电影制作特辑.S01/火与水：阿凡达电影制作特辑.Fire.and.Water.Making.the.Avatar.Films.S01E01.1080p.HD中字.mp4|Show|火与水：阿凡达电影制作特辑|303109|zh-CN
 ./电视剧/火与水：阿凡达电影制作特辑/火与水：阿凡达电影制作特辑.S01/火与水：阿凡达电影制作特辑.Fire.and.Water.Making.the.Avatar.Films.S01E01.1080p.HD中字.mp4|Show|火与水：阿凡达电影制作特辑|303109|zh-TW

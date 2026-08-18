@@ -82,6 +82,16 @@ public class ScraperIntegrationTest {
                 String expectedIdStr = parts[3];
                 int expectedId = Integer.parseInt(expectedIdStr);
                 String language = parts.length >= 5 ? parts[4] : "en";
+                // Optional 6th column: expected id after the real auto-scrape path (Scraper.getAutoDetails),
+                // which can differ from the search-ranking top match (expectedId) when the title-collision
+                // cascade fallback kicks in (see ShowScraper4.searchWithTitleCollisionFallback). Defaults to
+                // expectedId, which holds for the overwhelming majority of cases where no cascade is needed.
+                // The sentinel value "skip" opts a line out of the AUTO-DETAILS assertion entirely, for cases
+                // that are only meant to validate search-ranking (e.g. no genuine episode exists on TMDb for
+                // the locally-parsed season/episode under the matched show).
+                String autoDetailField = parts.length >= 6 ? parts[5].trim() : "";
+                boolean skipAutoDetail = "skip".equalsIgnoreCase(autoDetailField);
+                int expectedAutoDetailId = (!skipAutoDetail && !autoDetailField.isEmpty()) ? Integer.parseInt(autoDetailField) : expectedId;
 
                 System.out.println("Testing URI: " + uriString + " (Type: " + type + ", Lang: " + language + ")");
 
@@ -173,6 +183,38 @@ public class ScraperIntegrationTest {
                         String errorMsg = "No search results found for " + uriString + " (Status: " + result.status + ")";
                         System.err.println("  -> " + errorMsg);
                         errors.add(errorMsg);
+                    }
+
+                    // Validate the real auto-scrape path (Scraper.getAutoDetails), which is what
+                    // actual library scraping uses end-to-end. This also exercises the
+                    // title-collision cascade fallback (ShowScraper4.searchWithTitleCollisionFallback)
+                    // for ambiguous title collisions, not just the search-ranking step above.
+                    if (skipAutoDetail) {
+                        System.out.println("  -> AUTO-DETAILS: skipped (search-ranking only test case)");
+                    } else {
+                        com.archos.mediascraper.ScrapeDetailResult autoResult = scraper.getAutoDetails(info);
+                        if (autoResult == null || autoResult.tag == null) {
+                            errors.add("AUTO-DETAILS: no tag returned for " + uriString);
+                        } else if (info.isTvShow()) {
+                            if (autoResult.tag instanceof com.archos.mediascraper.EpisodeTags) {
+                                com.archos.mediascraper.EpisodeTags autoEpTag = (com.archos.mediascraper.EpisodeTags) autoResult.tag;
+                                System.out.println(String.format("  -> AUTO-DETAILS: ShowId=%d Title='%s'", autoEpTag.getShowId(), autoEpTag.getTitle()));
+                                if (autoEpTag.getShowId() != expectedAutoDetailId) {
+                                    errors.add("AUTO-DETAILS SHOW ID MISMATCH for " + uriString + ". Expected " + expectedAutoDetailId + " but got " + autoEpTag.getShowId());
+                                }
+                                if (autoEpTag.getTitle() == null) {
+                                    errors.add("AUTO-DETAILS: no genuine episode title found for " + uriString + " (showId " + autoEpTag.getShowId() + ")");
+                                }
+                            } else {
+                                errors.add("AUTO-DETAILS: expected EpisodeTags for " + uriString + " but got " + autoResult.tag.getClass().getSimpleName());
+                            }
+                        } else {
+                            long autoId = autoResult.tag.getOnlineId();
+                            System.out.println(String.format("  -> AUTO-DETAILS: OnlineId=%d Title='%s'", autoId, autoResult.tag.getTitle()));
+                            if (autoId != expectedAutoDetailId) {
+                                errors.add("AUTO-DETAILS ID MISMATCH for " + uriString + ". Expected " + expectedAutoDetailId + " but got " + autoId);
+                            }
+                        }
                     }
                 } catch (Throwable t) {
                     String errorMsg = "Exception processing " + uriString + ": " + t.getMessage();
