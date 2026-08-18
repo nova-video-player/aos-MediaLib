@@ -99,7 +99,17 @@ public class SearchShowParser {
                 // get the min of the levenshtein distance between cleaned file based show name and title and original title identified
                 levenshteinDistanceTitle = levenshteinDistance.apply(showNameLC, result.getTitle().toLowerCase());
                 levenshteinDistanceOriginalTitle = levenshteinDistance.apply(showNameLC, result.getOriginalTitle().toLowerCase());
-                result.setLevenshteinDistance(Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle));
+                int distance = Math.min(levenshteinDistanceTitle, levenshteinDistanceOriginalTitle);
+                // Acronym boost: shows are often titled "ACRONYM: Full Description" (e.g. "CSI: Crime
+                // Scene Investigation", "CSI: NY", "HPI : Haut Potentiel Intellectuel"). Raw Levenshtein
+                // distance penalizes these against an unrelated but shorter title that happens to share
+                // more characters overall, so treat an exact match of the query against the title's head
+                // up to the colon as a strong/exact match.
+                if (isAcronymHeadMatch(showNameLC, result.getTitle().toLowerCase()) || isAcronymHeadMatch(showNameLC, result.getOriginalTitle().toLowerCase())) {
+                    if (log.isDebugEnabled()) log.debug("getSearchShowParserResult: acronym head match for {} against {}/{}, boosting distance to 0", showNameLC, result.getOriginalTitle().toLowerCase(), result.getTitle().toLowerCase());
+                    distance = 0;
+                }
+                result.setLevenshteinDistance(distance);
                 result.setReleaseOrFirstAiredDate(series.first_air_date);
                 if (log.isDebugEnabled()) log.debug("getSearchShowParserResult: between {} and {}/{} levenshteinDistanceTitle={}, levenshteinDistanceOriginalTitle={}, popularity={}, airdate={}, year={}", showNameLC, result.getOriginalTitle().toLowerCase(), result.getTitle().toLowerCase(), levenshteinDistanceTitle, levenshteinDistanceOriginalTitle, result.getPopularity(), series.first_air_date, result.getYear());
 
@@ -137,5 +147,18 @@ public class SearchShowParser {
         // dump
         if (log.isTraceEnabled()) log.trace("getSearchShowParserResult: applying Levenshtein distance resultsProbableSorted={}", searchShowParserResult.resultsProbable.toString());
         return searchShowParserResult;
+    }
+
+    /**
+     * Detects the "ACRONYM: Subtitle" show naming convention (e.g. "CSI: Crime Scene
+     * Investigation", "CSI: NY", "CSI: Miami"). Matches the query against the title's head up to
+     * the first colon, trimming spaces around the colon to also handle locales such as French
+     * that write it as "ACRONYM : Subtitle".
+     */
+    private static boolean isAcronymHeadMatch(String queryLC, String titleLC) {
+        int idx = titleLC.indexOf(':');
+        if (idx < 0) return false;
+        String head = titleLC.substring(0, idx).trim();
+        return !head.isEmpty() && head.equals(queryLC);
     }
 }

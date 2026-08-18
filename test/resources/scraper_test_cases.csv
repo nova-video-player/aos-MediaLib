@@ -127,3 +127,8 @@ DuckTales (1987)/S02 (1988)/Ducktales - S02E01 - Time is Money 1, Marking Time.m
 # A real season folder (S02) two levels above the file should not lend its "in a show dir" evidence
 # to an unrelated ancestor folder one level further up (download-2026 is not the show's own folder)
 ./downloads/download-2026/The 100/S02/The 100 S02E01.mkv|Show|The 100|48866|en
+# HPI (French show, TMDb id 112738, full title "HPI : Haut Potentiel Intellectuel"): the acronym-only
+# filename title was outranked by the unrelated US show "High Potential" (id 226637) on raw Levenshtein
+# distance alone (11 vs 30), since a long correct subtitle counts as many insertions. Fixed via the
+# acronym-head boost in SearchShowParser (matches the query against the title's head up to the colon).
+./serie-fr/HPI.S03E01.FRENCH.1080p.10bit.WEBRip.6CH.x265.HEVC-SERQPH.mkv|Show|HPI|112738|fr
