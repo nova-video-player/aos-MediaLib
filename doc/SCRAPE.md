@@ -176,6 +176,18 @@ Example:
 
 This is considered expected behavior unless the filename or folder provides a discriminating year.
 
+### 5.4 Acronym Show Title Boost (TV Shows)
+TV shows are often titled `ACRONYM: Full Description` (e.g. `CSI: Crime Scene Investigation`, `CSI: NY`, `HPI : Haut Potentiel Intellectuel`). Raw Levenshtein distance penalizes these titles against an acronym-only filename query, because the subtitle after the colon counts as many insertions. This can let an unrelated but shorter title rank higher.
+
+Example:
+
+- `HPI.S03E01.FRENCH.1080p.10bit.WEBRip.6CH.x265.HEVC-SERQPH.mkv`
+- Parsed show name `HPI`.
+- Distance to the correct `HPI : Haut Potentiel Intellectuel` (TMDb id `112738`) is 30; distance to the unrelated US show `High Potential` (id `226637`) is only 11.
+- Without correction, `High Potential` wins.
+
+`SearchShowParser` detects this convention via `isAcronymHeadMatch`: it trims whitespace around the first `:` in the candidate's title/original title and, if the resulting head exactly equals the query, forces the Levenshtein distance to `0` for that candidate. Trimming (rather than requiring `": "` literally) also covers locales such as French that space the colon (`"ACRONYM : Subtitle"`).
+
 ---
 
 ## 6. Special Episodes Handling (TV Shows)
@@ -185,7 +197,37 @@ This is considered expected behavior unless the filename or folder provides a di
 
 ---
 
-## 7. The Preprocessing Pipeline (Sequence)
+## 7. TV Auto-Scrape Recovery (Season/Episode & Title-Collision Fallbacks)
+
+`Scraper.getAutoDetails()` is the entry point used by directory/library auto-scraping (as opposed to interactive search). For TV shows it calls `ShowScraper4.searchWithTitleCollisionFallback()` instead of the shared `BaseScraper2.search()` used by movies, adding two recovery layers on top of the ranking described in Section 5.
+
+### 7.1 Fuzzy Episode-Title Match
+When the locally-parsed season/episode number is not found in the already-fetched season data (e.g. local numbering diverges from TMDb's, such as a filename numbered per broadcast order vs. TMDb's production order), `ShowScraper4.buildTag()` falls back to `fuzzyMatchEpisodeByTitle()`:
+
+- `ShowUtils.extractEpisodeTitle()` pulls the episode title out of the filename by locating the `SxxExx` marker and taking the cleaned remainder. It tolerates extra leading zeros in the episode number (e.g. `S01E018` for episode 18).
+- The extracted title is gated by `isPlausibleEpisodeTitle()` (at least 3 characters, containing at least two consecutive letters) so leftover release-tag garbage not caught by `ParseUtils`'s static `GARBAGE_*` lists cannot masquerade as a title.
+- If it passes the guard, it is matched against the already-fetched season's episode titles using Levenshtein distance, with a match accepted only if the distance is within 40% of the longer title's length.
+- This recovery costs no extra TMDb request: it only reuses the season data already fetched for the requested season.
+
+### 7.2 Title-Collision Cascade Fallback
+Some shows share the exact same title as an unrelated show (e.g. a classic show and its reboot), so the top-ranked search candidate is not always the right one, even after Section 5's ranking. `searchWithTitleCollisionFallback()`:
+
+1. Runs the normal ranked search (Section 5), keeping up to `CASCADE_CANDIDATE_LIMIT` (5) candidates — free, since TMDb's `tv()` search already returns up to 20 results in one page.
+2. Fetches full details for the top candidate. If season/episode data resolves to a genuine episode (a real title, via the recovery in 7.1 if needed), that result is returned.
+3. Otherwise, retries only the next candidates that are **exactly tied** in Levenshtein distance with the top one (not the whole candidate list), until one yields a genuine match.
+4. If no tied candidate yields a genuine match, returns the top candidate's (not-found) result, preserving existing behavior for episodes that are legitimately missing from the correct show.
+
+Restricting retries to distance-tied candidates, and only triggering the extra requests in the failure branch, avoids mis-attributing episodes to an unrelated, lower-ranked show and avoids extra TMDb cost in the overwhelmingly common success case.
+
+### 7.3 Per-Show/Per-Year Cache Key Scoping
+Because the cascade fallback (7.2) can call into TMDb-detail fetches for multiple distinct shows that happen to share the same cleaned title, and `SearchShow`'s search cache can be reused across queries for the same cleaned name in different years, cache keys must be scoped precisely enough to avoid collisions:
+
+- `SearchShow.showCache` is keyed by `cleanedName|year|language`, not just `cleanedName|language`: TMDb's `tv()` search applies server-side year filtering, so a year-filtered response must not be served back for an unrelated year-less (or different-year) query for the same name.
+- `ShowScraper4`'s per-show/season metadata caches (`showKey`, `seasonKey`, `fallbackShowKey`, `season0Key`, `season0KeyEn`) are keyed by cleaned show name **and TMDb show id**, not name alone, so two different shows sharing the same cleaned title (e.g. a classic show and its reboot, as in 7.2) cannot collide and return each other's cached season/episode data.
+
+---
+
+## 8. The Preprocessing Pipeline (Sequence)
 1. **Extension Stripping**: Defensive removal of `.mkv`, `.mp4`.
 2. **Original Name Capture**: Capture title here for re-ranking reference.
 3. **Numbering Stripping**: Remove leading numbers (restricted to **max 3 digits**).
