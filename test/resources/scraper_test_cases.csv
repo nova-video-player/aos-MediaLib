@@ -132,3 +132,13 @@ DuckTales (1987)/S02 (1988)/Ducktales - S02E01 - Time is Money 1, Marking Time.m
 # distance alone (11 vs 30), since a long correct subtitle counts as many insertions. Fixed via the
 # acronym-head boost in SearchShowParser (matches the query against the title's head up to the colon).
 ./serie-fr/HPI.S03E01.FRENCH.1080p.10bit.WEBRip.6CH.x265.HEVC-SERQPH.mkv|Show|HPI|112738|fr
+# Hunter x Hunter: TMDb has two shows with the exact same name "Hunter x Hunter" (1999 id 45952 and
+# 2011 id 46298, a remake). The parenthesized "(2011)" in both the release-group folder and the
+# filename is a confident year, so the year-filtered TMDb search alone disambiguates to the 2011 show.
+./transmission/Hunter x Hunter (2011) Bluray ripp x265 Multi Phoenix/Saison 01/Hunter x Hunter (2011) S01E12.mkv|Show|Hunter x Hunter|46298|en
+# Same show, season 2: TMDb numbers this show's episodes continuously across seasons
+# (season 2 starts at episode_number 63, not 1), so a direct s2e8 lookup 404s on TMDb.
+# Exercises the absolute-numbering fallback in ShowScraper4.getDetailsInternal (season
+# fetch + remap) that resolves this to TMDb's absolute episode 70 under the hood while
+# keeping the returned tag numbered s2e8 to match the local file's own numbering.
+./transmission/Hunter x Hunter (2011) Bluray ripp x265 Multi Phoenix/Saison 02/Hunter x Hunter (2011) S02E08.mkv|Show|Hunter x Hunter|46298|fr|46298

@@ -20,6 +20,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.text.TextUtils;
 import android.util.LruCache;
 import android.util.SparseArray;
@@ -348,6 +349,10 @@ public class ShowScraper4 extends BaseScraper2 {
         Map<String, EpisodeTags> allEpisodes = null;
         ShowTags showTags = null;
         ShowIdImagesResult searchImages = null;
+        // set when the single-episode lookup below had to be remapped to TMDb's absolute
+        // episode numbering (see comment there); used to restore the local season/episode
+        // numbering on the returned EpisodeTags once metadata has been fetched
+        boolean absoluteNumberingRemap = false;
 
         if (log.isDebugEnabled()) log.debug("getDetailsInternal: probing cache for showKey {}", showKey);
         allEpisodes = sEpisodeCache.get(seasonKey);
@@ -491,7 +496,52 @@ public class ShowScraper4 extends BaseScraper2 {
                     ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(episodeKey, showId, season, episode, resultLanguage, adultScrape, getTmdb());
                     if (showIdEpisode.status == ScrapeStatus.OKAY)
                         tvEpisodes.add(showIdEpisode.tvEpisode);
-                    else {
+                    else if (showIdEpisode.status == ScrapeStatus.NOT_FOUND) {
+                        // some long-running shows (mostly anime split into arbitrary TMDb
+                        // "seasons") do not restart episode_number at 1 for each season, so a
+                        // direct season/episode lookup using the file's own per-season numbering
+                        // can 404 even though the show/season exist. Detect this by fetching the
+                        // full season and checking whether its first episode is numbered 1; if
+                        // not, remap the requested episode to the equivalent absolute number.
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} not found, checking for absolute episode numbering", season, episode);
+                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, season, resultLanguage, adultScrape, getTmdb());
+                        TvEpisode matched = null;
+                        if (showIdSeason.status == ScrapeStatus.OKAY && showIdSeason.tvSeason != null
+                                && showIdSeason.tvSeason.episodes != null && !showIdSeason.tvSeason.episodes.isEmpty()) {
+                            TvEpisode firstEpisode = showIdSeason.tvSeason.episodes.get(0);
+                            if (firstEpisode.episode_number != null && firstEpisode.episode_number != 1) {
+                                int absoluteEpisode = firstEpisode.episode_number + episode - 1;
+                                if (log.isDebugEnabled()) log.debug("getDetailsInternal: season {} uses absolute numbering starting at {}, remapping e{} -> e{}", season, firstEpisode.episode_number, episode, absoluteEpisode);
+                                for (TvEpisode tvEpisode : showIdSeason.tvSeason.episodes) {
+                                    if (tvEpisode.episode_number != null && tvEpisode.episode_number == absoluteEpisode) {
+                                        matched = tvEpisode;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (matched != null) {
+                                tvSeasons.putIfAbsent(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
+                                // the fetched episode carries TMDb's absolute episode_number: adjust
+                                // episodeKey to match so the later allEpisodes.get(episodeKey) lookup
+                                // in buildTag succeeds instead of falling through to an empty tag
+                                episodeKey = showId + "|" + matched.season_number + "|" + matched.episode_number + "|" + resultLanguage;
+                                absoluteNumberingRemap = true;
+                            }
+                        }
+                        if (matched != null) {
+                            log.info("getDetailsInternal: remapped absolute numbering s{}e{} -> e{} for show {}", season, episode, matched.episode_number, showId);
+                            tvEpisodes.add(matched);
+                        } else {
+                            log.warn("getDetailsInternal: scrapeStatus for s{}e{} is NOK!", season, episode);
+                            // save showtag even if episodetag is empty
+                            EpisodeTags episodeTag = new EpisodeTags();
+                            episodeTag.setShowTags(showTags);
+                            // even if this is nok record season and episode not to end up with s00e00
+                            episodeTag.setSeason(requestedSeason);
+                            episodeTag.setEpisode(requestedEpisode);
+                            return new ScrapeDetailResult(episodeTag, true, null, showIdEpisode.status, showIdEpisode.reason);
+                        }
+                    } else {
                         log.warn("getDetailsInternal: scrapeStatus for s{}e{} is NOK!", season, episode);
                         // save showtag even if episodetag is empty
                         EpisodeTags episodeTag = new EpisodeTags();
@@ -525,6 +575,27 @@ public class ShowScraper4 extends BaseScraper2 {
                         episodeTag.setEpisode(requestedEpisode);
                         log.warn("getDetailsInternal: scrapeStatus for season {} is NOK!", season);
                         return new ScrapeDetailResult(episodeTag, true, null, showIdSeason.status, showIdSeason.reason);
+                    }
+                }
+            }
+
+            // some long-running shows (mostly anime split into arbitrary TMDb "seasons") do not
+            // restart episode_number at 1 for each season, so the file's own per-season episode
+            // number can miss the actual season's episode list entirely. Detect this once the
+            // full season is available (getAllEpisodes and season-only fetches above always
+            // pull the whole season) and remap requestedEpisode to the equivalent absolute
+            // TMDb episode number so the later allEpisodes.get(episodeKey) lookup succeeds.
+            if (fetchedFullSeason && !absoluteNumberingRemap && !tvEpisodes.isEmpty()) {
+                TvEpisode firstEpisode = tvEpisodes.get(0);
+                if (firstEpisode.episode_number != null && firstEpisode.episode_number != 1) {
+                    int absoluteEpisode = firstEpisode.episode_number + requestedEpisode - 1;
+                    for (TvEpisode tvEpisode : tvEpisodes) {
+                        if (tvEpisode.episode_number != null && tvEpisode.episode_number == absoluteEpisode) {
+                            if (log.isDebugEnabled()) log.debug("getDetailsInternal: season {} uses absolute numbering starting at {}, remapping e{} -> e{}", requestedSeason, firstEpisode.episode_number, requestedEpisode, absoluteEpisode);
+                            episodeKey = showId + "|" + tvEpisode.season_number + "|" + tvEpisode.episode_number + "|" + resultLanguage;
+                            absoluteNumberingRemap = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -570,6 +641,36 @@ public class ShowScraper4 extends BaseScraper2 {
             // get the showTags out of one random element, they all contain the same
             Iterator<EpisodeTags> iter = allEpisodes.values().iterator();
             if (iter.hasNext()) showTags = iter.next().getShowTags();
+
+            // the cached season may use TMDb absolute episode numbering (see comment on
+            // absoluteNumberingRemap above): a fresh fetch would have been remapped, but a
+            // cache hit skips that logic, so redo the same detection against the cached map.
+            // Derive minEpisode from the map's own keys (showId|season|episode|language, set
+            // by ShowIdEpisodes.getEpisodes from TMDb's season_number/episode_number) rather
+            // than from the cached EpisodeTags' own getSeason()/getEpisode(): those objects are
+            // shared across requests and must never be relied upon for this, only their key.
+            if (!allEpisodes.containsKey(episodeKey) && !allEpisodes.isEmpty()) {
+                int minEpisode = Integer.MAX_VALUE;
+                for (String key : allEpisodes.keySet()) {
+                    String[] parts = key.split("\\|");
+                    if (parts.length != 4) continue;
+                    try {
+                        if (Integer.parseInt(parts[1]) == keySeasonValue) {
+                            int ep = Integer.parseInt(parts[2]);
+                            if (ep < minEpisode) minEpisode = ep;
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+                if (minEpisode != Integer.MAX_VALUE && minEpisode != 1) {
+                    int absoluteEpisode = minEpisode + requestedEpisode - 1;
+                    String remappedKey = showId + "|" + keySeasonValue + "|" + absoluteEpisode + "|" + resultLanguage;
+                    if (allEpisodes.containsKey(remappedKey)) {
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: cached season {} uses absolute numbering starting at {}, remapping e{} -> e{}", keySeasonValue, minEpisode, requestedEpisode, absoluteEpisode);
+                        episodeKey = remappedKey;
+                        absoluteNumberingRemap = true;
+                    }
+                }
+            }
         }
         if (showTags == null) { // if there is no info about the show there is nothing we can do
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: ScrapeStatus.ERROR_PARSER");
@@ -581,6 +682,25 @@ public class ShowScraper4 extends BaseScraper2 {
             episodeTitleHint = ShowUtils.extractEpisodeTitle(filenameForTitle, keySeasonValue, keyEpisodeValue);
         }
         EpisodeTags returnValue = buildTag(allEpisodes, episodeKey, requestedEpisode, requestedSeason, showTags, episodeTitleHint);
+        if (absoluteNumberingRemap) {
+            // buildTag() returns the very instance stored in allEpisodes (and hence in
+            // sEpisodeCache): mutating it in place would permanently corrupt the shared cache
+            // entry with this request's local season/episode, breaking later lookups/remaps
+            // for other episodes of the same cached season. Clone before overriding so only
+            // the value handed back to the caller reflects the local file's own per-season
+            // numbering (matches how the rest of the season is organized on disk), even though
+            // the fetched metadata came from TMDb's absolute episode_number.
+            Parcel parcel = Parcel.obtain();
+            try {
+                returnValue.writeToParcel(parcel, 0);
+                parcel.setDataPosition(0);
+                returnValue = EpisodeTags.CREATOR.createFromParcel(parcel);
+            } finally {
+                parcel.recycle();
+            }
+            returnValue.setSeason(requestedSeason);
+            returnValue.setEpisode(requestedEpisode);
+        }
         if (log.isDebugEnabled()) log.debug("getDetailsInternal : ScrapeStatus.OKAY {} {} {}", returnValue.getShowTitle(), returnValue.getShowId(), returnValue.getTitle());
         Bundle extraOut = buildBundle(allEpisodes, options);
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
