@@ -225,6 +225,19 @@ Because the cascade fallback (7.2) can call into TMDb-detail fetches for multipl
 - `SearchShow.showCache` is keyed by `cleanedName|year|language`, not just `cleanedName|language`: TMDb's `tv()` search applies server-side year filtering, so a year-filtered response must not be served back for an unrelated year-less (or different-year) query for the same name.
 - `ShowScraper4`'s per-show/season metadata caches (`showKey`, `seasonKey`, `fallbackShowKey`, `season0Key`, `season0KeyEn`) are keyed by cleaned show name **and TMDb show id**, not name alone, so two different shows sharing the same cleaned title (e.g. a classic show and its reboot, as in 7.2) cannot collide and return each other's cached season/episode data.
 
+### 7.4 Absolute (Continuous) Episode Numbering Fallback
+Some long-running shows (mostly anime split into arbitrary TMDb "seasons") number episodes continuously across seasons on TMDb instead of resetting to `1` at the start of each season — e.g. *Hunter x Hunter* (2011, TMDb id 46298) season 2 starts at `episode_number` 63, not 1, and season 3 at 137. A file locally numbered per its own season's broadcast order (e.g. `S02E08`) then 404s against TMDb's `/tv/{id}/season/{s}/episode/{e}` endpoint, even though season 2 legitimately has 74 episodes.
+
+`ShowScraper4.getDetailsInternal()` detects and corrects this purely from data, with no genre/media-type gating:
+
+1. **Single-episode 404**: if the direct per-episode lookup returns `NOT_FOUND`, the full season is fetched and its first episode's `episode_number` is checked. If it isn't `1`, the requested episode is remapped to the equivalent absolute number (`firstEpisode.episode_number + requestedEpisode - 1`) and looked up again in the fetched season.
+2. **Full-season fetches** (`getAllEpisodes` and season-only fetches): the same first-episode check runs unconditionally right after the season is fetched, since these paths never 404 per-episode but would otherwise silently fail the later `allEpisodes.get(episodeKey)` lookup in `buildTag()` for absolutely-numbered seasons.
+3. **`sEpisodeCache` cache hit**: a season already cached from an earlier request skips the fetch paths above entirely, so the same detection is redone against the cached map — deriving the season's minimum episode number from the map's own keys (`showId|season|episode|language`, TMDb's real numbers) rather than from the cached `EpisodeTags` objects' `getSeason()`/`getEpisode()`, since those objects are shared across requests and must not be used as a numbering source of truth.
+
+In all three cases, once the absolute episode is resolved, its `episodeKey` (built from TMDb's real season/episode numbers) is substituted so `buildTag()`'s map lookup succeeds instead of falling through to an empty tag. Before returning, the resolved `EpisodeTags` is cloned (via `Parcel`) and only the clone's season/episode fields are overridden back to the file's own local numbering — the shared cache entry itself is never mutated in place, since doing so would permanently corrupt it for every later lookup of that season.
+
+This is self-limiting by construction: shows with normal per-season TMDb numbering always have a first episode numbered `1`, so the fallback never triggers for them.
+
 ---
 
 ## 8. The Preprocessing Pipeline (Sequence)
