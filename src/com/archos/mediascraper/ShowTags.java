@@ -79,6 +79,14 @@ public class ShowTags extends VideoTags {
         }
     }
 
+    @Override
+    public void setBackdrop(File file) {
+        if (file == null) return;
+        if (getBackdrops() == null || getBackdrops().isEmpty()) {
+            setBackdrops(ScraperImage.fromExistingCover(file.getPath(), Type.SHOW_BACKDROP).asList());
+        }
+    }
+
     public Date getPremiered() { return mPremiered; }
 
     private static final String[] BASE_PROJECTION = {

@@ -403,6 +403,7 @@ public abstract class BaseTags implements Parcelable {
     public void setWriters(List<String> writers) { mWriters = writers; }
 
     public abstract void setCover(File file);
+    public abstract void setBackdrop(File file);
 
     public void setFile(Uri searchFile) { mFile = searchFile; }
     public void setId(long id) { mId = id; }

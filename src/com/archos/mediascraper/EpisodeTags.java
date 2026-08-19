@@ -392,6 +392,16 @@ public class EpisodeTags extends BaseTags {
     }
 
     @Override
+    public void setBackdrop(File file) {
+        if (file == null) return;
+        if (mShowTags != null) {
+            mShowTags.setBackdrop(file);
+        } else if (getBackdrops() == null || getBackdrops().isEmpty()) {
+            setBackdrops(ScraperImage.fromExistingCover(file.getPath(), Type.SHOW_BACKDROP).asList());
+        }
+    }
+
+    @Override
     public File getCover() {
         File cover = super.getCover();
         if (cover != null && cover.exists())

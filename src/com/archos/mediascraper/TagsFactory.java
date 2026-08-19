@@ -776,13 +776,17 @@ public class TagsFactory {
                         VideoColumns.SCRAPER_C_BACKDROP_LARGE_FILE, // 22
                         VideoColumns.SCRAPER_C_BACKDROP_LARGE_URL,  // 23
                         VideoColumns.SCRAPER_C_BACKDROP_THUMB_FILE, // 24
-                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL   // 25
+                        VideoColumns.SCRAPER_C_BACKDROP_THUMB_URL,  // 25
+                        VideoColumns.SCRAPER_M_COVER,               // 26
+                        VideoColumns.SCRAPER_M_BACKDROP_FILE        // 27
                 },
                 VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID + "=?",
                 new String[] { String.valueOf(movieId) },
                 null);
         long posterId = -1;
         long backdropId = -1;
+        String movieCover = null;
+        String movieBackdrop = null;
         if (c != null) {
             if (c.moveToFirst()) {
                 result = new MovieTags();
@@ -813,6 +817,8 @@ public class TagsFactory {
                 result.setCollectionBackdropLargeUrl(c.getString(23));
                 result.setCollectionBackdropThumbFile(c.getString(24));
                 result.setCollectionBackdropThumbUrl(c.getString(25));
+                movieCover = c.getString(26);
+                movieBackdrop = c.getString(27);
             }
             c.close();
         }
@@ -908,6 +914,17 @@ public class TagsFactory {
                     allBackdropsSorted.addLast(image);
             }
             result.setBackdrops(allBackdropsSorted);
+
+            if (result.getPosters() == null || result.getPosters().isEmpty()) {
+                if (movieCover != null && !movieCover.isEmpty()) {
+                    result.setCover(new File(movieCover));
+                }
+            }
+            if (result.getBackdrops() == null || result.getBackdrops().isEmpty()) {
+                if (movieBackdrop != null && !movieBackdrop.isEmpty()) {
+                    result.setBackdrop(new File(movieBackdrop));
+                }
+            }
         }
         return result;
     }
@@ -1040,6 +1057,8 @@ public class TagsFactory {
                         ScraperStore.Show.IMDB_ID,              // 6
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
+                        ScraperStore.Show.COVER,                // 9
+                        ScraperStore.Show.BACKDROP,             // 10
                 }, null, null, null);
         return buildShowTagsFromCursor(context, c, showId);
     }
@@ -1060,6 +1079,8 @@ public class TagsFactory {
                         ScraperStore.Show.POSTER_ID,            // 7
                         ScraperStore.Show.BACKDROP_ID,          // 8
                         ScraperStore.Show.ID,                   // 9
+                        ScraperStore.Show.COVER,                // 10
+                        ScraperStore.Show.BACKDROP,             // 11
                 }, null, null, null);
         if (c != null && c.moveToFirst())
             showId = c.getLong(9);
@@ -1070,6 +1091,8 @@ public class TagsFactory {
         ShowTags showTags = null;
         long posterId = -1;
         long backdropId = -1;
+        String showCover = null;
+        String showBackdrop = null;
         if (c != null) {
             if (c.moveToFirst()) {
                 showTags = new ShowTags();
@@ -1083,6 +1106,10 @@ public class TagsFactory {
                 showTags.setImdbId(c.getString(6));
                 posterId = c.getLong(7);
                 backdropId = c.getLong(8);
+                int coverIdx = c.getColumnIndex(ScraperStore.Show.COVER);
+                if (coverIdx >= 0 && !c.isNull(coverIdx)) showCover = c.getString(coverIdx);
+                int backdropIdx = c.getColumnIndex(ScraperStore.Show.BACKDROP);
+                if (backdropIdx >= 0 && !c.isNull(backdropIdx)) showBackdrop = c.getString(backdropIdx);
             }
             c.close();
         }
@@ -1178,6 +1205,17 @@ public class TagsFactory {
                     allBackdropsSorted.addLast(image);
             }
             showTags.setBackdrops(allBackdropsSorted);
+
+            if (showTags.getPosters() == null || showTags.getPosters().isEmpty()) {
+                if (showCover != null && !showCover.isEmpty()) {
+                    showTags.setCover(new File(showCover));
+                }
+            }
+            if (showTags.getBackdrops() == null || showTags.getBackdrops().isEmpty()) {
+                if (showBackdrop != null && !showBackdrop.isEmpty()) {
+                    showTags.setBackdrop(new File(showBackdrop));
+                }
+            }
         }
         return showTags;
     }

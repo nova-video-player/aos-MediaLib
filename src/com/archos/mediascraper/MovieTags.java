@@ -132,6 +132,14 @@ public class MovieTags extends VideoTags {
     }
 
     @Override
+    public void setBackdrop(File file) {
+        if (file == null) return;
+        if (getBackdrops() == null || getBackdrops().isEmpty()) {
+            setBackdrops(ScraperImage.fromExistingCover(file.getPath(), Type.MOVIE_BACKDROP).asList());
+        }
+    }
+
+    @Override
     public long save(Context context, long videoId) {
         ContentResolver cr = context.getContentResolver();
         //------------------------------------------------------
