@@ -130,8 +130,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private static final String notifChannelDescr = "NetworkScannerServiceVideo";
 
     private static volatile boolean isForeground = true;
+    private static volatile int sFilesFoundCount = 0;
     private Thread mScanThread;
     private Thread mRemoveFilesThread;
+
+    public static int getFilesFoundCount() {
+        return sFilesFoundCount;
+    }
 
     public static boolean startIfHandles(Context context, Intent broadcast) {
         if (log.isDebugEnabled()) log.debug("startIfHandles");
@@ -651,6 +656,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
      */
     ScanResult performScan(Uri what) {
         mFoundFiles = 0;
+        sFilesFoundCount = 0;
         MetaFile2 f = null;
         boolean scanHadDbError = false;
         try {
@@ -675,7 +681,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 scannerIntent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
                 sendBroadcast(scannerIntent);
                 // also show a notification.
-                nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.network_scan_msg)).setContentText(f.getUri().toString()).build());
+                updateScanNotification(f.getUri().toString(), sFilesFoundCount);
 
                 String path;
                 String upnpUri = null;
@@ -732,7 +738,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 final String server = extractSmbServer(f.getUri());
                 final long serverId = getLightIndexServerId(server);
                 FileVisitListener fileVisitListener = new FileVisitListener(
-                        mBlacklist, prescanItemsMap, nfoScanEnabled, bulkHandler, serverId);
+                        mBlacklist, prescanItemsMap, nfoScanEnabled, bulkHandler, serverId, this);
 
                 FileVisitor.visit(f, RECURSION_LIMIT, fileVisitListener);
                 boolean traversalHadError = fileVisitListener.hadListingError();
@@ -804,6 +810,16 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         return new ScanResult((f != null) && !scanHadDbError, scanHadDbError);
     }
 
+    void updateScanNotification(String path, int count) {
+        if (nm != null && nb != null) {
+            String title = (count > 0) ? getString(R.string.network_scan_msg) + " (" + count + ")" : getString(R.string.network_scan_msg);
+            nb.setContentTitle(title)
+              .setContentText(path)
+              .setStyle(new NotificationCompat.BigTextStyle().bigText(path));
+            nm.notify(NOTIFICATION_ID, nb.build());
+        }
+    }
+
     // ---------------------------------------------------------------------- //
     // -- Recursive file scanner magic                                     -- //
     // ---------------------------------------------------------------------- //
@@ -814,12 +830,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         private final boolean mNfoScanEnabled;
         private final long mServerId;
         private final HashSet<String> mAlreadyAddedUpnpFiles; //for files analysed DURING scan process
+        private final NetworkScannerServiceVideo mService;
         private int mStorageId;
 
         private final Blacklist mBlacklist;
 
         public FileVisitListener(Blacklist blacklist, HashMap<String, PrescanItem> prescanItemsMap,
-                boolean nfoScanEnabled, BulkOperationHandler bulkHandler, long serverId) {
+                boolean nfoScanEnabled, BulkOperationHandler bulkHandler, long serverId, NetworkScannerServiceVideo service) {
             if (log.isDebugEnabled()) log.debug("FileVisitListener: serverId={}", serverId);
             mBlacklist = blacklist;
             mPrescanItemsMap = prescanItemsMap;
@@ -827,6 +844,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             mBulkHandler = bulkHandler;
             mServerId = serverId;
             mAlreadyAddedUpnpFiles = new HashSet<>();
+            mService = service;
         }
 
         private boolean mHadListingError;
@@ -880,6 +898,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (ArchosMediaFile.isHiddenFile(file)) return;
             // shortcut for blacklist check for trailer/sample, full should be isBlacklisted
             if (mBlacklist.isFilenameBlacklisted(FileUtils.getName(file.getUri()))) return;
+            sFilesFoundCount++;
+            if (mService != null && (sFilesFoundCount == 1 || sFilesFoundCount % 25 == 0)) {
+                mService.updateScanNotification(file.getUri().toString(), sFilesFoundCount);
+            }
             if (log.isTraceEnabled()) log.trace("FileVisitListener.onFile: File {}", file.getUri().toString());
             String p = file.getUri().toString();
             PrescanItem existingItem = null;
