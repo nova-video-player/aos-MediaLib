@@ -73,6 +73,10 @@ public class ParseUtils {
     // full list of possible countries of origin is available here https://api.themoviedb.org/3/configuration/countries?api_key=051012651ba326cf5b1e2f482342eaa2
     private static final Pattern COUNTRY_OF_ORIGIN = Pattern.compile("(.*)[\\s\\p{Punct}]+\\(((US|UK|FR))\\)(.*)");
 
+    // Validates a standalone roman numeral token (e.g. "iii", "iv"), lowercase only.
+    private static final Pattern ROMAN_NUMERAL_PATTERN =
+            Pattern.compile("^m*(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$");
+
 
     /**
      * Removes leading numbering like "1. A Movie" => "A Movie",
@@ -103,6 +107,23 @@ public class ParseUtils {
         String result = unifyApostrophes(input);
         result = replaceAcronyms(result);
         return StringUtils.replaceAll(result, " ", MULTI_NON_CHARACTER_PATTERN).trim();
+    }
+
+    /**
+     * Returns the last whitespace-delimited token of {@code textLC} (already lowercased) if it is
+     * a standalone, valid roman numeral (e.g. "iii", "iv"), otherwise null. Used to detect
+     * filenames such as "Star Wars III" so their trailing numeral can be matched against
+     * candidate titles.
+     */
+    public static String getTrailingRomanNumeral(String textLC) {
+        if (textLC == null) return null;
+        String trimmed = textLC.trim();
+        if (trimmed.isEmpty()) return null;
+        int idx = trimmed.lastIndexOf(' ');
+        String lastToken = idx == -1 ? trimmed : trimmed.substring(idx + 1);
+        if (lastToken.isEmpty()) return null;
+        if (!ROMAN_NUMERAL_PATTERN.matcher(lastToken).matches()) return null;
+        return lastToken;
     }
 
     public static String removeAfterEmptyParenthesis(String input) {

@@ -350,12 +350,55 @@ public class MovieScraper3 extends BaseScraper2 {
             uniqueResults.put(sr.getId(), sr);
         }
 
+        // ROMAN NUMERAL BOOST (ambiguous distances only):
+        // Filenames like "Star Wars III" often score a worse (higher) Levenshtein distance
+        // against the official "Star Wars: Episode III - Revenge of the Sith" than against an
+        // unrelated but shorter title that happens to also contain "III" (e.g. a parody or
+        // "making of" entry). When the cleaned query ends with a standalone roman numeral,
+        // re-score candidates that contain that same roman numeral as a standalone word using
+        // just the title's head up to the numeral (dropping any subtitle after it), which is
+        // normally a much closer match. "Ambiguous" here means no candidate is already an exact
+        // match (distance 0): those are left untouched, avoiding regressions on titles that
+        // legitimately end in a roman numeral (e.g. "Henry IV", regnal names).
+        String trailingRoman = com.archos.mediascraper.preprocess.ParseUtils.getTrailingRomanNumeral(cleanedNameLC);
+        if (trailingRoman != null) {
+            boolean hasExactMatch = uniqueResults.values().stream().anyMatch(sr -> sr.getLevenshteinDistance() == 0);
+            if (!hasExactMatch) {
+                for (SearchResult sr : uniqueResults.values()) {
+                    int headDistance = romanHeadDistance(cleanedNameLC, sr.getTitle(), trailingRoman, levenshteinDistance);
+                    int headDistanceOrig = romanHeadDistance(cleanedNameLC, sr.getOriginalTitle(), trailingRoman, levenshteinDistance);
+                    int bestHeadDistance = Math.min(headDistance, headDistanceOrig);
+                    if (bestHeadDistance < sr.getLevenshteinDistance()) {
+                        if (log.isDebugEnabled()) log.debug("getMatches2: roman numeral head match for {} ({}), boosting distance {} -> {}", sr.getTitle(), sr.getId(), sr.getLevenshteinDistance(), bestHeadDistance);
+                        sr.setLevenshteinDistance(bestHeadDistance);
+                    }
+                }
+            } else {
+                if (log.isDebugEnabled()) log.debug("getMatches2: trailing roman numeral '{}' found but an exact match already exists, skipping boost", trailingRoman);
+            }
+        }
 
         List<SearchResult> sortedResults = new ArrayList<>(uniqueResults.values());
         Collections.sort(sortedResults, com.archos.mediascraper.themoviedb3.SearchParserResult.comparator);
 
         //Return the rest we got.
         return new ScrapeSearchResult(sortedResults, true, ScrapeStatus.OKAY, null);
+    }
+
+    /**
+     * Looks for {@code romanNumeralLC} as a standalone word within {@code title}, and if found,
+     * returns the Levenshtein distance between {@code queryLC} and the title's head up to and
+     * including that numeral (i.e. the title with any trailing subtitle dropped). Returns
+     * Integer.MAX_VALUE if the title is null or does not contain the numeral as a standalone word.
+     */
+    private static int romanHeadDistance(String queryLC, String title, String romanNumeralLC,
+                                          org.apache.commons.text.similarity.LevenshteinDistance levenshteinDistance) {
+        if (title == null) return Integer.MAX_VALUE;
+        String titleLC = title.toLowerCase();
+        Matcher matcher = Pattern.compile("(?<![a-z0-9])" + Pattern.quote(romanNumeralLC) + "(?![a-z0-9])").matcher(titleLC);
+        if (!matcher.find()) return Integer.MAX_VALUE;
+        String head = titleLC.substring(0, matcher.end());
+        return levenshteinDistance.apply(queryLC, head);
     }
 
     private String getTitleHead(String name) {

@@ -188,6 +188,22 @@ Example:
 
 `SearchShowParser` detects this convention via `isAcronymHeadMatch`: it trims whitespace around the first `:` in the candidate's title/original title and, if the resulting head exactly equals the query, forces the Levenshtein distance to `0` for that candidate. Trimming (rather than requiring `": "` literally) also covers locales such as French that space the colon (`"ACRONYM : Subtitle"`).
 
+### 5.5 Trailing Roman Numeral Head Boost (Movies)
+Numbered franchise entries are often released/scraped as just `Title N` (roman numeral), while TMDb's actual title carries the full `Title: Episode N - Subtitle` form. Raw Levenshtein distance penalizes the correct long title against an unrelated but shorter candidate that happens to also contain the same roman numeral (e.g. a parody or "making of" entry).
+
+Example:
+
+- `Star.Wars.III.[1080p].MULTi.(2005).BluRay.x264-PopHD.(La.revanche.des.siths.3).mkv`
+- Cleaned query `Star Wars III`.
+- Distance to the correct `Star Wars: Episode III - Revenge of the Sith` (TMDb id `1895`) is 31; distance to the unrelated `The Robot Chicken: Star Wars Episode III` (id `51888`) is only 27.
+- Without correction, the Robot Chicken entry wins.
+
+`MovieScraper3` detects a standalone roman numeral at the end of the cleaned query via `ParseUtils.getTrailingRomanNumeral()`. If no candidate is already an exact match (distance `0`), candidates whose title/original title contain that same numeral as a standalone word are re-scored using only the title's head up to and including the numeral (dropping any trailing subtitle); the boosted distance replaces the original only if it is strictly lower.
+
+The boost is skipped outright whenever an exact match already exists, so it never touches an already-decisive result. This protects titles that legitimately end in a roman numeral, such as `Henry IV` or other regnal names, from being second-guessed.
+
+This only helps when the roman numeral literally appears in TMDb's title text. It cannot resolve cases like `Star.Wars.V`/`Star.Wars.VI`, whose correct TMDb titles are `The Empire Strikes Back` / `Return of the Jedi` — no numeral appears anywhere in that text, so no string-distance approach can bridge it; that would require a separate franchise-collection/chronology lookup instead.
+
 ---
 
 ## 6. Special Episodes Handling (TV Shows)

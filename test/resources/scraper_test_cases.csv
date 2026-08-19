@@ -149,3 +149,23 @@ DuckTales (1987)/S02 (1988)/Ducktales - S02E01 - Time is Money 1, Marking Time.m
 # ShowScraper4.getDetailsInternal that retries a failed season/episode + fuzzy-title lookup
 # against season 0, keeping the returned tag numbered s1e12 to match the local file.
 ./Firefly/Firefly-s01/Firefly-s01e12-Heart_of_Gold.avi|Show|Firefly|1437|en
+Rogue One - A Star Wars Story (2016) MULTi VF2 [1080p] BluRay x264-PopHD.mkv|Movie|Rogue One: A Star Wars Story|330459|en
+# "Starwars" (no space/dot before the digit) is not split off as its own word by the cleaner,
+# so the digit stays glued to the show name (e.g. "starwars 1"), which either finds nothing or
+# matches an unrelated fan-made title. This is a separate filename-tokenization issue, not
+# something the roman-numeral head-boost below addresses (these don't even use roman numerals).
+# Starwars 1 - La Menace Fantôme - 1080p FR EN x264 ac3 mHDgz.mkv|Movie|Star Wars: Episode I - The Phantom Menace|1893|en
+# Starwars 2 - L'attaque Des Clones - 1080p FR EN x264 ac3 mHDgz.mkv|Movie|Star Wars: Episode II - Attack of the Clones|1894|en
+# Starwars 3 - La Revanche Des Sith - 1080p FR EN x264 ac3 mHDgz.mkv|Movie|Star Wars: Episode III - Revenge of the Sith|1895|en
+Star.Wars.I.[1080p].MULTi.(1999).BluRay.x264-PopHD.(La.menace.fantome.1).mkv|Movie|Star Wars: Episode I - The Phantom Menace|1893|en
+Star.Wars.II.[1080p].MULTi.(2002).BluRay.x264-PopHD(L.attaque.des.clones.2).mkv|Movie|Star Wars: Episode II - Attack of the Clones|1894|en
+Star.Wars.III.[1080p].MULTi.(2005).BluRay.x264-PopHD.(La.revanche.des.siths.3).mkv|Movie|Star Wars: Episode III - Revenge of the Sith|1895|en
+Star.Wars.IV.[1080p].MULTi.(1977).BluRay.x264-PopHD(Un.nouvel.espoir.4).mkv|Movie|Star Wars|11|en
+Star Wars The Clone Wars 2008 Multi-VF2 1080p BluRay x264-PopHD.mkv|Movie|Star Wars: The Clone Wars|12180|en
+# Star.Wars.V/VI: TMDb's actual title/original_title for these is "The Empire Strikes Back" /
+# "Return of the Jedi" - no roman numeral (or digit) appears anywhere in the title text, so no
+# string-distance based matching (roman-numeral head-boost included) can ever resolve them; doing
+# so would require fetching the movie's belongs_to_collection and picking the Nth entry by release
+# date, a separate franchise-chronology feature.
+# Star.Wars.V.[1080p].MULTi.(1980).BluRay.x264-PopHD(L.empire.contre.attaque.5).mkv|Movie|The Empire Strikes Back|1891|en
+# Star.Wars.VI.[1080p].MULTi.(1983).BluRay.x264-PopHD(Le.retour.du.Jedi.6).mkv|Movie|Return of the Jedi|1892|en
