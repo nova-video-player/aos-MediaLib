@@ -793,7 +793,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 //Also checks network. We can scrape off 5G, but cant load local NFOs (obviously)
                                 //Question is, do we wait for NFO or just fallback to TMDB?
                                 // TODO: I think fallback is better, and was how NoVa worked previously.
-                                if (!LoaderUtils.getScrapeInProgress() || !NetworkState.isLocalNetworkConnected(AutoScrapeService.this) || !NetworkState.isNetworkConnected(AutoScrapeService.this)) {
+                                if (!LoaderUtils.getScrapeInProgress() ||
+                                        (!NetworkState.isLocalNetworkConnected(AutoScrapeService.this) && !NetworkState.isNetworkConnected(AutoScrapeService.this))) {
                                     sNumberOfFilesRemainingToProcess = 0;
                                     log.debug("startScraping disconnected from network or stop requested");
                                     return;
