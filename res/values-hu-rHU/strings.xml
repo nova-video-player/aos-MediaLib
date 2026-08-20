@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">Teljes újrafeldolgozás</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">trakt szinkronizálás nem lehetséges</string>
+    <string name="trakt_toast_account_locked">A Trakt fiók zárolva. A szinkronizálás letiltva. A funkció újraengedélyezéséhez kérjük, végezzen új hitelesítést a beállításokban.</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Nincs SD kártya</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,4 +140,5 @@
     <string name="scraping_in_progress">Keresés folyamatban</string>
     <string name="remaining_videos_to_process">A még feldolgozandó médiafájlok:</string>
     <string name="video_store_import">Helyi médiafájlok importálása</string>
+    <string name="current_video_title">Jelenlegi:</string>
 </resources>
