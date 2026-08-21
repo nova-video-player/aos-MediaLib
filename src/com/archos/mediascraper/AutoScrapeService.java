@@ -162,9 +162,11 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     public static void startService(Context context) {
         if (log.isDebugEnabled()) log.debug("startService in foreground");
         mContext = context.getApplicationContext();
-        Intent intent = new Intent(context, AutoScrapeService.class);
-        mContext = context;
-        context.startService(new Intent(context, AutoScrapeService.class));
+        try {
+            context.startService(new Intent(context, AutoScrapeService.class));
+        } catch (Exception e) {
+            log.warn("startService: Failed to start AutoScrapeService - timing or background restriction issue", e);
+        }
     }
 
     public static void startServiceAfterNetworkScan(Context context) {
@@ -172,7 +174,11 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         mContext = context.getApplicationContext();
         Intent intent = new Intent(context, AutoScrapeService.class);
         intent.putExtra("FORCE_AFTER_NETWORK_SCAN", true);
-        context.startService(intent);
+        try {
+            context.startService(intent);
+        } catch (Exception e) {
+            log.warn("startServiceAfterNetworkScan: Failed to start AutoScrapeService - timing or background restriction issue", e);
+        }
     }
 
     /**
