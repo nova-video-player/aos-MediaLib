@@ -83,6 +83,23 @@ public class NetworkScannerServiceVideoTest {
         assertEquals(0, AutoScrapeService.getNetworkScanCount());
     }
 
+    @Test
+    public void updateScanNotificationFormatingUsesDirectoryPathAndCount() {
+        final String[] updatedPath = new String[1];
+        final int[] updatedCount = new int[1];
+        NetworkScannerServiceVideo service = new NetworkScannerServiceVideo() {
+            @Override
+            void updateScanNotification(String path, int count) {
+                updatedPath[0] = path;
+                updatedCount[0] = count;
+            }
+        };
+
+        service.updateScanNotification("smb://server/share/folder/", 25);
+        assertEquals("smb://server/share/folder/", updatedPath[0]);
+        assertEquals(25, updatedCount[0]);
+    }
+
     @SuppressWarnings("unchecked")
     private static ConcurrentHashMap<String, Object> queuedRequests(
             NetworkScannerServiceVideo service) throws Exception {

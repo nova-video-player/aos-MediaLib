@@ -742,6 +742,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
                 FileVisitor.visit(f, RECURSION_LIMIT, fileVisitListener);
                 boolean traversalHadError = fileVisitListener.hadListingError();
+
+                String finalDir = fileVisitListener.getLastNotifiedDirectory();
+                if (finalDir == null) finalDir = f.getUri().toString();
+                updateScanNotification(finalDir, sFilesFoundCount);
                                   
                 // once all files where visited we have inserted, updated or deleted files in the db.
                 // Nfo has also been processed
@@ -857,9 +861,18 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             return mHadListingError;
         }
 
+        private String mLastNotifiedDirectory = null;
+
+        public String getLastNotifiedDirectory() {
+            return mLastNotifiedDirectory;
+        }
+
         @Override
         public void onStart(MetaFile2 root) {
             mStorageId = getStorageId(root.getUri().toString());
+            if (root != null && root.getUri() != null) {
+                mLastNotifiedDirectory = root.getUri().toString();
+            }
         }
 
         @Override
@@ -886,6 +899,14 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 return false;
             }
 
+            if (mService != null && directory != null && directory.getUri() != null) {
+                String dirPath = directory.getUri().toString();
+                if (!dirPath.equals(mLastNotifiedDirectory)) {
+                    mLastNotifiedDirectory = dirPath;
+                    mService.updateScanNotification(dirPath, sFilesFoundCount);
+                }
+            }
+
             // everything else is scanned
             return true;
         }
@@ -899,8 +920,15 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             // shortcut for blacklist check for trailer/sample, full should be isBlacklisted
             if (mBlacklist.isFilenameBlacklisted(FileUtils.getName(file.getUri()))) return;
             sFilesFoundCount++;
-            if (mService != null && (sFilesFoundCount == 1 || sFilesFoundCount % 25 == 0)) {
-                mService.updateScanNotification(file.getUri().toString(), sFilesFoundCount);
+            if (mService != null) {
+                String dirPath = FileUtils.getParentUrl(file.getUri().toString());
+                if (dirPath == null) dirPath = file.getUri().toString();
+                boolean isNewDir = !dirPath.equals(mLastNotifiedDirectory);
+                boolean isCountMilestone = (sFilesFoundCount == 1 || sFilesFoundCount % 25 == 0);
+                if (isNewDir || isCountMilestone) {
+                    mLastNotifiedDirectory = dirPath;
+                    mService.updateScanNotification(dirPath, sFilesFoundCount);
+                }
             }
             if (log.isTraceEnabled()) log.trace("FileVisitListener.onFile: File {}", file.getUri().toString());
             String p = file.getUri().toString();
