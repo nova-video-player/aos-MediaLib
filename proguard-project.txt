@@ -1,16 +1,7 @@
-#### JNI-bound classes (native callbacks and field handles) ####
--keep class com.archos.medialib.AvosMediaPlayer {
-  private void postEventFromNative(java.lang.Object, int, int, int, java.lang.Object);
-  private long mMediaPlayerHandle;
-  private long mNativeWindowHandle;
-}
--keep class com.archos.medialib.Subtitle {
-  public java.lang.Object createTimedTextSubtitle(int, int, java.lang.String);
-  public java.lang.Object createTimedBitmapSubtitle(int, int, int, int, int, int, android.graphics.Bitmap);
-}
--keep class com.archos.medialib.AvosMediaMetadataRetriever {
-  private long mMediaMetadataRetrieverHandle;
-}
+#### JNI-bound & project internal classes ####
+-keep class com.archos.medialib.** { *; }
+-keep class com.archos.mediaprovider.** { *; }
+-keep class com.archos.mediascraper.** { *; }
 
 #### TMDb / Trakt JSON entities (Gson/Retrofit reflection targets) ####
 -keep class com.uwetrottmann.trakt5.entities.** { *; }
