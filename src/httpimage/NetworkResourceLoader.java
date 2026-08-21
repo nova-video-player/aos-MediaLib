@@ -20,26 +20,15 @@
 package httpimage;
 
 import java.io.IOException;
-import java.net.ProxySelector;
-
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.config.Registry;
-import org.apache.hc.core5.http.config.RegistryBuilder;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import android.net.Uri;
 import android.util.Log;
 
-
 /**
- * resource loader using apache HTTP client. Support HTTP and HTTPS request.
+ * Resource loader using standard Android HttpURLConnection. Supports HTTP and HTTPS requests.
  * 
  * @author zonghai@gmail.com
  */
@@ -47,86 +36,56 @@ public class NetworkResourceLoader {
     public static final String TAG = "NetworkResourceLoader";
     public static final boolean DEBUG = false;
 
-    private CloseableHttpClient mHttpClient = createHttpClient();
+    public static class Response implements AutoCloseable {
+        private final HttpURLConnection mConnection;
+        private final InputStream mInputStream;
 
-    
-    /**
-     * Gets the input stream from a response entity. If the entity is gzipped then this will get a
-     * stream over the uncompressed data.
-     *
-     * @param entity the entity whose content should be read
-     * @return the input stream to read from
-     * @throws IOException
-     */
-    public CloseableHttpResponse load (Uri uri) throws IOException{
+        public Response(HttpURLConnection connection) throws IOException {
+            mConnection = connection;
+            int responseCode = connection.getResponseCode();
+            if (responseCode >= 400) {
+                throw new IOException("HTTP error code: " + responseCode);
+            }
+            mInputStream = connection.getInputStream();
+        }
+
+        public String getContentType() {
+            return mConnection.getContentType();
+        }
+
+        public String getContentEncoding() {
+            return mConnection.getContentEncoding();
+        }
+
+        public long getContentLength() {
+            return mConnection.getContentLengthLong();
+        }
+
+        public InputStream getInputStream() {
+            return mInputStream;
+        }
+
+        @Override
+        public void close() {
+            if (mInputStream != null) {
+                try {
+                    mInputStream.close();
+                } catch (IOException ignored) {}
+            }
+            if (mConnection != null) {
+                mConnection.disconnect();
+            }
+        }
+    }
+
+    public Response load(Uri uri) throws IOException {
         if (DEBUG) Log.d(TAG, "Requesting: " + uri);
-        HttpGet httpGet = new HttpGet(uri.toString());
-        httpGet.addHeader("Accept-Encoding", "gzip");
-        
-        return mHttpClient.execute(httpGet);
-
+        URL url = new URL(uri.toString());
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(20000);
+        conn.setRequestProperty("Accept-Encoding", "gzip");
+        conn.setInstanceFollowRedirects(true);
+        return new Response(conn);
     }
-
-    
-    /**
-     * Create a thread-safe client. This client does not do redirecting, to allow us to capture
-     * correct "error" codes.
-     *
-     * @return HttpClient
-     */
-    //public final HttpClient createHttpClient() {
-    public final CloseableHttpClient createHttpClient() {
-
-        if (DEBUG) Log.d(TAG, "createHttpClient");
-
-
-        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("https", SSLConnectionSocketFactory.getSocketFactory())
-                .register("http", new PlainConnectionSocketFactory())
-                .build();
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-        HttpClients.custom().setConnectionManager(connectionManager);
-        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(connectionManager)
-                .setRoutePlanner(new SystemDefaultRoutePlanner(ProxySelector.getDefault()))
-                .build();
-
-        return httpClient;
-
-        /*
-        HttpParams params = new BasicHttpParams();
-        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);  
-        HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);  
-        HttpProtocolParams.setUseExpectContinue(params, true);  
-        // Turn off stale checking. Our connections break all the time anyway,
-        // and it's not worth it to pay the penalty of checking every time.
-        HttpConnectionParams.setStaleCheckingEnabled(params, false);
-
-        // Default connection and socket timeout of 30 seconds. Tweak to taste.
-        HttpConnectionParams.setConnectionTimeout(params, 10*1000);
-        HttpConnectionParams.setSoTimeout(params, 20*1000);
-        HttpConnectionParams.setSocketBufferSize(params, 8192);
-        
-        ConnManagerParams.setTimeout(params, 5 * 1000);
-        ConnManagerParams.setMaxConnectionsPerRoute(params, new ConnPerRouteBean(50));
-        ConnManagerParams.setMaxTotalConnections(params, 200);
-        
-        // Sets up the http part of the service.
-        final SchemeRegistry supportedSchemes = new SchemeRegistry();
-
-        // Register the "http" protocol scheme, it is required
-        // by the default operator to look up socket factories.
-        final SocketFactory sf = PlainSocketFactory.getSocketFactory();
-        supportedSchemes.register(new Scheme("http", sf, 80));
-        supportedSchemes.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));  
-        final ThreadSafeClientConnManager ccm = new ThreadSafeClientConnManager(params,
-                supportedSchemes);
-        
-        DefaultHttpClient httpClient = new DefaultHttpClient(ccm, params);
-        
-        httpClient.setHttpRequestRetryHandler(new DefaultHttpRequestRetryHandler(3, true));
-        
-        return httpClient;
-         */
-    }
-
 }

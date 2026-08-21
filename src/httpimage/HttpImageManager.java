@@ -33,9 +33,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpEntity;
+
 
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -324,40 +322,26 @@ public class HttpImageManager{
                             long millis = System.currentTimeMillis();
                             
                             byte[] binary = null;
-                            //HttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
-                            CloseableHttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
-
-                            Header[] headers = httpResp.getHeaders();
-                            for (Header header : headers) {
-                                if(DEBUG) Log.i(TAG, header.toString());
-                                if (header.getName().equalsIgnoreCase("Content-Type") && !header.getValue().startsWith("image"))
+                            try (NetworkResourceLoader.Response response = mNetworkResourceLoader.load(request.getUri())) {
+                                String contentType = response.getContentType();
+                                if (contentType != null && !contentType.startsWith("image")) {
                                     throw new RuntimeException("data from remote can't be decoded to bitmap");
-                            }
+                                }
 
-                            HttpEntity entity = httpResp.getEntity();
-                            if (entity != null) {
-                                InputStream responseStream = entity.getContent();
+                                InputStream responseStream = response.getInputStream();
                                 try {
-                                    /*
-                                    Header header = entity.getContentEncoding();
-                                    String contentEncoding = entity.getContentEncoding();
-                                    if (header != null && header.getValue() != null && header.getValue().contains("gzip")) {
-                                        responseStream =  new GZIPInputStream(responseStream);
-                                    }
-                                     */
-                                    String contentEncoding = entity.getContentEncoding();
+                                    String contentEncoding = response.getContentEncoding();
                                     if (DEBUG) Log.d(TAG, "contentEncoding=" + contentEncoding);
-                                    if (contentEncoding != null && contentEncoding.length() >0 && contentEncoding.contains("gzip")) {
-                                        responseStream =  new GZIPInputStream(responseStream);
+                                    if (contentEncoding != null && contentEncoding.length() > 0 && contentEncoding.contains("gzip")) {
+                                        responseStream = new GZIPInputStream(responseStream);
                                     }
 
-                                    responseStream = new FlushedInputStream(responseStream); //patch the inputstream
-                                    long contentSize = entity.getContentLength();
-                                    binary = readInputStreamProgressively(responseStream, (int)contentSize, request);
+                                    responseStream = new FlushedInputStream(responseStream); // patch the inputstream
+                                    long contentSize = response.getContentLength();
+                                    binary = readInputStreamProgressively(responseStream, (int) contentSize, request);
                                     data = BitmapUtil.decodeByteArray(binary, mMaxNumOfPixelsConstraint);
-                                } 
-                                finally {
-                                    if(responseStream != null) {
+                                } finally {
+                                    if (responseStream != null) {
                                         try { responseStream.close(); } catch (IOException e) {}
                                     }
                                 }

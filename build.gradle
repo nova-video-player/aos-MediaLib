@@ -156,11 +156,7 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.8.0'
     implementation 'androidx.preference:preference:1.2.1'
-    // WARNING: Do NOT upgrade httpclient5 beyond 5.5.1 - Android incompatible!
-    // Version 5.5.2+ crashes at app startup with NoSuchMethodError on jdk.net.Sockets.supportedOptions()
-    // This JDK-specific API (used for TCP keepalive socket options) does not exist in Android runtime
-    // See: DefaultHttpClientConnectionOperator line 87 in httpclient5 source
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.5.1'
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
     implementation 'org.json:json:20260814'
     // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     //implementation ('com.github.nova-video-player:trakt-java:0.0.1') {
