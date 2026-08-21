@@ -156,7 +156,7 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.8.0'
     implementation 'androidx.preference:preference:1.2.1'
-    implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.4.3'
     implementation 'org.json:json:20260814'
     // see https://github.com/UweTrottmann/trakt-java?tab=readme-ov-file for threetenabp instead of threetenbp
     //implementation ('com.github.nova-video-player:trakt-java:0.0.1') {
