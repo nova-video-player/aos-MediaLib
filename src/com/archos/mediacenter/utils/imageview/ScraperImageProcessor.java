@@ -16,11 +16,11 @@
 package com.archos.mediacenter.utils.imageview;
 
 import android.content.Context;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 
+import com.archos.mediacenter.utils.BitmapUtils;
 import com.archos.mediacenter.utils.imageview.LoadResult.Status;
 import com.archos.mediascraper.ScraperImage;
 
@@ -38,7 +38,7 @@ public class ScraperImageProcessor extends ImageProcessor {
             String file = image.getLargeFile();
             if (file != null) {
                 image.download(mContext);
-                taskItem.result.bitmap = BitmapFactory.decodeFile(file);
+                taskItem.result.bitmap = BitmapUtils.decodeSampledBitmapFromFile(file, 500, 750);
             }
             taskItem.result.status = taskItem.result.bitmap != null ?
                     Status.LOAD_OK : Status.LOAD_ERROR;
