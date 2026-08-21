@@ -654,6 +654,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
      * storage failures are handled gracefully; unexpected database errors are reported to
      * Sentry but still handled so the caller can always complete the batch.
      */
+    private String mCurrentRootUri = null;
+
     ScanResult performScan(Uri what) {
         mFoundFiles = 0;
         sFilesFoundCount = 0;
@@ -665,6 +667,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             log.error("doScan: caught Exception failed to get MetaFile for {}", what, e);
         }
         if (f != null) {
+            mCurrentRootUri = f.getUri().toString();
             if (log.isDebugEnabled()) log.debug("doScan path resolved to:{}", f.getUri().toString());
             ContentResolver cr = getContentResolver();
 
@@ -814,12 +817,68 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         return new ScanResult((f != null) && !scanHadDbError, scanHadDbError);
     }
 
+    public static String[] formatNotificationBody(String rootUriStr, String currentPathStr) {
+        if (currentPathStr == null || currentPathStr.isEmpty()) {
+            return new String[] { rootUriStr != null ? rootUriStr : "", "/" };
+        }
+        String root = (rootUriStr != null && !rootUriStr.isEmpty()) ? rootUriStr : currentPathStr;
+
+        String normRoot = root.endsWith("/") && root.length() > 1 ? root.substring(0, root.length() - 1) : root;
+        String normCurrent = currentPathStr.endsWith("/") && currentPathStr.length() > 1 ? currentPathStr.substring(0, currentPathStr.length() - 1) : currentPathStr;
+
+        String shareLine = normRoot;
+        String subDirLine = "/";
+
+        if (normCurrent.startsWith(normRoot)) {
+            String rel = normCurrent.substring(normRoot.length());
+            if (!rel.isEmpty()) {
+                subDirLine = rel.startsWith("/") ? rel : "/" + rel;
+            }
+        } else {
+            try {
+                Uri uri = Uri.parse(currentPathStr);
+                String scheme = uri.getScheme();
+                if (scheme != null && !scheme.equals("file") && !scheme.equals("content")) {
+                    List<String> segments = uri.getPathSegments();
+                    if (segments != null && !segments.isEmpty()) {
+                        String shareName = segments.get(0);
+                        String host = uri.getHost();
+                        int port = uri.getPort();
+                        StringBuilder shareSb = new StringBuilder(scheme).append("://").append(host != null ? host : "");
+                        if (port > 0) shareSb.append(":").append(port);
+                        shareSb.append("/").append(shareName);
+                        shareLine = shareSb.toString();
+
+                        StringBuilder subSb = new StringBuilder();
+                        for (int i = 1; i < segments.size(); i++) {
+                            subSb.append("/").append(segments.get(i));
+                        }
+                        subDirLine = subSb.length() > 0 ? subSb.toString() : "/";
+                    }
+                } else {
+                    shareLine = currentPathStr;
+                }
+            } catch (Exception e) {
+                shareLine = currentPathStr;
+            }
+        }
+
+        return new String[] { shareLine, subDirLine };
+    }
+
     void updateScanNotification(String path, int count) {
         if (nm != null && nb != null) {
             String title = (count > 0) ? getString(R.string.network_scan_msg) + " (" + count + ")" : getString(R.string.network_scan_msg);
+            String[] bodyLines = formatNotificationBody(mCurrentRootUri, path);
+            String shareLine = bodyLines[0];
+            String subDirLine = bodyLines[1];
+
+            String contentText = shareLine + " - " + subDirLine;
+            String bigText = shareLine + "\n" + subDirLine;
+
             nb.setContentTitle(title)
-              .setContentText(path)
-              .setStyle(new NotificationCompat.BigTextStyle().bigText(path));
+              .setContentText(contentText)
+              .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText));
             nm.notify(NOTIFICATION_ID, nb.build());
         }
     }

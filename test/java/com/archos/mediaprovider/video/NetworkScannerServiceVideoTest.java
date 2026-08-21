@@ -100,6 +100,33 @@ public class NetworkScannerServiceVideoTest {
         assertEquals(25, updatedCount[0]);
     }
 
+    @Test
+    public void formatNotificationBodySplitsShareAndSubdir() {
+        String[] lines = NetworkScannerServiceVideo.formatNotificationBody(
+                "smb://server/share",
+                "smb://server/share/Movies/Action"
+        );
+        assertEquals("smb://server/share", lines[0]);
+        assertEquals("/Movies/Action", lines[1]);
+
+        String[] rootLines = NetworkScannerServiceVideo.formatNotificationBody(
+                "smb://server/share",
+                "smb://server/share"
+        );
+        assertEquals("smb://server/share", rootLines[0]);
+        assertEquals("/", rootLines[1]);
+    }
+
+    @Test
+    public void formatNotificationBodyPreservesPortNumbers() {
+        String[] lines = NetworkScannerServiceVideo.formatNotificationBody(
+                "upnp://192.168.1.50:50001/v/Media",
+                "upnp://192.168.1.50:50001/v/Media/Movies"
+        );
+        assertEquals("upnp://192.168.1.50:50001/v/Media", lines[0]);
+        assertEquals("/Movies", lines[1]);
+    }
+
     @SuppressWarnings("unchecked")
     private static ConcurrentHashMap<String, Object> queuedRequests(
             NetworkScannerServiceVideo service) throws Exception {
