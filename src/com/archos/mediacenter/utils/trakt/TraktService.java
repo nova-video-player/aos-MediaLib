@@ -2187,79 +2187,88 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                 intent.putExtra("messenger", mMessenger);
             return intent;
         }
+        private void startService(Intent intent, boolean checkForeground) {
+            if (!checkForeground || isForeground) {
+                try {
+                    mContext.startService(intent);
+                } catch (Exception e) {
+                    log.warn("Failed to start TraktService", e);
+                }
+            }
+        }
+
         public void watching(long videoID, float progress) {
             if (log.isDebugEnabled()) log.debug("watching: send INTENT_ACTION_WATCHING");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoID, progress, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void watchingStop(long videoID, float progress) {
             if (log.isDebugEnabled()) log.debug("watchingStop: send INTENT_ACTION_WATCHING_STOP");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoID, progress, null);
             // Should not check if isForeGround in this specific case in order to allow posting watch status when exiting
             // video playback with home button to save state but with Android restrictions, do not do it because foreground services banned
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void watchingPause(long videoID, float progress) {
             if (log.isDebugEnabled()) log.debug("watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_PAUSE, videoID, progress, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void watching(VideoDbInfo videoInfo, float progress) {
             if (log.isDebugEnabled()) log.debug("watching: send INTENT_ACTION_WATCHING");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING, videoInfo, progress, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void watchingStop(VideoDbInfo videoInfo, float progress) {
             if (log.isDebugEnabled()) log.debug("watchingStop: send INTENT_ACTION_WATCHING_STOP");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_STOP, videoInfo, progress, null);
             // do not check if isForeGround in this specific case in order to allow posting watch status when exiting
             // video playback with home button to save state
-            //if (isForeground) mContext.startService(intent);
-            mContext.startService(intent);
+            startService(intent, false);
         }
         public void watchingPause(VideoDbInfo videoInfo, float progress) {
             if (log.isDebugEnabled()) log.debug("watchingPause: send INTENT_ACTION_WATCHING_PAUSE");
             Intent intent = prepareIntent(INTENT_ACTION_WATCHING_PAUSE, videoInfo, progress, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void markAs(VideoDbInfo videoInfo, String traktAction) {
             if (log.isDebugEnabled()) log.debug("markAs: send INTENT_ACTION_MARK_AS");
             Intent intent = prepareIntent(INTENT_ACTION_MARK_AS, videoInfo, -1, traktAction);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void wipe() {
             if (log.isDebugEnabled()) log.debug("wipe: send INTENT_ACTION_WIPE");
             Intent intent = prepareIntent(INTENT_ACTION_WIPE, null, -1, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void wipeCollection() {
             if (log.isDebugEnabled()) log.debug("wipeCollection: send INTENT_ACTION_WIPE_COLLECTION");
             Intent intent = prepareIntent(INTENT_ACTION_WIPE_COLLECTION, null, -1, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void fullSync() {
             if (log.isDebugEnabled()) log.debug("fullSync: send INTENT_ACTION_SYNC");
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", FLAG_SYNC_FULL);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
         public void sync(int flag) {
             if (log.isDebugEnabled()) log.debug("sync: send INTENT_ACTION_SYNC");
             Intent intent = prepareIntent(INTENT_ACTION_SYNC, null, -1, null);
             intent.putExtra("flag_sync", flag);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
 
         public void forcePush() {
             if (log.isDebugEnabled()) log.debug("forcePush: send INTENT_ACTION_FORCE_PUSH");
             Intent intent = prepareIntent(INTENT_ACTION_FORCE_PUSH, null, -1, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
 
         public void forcePull() {
             if (log.isDebugEnabled()) log.debug("forcePull: send INTENT_ACTION_FORCE_PULL");
             Intent intent = prepareIntent(INTENT_ACTION_FORCE_PULL, null, -1, null);
-            if (isForeground) mContext.startService(intent);
+            startService(intent, true);
         }
     }
 
