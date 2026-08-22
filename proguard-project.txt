@@ -23,4 +23,6 @@
 -dontwarn retrofit2.KotlinExtensions
 -dontwarn retrofit2.KotlinExtensions$*
 
+#### Jetty / UPnP ####
 -keep class org.eclipse.jetty.** { *; }
+-keep class org.jupnp.** { *; }
