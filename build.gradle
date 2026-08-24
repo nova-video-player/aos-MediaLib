@@ -104,6 +104,7 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
         unitTests.all {
+            systemProperty 'nova.test.mediaDbPath', System.getProperty('nova.test.mediaDbPath')
             testLogging {
                 events "passed", "skipped", "failed", "standardOut", "standardError"
                 outputs.upToDateWhen {false}
