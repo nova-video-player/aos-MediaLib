@@ -80,6 +80,8 @@ public class VideoStoreImportImpl {
     private static final String MediaColumnsDATA = MediaColumns.DATA;
 
     private static final int WINDOW_SIZE = 2500;
+    // Rows hidden longer than this are purged from files_import instead of kept forever (see #1909)
+    private static final long HIDDEN_FILES_RETENTION_SECONDS = 30L * 24 * 3600;
     private static String BLACKLIST;
     private static String sdCardPath = "";
 
@@ -1557,6 +1559,8 @@ public class VideoStoreImportImpl {
      * drive is still reconnecting.
      */
     private void updateVolumeHiddenStates(String existingFiles) {
+        purgeExpiredHiddenFiles();
+
         if (!remoteProjectionHasStorageId()) {
             // Post-Android P: Use path-based volume detection
             updateVolumeHiddenStatesByPath(existingFiles);
@@ -1597,6 +1601,19 @@ public class VideoStoreImportImpl {
                 if (log.isDebugEnabled()) log.debug("updateVolumeHiddenStates: unhidden {} rows", presentCount);
             }
         }
+    }
+
+    /**
+     * Permanently remove rows that have been hidden for more than a month. Hidden rows are kept
+     * around temporarily so that transient unmounts (USB power-saving, slow remount, MediaStore
+     * indexing delays) don't cause data loss, but without this purge the historical backlog of
+     * hidden rows grows without bound and every future import pass pays the cost of scanning it.
+     */
+    private void purgeExpiredHiddenFiles() {
+        long cutoff = System.currentTimeMillis() / 1000 - HIDDEN_FILES_RETENTION_SECONDS;
+        int purged = mCr.delete(VideoStoreInternal.FILES_IMPORT,
+                "volume_hidden > 0 AND volume_hidden < ?", new String[]{String.valueOf(cutoff)});
+        if (log.isDebugEnabled()) log.debug("purgeExpiredHiddenFiles: purged {} rows hidden before {}", purged, cutoff);
     }
 
     private Set<Integer> getMountedReadableStorageIds() {
@@ -1696,9 +1713,12 @@ public class VideoStoreImportImpl {
             hideFilesFromVolumes(unmountedVolumePaths, now);
         }
 
-        // Unhide files from mounted volumes
-        if (!mountedVolumePaths.isEmpty()) {
-            unhideFilesFromVolumes(mountedVolumePaths);
+        // Unhide files from mounted volumes, but only those MediaStore currently confirms are
+        // present. Unhiding unconditionally here would make every hidden file (including ones
+        // about to be re-hidden a few lines below because they are genuinely gone) flash back to
+        // visible for the duration of this import pass, causing deleted files to flicker in the UI.
+        if (!mountedVolumePaths.isEmpty() && !TextUtils.isEmpty(existingFiles)) {
+            unhideFilesFromVolumes(mountedVolumePaths, existingFiles);
         }
 
         // For recently mounted volumes: Delete missing files more aggressively
@@ -1737,13 +1757,16 @@ public class VideoStoreImportImpl {
         if (log.isDebugEnabled()) log.debug("hideFilesFromVolumes: hidden {} files from unmounted volumes", hidden);
     }
 
-    private void unhideFilesFromVolumes(List<String> volumePaths) {
-        if (volumePaths.isEmpty()) return;
+    private void unhideFilesFromVolumes(List<String> volumePaths, String existingFiles) {
+        if (volumePaths.isEmpty() || TextUtils.isEmpty(existingFiles)) return;
 
         ContentValues cv = new ContentValues();
         cv.put("volume_hidden", 0);
 
-        StringBuilder where = new StringBuilder("volume_hidden != 0 AND (");
+        // Only unhide rows MediaStore currently confirms are present; rows missing from
+        // existingFiles are left untouched here and handled by verifyAndHideDeletedFiles below.
+        StringBuilder where = new StringBuilder("volume_hidden != 0 AND _id IN (")
+                .append(existingFiles).append(") AND (");
         boolean first = true;
         for (String path : volumePaths) {
             if (!first) where.append(" OR ");
@@ -1879,8 +1902,8 @@ public class VideoStoreImportImpl {
             if (c == null) return;
 
             java.io.File file;
-            int hiddenCount = 0;
-            int existingCount = 0;
+            StringBuilder toHide = new StringBuilder();
+            StringBuilder toUnhide = new StringBuilder();
 
             while (c.moveToNext() && !mIsImportInterrupted) {
                 long id = c.getLong(0);
@@ -1889,22 +1912,28 @@ public class VideoStoreImportImpl {
                 if (filePath == null) continue;
 
                 file = new java.io.File(filePath);
-                if (!file.exists()) {
-                    // File truly doesn't exist, hide it
-                    ContentValues cv = new ContentValues();
-                    cv.put("volume_hidden", timestamp);
-                    int updated = mCr.update(VideoStoreInternal.FILES_IMPORT, cv,
-                            "_id = ?", new String[]{String.valueOf(id)});
-                    if (updated > 0) hiddenCount++;
-                } else {
-                    // File exists on filesystem even though not in MediaStore
-                    // Unhide it so it can be rescanned (handles MediaStore indexing delays)
-                    ContentValues cv = new ContentValues();
-                    cv.put("volume_hidden", 0);
-                    mCr.update(VideoStoreInternal.FILES_IMPORT, cv,
-                            "_id = ?", new String[]{String.valueOf(id)});
-                    existingCount++;
-                }
+                StringBuilder target = file.exists() ? toUnhide : toHide;
+                if (target.length() > 0) target.append(',');
+                target.append(id);
+            }
+
+            int hiddenCount = 0;
+            if (toHide.length() > 0) {
+                ContentValues cv = new ContentValues();
+                cv.put("volume_hidden", timestamp);
+                // File truly doesn't exist, hide it
+                hiddenCount = mCr.update(VideoStoreInternal.FILES_IMPORT, cv,
+                        "_id IN (" + toHide + ")", null);
+            }
+
+            int existingCount = 0;
+            if (toUnhide.length() > 0) {
+                ContentValues cv = new ContentValues();
+                cv.put("volume_hidden", 0);
+                // File exists on filesystem even though not in MediaStore
+                // Unhide it so it can be rescanned (handles MediaStore indexing delays)
+                existingCount = mCr.update(VideoStoreInternal.FILES_IMPORT, cv,
+                        "_id IN (" + toUnhide + ")", null);
             }
 
             if (log.isDebugEnabled()) log.debug("{}: verified files - hidden {}, found existing but unindexed {}", logTag, hiddenCount, existingCount);
