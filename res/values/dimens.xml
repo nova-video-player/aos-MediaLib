@@ -94,8 +94,9 @@
     <dimen name="multi_quick_action_arrow_up_margin">0px</dimen>
     <dimen name="single_quick_action_arrow_down_margin">-16px</dimen>
     <dimen name="multi_quick_action_arrow_down_margin">-16px</dimen>
-    <dimen name="quick_action_row_height">50dip</dimen>
+    <dimen name="quick_action_row_height">72dip</dimen>
     <dimen name="quick_action_anchor_size">24dip</dimen>    <!-- used to adjust the vertical distance between the popup and the anchor -->
+    <dimen name="popup_arrow_overlap">2dip</dimen>
 
     <!-- based on base/core/res/res/layout/popup_menu_item_layout.xml -->
     <dimen name="track_menu_minWidth">196dip</dimen>

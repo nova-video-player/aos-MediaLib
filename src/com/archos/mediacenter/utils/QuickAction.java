@@ -29,6 +29,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import com.archos.medialib.R;
 
 import java.util.ArrayList;
@@ -158,18 +159,8 @@ public class QuickAction extends CustomPopupWindow {
         root.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         root.measure(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 
-        // Compute the height of the popup window
-        int itemsCount = actionList.size();
-        int rowHeight = context.getResources().getDimensionPixelSize(R.dimen.quick_action_row_height);
-
-        int upArrowHeight = mArrowUp.getMeasuredHeight();
-        int downArrowHeight = mArrowDown.getMeasuredHeight();
-        int upArrowMargin = context.getResources().getDimensionPixelSize(R.dimen.single_quick_action_arrow_up_margin);
-        int downArrowMargin = context.getResources().getDimensionPixelSize(R.dimen.single_quick_action_arrow_down_margin);
-
         int popupWidth = root.getMeasuredWidth();
-        int popupItemsHeight = rowHeight * itemsCount;
-        int popupHeight = popupItemsHeight + upArrowHeight + upArrowMargin + downArrowHeight + downArrowMargin;
+        int popupHeight = root.getMeasuredHeight();
 
         //----------------------------------------------------------------------
         // Compute the horizontal position of the quick action window
@@ -213,9 +204,8 @@ public class QuickAction extends CustomPopupWindow {
             // Display the popup above the (+) symbol
             yPos = anchorRect.centerY() - anchorHeight / 2 - popupHeight;
         } else {
-            // Display the popup below the (+) symbol (extraVerticalOffset is used for a fine adjustement)
-            int extraVerticalOffset = context.getResources().getDimensionPixelSize(R.dimen.extra_vertical_offset);
-            yPos = anchorRect.centerY() + anchorHeight / 2 - extraVerticalOffset;
+            // Display the popup below the (+) symbol
+            yPos = anchorRect.centerY() + anchorHeight / 2;
         }
 
         //----------------------------------------------------------------------
@@ -338,9 +328,9 @@ public class QuickAction extends CustomPopupWindow {
         * @param requestedX distance from left screen
         */
     private void showArrow(int whichArrow, int requestedX) {
-        int arrowMarginTop;
         int arrowWidth;
-        int resId;
+        View container = root.findViewById(R.id.popup_container);
+        RelativeLayout.LayoutParams containerParams = (RelativeLayout.LayoutParams) container.getLayoutParams();
 
         if (whichArrow == R.id.arrow_up) {
             ViewGroup.MarginLayoutParams param = (ViewGroup.MarginLayoutParams)mArrowUp.getLayoutParams();
@@ -349,13 +339,12 @@ public class QuickAction extends CustomPopupWindow {
             arrowWidth = mArrowUp.getMeasuredWidth();
             param.leftMargin = requestedX - arrowWidth / 2;
 
-            // Set the vertical position of the arrow
-            resId = (actionList.size() > 1) ? R.dimen.multi_quick_action_arrow_up_margin : R.dimen.single_quick_action_arrow_up_margin;
-            arrowMarginTop = context.getResources().getDimensionPixelSize(resId);
-            param.topMargin = arrowMarginTop;
-
             mArrowUp.setVisibility(View.VISIBLE);
-            mArrowDown.setVisibility(View.INVISIBLE);
+            mArrowDown.setVisibility(View.GONE);
+
+            containerParams.addRule(RelativeLayout.BELOW, R.id.arrow_up);
+            containerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+            containerParams.topMargin = -context.getResources().getDimensionPixelSize(R.dimen.popup_arrow_overlap);
         }
         else {
             ViewGroup.MarginLayoutParams param = (ViewGroup.MarginLayoutParams)mArrowDown.getLayoutParams();
@@ -364,13 +353,12 @@ public class QuickAction extends CustomPopupWindow {
             arrowWidth = mArrowDown.getMeasuredWidth();
             param.leftMargin = requestedX - arrowWidth / 2;
 
-            // Set the vertical position of the arrow
-            resId = (actionList.size() > 1) ? R.dimen.multi_quick_action_arrow_down_margin : R.dimen.single_quick_action_arrow_down_margin;
-            arrowMarginTop = context.getResources().getDimensionPixelSize(resId);
-            param.topMargin = arrowMarginTop;
-
-            mArrowUp.setVisibility(View.INVISIBLE);
+            mArrowUp.setVisibility(View.GONE);
             mArrowDown.setVisibility(View.VISIBLE);
+
+            containerParams.addRule(RelativeLayout.BELOW, 0);
+            containerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+            containerParams.topMargin = 0;
         }
     }
 }
