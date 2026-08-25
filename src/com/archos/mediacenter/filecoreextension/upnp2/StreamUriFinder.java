@@ -98,7 +98,7 @@ public class StreamUriFinder {
         try {
             List<MetaFile2> files = lister.getFileList();
             for (MetaFile2 metafile : files) {
-                if (metafile.getUri().equals(mUri)) {
+                if (isSameUri(metafile.getUri(), mUri)) {
                     uri = metafile.getStreamingUri();
                     break;
                 }
@@ -134,6 +134,19 @@ public class StreamUriFinder {
         }
         return null;
     }
+
+    private static boolean isSameUri(Uri uri1, Uri uri2) {
+        if (uri1 == null || uri2 == null) return false;
+        if (uri1.equals(uri2)) return true;
+        if (uri1.toString().equals(uri2.toString())) return true;
+        String decoded1 = Uri.decode(uri1.toString());
+        String decoded2 = Uri.decode(uri2.toString());
+        if (decoded1 != null && decoded1.equals(decoded2)) return true;
+        String name1 = FileUtils.getName(uri1);
+        String name2 = FileUtils.getName(uri2);
+        return name1 != null && name1.equals(name2);
+    }
+
     public interface Listener{
         void onUriFound(Uri uri);
         void onError();

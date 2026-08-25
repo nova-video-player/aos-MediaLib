@@ -100,10 +100,7 @@ public class UpnpListingEngine extends ListingEngine {
             });
             return;
         }
-        String decodedContainerId = null;
-        try {
-            decodedContainerId = URLDecoder.decode(containerId, "UTF-8");
-        } catch (UnsupportedEncodingException e) {/* does not happen, UTF-8 always available... */}
+        String decodedContainerId = containerId != null ? Uri.decode(containerId) : null;
 
         UpnpServiceManager.startServiceIfNeeded(mContext).execute(new Browse(service, decodedContainerId, BrowseFlag.DIRECT_CHILDREN) {
             @Override

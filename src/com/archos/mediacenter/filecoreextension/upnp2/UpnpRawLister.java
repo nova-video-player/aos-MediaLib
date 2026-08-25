@@ -89,11 +89,10 @@ public class UpnpRawLister extends RawLister  {
         mDevice = mUpnpServiceManager.getDeviceByKey_blocking(Integer.parseInt(mUri.getHost()), 500); // NPE on subs listing
 
         // Container ID is encoded at the end of the Uri, need to decode it here
-        try {
-            String lastPathSegment = FileUtils.getName(mUri);
-            if(lastPathSegment!=null)
-                mContainerId = URLDecoder.decode(lastPathSegment, "UTF-8");
-        } catch (UnsupportedEncodingException e) { /* does not happen, UTF-8 always available... */ }
+        String lastPathSegment = FileUtils.getName(mUri);
+        if (lastPathSegment != null) {
+            mContainerId = Uri.decode(lastPathSegment);
+        }
     }
 
     //some device specific restrictions

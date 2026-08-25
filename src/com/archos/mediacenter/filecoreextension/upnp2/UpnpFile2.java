@@ -222,7 +222,9 @@ public class UpnpFile2 extends MetaFile2 {
             try {
                 List<MetaFile2> files = lister.getFileList();
                 for(MetaFile2 file : files){
-                    if(file.getUri().equals(uri)){
+                    if (file.getUri().equals(uri) ||
+                            (file.getUri() != null && Uri.decode(file.getUri().toString()).equals(Uri.decode(uri.toString()))) ||
+                            (FileUtils.getName(file.getUri()) != null && FileUtils.getName(file.getUri()).equals(FileUtils.getName(uri)))) {
                         return file;
                     }
                 }
