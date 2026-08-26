@@ -887,6 +887,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     // -- Recursive file scanner magic                                     -- //
     // ---------------------------------------------------------------------- //
     private static class FileVisitListener implements FileVisitor.Listener {
+        /**
+         * A stale network share can contain many removed files.  Keep each delete
+         * transaction comfortably below the five-second input-ANR budget, and
+         * release the SQLite writer between groups so UI/provider work can run.
+         */
+        private static final int DELETE_BATCH_SIZE = 50;
+
         private final BulkOperationHandler mBulkHandler;
         private final HashMap<String, PrescanItem> mPrescanItemsMap;
         private final List<MetaFile2> mLastPlayedDbs = new ArrayList<MetaFile2>();
@@ -1042,9 +1049,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 if (item.needsDelete) {
                     // append id to delete string
                     deletes.add(item._id);
+                    if (deletes.getCount() == DELETE_BATCH_SIZE) {
+                        mBulkHandler.executeDelete(deletes);
+                        deletes = new DeleteString();
+                    }
                 }
             }
-            mBulkHandler.addDelete(deletes);
+            mBulkHandler.executeDelete(deletes);
 
             // force execution of all pending operations
             mBulkHandler.executePending();
@@ -1144,15 +1155,27 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             mUpdateExecutor.add(builder.build());
         }
 
-        public void addDelete(DeleteString deletes) {
+        /**
+         * Deletes one bounded stale-file group in its own provider transaction.
+         * CPOExecutor's limit is a limit on operations, not IDs inside an IN
+         * clause, so merely queuing multiple delete operations would still keep
+         * all groups in one long applyBatch transaction.
+         */
+        public void executeDelete(DeleteString deletes) {
             int deleteCount = deletes.getCount();
             if (deleteCount > 0) {
+                // Preserve the original ordering: apply discovered-file updates
+                // before removing stale entries, but do not retain the writer
+                // while every stale entry on a large share is deleted.
+                mUpdateExecutor.execute();
+
                 Builder delete = ContentProviderOperation.newDelete(VideoStoreInternal.FILES_SCANNED);
                 String deleteSelection = BaseColumns._ID + " IN (" + deletes.toString() + ")";
-                if (log.isDebugEnabled()) log.debug("delete WHERE {}", deleteSelection);
+                if (log.isDebugEnabled()) log.debug("delete {} stale files WHERE {}", deleteCount, deleteSelection);
                 delete.withSelection(deleteSelection, null);
 
                 mUpdateExecutor.add(delete.build());
+                mUpdateExecutor.execute();
                 mDeletes += deleteCount;
             }
         }
