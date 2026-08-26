@@ -20,6 +20,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
@@ -362,9 +363,14 @@ public class VideoDbInfo implements Parcelable {
         scraperCollectionID = another.scraperCollectionID;
     }
 
+    @SuppressWarnings("deprecation") // readParcelable: API 33+ branch uses typed form; else branch suppressed
     public VideoDbInfo(Parcel in) {
         id = in.readLong();
-        uri = in.readParcelable(Uri.class.getClassLoader());
+        if (Build.VERSION.SDK_INT >= 33) {
+            uri = in.readParcelable(Uri.class.getClassLoader(), Uri.class);
+        } else {
+            uri = in.readParcelable(Uri.class.getClassLoader());
+        }
         title = in.readString();
         duration = in.readInt();
         resume = in.readInt();

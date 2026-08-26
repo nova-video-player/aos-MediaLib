@@ -23,6 +23,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.OperationApplicationException;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
@@ -325,8 +326,13 @@ public class EpisodeTags extends BaseTags {
             mAired + " / SHOW ID=" + mShowId + " / SHOW TAGS=" + mShowTags;
     }
 
+    @SuppressWarnings("deprecation") // readParcelable: API 33+ branch uses typed form; else branch suppressed
     public void readFromParcel(Parcel in) {
-        mShowTags = in.readParcelable(ShowTags.class.getClassLoader());
+        if (Build.VERSION.SDK_INT >= 33) {
+            mShowTags = in.readParcelable(ShowTags.class.getClassLoader(), ShowTags.class);
+        } else {
+            mShowTags = in.readParcelable(ShowTags.class.getClassLoader());
+        }
         mShowId = in.readLong();
         mSeason = in.readInt();
         mEpisode = in.readInt();
