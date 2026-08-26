@@ -43,8 +43,7 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
                                     MediaPlayer.OnSeekCompleteListener,
                                     MediaPlayer.OnVideoSizeChangedListener,
                                     MediaPlayer.OnErrorListener,
-                                    MediaPlayer.OnInfoListener,
-                                    MediaPlayerProxy.OnTimedTextListener {
+                                    MediaPlayer.OnInfoListener {
     private static final String TAG = "AndroidMediaPlayer";
 
     private static class MetadataDelegate extends MediaMetadata {
@@ -308,7 +307,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
     private IMediaPlayer.OnBufferingUpdateListener mOnBufferingUpdateListener = null;
     private IMediaPlayer.OnSeekCompleteListener mOnSeekCompleteListener = null;
     private IMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = null;
-    private IMediaPlayer.OnSubtitleListener mOnSubtitleListener = null;
 
     private final Context mContext;
     private String mVideoPath;
@@ -552,11 +550,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
         return mProxy!=null?mProxy.doesCurrentFileExists():-1;
     }
 
-    public void setOnSubtitleListener(OnSubtitleListener listener) {
-        MediaPlayerProxy.setOnTimedTextListener(this, this);
-        mOnSubtitleListener = listener;
-    }
-
     public boolean setAudioTrack(int stream) throws IllegalStateException {
         if (mTracks != null) {
             if (stream >= 0 && stream < mTracks.audios.length) {
@@ -611,11 +604,5 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
 
     public boolean setStartTime(int msec) {
         return false;
-    }
-
-    @Override
-    public void onTimedText(MediaPlayer mp, String text) {
-        if (mOnSubtitleListener != null)
-            mOnSubtitleListener.onSubtitle(this, new Subtitle.TextSubtitle(text));
     }
 }
