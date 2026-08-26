@@ -267,10 +267,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         if (wifiManager != null) {
-            int lockMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                    ? WifiManager.WIFI_MODE_FULL_LOW_LATENCY
-                    : WifiManager.WIFI_MODE_FULL_HIGH_PERF;
-            wifiLock = wifiManager.createWifiLock(lockMode, "ArchosNetworkIndexer");
+            wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
             wifiLock.setReferenceCounted(true);
         }
 
