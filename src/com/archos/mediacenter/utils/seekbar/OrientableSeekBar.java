@@ -23,9 +23,10 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.widget.SeekBar;
 
-public class OrientableSeekBar extends SeekBar {
+import androidx.appcompat.widget.AppCompatSeekBar;
+
+public class OrientableSeekBar extends AppCompatSeekBar {
 
     protected boolean isVertical = false;
 

@@ -1309,9 +1309,9 @@ public class ScraperProvider extends ContentProvider {
     }
 
     private static void handleEpisodeFull(SQLiteQueryBuilder qb) {
-    	if (log.isDebugEnabled()) log.debug("File is a TV show.");
+	if (log.isDebugEnabled()) log.debug("File is a TV show.");
 
-        qb.setTables(ScraperTables.EPISODE_TABLE_NAME +
+	qb.setTables(ScraperTables.EPISODE_TABLE_NAME +
                 " LEFT JOIN " + ScraperTables.FILMS_EPISODE_VIEW_NAME + " ON (" +
                 ScraperTables.EPISODE_TABLE_NAME + "." +
                 ScraperStore.Episode.ID + " = " +
@@ -1330,9 +1330,9 @@ public class ScraperProvider extends ContentProvider {
     }
 
     private static void handleMovieFull(SQLiteQueryBuilder qb) {
-    	if (log.isDebugEnabled()) log.debug("File is a movie.");
+	if (log.isDebugEnabled()) log.debug("File is a movie.");
 
-        qb.setTables(ScraperTables.MOVIE_TABLE_NAME +
+	qb.setTables(ScraperTables.MOVIE_TABLE_NAME +
                 " LEFT JOIN " + ScraperTables.FILMS_MOVIE_VIEW_NAME + " ON (" +
                 ScraperTables.MOVIE_TABLE_NAME + "." +
                 ScraperStore.Movie.ID + " = " +
@@ -1361,9 +1361,9 @@ public class ScraperProvider extends ContentProvider {
     }
 
     private static void handleShowFull(SQLiteQueryBuilder qb) {
-    	if (log.isDebugEnabled()) log.debug("File is a TV show.");
+	if (log.isDebugEnabled()) log.debug("File is a TV show.");
 
-        qb.setTables(ScraperTables.SHOW_TABLE_NAME +
+	qb.setTables(ScraperTables.SHOW_TABLE_NAME +
                 " LEFT JOIN " +
                 ScraperTables.FILMS_SHOW_VIEW_NAME + " ON (" +
                 ScraperTables.SHOW_TABLE_NAME + "." +

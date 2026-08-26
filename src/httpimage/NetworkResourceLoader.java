@@ -58,7 +58,10 @@ public class NetworkResourceLoader {
         }
 
         public long getContentLength() {
-            return mConnection.getContentLengthLong();
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                return mConnection.getContentLengthLong();
+            }
+            return mConnection.getContentLength();
         }
 
         public InputStream getInputStream() {

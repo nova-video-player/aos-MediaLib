@@ -104,8 +104,8 @@ public class FadeOutBand {
         mColorBuffer = cbb.asIntBuffer();
         mColorBuffer.put(COLORS);
         
-		mFVertexBuffer.position(0);
-		mIndexBuffer.position(0);
+        mFVertexBuffer.position(0);
+        mIndexBuffer.position(0);
         mColorBuffer.position(0);
 	}
 

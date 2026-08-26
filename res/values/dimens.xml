@@ -149,4 +149,6 @@
     <dimen name="help_overlay_vertical_offset">10dip</dimen>
     <dimen name="help_overlay_button_height">30dip</dimen>
 
+    <dimen name="musicplayer_album_art_size">250dip</dimen>
+
 </resources>

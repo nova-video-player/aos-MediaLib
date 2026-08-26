@@ -115,8 +115,8 @@ public class FadeOutVeil {
 
 	public void draw(GL10 gl, float alpha) {
 
-	    gl.glDisable(GL_TEXTURE_2D);
-	    gl.glEnable(GL_BLEND);
+		gl.glDisable(GL_TEXTURE_2D);
+		gl.glEnable(GL_BLEND);
 		gl.glEnableClientState(GL_VERTEX_ARRAY);
 		gl.glDisableClientState(GL_COLOR_ARRAY);
 

@@ -148,7 +148,7 @@ public class CoverModel implements Comparable<CoverModel> {
 		glFrontFace(GL_CCW);
 		glRotatef(mRotationAngle,0f,0f,1f);
 		// Alpha Blending
-        glEnable(GL_BLEND);
+		glEnable(GL_BLEND);
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// Texture blending
@@ -176,7 +176,7 @@ public class CoverModel implements Comparable<CoverModel> {
 		glTexCoordPointer(2, GL_FLOAT, 0, mTexBuffer);
 		glDrawElements(GL_TRIANGLE_STRIP, VERTS, GL_UNSIGNED_SHORT, mIndexBuffer);
 
-        glPopMatrix();
+		glPopMatrix();
 	}
 
 	public void drawFocus(GL10 gl) {
@@ -188,7 +188,7 @@ public class CoverModel implements Comparable<CoverModel> {
 		glFrontFace(GL_CCW);
 		glRotatef(mRotationAngle,0f,0f,1f);
 		// Alpha Blending
-        glEnable(GL_BLEND);
+		glEnable(GL_BLEND);
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDisableClientState(GL_COLOR_ARRAY); // be sure this has not been enabled by someone else in the scene
@@ -207,7 +207,7 @@ public class CoverModel implements Comparable<CoverModel> {
 		glTexCoordPointer(2, GL_FLOAT, 0, mTexBuffer);
 		glDrawElements(GL_TRIANGLE_STRIP, VERTS, GL_UNSIGNED_SHORT, mIndexBuffer);
 
-        glPopMatrix();
+		glPopMatrix();
 	}
 
 	public void drawStencilMask() {
@@ -229,7 +229,7 @@ public class CoverModel implements Comparable<CoverModel> {
 												// (I.E. Where The Floor Was Drawn)
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);	// Don't Change The Stencil Buffer
 
-        glPopMatrix();
+		glPopMatrix();
 	}
 
 	public int compareTo(CoverModel another) {

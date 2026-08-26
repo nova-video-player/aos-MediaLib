@@ -17,6 +17,7 @@ package com.archos.mediacenter.cover;
 import com.archos.environment.ArchosFeatures;
 import com.archos.medialib.R;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
@@ -81,6 +82,10 @@ public class ArtworkFactory {
     private float mContentLabelFontsize;
 
 
+	// openRawResource() is intentionally called with @DrawableRes shadow ids below: it is used
+	// as a way to get the raw PNG byte stream (including the nine-patch "npTc" chunk) of a
+	// drawable, which decodeResource()-style APIs would not expose.
+	@SuppressLint("ResourceType")
 	public ArtworkFactory( Context context, int width, int height) {
 
 		mContext = context;
@@ -91,7 +96,7 @@ public class ArtworkFactory {
 		mWidth = width;
 		mHeight = height;
 
-        mContentLabelFontsize = mRes.getDimension(R.dimen.ContentLabel_fontsize);
+		mContentLabelFontsize = mRes.getDimension(R.dimen.ContentLabel_fontsize);
 
 		mBitmapOptions = new BitmapFactory.Options();
 		// RGB565 is OK for the artwork, 888 will be needed only when we add the shadow
@@ -254,8 +259,8 @@ public class ArtworkFactory {
 			final Rect shadowArea = new Rect(shadowX, shadowY, shadowX+shadowWidth, shadowY+shadowHeight);
 			if(DBG) Log.d(TAG, "shadowArea = " + shadowArea);
 
-            // Draw the wanted part (crop) of the artwork into the shadow free area
-            mCanvas.drawBitmap(artwork, srcCrop, artworkResizedArea, mPaint);
+			// Draw the wanted part (crop) of the artwork into the shadow free area
+			mCanvas.drawBitmap(artwork, srcCrop, artworkResizedArea, mPaint);
 
 			// Draw the nine-patch shadow
 			mShadow9patch.draw(mCanvas, shadowArea);
@@ -291,9 +296,9 @@ public class ArtworkFactory {
 
 	// single line label
 	public Bitmap createLabelBitmap(String label) {
-        if (DBG) Log.d(TAG, "createLabelBitmap : label="+ label);
+		if (DBG) Log.d(TAG, "createLabelBitmap : label="+ label);
 
-        mLabelView = (TextView)mLayoutInflater.inflate(R.layout.cover_roll_label, null);
+		mLabelView = (TextView)mLayoutInflater.inflate(R.layout.cover_roll_label, null);
 		mLabelView.setText(label);
 		mLabelView.setLayoutParams( new FrameLayout.LayoutParams(NO_SIZE_LIMIT,NO_SIZE_LIMIT) );
 		mLabelView.measure(NO_SIZE_LIMIT, NO_SIZE_LIMIT);
@@ -373,7 +378,7 @@ public class ArtworkFactory {
 			mCanvas.save();
 
 			// Center the bitmap horizontally inside the "powerOfTwo" texture bitmap
-            mCanvas.translate((actualBitmapWidth - bitmapWidth) / 2, 0);
+			mCanvas.translate((actualBitmapWidth - bitmapWidth) / 2, 0);
 
 			// Align vertically depending of the argument
 			switch (vertical_align) {
@@ -388,11 +393,11 @@ public class ArtworkFactory {
 			}
 
 			view.draw(mCanvas);
-            if (textLayout != null) {
-                // Draw the text using the TextLayout if one is provided
-                mCanvas.translate(0, (actualBitmapHeight - bitmapHeight) / 2);
-                textLayout.draw(mCanvas);
-            }
+			if (textLayout != null) {
+				// Draw the text using the TextLayout if one is provided
+				mCanvas.translate(0, (actualBitmapHeight - bitmapHeight) / 2);
+				textLayout.draw(mCanvas);
+			}
 
 			mCanvas.restore();
 		}

@@ -182,7 +182,7 @@ public enum FTPShortcutDbAdapter {
                     String shortcutName = 	cursor.getString(shortcutNameIndex);
                     if(shortcutName==null)
                     	shortcutName = host;
-                   	mShortcuts[type].add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
+                    mShortcuts[type].add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
 
                 } while (cursor.moveToNext());
             }

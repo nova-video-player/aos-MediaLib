@@ -510,11 +510,11 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 break;
                             }
                             processedInBatch++;
-                            Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
-                            long movieID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID));
-                            long episodeID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID));
-                            final int scraperType = cursor.getInt(cursor.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
-                            String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
+                            Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.DATA)));
+                            long movieID = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID));
+                            long episodeID = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID));
+                            final int scraperType = cursor.getInt(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
+                            String title = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.TITLE));
                             BaseTags baseTags = null;
                             if (sTotalNumberOfFilesRemainingToProcess > 0)
                                 nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sTotalNumberOfFilesRemainingToProcess  + "\n" + getString(R.string.current_video_title) + " " + title).build());
@@ -789,7 +789,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                     break;
                                 }
                                 hasMoreRows = true;
-                                long ID = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
+                                long ID = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
                                 lastSeenId = ID;
                                 if (persistenceRetryRound && !persistenceRetryIds.contains(ID)) {
                                     continue;
@@ -813,8 +813,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 boolean nfoPersisted = false;
 
                                 //Get the information we need about the current file, for use later in the scrape.
-                                String title = cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.TITLE));
-                                Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndex(VideoStore.MediaColumns.DATA)));
+                                String title = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.TITLE));
+                                Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.DATA)));
                                 Uri scrapUri = title == null || title.isEmpty() || title.equalsIgnoreCase("null") ? fileUri : Uri.parse("/" + title + ".mp4") ;
 
                                 //This get the info to reparse for UPNP, and grab the correct details.
@@ -890,13 +890,13 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                     ScrapeDetailResult result = null;
                                     boolean searchOnline = true;
                                     if (log.isTraceEnabled()) log.trace("startScraping: rescraping all");
-                                    long videoID = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID));
-                                    final int scraperType = cursor.getInt(cursor.getColumnIndex(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
+                                    long videoID = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID));
+                                    final int scraperType = cursor.getInt(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
 
                                     //This I have NEVER SEEN WORK! Always scrapes as an unknown, lets prove me wrong or this gets the chop too!
                                     if (scraperType == BaseTags.TV_SHOW) {
                                         // get the whole season
-                                        long season = cursor.getLong(cursor.getColumnIndex(VideoStore.Video.VideoColumns.SCRAPER_E_SEASON));
+                                        long season = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_E_SEASON));
                                         Bundle b = new Bundle();
                                         b.putInt(Scraper.ITEM_REQUEST_SEASON, (int) season);
                                         b.putInt(Scraper.ITEM_REQUEST_BASIC_VIDEO, 1);

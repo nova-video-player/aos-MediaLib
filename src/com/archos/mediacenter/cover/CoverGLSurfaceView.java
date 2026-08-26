@@ -1184,8 +1184,8 @@ SensorEventListener, OnTouchModeChangeListener, OnFocusChangeListener {
 			mItemClickProgress = null;
 			// no more message box animation
 			mMessageBoxDisplayProgress = null;
-	         // no more background cover fade animation
-            mBackgroundCoversFadeProgress = null;
+			// no more background cover fade animation
+			mBackgroundCoversFadeProgress = null;
 			// stop animation loop
 			removeMessages(MSG_ANIMATE_LOOP);
 			mAnimState = STATE_IDLE;

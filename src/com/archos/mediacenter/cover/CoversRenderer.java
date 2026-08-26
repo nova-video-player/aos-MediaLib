@@ -85,12 +85,12 @@ public class CoversRenderer implements GLSurfaceView.Renderer{
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-    	if(DBG) Log.d(TAG, "onSurfaceCreated");
-    	// mGL = gl;
+	if(DBG) Log.d(TAG, "onSurfaceCreated");
+	// mGL = gl;
 
-    	// Tell the listener as soon as GL stack is ready
-    	if(DBG) Log.d(TAG,"GL_READY");
-        mListener.sendEmptyMessage(RendererListener.MSG_GL_READY);
+	// Tell the listener as soon as GL stack is ready
+	if(DBG) Log.d(TAG,"GL_READY");
+	mListener.sendEmptyMessage(RendererListener.MSG_GL_READY);
 
         // Depth management is done "by hand", by sorting covers. Because of Blending.
         // Sometimes I even want to display cover behind, to mimic transparency
@@ -158,7 +158,7 @@ public class CoversRenderer implements GLSurfaceView.Renderer{
 	    	// Is '0' never used as a valid texture ID? It seems not, but I have to admit i am not sure...
 	    	return FAILED_TO_ADD_TEXTURE_ERROR;
 	    }
-    	return textureIdArray[0];
+	    return textureIdArray[0];
 	}
 
 	// MUST BE CALLED FROM GL THREAD ONLY

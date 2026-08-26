@@ -165,7 +165,7 @@ public abstract class ThumbnailEngine {
     public void setThumbnailSize(int thumbnailWidth, int thumbnailHeight) {
         if(DBG) Log.d(TAG, "setThumbnailSize : " + thumbnailWidth + "x" + thumbnailHeight);
 
-		if (thumbnailWidth != mThumbnailWidth || thumbnailHeight != mThumbnailHeight) {
+        if (thumbnailWidth != mThumbnailWidth || thumbnailHeight != mThumbnailHeight) {
         	if(DBG) Log.d(TAG, "Clearing the thumbnail cache " + thumbnailWidth +"/"+ mThumbnailWidth+" "+thumbnailHeight+"/"+mThumbnailHeight);
         	clearThumbnailCache();
             // The hard-coded base footprint is for a regular mdpi device.
@@ -177,11 +177,11 @@ public abstract class ThumbnailEngine {
         	// We don't take the data added by the derived classes (ThumbnailEngineVideo for example) into account
             int numberOgThumbs = (int)(actualFootprint/(thumbnailWidth*thumbnailHeight*3));
             if(DBG) Log.d(TAG, "setThumbnailSize: pool size = "+numberOgThumbs);
-        	mResultsPool =  new LruCache<Object, Result>(numberOgThumbs);
+            mResultsPool =  new LruCache<Object, Result>(numberOgThumbs);
         }
 
-		mThumbnailWidth = thumbnailWidth;
-		mThumbnailHeight = thumbnailHeight;
+        mThumbnailWidth = thumbnailWidth;
+        mThumbnailHeight = thumbnailHeight;
     }
     
     /**
