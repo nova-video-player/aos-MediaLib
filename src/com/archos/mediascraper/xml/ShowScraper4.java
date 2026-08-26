@@ -874,7 +874,7 @@ public class ShowScraper4 extends BaseScraper2 {
             return -1;
         }
 
-        LevenshteinDistance ld = new LevenshteinDistance();
+        LevenshteinDistance ld = LevenshteinDistance.getDefaultInstance();
         String normalizedTitle = extractedTitle.toLowerCase(java.util.Locale.ROOT).trim();
         int bestDistance = Integer.MAX_VALUE;
         int bestEpisodeNumber = -1;
@@ -927,7 +927,7 @@ public class ShowScraper4 extends BaseScraper2 {
             return null;
         }
 
-        LevenshteinDistance ld = new LevenshteinDistance();
+        LevenshteinDistance ld = LevenshteinDistance.getDefaultInstance();
         String normalizedTitle = extractedTitle.toLowerCase(java.util.Locale.ROOT).trim();
         int bestDistance = Integer.MAX_VALUE;
         EpisodeTags bestMatch = null;

@@ -94,6 +94,7 @@ public class UriUtils {
         return matcher.matches();
     }
 
+    @SuppressWarnings("deprecation") // InetAddressUtils: legacy IP address format validation
     public static boolean isValidHost(String hostname) {
         if (hostname == null) return false;
         return isValidFqdn(hostname) || isIPv4Address(hostname) || isIPv6Address(hostname) || isValidSmbServer(hostname);

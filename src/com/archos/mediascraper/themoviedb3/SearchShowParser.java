@@ -38,7 +38,7 @@ public class SearchShowParser {
     private static final Logger log = LoggerFactory.getLogger(SearchShowParser.class);
     private final static int SERIES_NOT_PERMITTED_ID = 313081;
 
-    private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+    private final static LevenshteinDistance levenshteinDistance = LevenshteinDistance.getDefaultInstance();
 
     public static List<SearchResult> getResult(Response<TvShowResultsPage> response,
                                                TvShowSearchInfo searchInfo, Integer year,

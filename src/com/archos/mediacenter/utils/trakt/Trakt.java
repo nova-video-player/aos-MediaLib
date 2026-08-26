@@ -958,6 +958,7 @@ public class Trakt {
         return handleRet(null, null, result, ObjectType.MOVIES);
     }
 
+    @SuppressWarnings("deprecation") // Trakt v2 lastActivities API
     public Result getLastActivity(int trial) {
         if (log.isDebugEnabled()) log.debug("getLastActivity");
         LastActivities ret = exec(mTraktV2.sync().lastActivities());
@@ -993,6 +994,7 @@ public class Trakt {
          */
     }
 
+    @SuppressWarnings("deprecation") // Trakt v2 users().lists API
     public Result getLists(int trial) {
         if (log.isDebugEnabled()) log.debug("getLists");
         List<TraktList> lists = exec(mTraktV2.users().lists(UserSlug.ME));

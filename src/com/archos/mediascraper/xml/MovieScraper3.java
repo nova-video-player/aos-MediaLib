@@ -322,7 +322,7 @@ public class MovieScraper3 extends BaseScraper2 {
         String referenceName = searchInfo.getName(); // Use cleaned name as reference for distance
         if (log.isDebugEnabled()) log.debug("getMatches2: unified scoring against reference '{}'", referenceName);
 
-        org.apache.commons.text.similarity.LevenshteinDistance levenshteinDistance = new org.apache.commons.text.similarity.LevenshteinDistance();
+        org.apache.commons.text.similarity.LevenshteinDistance levenshteinDistance = org.apache.commons.text.similarity.LevenshteinDistance.getDefaultInstance();
         String referenceNameLC = referenceName.toLowerCase();
         String cleanedNameLC = cleanedName.toLowerCase();
 

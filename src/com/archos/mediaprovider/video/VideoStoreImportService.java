@@ -43,6 +43,7 @@ import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -403,7 +404,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 // Always clear the foreground notification when processing has finished. Some
                 // commands (remove file, metadata update, etc.) do not go through doImport()
                 // and were previously leaving the foreground notification visible forever.
-                stopForeground(true);
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
                 if (msg.arg1 != DONT_KILL_SELF){
                     if (log.isDebugEnabled()) log.debug("handleMessage: stopSelf");
                     ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.handleMessage", "MESSAGE_KILL: stopSelf");
