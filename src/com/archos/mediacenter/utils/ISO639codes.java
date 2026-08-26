@@ -167,7 +167,7 @@ public class ISO639codes {
             locale = Locale.forLanguageTag(code);
         } else if (code.length() == 3) {
             String iso3 = convertIso6392bToIso6393(code);
-            locale = new Locale(iso3);
+            locale = new Locale.Builder().setLanguage(iso3).build();
         } else {
             return "";
         }

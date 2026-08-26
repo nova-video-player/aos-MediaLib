@@ -21,6 +21,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
@@ -444,12 +445,17 @@ public abstract class BaseTags implements Parcelable {
         return 0;
     }
 
+    @SuppressWarnings("deprecation") // readMap: API 33+ branch uses typed form; else branch suppressed
     private void readFromParcel(Parcel in) {
         mId = in.readLong();
         mTitle = in.readString();
         mRating = in.readFloat();
         mPlot = in.readString();
-        in.readMap(mActors, LinkedHashMap.class.getClassLoader());
+        if (Build.VERSION.SDK_INT >= 33) {
+            in.readMap(mActors, LinkedHashMap.class.getClassLoader(), String.class, String.class);
+        } else {
+            in.readMap(mActors, LinkedHashMap.class.getClassLoader());
+        }
         in.readStringList(mDirectors);
         in.readStringList(mWriters);
         mFile = Uri.parse(in.readString());

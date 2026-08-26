@@ -86,6 +86,7 @@ public class ArtworkFactory {
 	// as a way to get the raw PNG byte stream (including the nine-patch "npTc" chunk) of a
 	// drawable, which decodeResource()-style APIs would not expose.
 	@SuppressLint("ResourceType")
+	@SuppressWarnings("deprecation") // inDither: pre-N fallback
 	public ArtworkFactory( Context context, int width, int height) {
 
 		mContext = context;

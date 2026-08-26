@@ -224,6 +224,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         super.finalize();
     }
 
+    @SuppressWarnings("deprecation") // WIFI_MODE_FULL_HIGH_PERF: API < 29 fallback
     @Override
     public void onCreate() {
         if (log.isDebugEnabled()) log.debug("onCreate");
@@ -266,7 +267,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         if (wifiManager != null) {
-            wifiLock = wifiManager.createWifiLock(WIFI_MODE_FULL_HIGH_PERF, "ArchosNetworkIndexer");
+            int lockMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+                    : WifiManager.WIFI_MODE_FULL_HIGH_PERF;
+            wifiLock = wifiManager.createWifiLock(lockMode, "ArchosNetworkIndexer");
             wifiLock.setReferenceCounted(true);
         }
 

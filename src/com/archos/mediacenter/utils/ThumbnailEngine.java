@@ -170,7 +170,7 @@ public abstract class ThumbnailEngine {
         	clearThumbnailCache();
             // The hard-coded base footprint is for a regular mdpi device.
             // We need more for hdpi or xhdpi devices
-            final float density = mContext.getResources().getDisplayMetrics().scaledDensity;
+            final float density = mContext.getResources().getDisplayMetrics().density;
             final float actualFootprint = THUMBNAILS_POOL_BASE_FOOTPRINT_IN_BYTES * density * density;
         	// Compute the number of thumbnails to *approximately* fit the memory footprint we want
         	// We guess thumbs are RGB888 -> 3 bytes per pixel

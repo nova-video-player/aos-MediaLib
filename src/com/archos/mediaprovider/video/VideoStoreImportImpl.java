@@ -981,6 +981,7 @@ public class VideoStoreImportImpl {
     }
 
     private static class Job {
+        @SuppressWarnings("deprecation") // FileColumns.MEDIA_TYPE_PLAYLIST
         public Job(String path, String id, Blacklist blacklist) {
             mPath = Uri.parse(path);
             mId = id;
