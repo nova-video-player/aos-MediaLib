@@ -318,6 +318,7 @@ public class NfoExportService extends Service implements DefaultLifecycleObserve
     @Override
     public void onDestroy() {
         if (log.isDebugEnabled()) log.debug("onDestroy()");
+        ProcessLifecycleOwner.get().getLifecycle().removeObserver(this);
         if (mServiceLooper != null) {
             mServiceLooper.quit();
         }
