@@ -127,7 +127,7 @@ androidComponents {
 
 tasks.register('ndkBuild', Exec) {
     workingDir = "../"
-    outputs.dir("libs")
+    // Let GNU Make manage native C/C++ dependency checking
     List<String> myCmd = new ArrayList<String>()
     myCmd.add("make")
     myCmd.add("native_libyuv")
