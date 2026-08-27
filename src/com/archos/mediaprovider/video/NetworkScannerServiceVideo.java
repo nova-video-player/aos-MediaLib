@@ -224,7 +224,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         super.finalize();
     }
 
-    @SuppressWarnings("deprecation") // WIFI_MODE_FULL_HIGH_PERF: API < 29 fallback
+    @SuppressWarnings("deprecation") // WIFI_MODE_FULL_HIGH_PERF: intentionally used across API levels to preserve Wi-Fi throughput during background indexing
     @Override
     public void onCreate() {
         if (log.isDebugEnabled()) log.debug("onCreate");
