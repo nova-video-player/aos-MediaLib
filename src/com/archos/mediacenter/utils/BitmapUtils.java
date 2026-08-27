@@ -152,15 +152,16 @@ public class BitmapUtils {
 
     public static Bitmap decodeSampledBitmapFromFile(String filePath, int reqWidth, int reqHeight) {
         if (filePath == null) return null;
-        if (reqWidth <= 0 || reqHeight <= 0) {
-            return BitmapFactory.decodeFile(filePath);
-        }
         final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(filePath, options);
+        if (reqWidth > 0 && reqHeight > 0) {
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(filePath, options);
 
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-        options.inJustDecodeBounds = false;
+            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+            options.inJustDecodeBounds = false;
+        } else {
+            options.inSampleSize = 1;
+        }
         return BitmapFactory.decodeFile(filePath, options);
     }
 }
