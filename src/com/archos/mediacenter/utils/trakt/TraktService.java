@@ -606,7 +606,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
      * TODO: Remove this method in future release once hybrid approach is fully tested
      */
     @Deprecated
-    @SuppressWarnings("unused") // Kept for emergency fallback during transition period
+    @SuppressWarnings({"unused", "unchecked"}) // Kept for emergency fallback during transition period
     private Trakt.Status syncPlaybackStatusLegacy(){
         if (log.isDebugEnabled()) log.debug("syncPlaybackStatus start");
         final ContentResolver cr = getContentResolver();
@@ -776,6 +776,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
 
     // HYBRID APPROACH: Combines original logic with new architecture
     // This method preserves the original's smart conflict resolution while using cleaner separation
+    @SuppressWarnings("unchecked")
     private Trakt.Status syncPlaybackStatusHybrid() {
         if (log.isDebugEnabled()) log.debug("syncPlaybackStatusHybrid start - combining original logic with new architecture");
         
@@ -1030,6 +1031,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
     }
 
     // Original method: sync watched status by fetching data first (kept for backward compatibility)
+    @SuppressWarnings("unchecked")
     private Trakt.Status syncWatchedStatusToDb(){
         if (log.isDebugEnabled()) log.debug("syncWatchedStatusToDb start");
         final ContentResolver cr = getContentResolver();
@@ -1208,6 +1210,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
     }
 
     // Original method: sync resume points by fetching data first (kept for backward compatibility)
+    @SuppressWarnings("unchecked")
     private Trakt.Status syncResumePointsToDb(){
         if (log.isDebugEnabled()) log.debug("syncResumePointsToDb start");
         final ContentResolver cr = getContentResolver();
@@ -1303,6 +1306,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
         return Trakt.Status.SUCCESS;
     }
 
+    @SuppressWarnings("unchecked")
     private Trakt.Status syncMoviesToDb(String library) {
         if (log.isDebugEnabled()) log.debug("syncMoviesToDb: library={}", library);
         final ContentResolver cr = getContentResolver();
@@ -1336,6 +1340,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
         return Trakt.Status.SUCCESS;
     }
 
+    @SuppressWarnings("unchecked")
     private Trakt.Status syncShowsToDb(String library) {
         if (log.isDebugEnabled()) log.debug("syncShowsToDb: library={}", library);
         final ContentResolver cr = getContentResolver();
@@ -1814,6 +1819,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
         return finalResult;
     }
 
+    @SuppressWarnings("unchecked")
     private void syncLists() {
         if (log.isDebugEnabled()) log.debug("syncLists");
         Cursor cursor = getContentResolver().query(VideoStore.List.LIST_CONTENT_URI,VideoStore.List.Columns.COLUMNS, null, null, null);

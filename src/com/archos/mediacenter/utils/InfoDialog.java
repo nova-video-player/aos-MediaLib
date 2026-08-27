@@ -420,7 +420,8 @@ public class InfoDialog extends Dialog {
 
     // Handler to get some asynchronous info
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
-        // @SuppressWarnings("unchecked")
+        @Override
+        @SuppressWarnings("unchecked")
         public void handleMessage(Message msg) {
             if (msg.what == MSG_SIZE_COMPUTED) {
                 ArrayList<Object> list = (ArrayList<Object>) msg.obj;

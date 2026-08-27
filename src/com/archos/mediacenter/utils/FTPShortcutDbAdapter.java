@@ -134,6 +134,7 @@ public enum FTPShortcutDbAdapter {
      */
     // TODO we should do this in an AsyncTask but browsers currently
     // expect a right a way answer.
+    @SuppressWarnings("unchecked")
     public void loadShortcuts(Context context) {
         if (mContext != null) {
             return;

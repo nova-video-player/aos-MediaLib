@@ -24,7 +24,7 @@ public class WrapperChannelManager {
     public static void refreshChannels(Context context){
         try
         {
-            Class c = Class.forName("com.archos.mediacenter.video.leanback.channels.ChannelManager");
+            Class<?> c = Class.forName("com.archos.mediacenter.video.leanback.channels.ChannelManager");
             Method m = c.getDeclaredMethod("refreshChannels", Context.class);
             m.invoke(null, context);
         }

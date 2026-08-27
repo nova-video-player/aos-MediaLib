@@ -177,10 +177,10 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
             return mMetadata.toString();
         }
         @Override
+        @SuppressWarnings("unchecked")
         public Set<Integer> keySet() {
-            Class paramsType[] = new Class[0];
             try {
-                return (Set<Integer>) mMetadata.getClass().getMethod("keySet", paramsType).invoke(mMetadata);
+                return (Set<Integer>) mMetadata.getClass().getMethod("keySet").invoke(mMetadata);
             } catch (Exception e) {
                 return null;
             }
