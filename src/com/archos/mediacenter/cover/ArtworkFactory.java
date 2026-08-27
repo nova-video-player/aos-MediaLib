@@ -484,14 +484,10 @@ public class ArtworkFactory {
         paint.setTypeface(Typeface.SANS_SERIF);
         paint.setAntiAlias(true);
 
-        if (Build.VERSION.SDK_INT >= 23) {
-			StaticLayout.Builder sb = StaticLayout.Builder.obtain(text, 0, text.length(), paint, width)
-					.setAlignment(Layout.Alignment.ALIGN_CENTER)
-					.setLineSpacing(0f, 1.1f)
-					.setIncludePad(true);
-			return sb.build();
-		} else {
-			return (new StaticLayout(text, paint, width, Layout.Alignment.ALIGN_CENTER, 1.1f, 0f, true));
-		}
+        StaticLayout.Builder sb = StaticLayout.Builder.obtain(text, 0, text.length(), paint, width)
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, 1.1f)
+                .setIncludePad(true);
+        return sb.build();
 	}
 }
