@@ -80,6 +80,16 @@ public class ArtworkFactory {
 	Bitmap mShadowBitmap;
     TextView mLabelView = null;
     private float mContentLabelFontsize;
+    private final android.util.SparseArray<View> mCachedViews = new android.util.SparseArray<>();
+
+	public View getCachedView(int layoutResId) {
+		View v = mCachedViews.get(layoutResId);
+		if (v == null) {
+			v = mLayoutInflater.inflate(layoutResId, null);
+			mCachedViews.put(layoutResId, v);
+		}
+		return v;
+	}
 
 
 	// openRawResource() is intentionally called with @DrawableRes shadow ids below: it is used
