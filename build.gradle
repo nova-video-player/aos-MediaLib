@@ -96,8 +96,8 @@ android {
         renderScript = false
     }
     lint {
-        abortOnError true
-        checkReleaseBuilds false
+        abortOnError = true
+        checkReleaseBuilds = false
         disable 'MissingTranslation', 'ExtraTranslation', 'MissingQuantity', 'ImpliedQuantity'
         enable 'SuspiciousIndentation'
     }
