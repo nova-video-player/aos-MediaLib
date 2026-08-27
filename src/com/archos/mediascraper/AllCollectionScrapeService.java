@@ -14,9 +14,9 @@
 
 package com.archos.mediascraper;
 
-import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -24,6 +24,12 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
+import android.os.Process;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -44,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import okhttp3.Cache;
 
-public class AllCollectionScrapeService extends IntentService implements DefaultLifecycleObserver {
+public class AllCollectionScrapeService extends Service implements DefaultLifecycleObserver {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private static final Logger log = LoggerFactory.getLogger(AllCollectionScrapeService.class);
@@ -74,6 +80,21 @@ public class AllCollectionScrapeService extends IntentService implements Default
     private static volatile CollectionsService collectionService = null;
 
     static String apiKey = null;
+
+    private volatile Looper mServiceLooper;
+    private volatile ServiceHandler mServiceHandler;
+
+    private final class ServiceHandler extends Handler {
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            onHandleIntent((Intent) msg.obj);
+            stopSelf(msg.arg1);
+        }
+    }
 
     public static synchronized void reauth() {
         tmdb = new MyTmdb(apiKey, cache);
@@ -132,33 +153,34 @@ public class AllCollectionScrapeService extends IntentService implements Default
             handleCursor(getCollectionCursor(collectionId));
         }
         removeTask(collectionId);
-        stopSelf();
     }
 
     public void rescrapeAllCollections(Context context) {
         if (log.isDebugEnabled()) log.debug("rescrapeAllCollections");
         handleCursor(getAllCursor());
         removeAllTask();
-        stopSelf();
     }
 
     public void rescrapeNoImageCollections(Context context) {
         if (log.isDebugEnabled()) log.debug("rescrapeNoImageCollections");
         handleCursor(getNoImageCursor());
         removeNoImageTask();
-        stopSelf();
     }
 
     public AllCollectionScrapeService() {
-        super(AllCollectionScrapeService.class.getSimpleName());
+        super();
         if (log.isDebugEnabled()) log.debug("AllCollectionScrapeService");
-        setIntentRedelivery(true);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
         if (log.isDebugEnabled()) log.debug("onCreate");
+
+        HandlerThread thread = new HandlerThread("AllCollectionScrapeService", Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+        mServiceLooper = thread.getLooper();
+        mServiceHandler = new ServiceHandler(mServiceLooper);
 
         // ensure cache is initialized
         synchronized (AllCollectionScrapeService.class) {
@@ -169,7 +191,7 @@ public class AllCollectionScrapeService extends IntentService implements Default
         // need to do that early to avoid ANR on Android 26+
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName, nm.IMPORTANCE_LOW);
+            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName, NotificationManager.IMPORTANCE_LOW);
             nc.setDescription(notifChannelDescr);
             if (nm != null) nm.createNotificationChannel(nc);
         }
@@ -187,6 +209,9 @@ public class AllCollectionScrapeService extends IntentService implements Default
     @Override
     public void onDestroy() {
         if (log.isDebugEnabled()) log.debug("onDestroy");
+        if (mServiceLooper != null) {
+            mServiceLooper.quit();
+        }
         cleanup();
         super.onDestroy();
     }
@@ -206,15 +231,19 @@ public class AllCollectionScrapeService extends IntentService implements Default
             if (addNoImageTask() && addAllTask()) // if already AllTask, no need for NoImageTask
                 processIntent = true;
         }
-        if (processIntent) {
-            return super.onStartCommand(intent, flags, startId);
-        }
 
-        // super will pass an intent to onHandleIntent that is not handled
-        return super.onStartCommand(VOID_INTENT, flags, startId);
+        Message msg = mServiceHandler.obtainMessage();
+        msg.arg1 = startId;
+        msg.obj = processIntent ? intent : VOID_INTENT;
+        mServiceHandler.sendMessage(msg);
+        return START_REDELIVER_INTENT;
     }
 
     @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
     protected void onHandleIntent(Intent intent) {
         String action = intent != null ? intent.getAction() : null;
         Long collectionId = intent != null ? intent.getLongExtra("collectionId", -1) : null;
@@ -234,7 +263,6 @@ public class AllCollectionScrapeService extends IntentService implements Default
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getAllCursor());
         removeAllTask();
-        stopSelf();
     }
 
     private void rescrapeNoImageCollections() {
@@ -243,7 +271,6 @@ public class AllCollectionScrapeService extends IntentService implements Default
         nm.notify(NOTIFICATION_ID, nb.build());
         handleCursor(getNoImageCursor());
         removeNoImageTask();
-        stopSelf();
     }
 
     private void rescrapeCollection(Long collectionId) {
@@ -255,7 +282,6 @@ public class AllCollectionScrapeService extends IntentService implements Default
             handleCursor(getCollectionCursor(collectionId));
         }
         removeTask(collectionId);
-        stopSelf();
     }
 
     private void handleCursor(Cursor cursor) {

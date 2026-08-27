@@ -15,16 +15,22 @@
 
 package com.archos.mediascraper;
 
-import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.os.NetworkOnMainThreadException;
+import android.os.Process;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -43,7 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NfoExportService extends IntentService implements DefaultLifecycleObserver {
+public class NfoExportService extends Service implements DefaultLifecycleObserver {
     private static final Logger log = LoggerFactory.getLogger(NfoExportService.class);
     private static final String TAG = "NfoExportService";
 
@@ -63,6 +69,21 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
     private static final String notifChannelDescr = "NfoExportService";
 
     private static volatile boolean isForeground = true;
+
+    private volatile Looper mServiceLooper;
+    private volatile ServiceHandler mServiceHandler;
+
+    private final class ServiceHandler extends Handler {
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            onHandleIntent((Intent) msg.obj);
+            stopSelf(msg.arg1);
+        }
+    }
 
     /**
      * simple guard against multiple tasks of the same directory
@@ -111,9 +132,8 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
     }
 
     public NfoExportService() {
-        super(TAG);
+        super();
         if (log.isDebugEnabled()) log.debug("NfoExportService");
-        setIntentRedelivery(true);
     }
 
     @Override
@@ -121,11 +141,16 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
         super.onCreate();
         if (log.isDebugEnabled()) log.debug("onCreate");
 
+        HandlerThread thread = new HandlerThread("NfoExportService", Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+        mServiceLooper = thread.getLooper();
+        mServiceHandler = new ServiceHandler(mServiceLooper);
+
         // need to do that early to avoid ANR on Android 26+
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName,
-                    nm.IMPORTANCE_LOW);
+                    NotificationManager.IMPORTANCE_LOW);
             nc.setDescription(notifChannelDescr);
             if (nm != null)
                 nm.createNotificationChannel(nc);
@@ -152,15 +177,19 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
             if (addAllTask())
                 processIntent = true;
         }
-        if (processIntent) {
-            return super.onStartCommand(intent, flags, startId);
-        }
 
-        // super will pass an intent to onHandleIntent that is not handled
-        return super.onStartCommand(VOID_INTENT, flags, startId);
+        Message msg = mServiceHandler.obtainMessage();
+        msg.arg1 = startId;
+        msg.obj = processIntent ? intent : VOID_INTENT;
+        mServiceHandler.sendMessage(msg);
+        return START_REDELIVER_INTENT;
     }
 
     @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
     protected void onHandleIntent(Intent intent) {
         String action = intent != null ? intent.getAction() : null;
         Uri data = intent != null ? intent.getData() : null;
@@ -180,7 +209,6 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
         // exports are dispatched asynchronously; wait for them before reporting done/stopping
         NfoWriter.awaitPendingExports();
         removeAllTask();
-        stopSelf();
     }
 
     private void exportFile(Uri data) {
@@ -202,7 +230,6 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
         // exports are dispatched asynchronously; wait for them before reporting done/stopping
         NfoWriter.awaitPendingExports();
         removeDirTask(data);
-        stopSelf();
     }
 
     private void handleCursor(Cursor cursor) {
@@ -291,6 +318,9 @@ public class NfoExportService extends IntentService implements DefaultLifecycleO
     @Override
     public void onDestroy() {
         if (log.isDebugEnabled()) log.debug("onDestroy()");
+        if (mServiceLooper != null) {
+            mServiceLooper.quit();
+        }
         cleanup();
         super.onDestroy();
     }
