@@ -43,6 +43,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class MovieIdParser2 {
             cal.setTime(movie.release_date);
             result.setYear(cal.get(Calendar.YEAR));
             // Format release_date as YYYY-MM-DD string
-            String dateStr = String.format("%04d-%02d-%02d",
+            String dateStr = String.format(Locale.ROOT, "%04d-%02d-%02d",
                     cal.get(Calendar.YEAR),
                     cal.get(Calendar.MONTH) + 1,
                     cal.get(Calendar.DAY_OF_MONTH));

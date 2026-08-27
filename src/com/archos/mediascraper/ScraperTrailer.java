@@ -21,6 +21,8 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
 
+import java.util.Locale;
+
 import com.archos.mediaprovider.video.ScraperStore;
 
 /**
@@ -103,13 +105,13 @@ public class ScraperTrailer {
             urlScheme = "https://www.youtube.com/watch?v=%s";
         }
         Log.d("urldebug",  mVideoKey);
-        Log.d("urldebug", String.format(urlScheme, mVideoKey));
-        return Uri.parse(String.format(urlScheme, mVideoKey));
+        Log.d("urldebug", String.format(Locale.ROOT, urlScheme, mVideoKey));
+        return Uri.parse(String.format(Locale.ROOT, urlScheme, mVideoKey));
     }
 
     public String getNfoValue() {
         if ("YouTube".equals(mSite) && mVideoKey != null && !mVideoKey.isEmpty()) {
-            return String.format("https://www.youtube.com/watch?v=%s", mVideoKey);
+            return String.format(Locale.ROOT, "https://www.youtube.com/watch?v=%s", mVideoKey);
         }
         if (mVideoKey != null && (mVideoKey.startsWith("http://") || mVideoKey.startsWith("https://"))) {
             return mVideoKey;

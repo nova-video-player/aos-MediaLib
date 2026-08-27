@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -163,7 +164,7 @@ public class HttpImageManager{
                 digest.update(name.getBytes());
                 
                 byte[] result = digest.digest();
-                return String.format("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+                return String.format(Locale.ROOT, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
                         result[0], result[1], result[2], result[3], result[4], result[5], result[6], result[7],
                         result[8],result[9], result[10], result[11],result[12], result[13], result[14], result[15]);
             } 

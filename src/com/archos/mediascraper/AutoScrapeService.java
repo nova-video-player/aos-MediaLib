@@ -42,6 +42,8 @@ import androidx.preference.PreferenceManager;
 import android.os.Looper;
 import android.provider.BaseColumns;
 
+import java.util.Locale;
+
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaIntent;
@@ -845,7 +847,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                                 }
 
                                                 //Use Title - Episode Name
-                                                title = episodeTags.getShowTags().getTitle() + " - S" +  String.format("%02d", episodeTags.getSeason()) + "E" + String.format("%02d", episodeTags.getEpisode());
+                                                title = episodeTags.getShowTags().getTitle() + " - S" +  String.format(Locale.ROOT, "%02d", episodeTags.getSeason()) + "E" + String.format(Locale.ROOT, "%02d", episodeTags.getEpisode());
                                             } else {
                                                 //Use Title
                                                 title = ((MovieTags) tags).getTitle();
@@ -948,7 +950,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                                 DeleteFileCallback.DO_NOT_DELETE.add(episodeTags.getShowTags().getDefaultPoster().getLargeFile());
                                             }
                                             //Set the Episode title here, we don't have to do an extra isMovie check.
-                                            title = episodeTags.getShowTags().getTitle() + " - S" +  String.format("%02d", episodeTags.getSeason()) + "E" + String.format("%02d", episodeTags.getEpisode());
+                                            title = episodeTags.getShowTags().getTitle() + " - S" +  String.format(Locale.ROOT, "%02d", episodeTags.getSeason()) + "E" + String.format(Locale.ROOT, "%02d", episodeTags.getEpisode());
                                         } else {
                                             //Set the Movie title.
                                             title = result.tag.getTitle();

@@ -16,6 +16,7 @@ package com.archos.mediacenter.filecoreextension;
 
 import android.content.Context;
 import android.net.Uri;
+import java.util.Locale;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.FileUtils;
@@ -128,7 +129,7 @@ public class HttpFile2 extends MetaFile2 {
     }
 
     public String getUniqueHash(){
-        return "H" + String.format("%018x", Math.abs(getUri().hashCode()) + length() * Math.abs(getName().hashCode()));
+        return "H" + String.format(Locale.ROOT, "%018x", Math.abs(getUri().hashCode()) + length() * Math.abs(getName().hashCode()));
     }
 
     @Override

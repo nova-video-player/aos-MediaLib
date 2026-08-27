@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -110,11 +111,11 @@ public class ScraperIntegrationTest {
                     // Print parsed details
                     if (info.isTvShow()) {
                         TvShowSearchInfo tvShowInfo = (TvShowSearchInfo) info;
-                        System.out.println(String.format("  -> PREPROCESSED: Name='%s' Year=%s S%02dE%02d Suggestion='%s'", 
+                        System.out.println(String.format(Locale.ROOT, "  -> PREPROCESSED: Name='%s' Year=%s S%02dE%02d Suggestion='%s'", 
                             tvShowInfo.getShowName(), tvShowInfo.getFirstAiredYear(), tvShowInfo.getSeason(), tvShowInfo.getEpisode(), tvShowInfo.getSearchSuggestion()));
                     } else {
                         MovieSearchInfo movieInfo = (MovieSearchInfo) info;
-                        System.out.println(String.format("  -> PREPROCESSED: Name='%s' Year=%s Suggestion='%s'", 
+                        System.out.println(String.format(Locale.ROOT, "  -> PREPROCESSED: Name='%s' Year=%s Suggestion='%s'", 
                             movieInfo.getName(), movieInfo.getYear(), movieInfo.getSearchSuggestion()));
                     }
 
@@ -145,13 +146,13 @@ public class ScraperIntegrationTest {
                                 sb.append("  -> MATCH FOUND #").append(foundPosition + 1).append(": ").append(match.getTitle());
                                 sb.append(" (ID: ").append(match.getId()).append(")");
                                 if (match.getReleaseOrFirstAiredDate() != null) {
-                                    sb.append(" [Release: ").append(new java.text.SimpleDateFormat("yyyy").format(match.getReleaseOrFirstAiredDate())).append("]");
+                                    sb.append(" [Release: ").append(new java.text.SimpleDateFormat("yyyy", Locale.ROOT).format(match.getReleaseOrFirstAiredDate())).append("]");
                                 }
                                 if (match.isTvShow()) {
                                     int s = match.getOriginSearchSeason();
                                     int e = match.getOriginSearchEpisode();
                                     if (s >= 0 && e >= 0) {
-                                        sb.append(String.format(" S%02dE%02d", s, e));
+                                        sb.append(String.format(Locale.ROOT, " S%02dE%02d", s, e));
                                     }
                                 }
                                 System.out.println(sb.toString());
@@ -163,7 +164,7 @@ public class ScraperIntegrationTest {
                                     if (detailResult != null && detailResult.tag != null) {
                                         if (detailResult.tag instanceof com.archos.mediascraper.EpisodeTags) {
                                             com.archos.mediascraper.EpisodeTags epTag = (com.archos.mediascraper.EpisodeTags) detailResult.tag;
-                                            System.out.println(String.format("  -> DETAILS: Title='%s' Plot='%s' Picture='%s' Poster='%s'",
+                                            System.out.println(String.format(Locale.ROOT, "  -> DETAILS: Title='%s' Plot='%s' Picture='%s' Poster='%s'",
                                                 epTag.getTitle(), epTag.getPlot(), epTag.getEpisodePicture(), epTag.getDefaultPoster() != null ? epTag.getDefaultPoster().getLargeUrl() : "null"));
                                         }
                                     }
@@ -198,7 +199,7 @@ public class ScraperIntegrationTest {
                         } else if (info.isTvShow()) {
                             if (autoResult.tag instanceof com.archos.mediascraper.EpisodeTags) {
                                 com.archos.mediascraper.EpisodeTags autoEpTag = (com.archos.mediascraper.EpisodeTags) autoResult.tag;
-                                System.out.println(String.format("  -> AUTO-DETAILS: ShowId=%d Title='%s'", autoEpTag.getShowId(), autoEpTag.getTitle()));
+                                System.out.println(String.format(Locale.ROOT, "  -> AUTO-DETAILS: ShowId=%d Title='%s'", autoEpTag.getShowId(), autoEpTag.getTitle()));
                                 if (autoEpTag.getShowId() != expectedAutoDetailId) {
                                     errors.add("AUTO-DETAILS SHOW ID MISMATCH for " + uriString + ". Expected " + expectedAutoDetailId + " but got " + autoEpTag.getShowId());
                                 }
@@ -210,7 +211,7 @@ public class ScraperIntegrationTest {
                             }
                         } else {
                             long autoId = autoResult.tag.getOnlineId();
-                            System.out.println(String.format("  -> AUTO-DETAILS: OnlineId=%d Title='%s'", autoId, autoResult.tag.getTitle()));
+                            System.out.println(String.format(Locale.ROOT, "  -> AUTO-DETAILS: OnlineId=%d Title='%s'", autoId, autoResult.tag.getTitle()));
                             if (autoId != expectedAutoDetailId) {
                                 errors.add("AUTO-DETAILS ID MISMATCH for " + uriString + ". Expected " + expectedAutoDetailId + " but got " + autoId);
                             }

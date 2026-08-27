@@ -17,6 +17,7 @@ package com.archos.mediacenter.filecoreextension.upnp2;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import java.util.Locale;
 
 import com.archos.filecorelibrary.FileEditor;
 import com.archos.filecorelibrary.MetaFile2;
@@ -175,7 +176,7 @@ public class UpnpFile2 extends MetaFile2 {
     }
 
     public String getUniqueHash(){
-        return "H" + String.format("%018x", Math.abs(getUri().hashCode()) + length() * Math.abs(getName().hashCode()));
+        return "H" + String.format(Locale.ROOT, "%018x", Math.abs(getUri().hashCode()) + length() * Math.abs(getName().hashCode()));
     }
 
     @Override

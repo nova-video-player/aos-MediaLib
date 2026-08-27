@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1954,7 +1955,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                 // Compute new hash using the new algorithm
                 // New format: "H" + String.format("%018x", Math.abs(uri.hashCode()) + length * Math.abs(name.hashCode()))
                 long hashValue = Math.abs((long)uriString.hashCode()) + length * Math.abs((long)name.hashCode());
-                String newHash = "H" + String.format("%018x", hashValue);
+                String newHash = "H" + String.format(Locale.ROOT, "%018x", hashValue);
 
                 ContentValues cv = new ContentValues();
                 cv.put(VideoColumns.ARCHOS_UNIQUE_ID, newHash);
