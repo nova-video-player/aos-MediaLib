@@ -150,7 +150,7 @@ public class VideoStoreImportImpl {
                 ReconciliationSnapshot snapshot = loadMountedStorageSnapshot(
                         mCr, getMountedStorageLocations());
                 if (snapshot.complete) {
-                    reconciliation = reconcileStorageSnapshot(mCr, snapshot);
+                    reconciliation = reconcileStorageSnapshot(mCr, snapshot, mContext);
                     copy = copySnapshotData(mCr, snapshot, null);
                 } else {
                     log.warn("doFullImport: reconciliation snapshot incomplete; using paged importer");
@@ -166,6 +166,7 @@ public class VideoStoreImportImpl {
             int countEnd = getLocalCount(mCr);
             log.info("full import +:" + copy + " ~:" + reconciliation.updated + " -:" + del
                     + " " + countStart + "=>" + countEnd);
+            ImportState.VIDEO.setDeleting(false);
             // then trigger scan of new data
             doScan(mCr, mContext, mBlackList);
             // ...
@@ -173,6 +174,9 @@ public class VideoStoreImportImpl {
             // External storage is not available, handle this situation
             log.error("doFullImport: external storage (volume: 'external_primary') is not available");
         }
+        ImportState.VIDEO.setDeleting(false);
+        ImportState.VIDEO.setNumberOfFilesRemainingToDelete(0);
+        ImportState.VIDEO.setRemainingCount(0);
         ImportState.VIDEO.setState(State.IDLE);
         if (log.isDebugEnabled()) log.debug("doFullImport: ImportState.VIDEO.setState(State.IDLE)");
     }
@@ -195,7 +199,7 @@ public class VideoStoreImportImpl {
             int copy;
             // Copy only MediaStore ids newer than the maximum captured before reconciliation.
             if (snapshot.complete) {
-                reconciliation = reconcileStorageSnapshot(mCr, snapshot);
+                reconciliation = reconcileStorageSnapshot(mCr, snapshot, mContext);
                 copy = copySnapshotData(mCr, snapshot, maxLocal);
             } else {
                 log.warn("doIncrementalImport: reconciliation snapshot incomplete; using paged importer");
@@ -210,6 +214,7 @@ public class VideoStoreImportImpl {
             int countEnd = getLocalCount(mCr);
             log.info("part import +:" + copy + " ~:" + reconciliation.updated + " -:" + del
                     + " " + countStart + "=>" + countEnd);
+            ImportState.VIDEO.setDeleting(false);
             // then trigger scan of new data
             doScan(mCr, mContext, mBlackList);
         } else {
@@ -217,6 +222,9 @@ public class VideoStoreImportImpl {
             log.error("doIncrementalImport: external storage (volume: 'external_primary') is not available");
         }
 
+        ImportState.VIDEO.setDeleting(false);
+        ImportState.VIDEO.setNumberOfFilesRemainingToDelete(0);
+        ImportState.VIDEO.setRemainingCount(0);
         ImportState.VIDEO.setState(State.IDLE);
         if (log.isDebugEnabled()) log.debug("doIncrementalImport: ImportState.VIDEO.setState(State.IDLE)");
     }
@@ -533,6 +541,11 @@ public class VideoStoreImportImpl {
      */
     static LocalReconciliationResult reconcileStorageSnapshot(ContentResolver cr,
             ReconciliationSnapshot snapshot) {
+        return reconcileStorageSnapshot(cr, snapshot, null);
+    }
+
+    static LocalReconciliationResult reconcileStorageSnapshot(ContentResolver cr,
+            ReconciliationSnapshot snapshot, Context context) {
         LocalReconciliationResult result = new LocalReconciliationResult();
         if (cr == null || snapshot == null || !snapshot.complete || mIsImportInterrupted) {
             return result;
@@ -541,7 +554,7 @@ public class VideoStoreImportImpl {
         Set<Long> remappedSourceIds = new HashSet<>();
         reconcileStableIds(cr, snapshot, result);
         reconcileChangedIds(cr, snapshot, result, remappedSourceIds);
-        removeMissingPrimaryRows(cr, snapshot, result, remappedSourceIds);
+        removeMissingPrimaryRows(cr, snapshot, result, remappedSourceIds, context);
         return result;
     }
 
@@ -645,22 +658,74 @@ public class VideoStoreImportImpl {
 
     private static void removeMissingPrimaryRows(ContentResolver cr,
             ReconciliationSnapshot snapshot, LocalReconciliationResult result,
-            Set<Long> remappedSourceIds) {
+            Set<Long> remappedSourceIds, Context context) {
         if (mIsImportInterrupted) return;
+        List<ImportIdentity> missingList = new ArrayList<>();
         for (ImportIdentity identity : snapshot.importedById.values()) {
             StorageLocation location = snapshot.importedLocations.get(identity.id);
             if (location == null || !location.primary || snapshot.mediaStoreIds.contains(identity.id)
                     || remappedSourceIds.contains(identity.id) || new File(identity.path).exists()) {
                 continue;
             }
-            int removed = cr.delete(VideoStoreInternal.FILES_IMPORT, BaseColumns._ID + "=?",
-                    new String[] { String.valueOf(identity.id) });
-            if (removed > 0) {
-                snapshot.importedIds.remove(identity.id);
-                result.removed += removed;
-                log.info("removeMissingPrimaryRows: removed inaccessible row id {} path {}",
-                        identity.id, identity.path);
+            missingList.add(identity);
+        }
+
+        int totalMissing = missingList.size();
+        if (totalMissing == 0) return;
+
+        int remaining = totalMissing;
+        ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remaining);
+        ImportState.VIDEO.setDeleting(true);
+        if (context instanceof VideoStoreImportService) {
+            ((VideoStoreImportService) context).updateDeleteNotification(remaining, missingList.get(0).path);
+        }
+
+        final int BATCH_SIZE = 50;
+        try {
+            for (int i = 0; i < totalMissing; i += BATCH_SIZE) {
+                if (mIsImportInterrupted) break;
+                int end = Math.min(i + BATCH_SIZE, totalMissing);
+                List<ImportIdentity> candidates = missingList.subList(i, end);
+                List<ImportIdentity> batch = new ArrayList<>(candidates.size());
+                for (ImportIdentity identity : candidates) {
+                    if (!new File(identity.path).exists()) {
+                        batch.add(identity);
+                    } else {
+                        // It reappeared after the snapshot. Retain its database row.
+                        remaining--;
+                    }
+                }
+
+                if (!batch.isEmpty()) {
+                    StringBuilder selection = new StringBuilder(BaseColumns._ID).append(" IN (");
+                    String[] selectionArgs = new String[batch.size()];
+                    for (int j = 0; j < batch.size(); j++) {
+                        if (j > 0) selection.append(',');
+                        selection.append('?');
+                        selectionArgs[j] = String.valueOf(batch.get(j).id);
+                    }
+                    selection.append(')');
+                    int removed = cr.delete(VideoStoreInternal.FILES_IMPORT, selection.toString(), selectionArgs);
+                    if (removed == batch.size()) {
+                        for (ImportIdentity identity : batch) {
+                            snapshot.importedIds.remove(identity.id);
+                        }
+                    }
+                    result.removed += removed;
+                    remaining -= removed;
+                    log.info("removeMissingPrimaryRows: removed {} inaccessible rows (remaining: {})", removed, remaining);
+                }
+                ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remaining);
+                if (context instanceof VideoStoreImportService) {
+                    String path = batch.isEmpty()
+                            ? candidates.get(candidates.size() - 1).path
+                            : batch.get(batch.size() - 1).path;
+                    ((VideoStoreImportService) context).updateDeleteNotification(remaining, path);
+                }
             }
+        } finally {
+            ImportState.VIDEO.setDeleting(false);
+            ImportState.VIDEO.setNumberOfFilesRemainingToDelete(0);
         }
     }
 
@@ -895,6 +960,9 @@ public class VideoStoreImportImpl {
                     log.error("handleScanCursor: IllegalStateException caught, content deleted while scanning?");
                     //we silently ignore empty lines - it means content has been deleted while scanning
                     continue;
+                }
+                if (context instanceof VideoStoreImportService) {
+                    ((VideoStoreImportService) context).updateScanNotification(remaining, path);
                 }
                 Job job = new Job(path, id, blacklist);
                 if (log.isDebugEnabled()) log.debug("handleScanCursor: scanning {}", job.mPath);

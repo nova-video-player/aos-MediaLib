@@ -121,7 +121,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     private String mRecordEndOfScanPreference;
     WifiLock wifiLock;
 
-    private static final int NOTIFICATION_ID = 1;
+    static final int NOTIFICATION_ID = 1;
     private NotificationManager nm;
     private NotificationCompat.Builder nb;
     private Notification n;
@@ -131,11 +131,21 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
     private static volatile boolean isForeground = true;
     private static volatile int sFilesFoundCount = 0;
+    private static volatile int sRemainingDeletes = 0;
+    private static volatile boolean sIsDeleting = false;
     private Thread mScanThread;
     private Thread mRemoveFilesThread;
 
     public static int getFilesFoundCount() {
         return sFilesFoundCount;
+    }
+
+    public static int getRemainingDeletesCount() {
+        return sRemainingDeletes;
+    }
+
+    public static boolean isDeleting() {
+        return sIsDeleting;
     }
 
     public static boolean startIfHandles(Context context, Intent broadcast) {
@@ -660,6 +670,8 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     ScanResult performScan(Uri what) {
         mFoundFiles = 0;
         sFilesFoundCount = 0;
+        sRemainingDeletes = 0;
+        sIsDeleting = false;
         MetaFile2 f = null;
         boolean scanHadDbError = false;
         try {
@@ -884,6 +896,23 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
     }
 
+    void updateDeleteNotification(String path, int count) {
+        if (nm != null && nb != null) {
+            String title = (count > 0) ? getString(R.string.network_cleanup) + " (" + count + ")" : getString(R.string.network_cleanup);
+            String[] bodyLines = formatNotificationBody(mCurrentRootUri, path);
+            String shareLine = bodyLines[0];
+            String subDirLine = bodyLines[1];
+
+            String contentText = shareLine + " - " + subDirLine;
+            String bigText = shareLine + "\n" + subDirLine;
+
+            nb.setContentTitle(title)
+              .setContentText(contentText)
+              .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText));
+            nm.notify(NOTIFICATION_ID, nb.build());
+        }
+    }
+
     // ---------------------------------------------------------------------- //
     // -- Recursive file scanner magic                                     -- //
     // ---------------------------------------------------------------------- //
@@ -1043,20 +1072,50 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         @Override
         public void onStop(MetaFile2 root) {
             if (log.isDebugEnabled()) log.debug("onStop");
-            // once we are done traversing the directories check for files that
-            // were not seen and delete them
-            DeleteString deletes = new DeleteString();
+            // Count total files that need deletion
+            int totalNeedsDelete = 0;
             for (PrescanItem item : mPrescanItemsMap.values()) {
                 if (item.needsDelete) {
-                    // append id to delete string
-                    deletes.add(item._id);
-                    if (deletes.getCount() == DELETE_BATCH_SIZE) {
-                        mBulkHandler.executeDelete(deletes);
-                        deletes = new DeleteString();
-                    }
+                    totalNeedsDelete++;
                 }
             }
-            mBulkHandler.executeDelete(deletes);
+
+            if (totalNeedsDelete > 0) {
+                String path = (root != null) ? root.getUri().toString() : (mService != null ? mService.mCurrentRootUri : null);
+                int remaining = totalNeedsDelete;
+                sRemainingDeletes = remaining;
+                sIsDeleting = true;
+                if (mService != null) {
+                    mService.updateDeleteNotification(path, remaining);
+                }
+
+                try {
+                    DeleteString deletes = new DeleteString();
+                    for (PrescanItem item : mPrescanItemsMap.values()) {
+                        if (item.needsDelete) {
+                            deletes.add(item._id);
+                            if (deletes.getCount() == DELETE_BATCH_SIZE) {
+                                remaining -= mBulkHandler.executeDelete(deletes);
+                                sRemainingDeletes = remaining;
+                                if (mService != null) {
+                                    mService.updateDeleteNotification(path, remaining);
+                                }
+                                deletes = new DeleteString();
+                            }
+                        }
+                    }
+                    if (deletes.getCount() > 0) {
+                        remaining -= mBulkHandler.executeDelete(deletes);
+                        sRemainingDeletes = remaining;
+                        if (mService != null) {
+                            mService.updateDeleteNotification(path, remaining);
+                        }
+                    }
+                } finally {
+                    sIsDeleting = false;
+                    sRemainingDeletes = 0;
+                }
+            }
 
             // force execution of all pending operations
             mBulkHandler.executePending();
@@ -1140,11 +1199,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         private final CPOExecutor mUpdateExecutor;
         private final BulkInserter mInsertExecutor;
+        private final ContentResolver mCr;
 
         private int mDeletes;
 
         public BulkOperationHandler(boolean nfoScanEnabled, Context context) {
             ContentResolver cr = context.getContentResolver();
+            mCr = cr;
             mUpdateExecutor = new CPOExecutor(VideoStore.AUTHORITY, cr, BULK_LIMIT_UPSERT);
             mInsertExecutor = new BulkInserter(VideoStoreInternal.FILES_SCANNED, cr, BULK_LIMIT_UPSERT);
         }
@@ -1162,7 +1223,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
          * clause, so merely queuing multiple delete operations would still keep
          * all groups in one long applyBatch transaction.
          */
-        public void executeDelete(DeleteString deletes) {
+        public int executeDelete(DeleteString deletes) {
             int deleteCount = deletes.getCount();
             if (deleteCount > 0) {
                 // Preserve the original ordering: apply discovered-file updates
@@ -1170,15 +1231,13 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 // while every stale entry on a large share is deleted.
                 mUpdateExecutor.execute();
 
-                Builder delete = ContentProviderOperation.newDelete(VideoStoreInternal.FILES_SCANNED);
                 String deleteSelection = BaseColumns._ID + " IN (" + deletes.toString() + ")";
                 if (log.isDebugEnabled()) log.debug("delete {} stale files WHERE {}", deleteCount, deleteSelection);
-                delete.withSelection(deleteSelection, null);
-
-                mUpdateExecutor.add(delete.build());
-                mUpdateExecutor.execute();
-                mDeletes += deleteCount;
+                int deleted = mCr.delete(VideoStoreInternal.FILES_SCANNED, deleteSelection, null);
+                mDeletes += deleted;
+                return deleted;
             }
+            return 0;
         }
 
         public void addInsert(FileScanInfo insert, long serverId) {
@@ -1621,6 +1680,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
         // Release any acquired locks (e.g., WifiLock)
         wifiLock = null;
+        sFilesFoundCount = 0;
+        sRemainingDeletes = 0;
+        sIsDeleting = false;
         // Notify listeners that the scanner is stopping
         sIsScannerAlive = false;
         notifyListeners();

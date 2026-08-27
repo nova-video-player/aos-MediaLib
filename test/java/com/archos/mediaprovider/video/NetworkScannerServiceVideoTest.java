@@ -84,20 +84,33 @@ public class NetworkScannerServiceVideoTest {
     }
 
     @Test
-    public void updateScanNotificationFormatingUsesDirectoryPathAndCount() {
-        final String[] updatedPath = new String[1];
-        final int[] updatedCount = new int[1];
-        NetworkScannerServiceVideo service = new NetworkScannerServiceVideo() {
-            @Override
-            void updateScanNotification(String path, int count) {
-                updatedPath[0] = path;
-                updatedCount[0] = count;
-            }
-        };
+    public void updateScanNotificationPostsNotification() {
+        NetworkScannerServiceVideo service = org.robolectric.Robolectric.buildService(NetworkScannerServiceVideo.class).create().get();
+        service.updateScanNotification("smb://server/share/folder", 25);
+        android.app.NotificationManager nm = (android.app.NotificationManager) service.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+        android.app.Notification notif = org.robolectric.Shadows.shadowOf(nm).getNotification(NetworkScannerServiceVideo.NOTIFICATION_ID);
+        org.junit.Assert.assertNotNull(notif);
+        org.junit.Assert.assertTrue(notif.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString().contains("25"));
+    }
 
-        service.updateScanNotification("smb://server/share/folder/", 25);
-        assertEquals("smb://server/share/folder/", updatedPath[0]);
-        assertEquals(25, updatedCount[0]);
+    @Test
+    public void updateDeleteNotificationPostsNotification() {
+        NetworkScannerServiceVideo service = org.robolectric.Robolectric.buildService(NetworkScannerServiceVideo.class).create().get();
+        service.updateDeleteNotification("smb://server/share/folder", 50);
+        android.app.NotificationManager nm = (android.app.NotificationManager) service.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+        android.app.Notification notif = org.robolectric.Shadows.shadowOf(nm).getNotification(NetworkScannerServiceVideo.NOTIFICATION_ID);
+        org.junit.Assert.assertNotNull(notif);
+        org.junit.Assert.assertTrue(notif.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString().contains("50"));
+    }
+
+    @Test
+    public void videoStoreImportServiceUpdateDeleteNotificationPostsNotification() {
+        VideoStoreImportService service = org.robolectric.Robolectric.buildService(VideoStoreImportService.class).create().get();
+        service.updateDeleteNotification(12, "/sdcard/Movies/test.mp4");
+        android.app.NotificationManager nm = (android.app.NotificationManager) service.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+        android.app.Notification notif = org.robolectric.Shadows.shadowOf(nm).getNotification(VideoStoreImportService.NOTIFICATION_ID);
+        org.junit.Assert.assertNotNull(notif);
+        org.junit.Assert.assertTrue(notif.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString().contains("12"));
     }
 
     @Test

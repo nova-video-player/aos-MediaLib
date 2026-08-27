@@ -97,8 +97,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private static Context mContext;
 
-    private static final int NOTIFICATION_ID = 6;
+    static final int NOTIFICATION_ID = 6;
     private NotificationManager nm;
+    private NotificationCompat.Builder nb;
     private Notification n;
     private static final String notifChannelId = "VideoStoreImportService_id";
     private static final String notifChannelName = "VideoStoreImportService";
@@ -155,13 +156,31 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             if (nm != null)
                 nm.createNotificationChannel(nc);
         }
-        return new NotificationCompat.Builder(this, notifChannelId)
+        nb = new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle(getString(R.string.video_store_import))
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true)
-                .build();
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
+        return nb.build();
+    }
+
+    public void updateScanNotification(int count, String path) {
+        if (nm != null && nb != null) {
+            String title = (count > 0) ? getString(R.string.video_store_import) + " (" + count + ")" : getString(R.string.video_store_import);
+            nb.setContentTitle(title)
+              .setContentText(path != null ? path : "");
+            nm.notify(NOTIFICATION_ID, nb.build());
+        }
+    }
+
+    public void updateDeleteNotification(int count, String path) {
+        if (nm != null && nb != null) {
+            String title = (count > 0) ? getString(R.string.local_cleanup) + " (" + count + ")" : getString(R.string.local_cleanup);
+            nb.setContentTitle(title)
+              .setContentText(path != null ? path : "");
+            nm.notify(NOTIFICATION_ID, nb.build());
+        }
     }
 
     @Override

@@ -34,6 +34,8 @@ public enum ImportState {
 
     private State mState = State.UNKNOWN;
     private int mNumberOfFilesRemainingToImport = 0;
+    private int mNumberOfFilesRemainingToDelete = 0;
+    private boolean mIsDeleting = false;
     private boolean mAndroidScanning = false;
     private final ReentrantLock mLock = new ReentrantLock();
     private volatile boolean mDbDirty = false;
@@ -58,6 +60,44 @@ public enum ImportState {
         mLock.lock();
         try {
             setNumberOfFilesRemainingToImportLocked(numberOfFilesRemainingToImport);
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    /** INTERNAL setter only */
+    public void setNumberOfFilesRemainingToDelete(int count) {
+        mLock.lock();
+        try {
+            mNumberOfFilesRemainingToDelete = count;
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    /** INTERNAL setter only */
+    public void setDeleting(boolean deleting) {
+        mLock.lock();
+        try {
+            mIsDeleting = deleting;
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    public boolean isDeleting() {
+        mLock.lock();
+        try {
+            return mIsDeleting;
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    public int getNumberOfFilesRemainingToDelete() {
+        mLock.lock();
+        try {
+            return mNumberOfFilesRemainingToDelete;
         } finally {
             mLock.unlock();
         }
