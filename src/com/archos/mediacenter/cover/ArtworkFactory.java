@@ -91,6 +91,10 @@ public class ArtworkFactory {
 		return v;
 	}
 
+	public void clearCachedViews() {
+		mCachedViews.clear();
+	}
+
 
 	// openRawResource() is intentionally called with @DrawableRes shadow ids below: it is used
 	// as a way to get the raw PNG byte stream (including the nine-patch "npTc" chunk) of a
