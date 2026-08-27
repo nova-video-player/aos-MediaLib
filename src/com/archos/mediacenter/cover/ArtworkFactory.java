@@ -82,7 +82,7 @@ public class ArtworkFactory {
     private float mContentLabelFontsize;
     private final android.util.SparseArray<View> mCachedViews = new android.util.SparseArray<>();
 
-	public View getCachedView(int layoutResId) {
+	public synchronized View getCachedView(int layoutResId) {
 		View v = mCachedViews.get(layoutResId);
 		if (v == null) {
 			v = mLayoutInflater.inflate(layoutResId, null);
@@ -91,7 +91,7 @@ public class ArtworkFactory {
 		return v;
 	}
 
-	public void clearCachedViews() {
+	public synchronized void clearCachedViews() {
 		mCachedViews.clear();
 	}
 
