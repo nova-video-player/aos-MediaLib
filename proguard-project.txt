@@ -4,9 +4,19 @@
 -keep class com.archos.mediascraper.** { *; }
 
 #### TMDb / Trakt JSON entities (Gson/Retrofit reflection targets) ####
--keep class com.uwetrottmann.trakt5.entities.** { *; }
+# Match the libraries' consumer rules: preserve JSON model names and members
+# needed by reflective deserialization, while allowing R8 to shrink unused models.
+-keepnames class com.uwetrottmann.trakt5.entities.**
+-keepclassmembers class com.uwetrottmann.trakt5.entities.** {
+    <fields>;
+    <init>(...);
+}
 -keep class com.uwetrottmann.trakt5.enums.** { *; }
--keep class com.uwetrottmann.tmdb2.entities.** { *; }
+-keepnames class com.uwetrottmann.tmdb2.entities.**
+-keepclassmembers class com.uwetrottmann.tmdb2.entities.** {
+    <fields>;
+    <init>(...);
+}
 -keep class com.uwetrottmann.tmdb2.enumerations.** { *; }
 
 #### Retrofit ####
