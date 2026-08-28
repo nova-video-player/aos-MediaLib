@@ -113,6 +113,14 @@ public class VolumeHiddenFilesReconciliationTest {
     }
 
     @Test
+    public void cleanupNotificationPathUsesTheStorageMountAndVolumeId() {
+        assertEquals("/storage/ABCD-1234",
+                VideoStoreImportImpl.getStoragePath("/storage/ABCD-1234/Movies/movie.mkv"));
+        assertEquals("/storage/emulated/0",
+                VideoStoreImportImpl.getStoragePath("/storage/emulated/0/Movies/movie.mkv"));
+    }
+
+    @Test
     public void unhideOnlyUnhidesRowsConfirmedPresentByMediaStore() {
         insertRow(10, STORAGE + "/present.mkv", 12345L);
         insertRow(11, STORAGE + "/still_missing.mkv", 12345L);
@@ -207,10 +215,10 @@ public class VolumeHiddenFilesReconciliationTest {
 
     private void stubFilesImportForwarding() {
         when(resolver.query(eq(VideoStoreInternal.FILES_IMPORT), any(String[].class),
-                anyString(), isNull(), isNull())).thenAnswer(invocation ->
+                anyString(), any(), any())).thenAnswer(invocation ->
                 database.query(VideoOpenHelper.FILES_IMPORT_TABLE_NAME,
                         invocation.getArgument(1), invocation.getArgument(2),
-                        null, null, null, null));
+                        invocation.getArgument(3), null, null, invocation.getArgument(4)));
         when(resolver.update(eq(VideoStoreInternal.FILES_IMPORT), any(ContentValues.class),
                 anyString(), any())).thenAnswer(invocation ->
                 database.update(VideoOpenHelper.FILES_IMPORT_TABLE_NAME,

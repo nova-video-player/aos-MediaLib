@@ -152,6 +152,10 @@ public class DatabaseMigrationTest {
         assertTrue(triggerExists(db, "movie_delete"));
         assertTrue(triggerExists(db, "show_delete"));
         assertTrue(triggerExists(db, "episode_delete"));
+        assertFalse(getSchemaSql(db, "trigger", "hide_volume_cmd_trigger")
+                .contains("DELETE FROM files_import"));
+        assertTrue(getSchemaSql(db, "trigger", "hide_volume_cmd_trigger")
+                .contains("UPDATE files_import SET volume_hidden"));
         assertOwnerAwareArtworkSchema(db);
         assertEquals("ok", querySingleString(db, "PRAGMA integrity_check"));
         assertEquals(0, foreignKeyViolationCount(db));
@@ -365,6 +369,29 @@ public class DatabaseMigrationTest {
         assertFalse("episode_delete should NOT contain v_actor_deletable (v39 optimization)", checkTriggerContains(upgradedDb, "episode_delete", "v_actor_deletable"));
         
         upgradedDb.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
+    public void testMigrationV57MovesExpiryDeleteOutOfHideVolumeTrigger() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v57.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper56 = new VideoOpenHelper(context, dbName, 56);
+        SQLiteDatabase db = helper56.getWritableDatabase();
+        assertTrue(checkTriggerContains(db, "hide_volume_cmd_trigger", "DELETE FROM files_import"));
+        db.close();
+
+        VideoOpenHelper helper57 = new VideoOpenHelper(context, dbName, 57);
+        SQLiteDatabase upgraded = helper57.getWritableDatabase();
+        String triggerSql = getSchemaSql(upgraded, "trigger", "hide_volume_cmd_trigger");
+        assertFalse(triggerSql.contains("DELETE FROM files_import"));
+        assertTrue(triggerSql.contains("UPDATE files_import SET volume_hidden"));
+        assertEquals("ok", querySingleString(upgraded, "PRAGMA integrity_check"));
+        assertEquals(0, foreignKeyViolationCount(upgraded));
+        assertEquals(0, getWritableSchema(upgraded));
+        upgraded.close();
         context.deleteDatabase(dbName);
     }
 

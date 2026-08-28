@@ -594,6 +594,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         public DeleteString() { /* empty */ }
 
         private final StringBuilder mStringBuilder = new StringBuilder();
+        private final ArrayList<Long> mIds = new ArrayList<>();
         private boolean mNeedComma;
         private int mCount;
 
@@ -603,6 +604,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             else
                 mNeedComma = true;
             mStringBuilder.append(id);
+            mIds.add(id);
             mCount++;
         }
 
@@ -613,6 +615,10 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         public int getCount() {
             return mCount;
+        }
+
+        public List<Long> getIds() {
+            return mIds;
         }
     }
     private static int mFoundFiles = 0;
@@ -1231,9 +1237,9 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 // while every stale entry on a large share is deleted.
                 mUpdateExecutor.execute();
 
-                String deleteSelection = BaseColumns._ID + " IN (" + deletes.toString() + ")";
-                if (log.isDebugEnabled()) log.debug("delete {} stale files WHERE {}", deleteCount, deleteSelection);
-                int deleted = mCr.delete(VideoStoreInternal.FILES_SCANNED, deleteSelection, null);
+                if (log.isDebugEnabled()) log.debug("delete {} stale files", deleteCount);
+                int deleted = VideoStoreImportImpl.deleteIdsInOneTransaction(mCr,
+                        VideoStoreInternal.FILES_SCANNED, deletes.getIds(), null, null);
                 mDeletes += deleted;
                 return deleted;
             }

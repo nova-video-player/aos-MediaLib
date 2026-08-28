@@ -80,6 +80,7 @@ public class VideoStoreImportImpl {
     private static final String MediaColumnsDATA = MediaColumns.DATA;
 
     private static final int WINDOW_SIZE = 2500;
+    static final int DELETE_BATCH_SIZE = 50;
     // Rows hidden longer than this are purged from files_import instead of kept forever (see #1909)
     private static final long HIDDEN_FILES_RETENTION_SECONDS = 30L * 24 * 3600;
     private static String BLACKLIST;
@@ -697,15 +698,10 @@ public class VideoStoreImportImpl {
                 }
 
                 if (!batch.isEmpty()) {
-                    StringBuilder selection = new StringBuilder(BaseColumns._ID).append(" IN (");
-                    String[] selectionArgs = new String[batch.size()];
-                    for (int j = 0; j < batch.size(); j++) {
-                        if (j > 0) selection.append(',');
-                        selection.append('?');
-                        selectionArgs[j] = String.valueOf(batch.get(j).id);
-                    }
-                    selection.append(')');
-                    int removed = cr.delete(VideoStoreInternal.FILES_IMPORT, selection.toString(), selectionArgs);
+                    List<Long> ids = new ArrayList<>(batch.size());
+                    for (ImportIdentity identity : batch) ids.add(identity.id);
+                    int removed = deleteIdsInOneTransaction(cr, VideoStoreInternal.FILES_IMPORT,
+                            ids, null, null);
                     if (removed == batch.size()) {
                         for (ImportIdentity identity : batch) {
                             snapshot.importedIds.remove(identity.id);
@@ -1098,7 +1094,7 @@ public class VideoStoreImportImpl {
         if (f.isFile())
             where = WHERE_FILE;
         if (log.isDebugEnabled()) log.debug("doRemove: Removing file(s): {}", path);
-        int deleted = mCr.delete(VideoStoreInternal.FILES_IMPORT, where, new String[]{path});
+        int deleted = deleteMatchingInBatches(mCr, where, new String[]{path});
         log.info("doRemove: removed:" + deleted);
     }
 
@@ -1628,7 +1624,7 @@ public class VideoStoreImportImpl {
      * drive is still reconnecting.
      */
     private void updateVolumeHiddenStates(String existingFiles) {
-        purgeExpiredHiddenFiles(mCr);
+        purgeExpiredHiddenFiles(mCr, mContext);
 
         if (!remoteProjectionHasStorageId()) {
             // Post-Android P: Use path-based volume detection
@@ -1679,10 +1675,134 @@ public class VideoStoreImportImpl {
      * hidden rows grows without bound and every future import pass pays the cost of scanning it.
      */
     static void purgeExpiredHiddenFiles(ContentResolver cr) {
+        purgeExpiredHiddenFiles(cr, null);
+    }
+
+    static void purgeExpiredHiddenFiles(ContentResolver cr, Context context) {
         long cutoff = System.currentTimeMillis() / 1000 - HIDDEN_FILES_RETENTION_SECONDS;
-        int purged = cr.delete(VideoStoreInternal.FILES_IMPORT,
-                "volume_hidden > 0 AND volume_hidden < ?", new String[]{String.valueOf(cutoff)});
+        String selection = "volume_hidden > 0 AND volume_hidden < ?";
+        String[] args = new String[]{String.valueOf(cutoff)};
+        int total = countRows(cr, selection, args);
+        if (total == 0) return;
+        // The expiry predicate can cover more than one old removable volume.  Keep the
+        // notification stable for this pass and identify it with the first affected
+        // volume's mount path, rather than replacing its text after every 50-row batch.
+        String storagePath = queryStoragePath(cr, selection, args);
+
+        int remaining = total;
+        ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remaining);
+        ImportState.VIDEO.setDeleting(true);
+        if (context instanceof VideoStoreImportService) {
+            ((VideoStoreImportService) context).updateDeleteNotification(remaining, storagePath);
+        }
+        int purged = 0;
+        try {
+            while (!mIsImportInterrupted) {
+                List<Long> ids = queryIds(cr, selection, args);
+                if (ids.isEmpty()) break;
+                int deleted = deleteIdsInOneTransaction(cr, VideoStoreInternal.FILES_IMPORT,
+                        ids, selection, args);
+                if (deleted <= 0) {
+                    log.error("purgeExpiredHiddenFiles: no progress deleting {} rows", ids.size());
+                    break;
+                }
+                purged += deleted;
+                remaining -= deleted;
+                ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remaining);
+                if (context instanceof VideoStoreImportService) {
+                    ((VideoStoreImportService) context).updateDeleteNotification(remaining, storagePath);
+                }
+            }
+        } finally {
+            ImportState.VIDEO.setDeleting(false);
+            ImportState.VIDEO.setNumberOfFilesRemainingToDelete(0);
+        }
         if (log.isDebugEnabled()) log.debug("purgeExpiredHiddenFiles: purged {} rows hidden before {}", purged, cutoff);
+    }
+
+    static int deleteIdsInOneTransaction(ContentResolver cr, Uri uri, List<Long> ids,
+            String guardSelection, String[] guardArgs) {
+        if (ids == null || ids.isEmpty()) return 0;
+        if (ids.size() > DELETE_BATCH_SIZE) throw new IllegalArgumentException("too many delete IDs");
+        StringBuilder selection = new StringBuilder();
+        if (!TextUtils.isEmpty(guardSelection)) selection.append('(').append(guardSelection).append(") AND ");
+        selection.append(BaseColumns._ID).append(" IN (");
+        String[] args = new String[(guardArgs == null ? 0 : guardArgs.length) + ids.size()];
+        int index = 0;
+        if (guardArgs != null) for (String arg : guardArgs) args[index++] = arg;
+        for (Long id : ids) {
+            if (index > (guardArgs == null ? 0 : guardArgs.length)) selection.append(',');
+            selection.append('?');
+            args[index++] = String.valueOf(id);
+        }
+        selection.append(')');
+        return cr.delete(uri, selection.toString(), args);
+    }
+
+    private static List<Long> queryIds(ContentResolver cr, String selection, String[] args) {
+        List<Long> ids = new ArrayList<>(DELETE_BATCH_SIZE);
+        Cursor cursor = null;
+        try {
+            cursor = cr.query(VideoStoreInternal.FILES_IMPORT, new String[]{BaseColumns._ID},
+                    selection, args, BaseColumns._ID + " ASC LIMIT " + DELETE_BATCH_SIZE);
+            while (cursor != null && cursor.moveToNext()) ids.add(cursor.getLong(0));
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return ids;
+    }
+
+    /**
+     * Returns the mount path shown for an expired-volume cleanup notification.  Removable
+     * volumes conventionally use {@code /storage/XXXX-XXXX}, so the returned path includes the
+     * Android volume ID without exposing an individual media-file name.
+     */
+    private static String queryStoragePath(ContentResolver cr, String selection, String[] args) {
+        Cursor cursor = null;
+        try {
+            cursor = cr.query(VideoStoreInternal.FILES_IMPORT, new String[]{MediaColumnsDATA},
+                    selection, args, BaseColumns._ID + " ASC LIMIT 1");
+            if (cursor == null || !cursor.moveToFirst()) return null;
+            return getStoragePath(cursor.getString(0));
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+    }
+
+    static String getStoragePath(String filePath) {
+        if (TextUtils.isEmpty(filePath) || !filePath.startsWith("/storage/")) return filePath;
+        String[] parts = filePath.split("/");
+        if (parts.length < 3 || TextUtils.isEmpty(parts[2])) return filePath;
+        if ("emulated".equals(parts[2]) && parts.length >= 4 && !TextUtils.isEmpty(parts[3])) {
+            return "/storage/emulated/" + parts[3];
+        }
+        return "/storage/" + parts[2];
+    }
+
+    private static int deleteMatchingInBatches(ContentResolver cr, String selection, String[] args) {
+        int total = 0;
+        while (!mIsImportInterrupted) {
+            List<Long> ids = queryIds(cr, selection, args);
+            if (ids.isEmpty()) return total;
+            int deleted = deleteIdsInOneTransaction(cr, VideoStoreInternal.FILES_IMPORT,
+                    ids, selection, args);
+            if (deleted <= 0) {
+                log.error("deleteMatchingInBatches: no progress for {}", selection);
+                return total;
+            }
+            total += deleted;
+        }
+        return total;
+    }
+
+    private static int countRows(ContentResolver cr, String selection, String[] args) {
+        Cursor cursor = null;
+        try {
+            cursor = cr.query(VideoStoreInternal.FILES_IMPORT, new String[]{"COUNT(*)"}, selection, args, null);
+            return cursor != null && cursor.moveToFirst() ? cursor.getInt(0) : 0;
+        } finally {
+            if (cursor != null) cursor.close();
+        }
     }
 
     private Set<Integer> getMountedReadableStorageIds() {

@@ -47,7 +47,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 56;
+    private static final int DATABASE_VERSION = 57;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -121,7 +121,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
              "END";
 
     /**
-     * View that when inserted a storage_id hides & deletes data for that volume.
+     * View that when inserted a storage_id hides data for that volume.
      * Queries on that view lists all the storage_ids that exist in files_import.
      **/
     public static final String HIDE_VOLUMES_VIEW_NAME = "hide_volume_cmd";
@@ -134,6 +134,12 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             "    DELETE FROM " + FILES_IMPORT_TABLE_NAME + " WHERE storage_id = NEW.storage_id AND volume_hidden > 0 AND volume_hidden < strftime('%s', 'now', '-1 month');\n" +
             // then set all visible files to hidden
             "    UPDATE " + FILES_IMPORT_TABLE_NAME + " SET volume_hidden = strftime('%s', 'now') WHERE volume_hidden == 0 AND storage_id == NEW.storage_id;\n" + 
+            "END";
+    // V57: expiry cleanup is explicit and batched in VideoStoreImportImpl.
+    private static final String CREATE_HIDE_VOLUMES_TRIGGER_V57 =
+            "CREATE TRIGGER hide_volume_cmd_trigger INSTEAD OF INSERT ON " + HIDE_VOLUMES_VIEW_NAME + " \n" +
+            "BEGIN\n" +
+            "    UPDATE " + FILES_IMPORT_TABLE_NAME + " SET volume_hidden = strftime('%s', 'now') WHERE volume_hidden == 0 AND storage_id == NEW.storage_id;\n" +
             "END";
     // ------------- ---##[ Scanned Files (SMB)  ]## ---------------------------
     // files_scanned holds data for network scanned files, but updates data in files table
@@ -1920,6 +1926,11 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 56);
             db.execSQL(CREATE_VIDEO_VIEW_V50);
+        }
+        if (oldVersion < 57 && newVersion >= 57) {
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] { "hide_volume_cmd_trigger" },
+                    CREATE_HIDE_VOLUMES_TRIGGER_V57);
         }
     }
 
