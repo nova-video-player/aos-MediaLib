@@ -252,7 +252,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
         nb = new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
-                .setContentTitle(getString(R.string.scraping_in_progress))
+                .setContentTitle(getString(R.string.network_scan_msg))
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);

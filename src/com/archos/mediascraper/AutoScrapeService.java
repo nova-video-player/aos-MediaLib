@@ -519,7 +519,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             String title = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.TITLE));
                             BaseTags baseTags = null;
                             if (sTotalNumberOfFilesRemainingToProcess > 0)
-                                nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.scraping_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
+                                nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.nfo_export_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
                                         .setContentText(getString(R.string.current_video_title) + " " + title).build());
                             if (!fileUri.toString().startsWith("upnp://")) {
                                 if (log.isTraceEnabled()) log.trace("startExporting: {} fileUri {}", movieID, fileUri);
