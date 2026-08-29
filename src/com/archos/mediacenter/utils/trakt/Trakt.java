@@ -328,7 +328,7 @@ public class Trakt {
                     final accessToken mAccessToken = new accessToken();
                     mAccessToken.access_token = response.body().access_token;
                     mAccessToken.refresh_token = response.body().refresh_token;
-                    if (log.isDebugEnabled()) log.debug("getAccessToken: access_token is {}", mAccessToken.access_token);
+                    if (log.isDebugEnabled()) log.debug("getAccessToken: access token obtained");
                     return mAccessToken;
                 }
                 break; // got a response, no need to retry
@@ -657,7 +657,7 @@ public class Trakt {
 
     public static void setRefreshToken(SharedPreferences sharedPreferences, String refreshToken) {
         Editor editor = sharedPreferences.edit();
-        if (log.isDebugEnabled()) log.debug("setRefreshToken: refreshToken={}", refreshToken);
+        if (log.isDebugEnabled()) log.debug("setRefreshToken: refresh token {}", refreshToken != null ? "updated" : "cleared");
         if (refreshToken != null) {
             editor.putString(KEY_TRAKT_REFRESH_TOKEN, refreshToken);
         } else {
