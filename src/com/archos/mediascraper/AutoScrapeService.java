@@ -78,13 +78,26 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     public static final String RESCAN_MOVIES = "rescan_movies";
     public static final String RESCAN_COLLECTIONS = "rescan_collections";
     public static final String RESCAN_ONLY_DESC_NOT_FOUND = "rescan_only_desc_not_found";
+    // Explicit user-triggered action (e.g. Settings "Refresh Files - Re-scan Storage"): retries
+    // never-scraped files plus auto-scrape-not-found files, without rescraping already-matched
+    // content. Distinct from the generic incremental/ContentObserver/dirty-state path (RESCAN_EVERYTHING=false,
+    // RESCAN_ONLY_DESC_NOT_FOUND=false), which stays scoped to never-scraped files only so that
+    // permanently-unmatchable content is not retried indefinitely on every silent automatic trigger.
     private static final int PARAM_NOT_SCRAPED = 0;
     private static final int PARAM_SCRAPED = 1;
     private static final int PARAM_ALL = 2;
     private static final int PARAM_SCRAPED_NOT_FOUND = 3;
     private static final int PARAM_MOVIES = 4;
     private static final int PARAM_PERSISTENCE_RETRY = 5;
+    private static final int PARAM_NOT_SCRAPED_AND_RETRY = 6;
     private static final int MAX_AUTOSCRAPE_ROUNDS = 4;
+    // ARCHOS_MEDIA_SCRAPER_ID sentinel written when an automatic scrape attempt found nothing:
+    // distinct from -1 (DbUtils.deleteScraperInfo()), which means the user explicitly cleared the
+    // scraper info for this item and opted out of automatic re-scraping. This value is safe to
+    // retry from the explicit "Refresh Files" path (PARAM_NOT_SCRAPED_AND_RETRY), but is excluded
+    // from the default/silent automatic scrape paths (PARAM_NOT_SCRAPED) to avoid retrying
+    // permanently-unmatchable content on every unattended trigger.
+    private static final int SCRAPER_ID_AUTO_NOT_FOUND = -2;
     private static final Logger log = LoggerFactory.getLogger(AutoScrapeService.class);
 
     public static final String PREFERENCE_LAST_TIME_VIDEO_SCRAPED_UTC = "last_time_video_scraped_utc";
@@ -724,7 +737,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             int scrapStatusParam = shouldRescrapAll && shouldRescanOnlyNotFound ? PARAM_SCRAPED_NOT_FOUND :
                                             scrapeOnlyMovies ? PARAM_MOVIES :
                                                     shouldRescrapAll ? PARAM_ALL :
-                                                            PARAM_NOT_SCRAPED;
+                                                            shouldRescanOnlyNotFound ? PARAM_NOT_SCRAPED_AND_RETRY :
+                                                                    PARAM_NOT_SCRAPED;
 
                             Set<Long> persistenceRetryIds = new HashSet<>(pendingPersistenceRetryIds);
                             pendingPersistenceRetryIds.clear();
@@ -1019,11 +1033,15 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                     nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.scraping_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
                                             .setContentText(getString(R.string.noresult_video_title) + " " + title).build());
 
-                                    // Failed => set the scraper fields to -1 so that we will be able
-                                    // to skip this file when launching the automated process again
+                                    // Failed => mark this file as auto-scrape-not-found (distinct from the
+                                    // user-opt-out -1 written by DbUtils.deleteScraperInfo()), so it is
+                                    // skipped by every silent automatic trigger (see WHERE_NOT_SCRAPED), but
+                                    // remains eligible for retry via the explicit "Refresh Files" action
+                                    // (WHERE_NOT_SCRAPED_AND_RETRY) or "Rescrape all > only not found"
+                                    // (WHERE_SCRAPED_NOT_FOUND).
                                     if (log.isTraceEnabled()) log.trace("startScraping: file {} not scraped without error -> mark it as not to be scraped again", fileUri);
                                     ContentValues cv = new ContentValues(2);
-                                    cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID, String.valueOf(-1));
+                                    cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID, String.valueOf(SCRAPER_ID_AUTO_NOT_FOUND));
                                     cv.put(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE, String.valueOf(-1));
                                     getContentResolver().update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, cv, BaseColumns._ID + "=?", new String[]{Long.toString(ID)});
                                     mNetworkOrScrapErrors++;
@@ -1048,13 +1066,15 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             }
 
                             // Restart only if we did not account for all rows still matching this mode.
-                            // For PARAM_SCRAPED_NOT_FOUND, files that fail to scrape are written back
-                            // with ARCHOS_MEDIA_SCRAPER_ID=-1 (same value), so they remain in the re-query.
-                            // Do not restart in this case — all files have been attempted and the
-                            // remaining ones simply cannot be identified; restarting causes an infinite loop.
+                            // For PARAM_SCRAPED_NOT_FOUND and PARAM_NOT_SCRAPED_AND_RETRY, files that fail
+                            // to scrape again are written back with the same ARCHOS_MEDIA_SCRAPER_ID value
+                            // (SCRAPER_ID_AUTO_NOT_FOUND), so they remain in the re-query. Do not restart
+                            // in this case — all files have been attempted and the remaining ones simply
+                            // cannot be identified; restarting causes an infinite loop.
                             if (!pendingPersistenceRetryIds.isEmpty()) {
                                 restartOnNextRound = true;
-                            } else if (persistenceRetryRound || scrapStatusParam == PARAM_SCRAPED_NOT_FOUND) {
+                            } else if (persistenceRetryRound || scrapStatusParam == PARAM_SCRAPED_NOT_FOUND
+                                    || scrapStatusParam == PARAM_NOT_SCRAPED_AND_RETRY) {
                                 restartOnNextRound = false;
                             } else {
                                 restartOnNextRound = (sNumberOfFilesScraped + sNumberOfFilesNotScraped + numberOfBlobRowsSkipped != numberOfRows);
@@ -1189,11 +1209,29 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     private static final String WHERE_BASE =
             VideoStore.Video.VideoColumns.ARCHOS_HIDE_FILE + "=0 AND " +
                     VideoStore.MediaColumns.DATA + " NOT LIKE ?";
+    // Never-scraped files only. Deliberately excludes both the legacy/user-opt-out value (-1,
+    // written by DbUtils.deleteScraperInfo()/VideoDetailsFragment.deleteScraperInfo() when the user
+    // explicitly removes scraper info for an item) and SCRAPER_ID_AUTO_NOT_FOUND: this clause backs
+    // every *silent* automatic trigger (ContentObserver on provider changes, app-foreground dirty
+    // state, generic incremental rescans), which fire repeatedly and unattended, so permanently
+    // unmatchable content must not be retried indefinitely on every one of them.
     private static final String WHERE_NOT_SCRAPED =
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + "=0 AND "+ WHERE_BASE;
 
+    // Explicit user action (Settings "Refresh Files - Re-scan Storage"): never-scraped files plus
+    // auto-scrape-not-found-retryable files, but not already-matched content. Scoped to this one
+    // user-triggered action (see PARAM_NOT_SCRAPED_AND_RETRY) rather than the default automatic
+    // path above, so the retry only happens when the user knowingly asks for it.
+    private static final String WHERE_NOT_SCRAPED_AND_RETRY =
+            "(" + VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + "=0 OR " +
+                    VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + "=" + SCRAPER_ID_AUTO_NOT_FOUND + ") AND "+ WHERE_BASE;
+
+    // Explicit user action ("Rescrape all" + "only not found"): includes both the legacy/opt-out
+    // value (-1) and the new auto-not-found-retryable value, since the user is knowingly requesting
+    // a retry here, unlike the default automatic paths above.
     private static final String WHERE_SCRAPED_NOT_FOUND =
-            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + "=-1 AND "+ WHERE_BASE;
+            "(" + VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + "=-1 OR " +
+                    VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + "=" + SCRAPER_ID_AUTO_NOT_FOUND + ") AND "+ WHERE_BASE;
 
     private static final String WHERE_SCRAPED =
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID + ">0 AND " + WHERE_BASE;
@@ -1215,6 +1253,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                 return WHERE_SCRAPED_ALL;
             case PARAM_SCRAPED_NOT_FOUND:
                 return WHERE_SCRAPED_NOT_FOUND;
+            case PARAM_NOT_SCRAPED_AND_RETRY:
+                return WHERE_NOT_SCRAPED_AND_RETRY;
             case PARAM_MOVIES:
                 return WHERE_MOVIES;
             case PARAM_PERSISTENCE_RETRY:
