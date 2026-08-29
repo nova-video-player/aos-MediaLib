@@ -207,13 +207,19 @@ public class ShowScraper4 extends BaseScraper2 {
      * TV-specific auto-scrape entry point used by {@link Scraper#getAutoDetails}. Mirrors
      * {@link BaseScraper2#search} (which is final and shared with movies, so it cannot be
      * overridden here) but adds one behavior: when the top-ranked candidate's requested
-     * season/episode cannot genuinely be found (see buildTag()), retries against the next
-     * candidates that are exactly tied in Levenshtein distance with the top one, e.g. two shows
-     * sharing the exact same title such as a classic show and its reboot.
+     * season/episode cannot genuinely be found (see buildTag()), and the top candidate is an
+     * exact title match (Levenshtein distance 0, a genuine title collision, e.g. two shows
+     * sharing the exact same title such as a classic show and its reboot), retries against the
+     * next candidates that are also tied at distance 0.
      * <p>
-     * This is deliberately restricted to distance-tied candidates and only triggers extra TMDB
-     * requests in the failure branch, to avoid mis-attributing episodes to an unrelated,
-     * lower-ranked show and to avoid any extra cost in the (overwhelmingly common) success case.
+     * This cascade is deliberately restricted to zero-distance tied candidates and only
+     * triggers extra TMDB requests in the failure branch, to avoid mis-attributing episodes to
+     * an unrelated, lower-ranked show and to avoid any extra cost in the (overwhelmingly
+     * common) success case. When the top candidate is merely a fuzzy/partial match (distance >
+     * 0), no cascade happens even if other candidates are tied at that same distance: only the
+     * top candidate is tried, same as a plain single-candidate lookup, since those ties are not
+     * genuine collisions with the top pick and retrying them would add several full-season/show
+     * TMDb fetches per candidate for no accuracy benefit.
      */
     public ScrapeDetailResult searchWithTitleCollisionFallback(SearchInfo info) {
         if (info == null || !(info instanceof TvShowSearchInfo)) {
@@ -234,6 +240,14 @@ public class ShowScraper4 extends BaseScraper2 {
         bundle.putInt(Scraper.ITEM_REQUEST_ALL_EPISODES, tvSearchInfo.getSeason());
 
         int topDistance = searchResult.results.get(0).getLevenshteinDistance();
+        // Only cascade through further tied candidates for genuine title collisions, i.e. an
+        // exact title match (distance 0, e.g. a classic show and its reboot sharing the same
+        // name). When the top match is merely a fuzzy/partial one (distance > 0), other
+        // candidates tied at that same non-zero distance are not true collisions with the top
+        // pick, so retrying them would add several full-season/show TMDb fetches per candidate
+        // without improving match precision. In that case behave like a plain single-candidate
+        // lookup, same as before this fallback existed.
+        boolean isGenuineTitleCollision = topDistance == 0;
         ScrapeDetailResult result = null;
         for (SearchResult candidate : searchResult.results) {
             if (candidate.getLevenshteinDistance() != topDistance) break; // only tied candidates
@@ -244,6 +258,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (log.isDebugEnabled()) log.debug("searchWithTitleCollisionFallback: genuine match for '{}' (id {})", candidate.getTitle(), candidate.getId());
                 return result;
             }
+            if (!isGenuineTitleCollision) break; // no cascade beyond the top candidate
             log.info("searchWithTitleCollisionFallback: no genuine episode match for '{}' (id {}), trying next tied candidate", candidate.getTitle(), candidate.getId());
         }
         // no tied candidate yielded a genuine match: return the last attempted result (top

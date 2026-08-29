@@ -230,10 +230,10 @@ Some shows share the exact same title as an unrelated show (e.g. a classic show 
 
 1. Runs the normal ranked search (Section 5), keeping up to `CASCADE_CANDIDATE_LIMIT` (5) candidates — free, since TMDb's `tv()` search already returns up to 20 results in one page.
 2. Fetches full details for the top candidate. If season/episode data resolves to a genuine episode (a real title, via the recovery in 7.1 if needed), that result is returned.
-3. Otherwise, retries only the next candidates that are **exactly tied** in Levenshtein distance with the top one (not the whole candidate list), until one yields a genuine match.
+3. Otherwise, if the top candidate's Levenshtein distance is exactly `0` (a genuine title collision, e.g. a classic show and its reboot sharing the exact same title), retries the next candidates that are also tied at distance `0`, until one yields a genuine match. If the top distance is not `0` (a fuzzy/partial match, not a true collision), no cascade happens: the top candidate's result is used as-is, same as a plain single-candidate lookup.
 4. If no tied candidate yields a genuine match, returns the top candidate's (not-found) result, preserving existing behavior for episodes that are legitimately missing from the correct show.
 
-Restricting retries to distance-tied candidates, and only triggering the extra requests in the failure branch, avoids mis-attributing episodes to an unrelated, lower-ranked show and avoids extra TMDb cost in the overwhelmingly common success case.
+Restricting the cascade to exact-title-tie (distance `0`) candidates, and only triggering the extra requests in the failure branch, avoids mis-attributing episodes to an unrelated, lower-ranked show and bounds the extra TMDb cost to the genuine-collision case: each additional candidate costs a full show/season fetch (and possibly a Season 0 fallback, 7.5), so cascading through fuzzy-matched, non-colliding candidates would multiply request cost with no accuracy benefit.
 
 ### 7.3 Per-Show/Per-Year Cache Key Scoping
 Because the cascade fallback (7.2) can call into TMDb-detail fetches for multiple distinct shows that happen to share the same cleaned title, and `SearchShow`'s search cache can be reused across queries for the same cleaned name in different years, cache keys must be scoped precisely enough to avoid collisions:
