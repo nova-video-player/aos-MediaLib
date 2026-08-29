@@ -519,7 +519,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             String title = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.TITLE));
                             BaseTags baseTags = null;
                             if (sTotalNumberOfFilesRemainingToProcess > 0)
-                                nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sTotalNumberOfFilesRemainingToProcess  + "\n" + getString(R.string.current_video_title) + " " + title).build());
+                                nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.scraping_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
+                                        .setContentText(getString(R.string.current_video_title) + " " + title).build());
                             if (!fileUri.toString().startsWith("upnp://")) {
                                 if (log.isTraceEnabled()) log.trace("startExporting: {} fileUri {}", movieID, fileUri);
                                 if (scraperType == BaseTags.TV_SHOW) {
@@ -1015,7 +1016,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 } else if (shouldMarkAsNotFound(persistenceFailed, notScraped, noScrapeError)) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
                                     //Show the error on the notification
                                     //Using the file name stripped as the title here, the search suggestion used to scrape.
-                                    nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sTotalNumberOfFilesRemainingToProcess  + "\n" + getString(R.string.noresult_video_title) + " " + title).build());
+                                    nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.scraping_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
+                                            .setContentText(getString(R.string.noresult_video_title) + " " + title).build());
 
                                     // Failed => set the scraper fields to -1 so that we will be able
                                     // to skip this file when launching the automated process again
@@ -1027,7 +1029,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                     mNetworkOrScrapErrors++;
                                 } else {
                                     //Show the user a pretty notification, with the Scraped Title.
-                                    nm.notify(NOTIFICATION_ID, nb.setContentText(getString(R.string.remaining_videos_to_process) + " " + sTotalNumberOfFilesRemainingToProcess  + "\n" + getString(R.string.current_video_title) + " " + title).build());
+                                    nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.scraping_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
+                                            .setContentText(getString(R.string.current_video_title) + " " + title).build());
                                 }
                                 //log.debug("startScraping: #filesProcessed={}/{} ({}), #scrapOrNetworkErrors={}, #notScraped={}, current batch #filesToProcess={}/{}", sNumberOfFilesScraped, numberOfRows, sTotalNumberOfFilesRemainingToProcess, mNetworkOrScrapErrors, sNumberOfFilesNotScraped, sNumberOfFilesRemainingToProcess, window);
                             }
