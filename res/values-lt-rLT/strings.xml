@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">Vykdomas atpažinimas</string>
     <string name="remaining_videos_to_process">Liko media failų:</string>
     <string name="video_store_import">Importuojami lokalūs media failai</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

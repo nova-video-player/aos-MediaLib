@@ -55,4 +55,5 @@
     -->
     <!-- Audio Search displays this label when displaying an artist. Copy from packages/providers/MediaProvider/res -->
     <string name="artist_label">କଳାକାର</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">Виконується операція</string>
     <string name="remaining_videos_to_process">Файли, що залишилися:</string>
     <string name="video_store_import">Імпортування локальних медіафайлів</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

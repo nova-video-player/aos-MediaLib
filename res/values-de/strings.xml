@@ -144,4 +144,5 @@ Auf Ihrer SD-Karte ist ein Fehler aufgetreten.</string>
     <string name="video_store_import">Importieren lokaler Mediendateien</string>
     <string name="current_video_title">Aktuell:</string>
     <string name="noresult_video_title">Nicht gescraped:</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

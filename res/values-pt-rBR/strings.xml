@@ -142,4 +142,5 @@
     <string name="video_store_import">Importando arquivos de mídia locais</string>
     <string name="current_video_title">Atual:</string>
     <string name="noresult_video_title">Sem metadados:</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">正在抓取資料</string>
     <string name="remaining_videos_to_process">尚須處理的媒體檔案：</string>
     <string name="video_store_import">匯入本機媒體檔案</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

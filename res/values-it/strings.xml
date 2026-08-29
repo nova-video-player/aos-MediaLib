@@ -137,4 +137,5 @@
     <string name="scraping_in_progress">Ricerca in corso</string>
     <string name="remaining_videos_to_process">Media rimanenti da elaborare:</string>
     <string name="video_store_import">Importazione dei file locali</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

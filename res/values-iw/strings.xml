@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">סריקת פרטי מדיה מתבצעת</string>
     <string name="remaining_videos_to_process">קבצי מדיה שיש לעבד:</string>
     <string name="video_store_import">מייבא קבצי מדיה מקומיים</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>
