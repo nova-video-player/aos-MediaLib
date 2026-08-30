@@ -140,7 +140,14 @@
     <string name="scraping_in_progress">Pesquisa em andamento</string>
     <string name="remaining_videos_to_process">Arquivos de mídia restantes a serem processados:</string>
     <string name="video_store_import">Importando arquivos de mídia locais</string>
+    <string name="local_cleanup">Limpeza local</string>
+    <string name="network_cleanup">Limpeza de rede</string>
     <string name="current_video_title">Atual:</string>
     <string name="noresult_video_title">Sem metadados:</string>
     <!-- Status overlay badges (1-letter abbreviations) -->
+    <string name="badge_domain_local">L</string>
+    <string name="badge_domain_network">N</string>
+    <string name="badge_op_scan">S</string>
+    <string name="badge_op_delete">D</string>
+    <string name="badge_op_identify">I</string>
 </resources>
