@@ -229,6 +229,12 @@ public class ShowTags extends VideoTags {
         // only update info based on onlineId since it is the source of truth (not the name)
         updateInfo(ONLINEID_SELECTION, new String[] { String.valueOf(mOnlineId)  }, cr);
 
+        if (log.isDebugEnabled()) {
+            log.debug("save: show onlineId={} parsed original_language={} original_title={} spoken_languages={} showFound={} baseInfoChanged={}",
+                    mOnlineId, mOriginalLanguage, mOriginalTitle, mSpokenLanguages,
+                    showFound, baseInfoChanged);
+        }
+
         if (!showFound || baseInfoChanged) {
             if (log.isDebugEnabled()) log.debug("save: show not found in db or baseInfo changed");
             // got to insert or update the baseinfo.
@@ -677,6 +683,13 @@ public class ShowTags extends VideoTags {
                 String storedOriginalLanguage = cursor.getString(10);
                 String storedOriginalTitle = cursor.getString(11);
                 String storedSpokenLanguages = cursor.getString(12);
+
+                if (log.isDebugEnabled()) {
+                    log.debug("updateInfo: show onlineId={} stored original_language={} original_title={} spoken_languages={} parsed original_language={} original_title={} spoken_languages={}",
+                            storedOnlineId, storedOriginalLanguage, storedOriginalTitle,
+                            storedSpokenLanguages, mOriginalLanguage, mOriginalTitle,
+                            mSpokenLanguages);
+                }
 
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);

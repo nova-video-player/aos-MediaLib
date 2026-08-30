@@ -362,7 +362,10 @@ public class ShowScraper4 extends BaseScraper2 {
 
         Map<String, EpisodeTags> allEpisodes = null;
         ShowTags showTags = null;
+        ShowTags refreshedShowMetadata = null;
         ShowIdImagesResult searchImages = null;
+        boolean refreshShowMetadata = options != null
+                && options.getBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, false);
         // set when the single-episode lookup below had to be remapped to TMDb's absolute
         // episode numbering (see comment there); guards against redoing the same detection
         // once it has already succeeded for this request
@@ -370,6 +373,12 @@ public class ShowScraper4 extends BaseScraper2 {
 
         if (log.isDebugEnabled()) log.debug("getDetailsInternal: probing cache for showKey {}", showKey);
         allEpisodes = sEpisodeCache.get(seasonKey);
+        // An explicit manual re-scrape must reach the show endpoint even when this season
+        // is cached: the cache keeps the pre-existing ShowTags and would retain its old
+        // source metadata indefinitely.
+        if (refreshShowMetadata) {
+            allEpisodes = null;
+        }
         if (log.isTraceEnabled()) debugLruCache(sEpisodeCache);
 
         if (allEpisodes == null) {
@@ -391,7 +400,7 @@ public class ShowScraper4 extends BaseScraper2 {
             Boolean isShowKnown = isShowAlreadyKnown(showId, mContext);
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: show known {}", isShowKnown);
 
-            if (!isShowKnown) {
+            if (!isShowKnown || refreshShowMetadata) {
                 String lang = resultLanguage;
                 // for getAllEpisodes we need to get the number of seasons thus get it
                 if (log.isDebugEnabled()) log.debug("getDetailsInternal: show {} not known or getAllEpisodes {}", showId, getAllEpisodes);
@@ -400,7 +409,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 ShowMetadata cachedMetadata = sShowMetadataCache.get(showKey);
                 ShowIdTvSearchResult showIdTvSearchResult = null;
 
-                if (cachedMetadata == null) {
+                if (cachedMetadata == null || refreshShowMetadata) {
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: show metadata cache miss, fetching from API");
                     // query first tmdb
                     showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey, showId, resultLanguage, adultScrape, getTmdb());
@@ -409,6 +418,10 @@ public class ShowScraper4 extends BaseScraper2 {
                     if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
                         return new ScrapeDetailResult(new ShowTags(), true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
                     else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                    if (refreshShowMetadata) {
+                        refreshedShowMetadata = showTags;
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: explicit manual refresh fetched source metadata for show {}", showId);
+                    }
                     
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: downloaded showTags {} {}", showTags.getOnlineId(), showTags.getTitle());
 
@@ -482,6 +495,15 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (showTags == null) {
                     log.warn("getDetailsInternal: show {} not found in db, cannot rebuild tags", showId);
                     return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR_PARSER, null);
+                }
+                if (refreshedShowMetadata != null) {
+                    showTags.setOriginalLanguage(refreshedShowMetadata.getOriginalLanguage());
+                    showTags.setOriginalTitle(refreshedShowMetadata.getOriginalTitle());
+                    showTags.setSpokenLanguages(refreshedShowMetadata.getSpokenLanguages().isEmpty()
+                            ? null : java.util.Arrays.asList(refreshedShowMetadata.getSpokenLanguages().split(",")));
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: applied refreshed source metadata to known show {}: language={} title={} spoken={}",
+                            showId, showTags.getOriginalLanguage(), showTags.getOriginalTitle(),
+                            showTags.getSpokenLanguages());
                 }
             }
 

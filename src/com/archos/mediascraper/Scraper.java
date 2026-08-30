@@ -46,6 +46,12 @@ public class Scraper {
     public static final String ITEM_REQUEST_ALL_EPISODES = "WantAllEps";
     public static final String ITEM_RESULT_ALL_EPISODES = "allEpisodes";
 
+    /**
+     * For an explicit user-initiated show re-scrape, refresh source-level show metadata even
+     * when the show already exists in the local scraper database.
+     */
+    public static final String ITEM_REQUEST_REFRESH_SHOW_METADATA = "RefreshShowMetadata";
+
     public static final String ITEM_REQUEST_BASIC_SHOW = "basicShow";
     public static final String ITEM_REQUEST_BASIC_VIDEO = "basicVideo";
 

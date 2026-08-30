@@ -53,6 +53,11 @@ public class ShowIdParser {
 
         result.setRating(Math.round(serie.vote_average.floatValue() * 10)/10.0f);
         result.setTitle(serie.name + (( year != null) ? " " + year : ""));
+        if (log.isDebugEnabled()) {
+            log.debug("getResult: TMDb show id={} name={} original_language={} original_name={} spoken_languages={}",
+                    serie.id, serie.name, serie.original_language, serie.original_name,
+                    serie.spoken_languages);
+        }
         result.setOriginalLanguage(serie.original_language);
         result.setOriginalTitle(serie.original_name);
         if (serie.spoken_languages != null) {
@@ -61,6 +66,11 @@ public class ShowIdParser {
                 if (spokenLanguage != null) spokenLanguages.add(spokenLanguage.iso_639_1);
             }
             result.setSpokenLanguages(spokenLanguages);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("getResult: normalized show metadata id={} original_language={} original_title={} spoken_languages={}",
+                    serie.id, result.getOriginalLanguage(), result.getOriginalTitle(),
+                    result.getSpokenLanguages());
         }
 
         if (log.isDebugEnabled()) log.debug("getResult: found title={}", serie.name);
