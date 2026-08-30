@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -64,6 +65,13 @@ import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.download
 
 public class MovieScraper3 extends BaseScraper2 {
     private static final String PREFERENCE_NAME = "themoviedb.org";
+
+    // Distance penalty applied to a candidate whose actual TMDb release year clearly mismatches
+    // the year parsed from the filename (see getMatches2() unified scoring section): large enough
+    // to outweigh a coincidental exact-title (distance 0) match against a genuinely close,
+    // year-correct one (a handful of edited characters), without being so extreme that it can
+    // never be recovered from when no better candidate exists.
+    private static final int YEAR_MISMATCH_PENALTY = 10;
 
     private static final Logger log = LoggerFactory.getLogger(MovieScraper3.class);
 
@@ -326,6 +334,24 @@ public class MovieScraper3 extends BaseScraper2 {
         String referenceNameLC = referenceName.toLowerCase();
         String cleanedNameLC = cleanedName.toLowerCase();
 
+        // Expected release year parsed from the filename, if any: used below to penalize
+        // candidates whose actual TMDb release year clearly does not match, so that a title that
+        // happens to be an unrelated movie's exact (but wrong) name cannot outrank the real,
+        // year-correct match just because a later, year-less candidate query pulled it in (see
+        // issue #1923, e.g. "Wonders of the Sea 3D (2017)" vs. an unrelated "Wonders of the Sea").
+        // Only trusted when the year is "confident" (i.e. came from an explicit "(YYYY)" pattern):
+        // a year guessed from a bare number elsewhere in the title (e.g. "2001 A Space Odyssey",
+        // "Class of 1999") is often not the real release year at all, so penalizing against it
+        // would punish the correct match instead of the wrong one.
+        Integer expectedYear = null;
+        if (searchInfo.isYearConfident()) {
+            try {
+                if (searchInfo.getYear() != null) expectedYear = Integer.valueOf(searchInfo.getYear());
+            } catch (NumberFormatException nfe) {
+                expectedYear = null;
+            }
+        }
+
         java.util.LinkedHashMap<Integer, SearchResult> uniqueResults = new java.util.LinkedHashMap<>();
         for (SearchResult sr : allResults) {
             if (uniqueResults.containsKey(sr.getId())) continue;
@@ -344,6 +370,22 @@ public class MovieScraper3 extends BaseScraper2 {
                 int distOrig = originalTitle != null ? levenshteinDistance.apply(referenceNameLC, originalTitleLC) : Integer.MAX_VALUE;
                 distance = Math.min(distTitle, distOrig);
             }
+
+            // PENALTY: an exact (or near) title match is not a genuine match if its actual TMDb
+            // release year is clearly different from the year parsed out of the filename. Without
+            // this, a coincidental exact-title match for an unrelated, differently-dated movie can
+            // beat the real, year-scoped match purely on Levenshtein distance. A 1-year tolerance
+            // absorbs festival-vs-wide release date discrepancies.
+            if (expectedYear != null && sr.getReleaseOrFirstAiredDate() != null) {
+                Calendar releaseCal = Calendar.getInstance();
+                releaseCal.setTime(sr.getReleaseOrFirstAiredDate());
+                int releaseYear = releaseCal.get(Calendar.YEAR);
+                if (Math.abs(releaseYear - expectedYear) > 1) {
+                    if (log.isDebugEnabled()) log.debug("getMatches2: result {} ({}) release year {} does not match expected year {}, penalizing distance {} -> {}", sr.getTitle(), sr.getId(), releaseYear, expectedYear, distance, distance + YEAR_MISMATCH_PENALTY);
+                    distance += YEAR_MISMATCH_PENALTY;
+                }
+            }
+
             sr.setLevenshteinDistance(distance);
             if (log.isDebugEnabled()) log.debug("getMatches2: result {} ({}) distance={}", sr.getTitle(), sr.getId(), sr.getLevenshteinDistance());
 

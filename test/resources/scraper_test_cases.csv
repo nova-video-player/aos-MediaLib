@@ -92,6 +92,9 @@ Stromae Racine Carrée Live (2015) BDRIP 1080 MKV x264 DTS.mkv|Movie|Stromae: Ra
 Smile 2 (2024) MULTi VFF 2160p 10bit 4KLight DV HDR BluRay DDP 5.1 Atmos x265-QTZ.mkv|Movie|Smile 2|1100782|fr
 Radiostars (2012) VOF 1080p Blu-ray FHD x264 - VFHD [0033].mkv|Movie|Radiostars|100830|fr
 Wonders of the Sea (2017) MULTi VFI 2160p 10bit 4KLight HDR BluRay DD+5.1 x265-QTZ.mkv|Movie|Wonders of the Sea 3D|476070|fr
+# issue #1923: title carries its own "3D" tag before the year, distinct from the line above;
+# must still resolve to the 2017 documentary (476070), not the unrelated 1922 short film of the same base title
+Wonders of the Sea 3D (2017) MULTi VFI 2160p 10bit 4KLight HDR BluRay DD+5.1 x265-QTZ.mkv|Movie|Wonders of the Sea 3D|476070|fr
 Barbie Skipper - La grande aventure de baby-sitting (2023) MULTi 1080p AMZN WEB-DL DDP5.1 H.264-FCK.mkv|Movie|Barbie : Skipper - La grande aventure de baby-sitting|1093349|fr
 Bloodline (2019) MULTi 1080p HDLight x264 AC3 5.1-EXTREME.mkv|Movie|Bloodline|543917|fr
 X (2022) MULTi VFI 2160p 10bit 4KLight DV HDR10Plus BluRay DDP 5.1 x265-QTZ.mkv|Movie|X|760104|fr
