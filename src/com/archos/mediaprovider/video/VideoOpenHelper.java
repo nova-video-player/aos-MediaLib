@@ -1514,6 +1514,13 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    (Archos_smbserver == 0 OR\n" +
                     "    Archos_smbserver IN (SELECT _id FROM smb_server WHERE active == 1))";
 
+    // Expose v58's movie/show original language through the common video view.
+    private static final String CREATE_VIDEO_VIEW_V58 = CREATE_VIDEO_VIEW_V50.replace(
+            "    coalesce(name_movie, name_show) AS scraper_name,\n",
+            "    coalesce(name_movie, name_show) AS scraper_name,\n" +
+                    "    coalesce(original_language_movie, original_language_show) AS " +
+                    VideoColumns.SCRAPER_ORIGINAL_LANGUAGE + ",\n");
+
     // ------------- ---##[ Video Thumbnails     ]## ---------------------------
     public static final String VIDEOTHUMBNAIL_TABLE_NAME = "videothumbnails";
     private static final String CREATE_VIDEOTHUMBNAIL_TABLE =
@@ -1934,7 +1941,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         }
         if (oldVersion < 58 && newVersion >= 58) {
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding original language and title metadata", 58);
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 58);
+            db.execSQL(CREATE_VIDEO_VIEW_V58);
         }
     }
 

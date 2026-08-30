@@ -108,6 +108,7 @@ public class DatabaseMigrationTest {
         assertTrue(columnExists(db, "show", ScraperStore.Show.ORIGINAL_LANGUAGE));
         assertTrue(columnExists(db, "show", ScraperStore.Show.ORIGINAL_TITLE));
         assertTrue(columnExists(db, "show", ScraperStore.Show.SPOKEN_LANGUAGES));
+        assertTrue(columnExists(db, "video", VideoStore.Video.VideoColumns.SCRAPER_ORIGINAL_LANGUAGE));
         assertEquals("und", querySingleString(db, "SELECT " +
                 ScraperStore.Show.ORIGINAL_LANGUAGE + " FROM show WHERE _id = 1"));
         assertEquals("", querySingleString(db, "SELECT " +

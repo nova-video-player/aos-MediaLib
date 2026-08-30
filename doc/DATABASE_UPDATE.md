@@ -429,6 +429,8 @@ to both `movie` and `show` through `ScraperTables.upgradeTo(db, 58)`:
   default to the empty string.
 - The migration's `UPDATE`s also assign those defaults to null or blank values,
   including rows from incomplete/external restores.
+- The v58 recreation of the `video` view exposes the applicable movie/show value
+  as `scraper_original_language`, so playback can use it without a second query.
 - `belongs_to_collection` remains in the existing normalized `movie_collection`
   table introduced in v38; the scraper now persists its overview as the
   collection description, so no v58 table change is needed for it.
