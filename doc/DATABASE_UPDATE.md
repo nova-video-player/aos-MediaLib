@@ -31,7 +31,7 @@ There are two version constants in `VideoOpenHelper`:
 
 ```java
 private static final int DATABASE_CREATE_VERSION = 36; // the frozen base schema
-private static final int DATABASE_VERSION        = 55; // the current schema
+private static final int DATABASE_VERSION        = 58; // the current schema
 ```
 
 `onCreate()` builds the **frozen version-36 base schema** and then immediately
@@ -417,7 +417,25 @@ schema:
 Do not raise the creation base merely to make a migration test pass. That can
 hide a broken field-upgrade path while abandoning existing users.
 
-## 8. Pre-commit checklist
+## 8. Version 58: original movie metadata
+
+Version 58 adds original-language, original-title and spoken-language columns
+to both `movie` and `show` through `ScraperTables.upgradeTo(db, 58)`:
+
+- Newly scraped movies persist TMDb's non-translated ISO 639-1 original-language
+  code in `original_language_movie`, such as `en` or `fr`; its non-null default
+  is `und` (ISO 639-2/3: undetermined).
+- `original_title_*` and comma-separated ISO 639-1 `spoken_languages_*` both
+  default to the empty string.
+- The migration's `UPDATE`s also assign those defaults to null or blank values,
+  including rows from incomplete/external restores.
+- `belongs_to_collection` remains in the existing normalized `movie_collection`
+  table introduced in v38; the scraper now persists its overview as the
+  collection description, so no v58 table change is needed for it.
+- Do not add these columns to the frozen v36 `MOVIE_TABLE_CREATE`; fresh
+  databases receive them when `onCreate()` replays migration 58.
+
+## 9. Pre-commit checklist
 
 - [ ] New step gated `if (oldVersion < N && newVersion >= N)`.
 - [ ] No released migration's intended result was changed; any compatibility

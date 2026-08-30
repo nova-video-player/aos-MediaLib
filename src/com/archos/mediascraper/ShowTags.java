@@ -31,6 +31,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 
 import com.archos.mediaprovider.video.ScraperStore;
+import com.archos.mediacenter.utils.ISO639codes;
 import com.archos.mediascraper.ScraperImage.Type;
 
 import com.archos.mediascraper.themoviedb3.SearchShowResult;
@@ -43,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,6 +52,9 @@ public class ShowTags extends VideoTags {
     private static final Logger log = LoggerFactory.getLogger(ShowTags.class);
     private static final SimpleDateFormat sDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     protected Date mPremiered;
+    private String mOriginalLanguage = "und";
+    private String mOriginalTitle = "";
+    private String mSpokenLanguages = "";
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
     public static final Parcelable.Creator<ShowTags> CREATOR = new Parcelable.Creator<ShowTags>() { 
@@ -89,6 +94,36 @@ public class ShowTags extends VideoTags {
 
     public Date getPremiered() { return mPremiered; }
 
+    public void setOriginalLanguage(String originalLanguage) {
+        if (originalLanguage == null) {
+            mOriginalLanguage = "und";
+            return;
+        }
+        String normalized = ISO639codes.getISO6391ForLetterCode(originalLanguage);
+        mOriginalLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    public String getOriginalLanguage() { return mOriginalLanguage; }
+
+    public void setOriginalTitle(String originalTitle) {
+        mOriginalTitle = originalTitle == null ? "" : originalTitle;
+    }
+
+    public String getOriginalTitle() { return mOriginalTitle; }
+
+    public void setSpokenLanguages(List<String> spokenLanguages) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<String>();
+        if (spokenLanguages != null) {
+            for (String language : spokenLanguages) {
+                String code = ISO639codes.getISO6391ForLetterCode(language);
+                if (!code.isEmpty()) normalized.add(code);
+            }
+        }
+        mSpokenLanguages = TextUtils.join(",", normalized);
+    }
+
+    public String getSpokenLanguages() { return mSpokenLanguages; }
+
     private static final String[] BASE_PROJECTION = {
         ScraperStore.Show.ID,              // 0
         ScraperStore.Show.COVER,           // 1
@@ -99,7 +134,10 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.ONLINE_ID,       // 6
         ScraperStore.Show.POSTER_ID,       // 7
         ScraperStore.Show.BACKDROP_ID,     // 8
-        ScraperStore.Show.PLOT             // 9
+        ScraperStore.Show.PLOT,            // 9
+        ScraperStore.Show.ORIGINAL_LANGUAGE, // 10
+        ScraperStore.Show.ORIGINAL_TITLE,    // 11
+        ScraperStore.Show.SPOKEN_LANGUAGES   // 12
     };
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
@@ -203,6 +241,9 @@ public class ShowTags extends VideoTags {
             values.put(ScraperStore.Show.PREMIERED, mPremiered == null ? null : Long.valueOf(mPremiered.getTime()));
             values.put(ScraperStore.Show.RATING, Float.valueOf(mRating));
             values.put(ScraperStore.Show.PLOT, mPlot);
+            values.put(ScraperStore.Show.ORIGINAL_LANGUAGE, mOriginalLanguage);
+            values.put(ScraperStore.Show.ORIGINAL_TITLE, mOriginalTitle);
+            values.put(ScraperStore.Show.SPOKEN_LANGUAGES, mSpokenLanguages);
 
             values.put(ScraperStore.Show.ACTORS_FORMATTED, getActorsFormatted());
             values.put(ScraperStore.Show.DIRECTORS_FORMATTED, getDirectorsFormatted());
@@ -396,12 +437,19 @@ public class ShowTags extends VideoTags {
 
     private void readFromParcel(Parcel in) {
         mPremiered = readDate(in.readLong());
+        setOriginalLanguage(in.readString());
+        setOriginalTitle(in.readString());
+        mSpokenLanguages = in.readString();
+        if (mSpokenLanguages == null) mSpokenLanguages = "";
     }
 
     @Override
     public void writeToParcel(Parcel out, int flags) {
         super.writeToParcel(out, flags);
         out.writeLong(nonNull(mPremiered));
+        out.writeString(mOriginalLanguage);
+        out.writeString(mOriginalTitle);
+        out.writeString(mSpokenLanguages);
     }
 
     public void setPremiered(String string) {
@@ -626,6 +674,9 @@ public class ShowTags extends VideoTags {
                 String storedImdb = cursor.getString(5);
                 long storedOnlineId = cursor.getLong(6);
                 String storedPlot = cursor.getString(9);
+                String storedOriginalLanguage = cursor.getString(10);
+                String storedOriginalTitle = cursor.getString(11);
+                String storedSpokenLanguages = cursor.getString(12);
 
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
@@ -643,7 +694,10 @@ public class ShowTags extends VideoTags {
                                 newStringIsBetter(storedCRating, mContentRating) ||
                                 newStringIsBetter(storedImdb, mImdbId) ||
                                 newLongIsBetter(storedOnlineId, mOnlineId) ||
-                                newStringIsBetter(storedPlot, mPlot);
+                                newStringIsBetter(storedPlot, mPlot) ||
+                                newStringIsBetter(storedOriginalLanguage, mOriginalLanguage) ||
+                                newStringIsBetter(storedOriginalTitle, mOriginalTitle) ||
+                                newStringIsBetter(storedSpokenLanguages, mSpokenLanguages);
 
                 if (log.isDebugEnabled()) log.debug("updateInfo: show found in db: updateCover {}, updateBackdrop {} baseInfoChanged {}",
                         updateCover, updateBackdrop, baseInfoChanged);

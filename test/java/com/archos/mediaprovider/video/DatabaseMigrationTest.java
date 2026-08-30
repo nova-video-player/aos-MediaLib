@@ -80,6 +80,49 @@ public class DatabaseMigrationTest {
     }
 
     @Test
+    public void testMigrationV58AddsOriginalLanguageAndBackfillsUnknown() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v58.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper57 = new VideoOpenHelper(context, dbName, 57);
+        SQLiteDatabase db = helper57.getWritableDatabase();
+        // movie.video_id has a foreign key to files. The fixture only needs a legacy movie row.
+        db.execSQL("PRAGMA foreign_keys = OFF");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie) VALUES (1, 1, 'Legacy movie')");
+        db.execSQL("INSERT INTO show (_id, name_show) VALUES (1, 'Legacy show')");
+        db.close();
+
+        VideoOpenHelper helper58 = new VideoOpenHelper(context, dbName, 58);
+        db = helper58.getWritableDatabase();
+
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.ORIGINAL_LANGUAGE));
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.ORIGINAL_TITLE));
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.SPOKEN_LANGUAGES));
+        assertEquals("und", querySingleString(db, "SELECT " +
+                ScraperStore.Movie.ORIGINAL_LANGUAGE + " FROM movie WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Movie.ORIGINAL_TITLE + " FROM movie WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Movie.SPOKEN_LANGUAGES + " FROM movie WHERE _id = 1"));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.ORIGINAL_LANGUAGE));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.ORIGINAL_TITLE));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.SPOKEN_LANGUAGES));
+        assertEquals("und", querySingleString(db, "SELECT " +
+                ScraperStore.Show.ORIGINAL_LANGUAGE + " FROM show WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Show.ORIGINAL_TITLE + " FROM show WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Show.SPOKEN_LANGUAGES + " FROM show WHERE _id = 1"));
+
+        db.execSQL("PRAGMA foreign_keys = OFF");
+        db.execSQL("DELETE FROM movie WHERE _id = 1");
+        db.execSQL("DELETE FROM show WHERE _id = 1");
+        db.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
     public void testMigrationV43RecreatesScannerTriggers() {
         Context context = ApplicationProvider.getApplicationContext();
         String dbName = "test_migration_v43.db";
@@ -157,6 +200,27 @@ public class DatabaseMigrationTest {
         assertTrue(getSchemaSql(db, "trigger", "hide_volume_cmd_trigger")
                 .contains("UPDATE files_import SET volume_hidden"));
         assertOwnerAwareArtworkSchema(db);
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.ORIGINAL_LANGUAGE));
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.ORIGINAL_TITLE));
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.SPOKEN_LANGUAGES));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.ORIGINAL_LANGUAGE));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.ORIGINAL_TITLE));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.SPOKEN_LANGUAGES));
+        insertFile(db, 1, "/storage/usb/Fresh-movie.mkv");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie) VALUES (1, 1, 'Fresh movie')");
+        assertEquals("und", querySingleString(db, "SELECT " +
+                ScraperStore.Movie.ORIGINAL_LANGUAGE + " FROM movie WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Movie.ORIGINAL_TITLE + " FROM movie WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Movie.SPOKEN_LANGUAGES + " FROM movie WHERE _id = 1"));
+        db.execSQL("INSERT INTO show (_id, name_show) VALUES (1, 'Fresh show')");
+        assertEquals("und", querySingleString(db, "SELECT " +
+                ScraperStore.Show.ORIGINAL_LANGUAGE + " FROM show WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Show.ORIGINAL_TITLE + " FROM show WHERE _id = 1"));
+        assertEquals("", querySingleString(db, "SELECT " +
+                ScraperStore.Show.SPOKEN_LANGUAGES + " FROM show WHERE _id = 1"));
         assertEquals("ok", querySingleString(db, "PRAGMA integrity_check"));
         assertEquals(0, foreignKeyViolationCount(db));
         assertEquals("writable_schema should be disabled after creation", 0, getWritableSchema(db));

@@ -5,6 +5,28 @@ This document defines the strategy and logic for extracting metadata from filena
 ## 1. Overview & Goals
 The goal is to transform a raw filename into an optimal TMDb query while distinguishing between a **Release Year** and a **Year in the Title** (e.g., *1984*, *2001: A Space Odyssey*, *Class of 1999*, *1917*).
 
+### Original movie metadata persistence
+
+The full TMDb movie-details response includes `original_title`,
+`original_language`, `spoken_languages`, and `belongs_to_collection`. Nova
+preserves these independently from the localized title/overview used for display:
+`MovieIdParser2` copies them into `MovieTags`, which persists them in the movie
+row and the existing `movie_collection` relation.
+
+Movie and TV-show rows use equivalent `original_title_*`,
+`original_language_*`, and `spoken_languages_*` columns. The original title is
+the source title, while the localized display title remains `name_movie` or
+`name_show`. Spoken languages are a stable comma-separated list of
+non-translated ISO 639-1 codes. TMDb currently returns ISO 639-1 two-letter
+codes (for example `en` or `fr`), not display names or locale tags such as
+`en-US`; the scraper normalizes accepted two- or three-letter ISO input to ISO
+639-1. If the original-language value is unavailable, the database stores `und`
+(ISO 639-2/3: undetermined); absent original title and spoken languages are
+stored as empty strings. Existing rows receive those same defaults during the
+v58 migration. `belongs_to_collection` already has a normalized
+`movie_collection` table keyed by TMDb collection id; the scraper now also saves
+its overview as the collection description.
+
 ---
 
 ## 2. Movie vs TV Decision

@@ -33,6 +33,7 @@ import com.uwetrottmann.tmdb2.entities.Images;
 import com.uwetrottmann.tmdb2.entities.Movie;
 import com.uwetrottmann.tmdb2.entities.ReleaseDate;
 import com.uwetrottmann.tmdb2.entities.ReleaseDatesResult;
+import com.uwetrottmann.tmdb2.entities.SpokenLanguage;
 import com.uwetrottmann.tmdb2.entities.Videos;
 
 import org.slf4j.Logger;
@@ -67,6 +68,15 @@ public class MovieIdParser2 {
         mContext = context;
         MovieTags result = new MovieTags();
         if (movie.id != null) result.setOnlineId(movie.id);
+        result.setOriginalLanguage(movie.original_language);
+        result.setOriginalTitle(movie.original_title);
+        if (movie.spoken_languages != null) {
+            List<String> spokenLanguages = new ArrayList<String>();
+            for (SpokenLanguage spokenLanguage : movie.spoken_languages) {
+                if (spokenLanguage != null) spokenLanguages.add(spokenLanguage.iso_639_1);
+            }
+            result.setSpokenLanguages(spokenLanguages);
+        }
         if (movie.genres != null) {
             List<String> localizedGenres = getLocalizedGenres(movie.genres);
             for (String genre : localizedGenres)
@@ -94,6 +104,7 @@ public class MovieIdParser2 {
             result.setCollectionBackdropPath(movie.belongs_to_collection.backdrop_path);
             result.setCollectionPosterPath(movie.belongs_to_collection.poster_path);
             result.setCollectionName(movie.belongs_to_collection.name);
+            result.setCollectionDescription(movie.belongs_to_collection.overview);
             if (log.isDebugEnabled()) log.debug("getResult collection overview: {}", movie.belongs_to_collection.overview);
         } else
             result.setCollectionId(-1);

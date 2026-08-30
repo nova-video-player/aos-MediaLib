@@ -594,6 +594,9 @@ public class TagsFactory {
             String name = getStringCol(cur, ScraperStore.Movie.NAME);
             float rating = getFloatCol(cur, ScraperStore.Movie.RATING);
             int year = getIntCol(cur, ScraperStore.Movie.YEAR);
+            String originalLanguage = getStringCol(cur, ScraperStore.Movie.ORIGINAL_LANGUAGE);
+            String originalTitle = getStringCol(cur, ScraperStore.Movie.ORIGINAL_TITLE);
+            String spokenLanguages = getStringCol(cur, ScraperStore.Movie.SPOKEN_LANGUAGES);
             String plot = getStringCol(cur, ScraperStore.Movie.PLOT);
             String cover = getStringCol(cur, ScraperStore.Movie.COVER);
             String actorName = getStringCol(cur, ScraperStore.Movie.Actor.NAME);
@@ -619,6 +622,10 @@ public class TagsFactory {
                 tag.setRating(rating);
             if(year >= 0)
                 tag.setYear(year);
+            tag.setOriginalLanguage(originalLanguage);
+            tag.setOriginalTitle(originalTitle);
+            tag.setSpokenLanguages(spokenLanguages == null || spokenLanguages.isEmpty() ? null :
+                    java.util.Arrays.asList(spokenLanguages.split(",")));
             tag.setPlot(plot);
 
             if(cover != null)
@@ -654,6 +661,9 @@ public class TagsFactory {
             String name = getStringCol(cur, ScraperStore.Show.NAME);
             float rating = getFloatCol(cur, ScraperStore.Show.RATING);
             long premiered = getLongCol(cur, ScraperStore.Show.PREMIERED);
+            String originalLanguage = getStringCol(cur, ScraperStore.Show.ORIGINAL_LANGUAGE);
+            String originalTitle = getStringCol(cur, ScraperStore.Show.ORIGINAL_TITLE);
+            String spokenLanguages = getStringCol(cur, ScraperStore.Show.SPOKEN_LANGUAGES);
             String plot = getStringCol(cur, ScraperStore.Show.PLOT);
             String cover = getStringCol(cur, ScraperStore.Show.COVER);
             String actorName = getStringCol(cur, ScraperStore.Show.Actor.NAME);
@@ -677,6 +687,10 @@ public class TagsFactory {
                 tag.setRating(rating);
             if(premiered >= 0)
                 tag.setPremiered(premiered);
+            tag.setOriginalLanguage(originalLanguage);
+            tag.setOriginalTitle(originalTitle);
+            tag.setSpokenLanguages(spokenLanguages == null || spokenLanguages.isEmpty() ? null :
+                    java.util.Arrays.asList(spokenLanguages.split(",")));
             tag.setPlot(plot);
 
             if(cover != null)

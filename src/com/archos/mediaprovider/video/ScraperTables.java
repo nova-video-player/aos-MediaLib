@@ -1455,6 +1455,36 @@ public final class ScraperTables {
             if (log.isDebugEnabled()) log.debug("upgradeTo: {} - making artwork rows owner-specific", toVersion);
             upgradeArtworkOwnershipTo56(db);
         }
+        if (toVersion == 58) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding original language and title metadata", toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.ORIGINAL_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.ORIGINAL_TITLE + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.SPOKEN_LANGUAGES + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.ORIGINAL_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.ORIGINAL_TITLE + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.SPOKEN_LANGUAGES + " TEXT NOT NULL DEFAULT ''");
+            // Explicitly normalize rows from partially upgraded or externally restored databases.
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.ORIGINAL_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Movie.ORIGINAL_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Movie.ORIGINAL_LANGUAGE + ") = ''");
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.ORIGINAL_TITLE +
+                    " = '' WHERE " + ScraperStore.Movie.ORIGINAL_TITLE + " IS NULL");
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.SPOKEN_LANGUAGES +
+                    " = '' WHERE " + ScraperStore.Movie.SPOKEN_LANGUAGES + " IS NULL");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.ORIGINAL_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Show.ORIGINAL_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Show.ORIGINAL_LANGUAGE + ") = ''");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.ORIGINAL_TITLE +
+                    " = '' WHERE " + ScraperStore.Show.ORIGINAL_TITLE + " IS NULL");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.SPOKEN_LANGUAGES +
+                    " = '' WHERE " + ScraperStore.Show.SPOKEN_LANGUAGES + " IS NULL");
+        }
     }
 
     /**

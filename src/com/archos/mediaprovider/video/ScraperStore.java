@@ -34,6 +34,12 @@ public final class ScraperStore {
         public static final String NAME = "name_movie";
         public static final String YEAR = "year_movie";
         public static final String RELEASE_DATE = "release_date_movie";
+        /** TMDb original language: ISO 639-1, or ISO 639-2 "und" when unavailable. */
+        public static final String ORIGINAL_LANGUAGE = "original_language_movie";
+        /** TMDb original title, independent of the localized display title. */
+        public static final String ORIGINAL_TITLE = "original_title_movie";
+        /** Comma-separated TMDb spoken-language ISO 639-1 codes. */
+        public static final String SPOKEN_LANGUAGES = "spoken_languages_movie";
         public static final String RATING = "rating_movie";
         public static final String COVER = "cover_movie";
         public static final String PLOT = "plot_movie";
@@ -108,6 +114,12 @@ public final class ScraperStore {
         public static final String PREMIERED = "premiered_show";
         public static final String RATING = "rating_show";
         public static final String PLOT = "plot_show";
+        /** TMDb original language: ISO 639-1, or ISO 639-2 "und" when unavailable. */
+        public static final String ORIGINAL_LANGUAGE = "original_language_show";
+        /** TMDb original name, independent of the localized display name. */
+        public static final String ORIGINAL_TITLE = "original_title_show";
+        /** Comma-separated TMDb spoken-language ISO 639-1 codes. */
+        public static final String SPOKEN_LANGUAGES = "spoken_languages_show";
         /** place to store local path to backdrop image */
         public static final String BACKDROP = "backdrop_show";
         /** the url to a backdrop image */
