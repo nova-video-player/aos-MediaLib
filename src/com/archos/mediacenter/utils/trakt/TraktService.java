@@ -637,21 +637,12 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                         boolean send = true;
                         GenericProgress gprog = null;
                         if (videos != null)
-                            // check if trakt has a more recent progress than videoInfo.watched_at we are about to send , if this is the case, we don't send
+                            // Do not upload if the matching Trakt resume wins the timestamp-first conflict.
                             for (PlaybackResponse video : videos) { // video is from trakt and videoInfo is from db
-                                if ((video.movie != null
-                                        && video.movie.ids != null
-                                        && videoInfo.scraperMovieId != null
-                                        && Objects.equals(video.movie.ids.tmdb, Integer.valueOf(videoInfo.scraperMovieId))
-                                        && video.progress > -videoInfo.traktResume) || // negative traktResume means set but not yet synced
-                                        (video.episode != null
-                                                && video.episode.ids != null
-                                                && videoInfo.scraperEpisodeId != null
-                                                && Objects.equals(video.episode.ids.tmdb, Integer.valueOf(videoInfo.scraperEpisodeId))
-                                                && video.progress > -videoInfo.traktResume)) {
-                                    //trakt mark is more advanced, we don't send anything
+                                if (isSameTraktVideo(video, videoInfo) && remoteResumeWins(video, videoInfo)) {
+                                    // A newer Trakt resume wins; do not overwrite it with local state.
                                     send = false;
-                                    if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: db->trakt {}{} not sent, trakt progress is more advanced", videoInfo.scraperTitle, videoInfo.isShow ? ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr : "");
+                                    if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: db->trakt {}{} not sent, Trakt resume wins the timestamp conflict", videoInfo.scraperTitle, videoInfo.isShow ? ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr : "");
                                     gprog = video;
                                     break;
                                 }
@@ -725,23 +716,17 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                         i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "", i.traktResume, i.traktSeen, i.resume, i.lastTimePlayed, newResumePercent, newResume, lastWatched, lastPlayedDateString);
                                 boolean toConsider = false;
                                 ContentValues values = new ContentValues();
-                                if (i.lastTimePlayed < lastWatched && newResumePercent > 0) {
-                                    // trakt lastTimePlayed > db lastTimePlayed: in this case update archos last time played since trakt was the latest compared to db
-                                    // exclude null newResumePercent since some other players use this to store library (e.g. infuse) and avoid pollution
-                                    if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: trakt->db update Archos last time played by trakt which is the latest {}", lastPlayedDateString);
+                                if (shouldUpdateLastPlayed(video, i, lastWatched, newResumePercent)) {
+                                    if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: trakt->db update Archos last time played by Trakt, which is the latest {}", lastPlayedDateString);
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, lastWatched);
                                 }
-                                if (Math.abs(i.traktResume) != newResumePercent && // trakt resume % != db resume %
-                                                i.traktSeen != 1 && // marked not watched on trakt (even if replayed)
-                                                newResume > i.resume && // trakt resume time > db resume time
-                                                i.resume != -2) { //not end of file (i.resume = -2 is file end)
-                                    // trakt resume time is ahead of device one: only update device one in this case
-                                    if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: trakt->db trakt has the latest bookmark {}% for {}{}, use this one", newResumePercent, i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
+                                if (shouldImportRemoteResume(video, i, newResumePercent)) {
+                                    if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: trakt->db Trakt resume {}% wins the timestamp conflict for {}{}", newResumePercent, i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, newResumePercent);
                                     values.put(VideoStore.Video.VideoColumns.BOOKMARK, newResume);
-                                    if (newResumePercent > Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
+                                    if (newResumePercent >= Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
                                         if (log.isDebugEnabled()) log.debug("syncPlaybackStatus: trakt->db trakt {}{} has been completed on trakt, mark it viewed", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
                                         values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 99); // resume%
                                         values.put(VideoStore.Video.VideoColumns.BOOKMARK, -2); // file end
@@ -844,6 +829,56 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
         return max;
     }
 
+    /**
+     * Applies the resume conflict policy in both directions: the newest playback wins and
+     * progress only breaks an exact timestamp tie.  In particular, an old 95% Trakt entry
+     * must not turn a newer local 50% resume point into a completed video.
+     */
+    private static boolean remoteResumeWins(PlaybackResponse remote, VideoDbInfo local) {
+        if (remote == null || remote.progress == null || local == null) return false;
+
+        final long remotePlayedAt = remote.paused_at != null ? remote.paused_at.toEpochSecond() : 0;
+        final long localPlayedAt = local.lastTimePlayed;
+        if (remotePlayedAt > 0 && localPlayedAt > 0 && remotePlayedAt != localPlayedAt) {
+            return remotePlayedAt > localPlayedAt;
+        }
+        if (remotePlayedAt > 0 && localPlayedAt <= 0) return true;
+        if (remotePlayedAt <= 0 && localPlayedAt > 0) return false;
+
+        return remote.progress > Math.abs(local.traktResume);
+    }
+
+    /** Returns whether a Trakt playback entry identifies the same movie or episode as the local row. */
+    private static boolean isSameTraktVideo(PlaybackResponse remote, VideoDbInfo local) {
+        return remote != null && local != null &&
+                ((remote.movie != null && remote.movie.ids != null && local.scraperMovieId != null &&
+                        Objects.equals(remote.movie.ids.tmdb, Integer.valueOf(local.scraperMovieId))) ||
+                        (remote.episode != null && remote.episode.ids != null && local.scraperEpisodeId != null &&
+                                Objects.equals(remote.episode.ids.tmdb, Integer.valueOf(local.scraperEpisodeId))));
+    }
+
+    /**
+     * Keeps Recently Played ordered by the newest playback. A remote entry without usable
+     * progress must not create a Recently Played row.
+     */
+    private static boolean shouldUpdateLastPlayed(PlaybackResponse remote, VideoDbInfo local,
+                                                  long remotePlayedAt, int remoteResumePercent) {
+        return remoteResumeWins(remote, local) &&
+                local.lastTimePlayed < remotePlayedAt && remoteResumePercent > 0;
+    }
+
+    /**
+     * A remote resume may update the bookmark only when it wins the timestamp-first conflict.
+     * Do not reopen watched or completed videos, write unchanged values, or accept a zero
+     * progress placeholder from another client.
+     */
+    private static boolean shouldImportRemoteResume(PlaybackResponse remote, VideoDbInfo local,
+                                                    int remoteResumePercent) {
+        return remoteResumeWins(remote, local) &&
+                Math.abs(local.traktResume) != remoteResumePercent &&
+                local.traktSeen != 1 && local.resume != -2 && remoteResumePercent > 0;
+    }
+
     // Upload resume points from DB to Trakt with original conflict checking logic
     private Trakt.Status syncResumePointsToTrakt(java.util.List<PlaybackResponse> traktVideos) {
         if (log.isDebugEnabled()) log.debug("syncResumePointsToTrakt start");
@@ -886,22 +921,13 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                         boolean send = true;
                         GenericProgress gprog = null;
 
-                        // PRESERVED ORIGINAL LOGIC: Check if Trakt has more recent progress than what we're about to send
+                        // Do not upload if the matching Trakt resume wins the timestamp-first conflict.
                         if (traktVideos != null) {
                             for (PlaybackResponse video : traktVideos) { // video is from trakt and videoInfo is from db
-                                if ((video.movie != null
-                                        && video.movie.ids != null
-                                        && videoInfo.scraperMovieId != null
-                                        && Objects.equals(video.movie.ids.tmdb, Integer.valueOf(videoInfo.scraperMovieId))
-                                        && video.progress > -videoInfo.traktResume) || // negative traktResume means set but not yet synced
-                                        (video.episode != null
-                                                && video.episode.ids != null
-                                                && videoInfo.scraperEpisodeId != null
-                                                && Objects.equals(video.episode.ids.tmdb, Integer.valueOf(videoInfo.scraperEpisodeId))
-                                                && video.progress > -videoInfo.traktResume)) {
-                                    //trakt mark is more advanced, we don't send anything
+                                if (isSameTraktVideo(video, videoInfo) && remoteResumeWins(video, videoInfo)) {
+                                    // A newer Trakt resume wins; do not overwrite it with local state.
                                     send = false;
-                                    if (log.isDebugEnabled()) log.debug("syncResumePointsToTrakt: db->trakt {}{} not sent, trakt progress is more advanced", videoInfo.scraperTitle, videoInfo.isShow ? ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr : "");
+                                    if (log.isDebugEnabled()) log.debug("syncResumePointsToTrakt: db->trakt {}{} not sent, Trakt resume wins the timestamp conflict", videoInfo.scraperTitle, videoInfo.isShow ? ", s" + videoInfo.scraperSeasonNr + "e" + videoInfo.scraperEpisodeNr : "");
                                     gprog = video;
                                     break;
                                 }
@@ -1160,23 +1186,17 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                 }
                                 boolean toConsider = false;
                                 ContentValues values = new ContentValues();
-                                if (i.lastTimePlayed < lastWatched && newResumePercent > 0) {
-                                    // Trakt has more recent progress update - this implements Rule 2: Cross-Device Resume Point Consistency
-                                    // Update ARCHOS_LAST_TIME_PLAYED so video appears in "Recently Played" with correct timestamp order
+                                if (shouldUpdateLastPlayed(video, i, lastWatched, newResumePercent)) {
                                     if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db updating timestamp to most recent playback time {}", lastPlayedDateString);
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, lastWatched);
                                 }
-                                if (Math.abs(i.traktResume) != newResumePercent && // trakt resume % != db resume %
-                                        i.traktSeen != 1 && // marked not watched on trakt (even if replayed)
-                                        newResume > i.resume && // trakt resume time > db resume time
-                                        i.resume != -2) { //not end of file (i.resume = -2 is file end)
-                                    // trakt resume time is ahead of device one: only update device one in this case
-                                    if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db trakt has the latest bookmark {}% for {}{}, use this one", newResumePercent, i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
+                                if (shouldImportRemoteResume(video, i, newResumePercent)) {
+                                    if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db Trakt resume {}% wins the timestamp conflict for {}{}", newResumePercent, i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, newResumePercent);
                                     values.put(VideoStore.Video.VideoColumns.BOOKMARK, newResume);
-                                    if (newResumePercent > Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
+                                    if (newResumePercent >= Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
                                         if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db trakt {}{} has been completed on trakt, mark it viewed and hide from Recently Played", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
                                         values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 99); // resume%
                                         values.put(VideoStore.Video.VideoColumns.BOOKMARK, -2); // file end - this hides from Recently Played
@@ -1266,23 +1286,17 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                                 }
                                 boolean toConsider = false;
                                 ContentValues values = new ContentValues();
-                                if (i.lastTimePlayed < lastWatched && newResumePercent > 0) {
-                                    // Trakt has more recent progress update - this implements Rule 2: Cross-Device Resume Point Consistency
-                                    // Update ARCHOS_LAST_TIME_PLAYED so video appears in "Recently Played" with correct timestamp order
+                                if (shouldUpdateLastPlayed(video, i, lastWatched, newResumePercent)) {
                                     if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db updating timestamp to most recent playback time {}", lastPlayedDateString);
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, lastWatched);
                                 }
-                                if (Math.abs(i.traktResume) != newResumePercent && // trakt resume % != db resume %
-                                        i.traktSeen != 1 && // marked not watched on trakt (even if replayed)
-                                        newResume > i.resume && // trakt resume time > db resume time
-                                        i.resume != -2) { //not end of file (i.resume = -2 is file end)
-                                    // trakt resume time is ahead of device one: only update device one in this case
-                                    if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db trakt has the latest bookmark {}% for {}{}, use this one", newResumePercent, i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
+                                if (shouldImportRemoteResume(video, i, newResumePercent)) {
+                                    if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db Trakt resume {}% wins the timestamp conflict for {}{}", newResumePercent, i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
                                     toConsider = true;
                                     values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, newResumePercent);
                                     values.put(VideoStore.Video.VideoColumns.BOOKMARK, newResume);
-                                    if (newResumePercent > Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
+                                    if (newResumePercent >= Trakt.SCROBBLE_THRESHOLD) { // we are at end of file
                                         if (log.isDebugEnabled()) log.debug("syncResumePointsToDb: trakt->db trakt {}{} has been completed on trakt, mark it viewed and hide from Recently Played", i.scraperTitle, i.isShow ? "-s" + i.scraperSeasonNr + "e" + i.scraperEpisodeNr : "");
                                         values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, 99); // resume%
                                         values.put(VideoStore.Video.VideoColumns.BOOKMARK, -2); // file end - this hides from Recently Played

@@ -95,25 +95,31 @@ The system implements sophisticated resume point conflict resolution:
 
 **Device to Trakt (Upload)**:
 ```java
-// Only upload if Trakt doesn't have newer progress
-for (PlaybackResponse video : traktVideos) {
-    if (video.progress > Math.abs(videoInfo.traktResume)) {
-        send = false; // Trakt is ahead, don't overwrite
-        break;
-    }
+// A newer paused_at always wins. Progress breaks an exact timestamp tie.
+if (remote.paused_at > local.lastTimePlayed ||
+        (remote.paused_at == local.lastTimePlayed &&
+                remote.progress > Math.abs(local.traktResume))) {
+    send = false; // Do not overwrite newer Trakt state.
 }
 ```
 
 **Trakt to Device (Download)**:
 ```java
-// Only update device if multiple conditions met:
-if (i.lastTimePlayed < lastWatched &&           // Trakt played more recently
-    Math.abs(i.traktResume) != newResumePercent && // Resume points differ
-    newResume > i.resume &&                     // Trakt resume is ahead
-    i.resume != -2) {                          // Not end of file
-    // Update device with Trakt's resume point
+// Apply the same comparator in the other direction.
+if (remote.paused_at > local.lastTimePlayed ||
+        (remote.paused_at == local.lastTimePlayed &&
+                remote.progress > Math.abs(local.traktResume))) {
+    // Update device, including a newer rewind to a lower percentage.
 }
 ```
+
+**Implementation mapping**:
+- `isSameTraktVideo()` matches the Trakt movie or episode to its local row.
+- `remoteResumeWins()` implements the timestamp-first rule shared by upload and download.
+- `shouldUpdateLastPlayed()` applies the winning remote playback timestamp to ordering in Recently Played.
+- `shouldImportRemoteResume()` preserves the additional safeguards: changed progress, not already watched, not end-of-file, and non-zero progress.
+
+All resume sync paths, including the retained legacy path, use these helpers so their policy stays identical.
 
 ## Playback Progress Synchronization
 
@@ -154,7 +160,7 @@ int resumePercent = (int)((resumeMs / (double)duration) * 100);
 
 ### Resume Point Priority
 1. **Most Recent Timestamp Wins** - Video with newer `lastTimePlayed` takes precedence
-2. **Furthest Progress Wins** - If timestamps close, higher resume percentage wins
+2. **Furthest Progress Wins** - If timestamps are identical at Trakt's second precision, higher resume percentage wins
 3. **Completion Override** - 90%+ progress marks as fully watched (resume = -2)
 
 ### Watched Status Priority  
