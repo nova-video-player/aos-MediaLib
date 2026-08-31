@@ -490,15 +490,22 @@ public class MovieScraper3 extends BaseScraper2 {
 
         long movieId = result.getId();
         Uri searchFile = result.getFile();
+        boolean refreshSourceMetadata = options != null
+                && options.getBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, false);
+        // A user-selected manual scrape must not be satisfied from the shared two-hour HTTP
+        // cache. Automatic scraping continues to use the shared cached TMDb client.
+        MyTmdb requestTmdb = refreshSourceMetadata ? new MyTmdb(apiKey, null) : getTmdb();
+        MoviesService requestMoviesService = refreshSourceMetadata
+                ? requestTmdb.moviesService() : getMoviesService();
 
         //If we got this result from the database, grab the tags from there and return them instead of going to TMDB.
-        if (result.fromDB) {
+        if (result.fromDB && !refreshSourceMetadata) {
             MovieTags tag = TagsFactory.buildMovieTags(mContext, movieId);
             return new ScrapeDetailResult(tag, true, null, ScrapeStatus.OKAY, null);
         }
 
         // get base info
-        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, getMoviesService(), mContext);
+        MovieIdResult search = MovieId2.getBaseInfo(movieId, language, requestMoviesService, mContext);
         if (search.status != ScrapeStatus.OKAY) {
             return new ScrapeDetailResult(search.tag, true, null, search.status, search.reason);
         }
@@ -527,7 +534,7 @@ public class MovieScraper3 extends BaseScraper2 {
         // if there was no movie description in the native language get it from default
         if (tag.getPlot() == null || tag.getPlot().trim().isEmpty()) {
             if (log.isDebugEnabled()) log.debug("ScrapeDetailResult: getting description in en because plot non existent in {}", language);
-            MovieIdDescription2.addDescription(movieId, tag, getMoviesService());
+            MovieIdDescription2.addDescription(movieId, tag, requestMoviesService);
         }
         tag.downloadPoster(mContext);
         tag.downloadBackdrop(mContext);

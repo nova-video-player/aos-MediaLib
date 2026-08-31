@@ -279,6 +279,12 @@ public class ShowScraper4 extends BaseScraper2 {
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
         boolean getAllEpisodes = options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES);
+        boolean refreshShowMetadata = options != null
+                && options.getBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, false);
+        // Manual requests use an uncached client and separate LRU keys. This keeps automatic
+        // scans on the shared cache while making an explicit re-scrape genuinely current.
+        MyTmdb requestTmdb = refreshShowMetadata ? new MyTmdb(apiKey, null) : getTmdb();
+        String requestCacheSuffix = refreshShowMetadata ? "|manual-refresh" : "";
         int season = -1;
         int episode = -1;
         if (options != null) {
@@ -295,7 +301,7 @@ public class ShowScraper4 extends BaseScraper2 {
         int showId = result.getId();
 
         //If we got this result from the database, grab the tags from there and return them instead of going to TMDB.
-        if (result.fromDB){
+        if (result.fromDB && !refreshShowMetadata){
             EpisodeTags tag = TagsFactory.buildEpisodeTags(mContext, showId);
             return new ScrapeDetailResult(tag, false, null, ScrapeStatus.OKAY, null);
         }
@@ -317,7 +323,7 @@ public class ShowScraper4 extends BaseScraper2 {
 
                 // Try matching in the configured language first
                 String season0Key = cleanShowName0 + "|" + showId + "|0|all|" + resultLanguage0;
-                ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key, showId, 0, resultLanguage0, adultScrape, getTmdb());
+                ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key + requestCacheSuffix, showId, 0, resultLanguage0, adultScrape, requestTmdb);
                 if (season0Result.status == ScrapeStatus.OKAY && season0Result.tvSeason != null && season0Result.tvSeason.episodes != null) {
                     matchedEpisode = fuzzyMatchEpisodeByTitle(episodeTitle, season0Result.tvSeason.episodes);
                 }
@@ -327,7 +333,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (matchedEpisode < 0 && !"en".equals(resultLanguage0)) {
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: no match in {}, retrying season 0 in English", resultLanguage0);
                     String season0KeyEn = cleanShowName0 + "|" + showId + "|0|all|en";
-                    ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn, showId, 0, "en", adultScrape, getTmdb());
+                    ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn + requestCacheSuffix, showId, 0, "en", adultScrape, requestTmdb);
                     if (season0ResultEn.status == ScrapeStatus.OKAY && season0ResultEn.tvSeason != null && season0ResultEn.tvSeason.episodes != null) {
                         matchedEpisode = fuzzyMatchEpisodeByTitle(episodeTitle, season0ResultEn.tvSeason.episodes);
                     }
@@ -364,8 +370,6 @@ public class ShowScraper4 extends BaseScraper2 {
         ShowTags showTags = null;
         ShowTags refreshedShowMetadata = null;
         ShowIdImagesResult searchImages = null;
-        boolean refreshShowMetadata = options != null
-                && options.getBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, false);
         // set when the single-episode lookup below had to be remapped to TMDb's absolute
         // episode numbering (see comment there); guards against redoing the same detection
         // once it has already succeeded for this request
@@ -412,7 +416,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (cachedMetadata == null || refreshShowMetadata) {
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: show metadata cache miss, fetching from API");
                     // query first tmdb
-                    showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey, showId, resultLanguage, adultScrape, getTmdb());
+                    showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey + requestCacheSuffix, showId, resultLanguage, adultScrape, requestTmdb);
 
                     // parse result to get global show basic info
                     if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
@@ -431,7 +435,7 @@ public class ShowScraper4 extends BaseScraper2 {
                         // with the localized (empty) result, reusing it here would just return that same
                         // cached entry instead of querying tmdb in English
                         String fallbackShowKey = cleanShowName + "|" + showId + "|en";
-                        ShowIdTvSearchResult enShowIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(fallbackShowKey, showId, "en", adultScrape, getTmdb());
+                        ShowIdTvSearchResult enShowIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(fallbackShowKey + requestCacheSuffix, showId, "en", adultScrape, requestTmdb);
                         if (enShowIdTvSearchResult.status == ScrapeStatus.OKAY) {
                             ShowTags enShowTags = ShowIdParser.getResult(enShowIdTvSearchResult.tvShow, result.getYear(), mContext);
                             // merge only the missing fields, preserve the rest of the localized showTags (images, etc.)
@@ -514,7 +518,7 @@ public class ShowScraper4 extends BaseScraper2 {
 
             if (getAllEpisodes) {
                 //I WILL GET EACH EASON AS NEEDED, I ONLY HAVE SOME SEASONS OF SOME SHOWS
-                ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, requestedSeason, resultLanguage, adultScrape, tmdb);
+                ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, requestedSeason, resultLanguage, adultScrape, requestTmdb);
                 if (showIdSeason.status == ScrapeStatus.OKAY) {
                     tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
                     if (! tvSeasons.containsKey(showIdSeason.tvSeason.season_number))
@@ -529,7 +533,7 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (episode != -1) {
                     // get a single episode: should never get there since it means that we cannot infer poster/backdrop from single episode (need season)
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: get single episode for show {} s{}e{}", showId, season, episode);
-                    ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(episodeKey, showId, season, episode, resultLanguage, adultScrape, getTmdb());
+                    ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(episodeKey + requestCacheSuffix, showId, season, episode, resultLanguage, adultScrape, requestTmdb);
                     if (showIdEpisode.status == ScrapeStatus.OKAY)
                         tvEpisodes.add(showIdEpisode.tvEpisode);
                     else if (showIdEpisode.status == ScrapeStatus.NOT_FOUND) {
@@ -540,7 +544,7 @@ public class ShowScraper4 extends BaseScraper2 {
                         // full season and checking whether its first episode is numbered 1; if
                         // not, remap the requested episode to the equivalent absolute number.
                         if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} not found, checking for absolute episode numbering", season, episode);
-                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, season, resultLanguage, adultScrape, getTmdb());
+                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, season, resultLanguage, adultScrape, requestTmdb);
                         TvEpisode matched = null;
                         if (showIdSeason.status == ScrapeStatus.OKAY && showIdSeason.tvSeason != null
                                 && showIdSeason.tvSeason.episodes != null && !showIdSeason.tvSeason.episodes.isEmpty()) {
@@ -597,7 +601,7 @@ public class ShowScraper4 extends BaseScraper2 {
                         return new ScrapeDetailResult(episodeTag, true, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: get full season for show {} s{}", showId, season);
-                    ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, season, resultLanguage, adultScrape, getTmdb());
+                    ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, season, resultLanguage, adultScrape, requestTmdb);
                     if (showIdSeason.status == ScrapeStatus.OKAY) {
                         tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
                         tvSeasons.putIfAbsent(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
@@ -637,7 +641,7 @@ public class ShowScraper4 extends BaseScraper2 {
             }
 
             // get now all episodes in tvEpisodes
-            Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(seasonKey, showId, tvEpisodes, tvSeasons, showTags, resultLanguage, adultScrape, getTmdb(), mContext);
+            Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(seasonKey + requestCacheSuffix, showId, tvEpisodes, tvSeasons, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
             if (!searchEpisodes.isEmpty()) {
                 allEpisodes = searchEpisodes;
                 // Cache only when the fetch path populated a full season map.
@@ -731,13 +735,13 @@ public class ShowScraper4 extends BaseScraper2 {
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} '{}' not found by number or title, trying season 0 fallback", requestedSeason, requestedEpisode, episodeTitleHint);
             int matchedSpecial = -1;
             String season0Key = cleanShowName + "|" + showId + "|0|all|" + resultLanguage;
-            ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key, showId, 0, resultLanguage, adultScrape, getTmdb());
+            ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key + requestCacheSuffix, showId, 0, resultLanguage, adultScrape, requestTmdb);
             if (season0Result.status == ScrapeStatus.OKAY && season0Result.tvSeason != null && season0Result.tvSeason.episodes != null) {
                 matchedSpecial = fuzzyMatchEpisodeByTitle(episodeTitleHint, season0Result.tvSeason.episodes);
             }
             if (matchedSpecial < 0 && !"en".equals(resultLanguage)) {
                 String season0KeyEn = cleanShowName + "|" + showId + "|0|all|en";
-                ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn, showId, 0, "en", adultScrape, getTmdb());
+                ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn + requestCacheSuffix, showId, 0, "en", adultScrape, requestTmdb);
                 if (season0ResultEn.status == ScrapeStatus.OKAY && season0ResultEn.tvSeason != null && season0ResultEn.tvSeason.episodes != null) {
                     matchedSpecial = fuzzyMatchEpisodeByTitle(episodeTitleHint, season0ResultEn.tvSeason.episodes);
                     season0Result = season0ResultEn;
@@ -756,7 +760,7 @@ public class ShowScraper4 extends BaseScraper2 {
                     specialList.add(matchedTvEpisode);
                     Map<Integer, TvSeason> specialSeasons = new HashMap<>();
                     specialSeasons.put(0, season0Result.tvSeason);
-                    Map<String, EpisodeTags> specialEpisodes = ShowIdEpisodes.getEpisodes(season0Key, showId, specialList, specialSeasons, showTags, resultLanguage, adultScrape, getTmdb(), mContext);
+                    Map<String, EpisodeTags> specialEpisodes = ShowIdEpisodes.getEpisodes(season0Key + requestCacheSuffix, showId, specialList, specialSeasons, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
                     String specialKey = showId + "|0|" + matchedSpecial + "|" + resultLanguage;
                     EpisodeTags specialTag = specialEpisodes.get(specialKey);
                     if (specialTag != null) {
