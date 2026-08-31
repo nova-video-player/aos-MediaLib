@@ -67,6 +67,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -107,6 +108,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
 
     static volatile int sNumberOfFilesRemainingToProcess = 0;
     static volatile int sTotalNumberOfFilesRemainingToProcess = 0;
+    private static volatile boolean sNfoExportInProgress = false;
+    private static final AtomicInteger sNumberOfFilesRemainingToExport = new AtomicInteger(0);
     static volatile int sNumberOfFilesScraped = 0;
     static volatile int sNumberOfFilesNotScraped = 0;
     public static String KEY_ENABLE_AUTO_SCRAP ="enable_auto_scrap_key";
@@ -175,6 +178,20 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
      */
     public static int getNumberOfFilesRemainingToProcess() {
         return sTotalNumberOfFilesRemainingToProcess;
+    }
+
+    /** True only while the explicit NFO export worker is running. */
+    public static boolean isNfoExportInProgress() {
+        return sNfoExportInProgress;
+    }
+
+    /** Remaining files in the explicit NFO export, independent from scrape progress. */
+    public static int getNumberOfFilesRemainingToExport() {
+        return sNumberOfFilesRemainingToExport.get();
+    }
+
+    private static void decrementNfoExportRemaining() {
+        sNumberOfFilesRemainingToExport.getAndUpdate(remaining -> Math.max(0, remaining - 1));
     }
 
     public static void startService(Context context) {
@@ -493,14 +510,19 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         if (log.isDebugEnabled()) log.debug("startExporting {}", String.valueOf(mExportingThread == null || !mExportingThread.isAlive()));
         nb.setContentTitle(getString(R.string.nfo_export_in_progress)).setWhen(System.currentTimeMillis());
         if (mExportingThread == null || !mExportingThread.isAlive()) {
+            sNfoExportInProgress = true;
             mExportingThread = new Thread() {
 
                 public void run() {
-                    Cursor cursor = getFileListCursor(PARAM_SCRAPED, null, null, null);
-                    final int numberOfRows = cursor.getCount();
-                    sTotalNumberOfFilesRemainingToProcess = numberOfRows;
-                    cursor.close();
-                    if (log.isDebugEnabled()) log.debug("starting thread {}", numberOfRows);
+                    Cursor cursor = null;
+                    try {
+                        cursor = getFileListCursor(PARAM_SCRAPED, null, null, null);
+                        final int numberOfRows = cursor.getCount();
+                        sTotalNumberOfFilesRemainingToProcess = numberOfRows;
+                        sNumberOfFilesRemainingToExport.set(numberOfRows);
+                        cursor.close();
+                        cursor = null;
+                        if (log.isDebugEnabled()) log.debug("startExporting: starting thread for {} files", numberOfRows);
 
                     NfoWriter.ExportContext exportContext = new NfoWriter.ExportContext();
 
@@ -534,8 +556,9 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             final int scraperType = cursor.getInt(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
                             String title = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.TITLE));
                             BaseTags baseTags = null;
-                            if (sTotalNumberOfFilesRemainingToProcess > 0)
-                                nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.nfo_export_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
+                            int remainingExports = sNumberOfFilesRemainingToExport.get();
+                            if (remainingExports > 0)
+                                nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.nfo_export_in_progress) + " (" + remainingExports + ")")
                                         .setContentText(getString(R.string.current_video_title) + " " + title).build());
                             if (!fileUri.toString().startsWith("upnp://")) {
                                 if (log.isTraceEnabled()) log.trace("startExporting: {} fileUri {}", movieID, fileUri);
@@ -549,30 +572,42 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             }
                             sNumberOfFilesRemainingToProcess--;
                             sTotalNumberOfFilesRemainingToProcess--;
-                            if (baseTags == null)
+                            if (baseTags == null) {
+                                decrementNfoExportRemaining();
                                 continue;
+                            }
                             if (log.isTraceEnabled()) log.trace("startExporting: Base tag created, exporting {}", fileUri);
                             if (exportContext != null && fileUri != null)
                                 try {
-                                    NfoWriter.export(fileUri, baseTags, exportContext);
+                                    NfoWriter.export(fileUri, baseTags, exportContext,
+                                            AutoScrapeService::decrementNfoExportRemaining);
                                 } catch (IOException e) {
                                     log.error("caught IOException: ", e);
+                                    decrementNfoExportRemaining();
                                 }
+                            else
+                                decrementNfoExportRemaining();
                         }
                         if (overflowInBatch && processedInBatch == 0) {
                             // Move forward even if the very first row in this batch is unreadable.
                             processedInBatch = 1;
                             if (sNumberOfFilesRemainingToProcess > 0) sNumberOfFilesRemainingToProcess--;
                             if (sTotalNumberOfFilesRemainingToProcess > 0) sTotalNumberOfFilesRemainingToProcess--;
+                            decrementNfoExportRemaining();
                         }
                         if (processedInBatch == 0) break;
                         index += processedInBatch;
                         cursor.close();
                     } while (index < numberOfRows && (isForeground || isForceAfterNetworkScan) && !Thread.currentThread().isInterrupted());
                     // exports are dispatched asynchronously; wait for them before finishing
-                    NfoWriter.awaitPendingExports();
-                    LoaderUtils.setScrapeInProgress(false);
-                    cursor.close();
+                        NfoWriter.awaitPendingExports();
+                        LoaderUtils.setScrapeInProgress(false);
+                    } finally {
+                        if (cursor != null) cursor.close();
+                        sNfoExportInProgress = false;
+                        sNumberOfFilesRemainingToExport.set(0);
+                        if (log.isDebugEnabled()) log.debug("startExporting: finished");
+                    }
                 }
             };
             mExportingThread.start();

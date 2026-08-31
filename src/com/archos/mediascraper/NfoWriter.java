@@ -418,6 +418,15 @@ public class NfoWriter {
     }
 
     public static void export(Uri video, BaseTags tag, ExportContext exportContext) throws IOException {
+        export(video, tag, exportContext, null);
+    }
+
+    /**
+     * Queues an export and invokes {@code completion} after that export task has finished.
+     * The callback is useful for callers which report progress for the actual single-worker
+     * export queue rather than merely for the records they have dispatched to it.
+     */
+    public static void export(Uri video, BaseTags tag, ExportContext exportContext, Runnable completion) throws IOException {
         enqueueExportTask(() -> {
             try {
                 if (tag instanceof MovieTags) {
@@ -430,6 +439,8 @@ public class NfoWriter {
                 }
             } catch (IOException e) {
                 log.error("export: failed for {}", video, e);
+            } finally {
+                if (completion != null) completion.run();
             }
         });
     }

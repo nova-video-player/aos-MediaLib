@@ -171,4 +171,5 @@
     <string name="badge_op_scan">S</string>
     <string name="badge_op_delete">D</string>
     <string name="badge_op_identify">I</string>
+    <string name="badge_op_export">E</string>
 </resources>
