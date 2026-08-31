@@ -118,9 +118,12 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
             VideoStore.MediaColumns.TITLE,
             VideoStore.Video.VideoColumns.SCRAPER_MOVIE_ID,
             VideoStore.Video.VideoColumns.SCRAPER_EPISODE_ID,
+            VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE,
             VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID,
-            VideoStore.Video.VideoColumns.SCRAPER_E_SEASON
+            VideoStore.Video.VideoColumns.SCRAPER_E_SEASON,
+            VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE,
+            VideoStore.Video.VideoColumns.SCRAPER_S_NAME
     };
     private static final AtomicReference<Thread> sScrapeWorker = new AtomicReference<>();
     private boolean restartOnNextRound = false;
@@ -733,7 +736,6 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             // Upgradable parameters check at each iteration
                             boolean shouldRescrapAll = sRescanAll;
                             boolean shouldRescanOnlyNotFound = sRescanOnlyNotFound;
-
                             int scrapStatusParam = shouldRescrapAll && shouldRescanOnlyNotFound ? PARAM_SCRAPED_NOT_FOUND :
                                             scrapeOnlyMovies ? PARAM_MOVIES :
                                                     shouldRescrapAll ? PARAM_ALL :
@@ -775,6 +777,14 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             }
                             sNumberOfFilesRemainingToProcess = numberOfRows;
                             sTotalNumberOfFilesRemainingToProcess = numberOfRows;
+                            // Publish immediately.  Waiting until the first item has completed
+                            // makes explicit Settings refreshes appear to do nothing whenever
+                            // lookup/save is quick or the batch is interrupted early.
+                            nm.notify(NOTIFICATION_ID, nb
+                                    .setContentTitle(getString(R.string.scraping_in_progress)
+                                            + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
+                                    .setContentText("")
+                                    .build());
 
                             // Process in windowed batches using keyset pagination (_ID > lastSeenId)
                             // to avoid CursorWindow overflow and ensure stable pagination
@@ -807,6 +817,13 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 }
                                 hasMoreRows = true;
                                 long ID = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
+                                long previousScraperId = cursor.getLong(cursor.getColumnIndexOrThrow(
+                                        VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID));
+                                // A re-identification miss must never detach an existing match. In
+                                // particular for episodes, changing this value invokes the provider's
+                                // cleanup trigger, which deletes the episode and can subsequently
+                                // delete its show when it was the final remaining episode.
+                                boolean wasPreviouslyScraped = previousScraperId > 0;
                                 lastSeenId = ID;
                                 if (persistenceRetryRound && !persistenceRetryIds.contains(ID)) {
                                     continue;
@@ -909,22 +926,35 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                     if (log.isTraceEnabled()) log.trace("startScraping: rescraping all");
                                     long videoID = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_VIDEO_ONLINE_ID));
                                     final int scraperType = cursor.getInt(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_TYPE));
-
                                     //This I have NEVER SEEN WORK! Always scrapes as an unknown, lets prove me wrong or this gets the chop too!
                                     if (scraperType == BaseTags.TV_SHOW) {
                                         // get the whole season
                                         long season = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_E_SEASON));
+                                        long episode = cursor.getLong(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_E_EPISODE));
+                                        String showTitle = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.SCRAPER_S_NAME));
                                         Bundle b = new Bundle();
-                                        b.putInt(Scraper.ITEM_REQUEST_SEASON, (int) season);
                                         b.putInt(Scraper.ITEM_REQUEST_BASIC_VIDEO, 1);
                                         b.putInt(Scraper.ITEM_REQUEST_SEASON, (int) season);
+                                        b.putInt(Scraper.ITEM_REQUEST_EPISODE, (int) episode);
                                         b.putInt(Scraper.ITEM_REQUEST_ALL_EPISODES, (int) season);
+                                        // Settings "Rescrape all" is an explicit user request,
+                                        // just like manual show/episode rescrapes. Refresh source
+                                        // metadata instead of retaining the known-show cache.
+                                        if (shouldRescrapAll) {
+                                            b.putBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, true);
+                                        }
 
-                                        if (log.isTraceEnabled()) log.trace("startScraping: rescraping episode for tvId {}, season {}", videoID, season);
+                                        if (log.isTraceEnabled()) log.trace("startScraping: rescraping episode for tvId {}, season {}, episode {}", videoID, season, episode);
                                         SearchResult searchResult = new SearchResult(SearchResult.tvshow, title, (int) videoID);
                                         searchResult.setFile(fileUri);
                                         searchResult.setScraper(new ShowScraper4(AutoScrapeService.this));
-                                        result = ShowScraper4.getDetails(new SearchResult(SearchResult.tvshow, title, (int) videoID), b);
+                                        searchResult.setOriginalTitle(showTitle == null ? title : showTitle);
+                                        searchResult.setLanguage(Scraper.getLanguage(AutoScrapeService.this));
+                                        Bundle searchExtra = new Bundle();
+                                        searchExtra.putString(ShowUtils.SEASON, String.valueOf(season));
+                                        searchExtra.putString(ShowUtils.EPNUM, String.valueOf(episode));
+                                        searchResult.setExtra(searchExtra);
+                                        result = ShowScraper4.getDetails(searchResult, b);
                                     } else if (scraperType == BaseTags.MOVIE) {
                                         if (log.isTraceEnabled()) log.trace("startScraping: rescraping movie {}", videoID);
                                         SearchResult searchResult = new SearchResult(SearchResult.movie, title, (int) videoID);
@@ -1027,7 +1057,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 if (persistenceFailed) {
                                     log.error("startScraping: keeping file {} retryable after database save failure", fileUri);
                                     mNetworkOrScrapErrors++;
-                                } else if (shouldMarkAsNotFound(persistenceFailed, notScraped, noScrapeError)) { //in case of network error, don't go there, and don't save in case we are rescraping already scraped videos
+                                } else if (shouldMarkAsNotFound(persistenceFailed, notScraped,
+                                        noScrapeError, wasPreviouslyScraped)) {
                                     //Show the error on the notification
                                     //Using the file name stripped as the title here, the search suggestion used to scrape.
                                     nm.notify(NOTIFICATION_ID, nb.setContentTitle(getString(R.string.scraping_in_progress) + " (" + sTotalNumberOfFilesRemainingToProcess + ")")
@@ -1171,8 +1202,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     }
 
     static boolean shouldMarkAsNotFound(boolean persistenceFailed, boolean notScraped,
-            boolean noScrapeError) {
-        return !persistenceFailed && (notScraped || !noScrapeError);
+            boolean noScrapeError, boolean wasPreviouslyScraped) {
+        return !persistenceFailed && !wasPreviouslyScraped && (notScraped || !noScrapeError);
     }
 
     static boolean shouldRunAnotherScrapeRound(int completedRounds, boolean restartRequested) {

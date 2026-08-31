@@ -21,7 +21,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -69,6 +68,8 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
     private static final String notifChannelId = "AllCollectionScrapeService_id";
     private static final String notifChannelName = "AllCollectionScrapeService";
     private static final String notifChannelDescr = "AllCollectionScrapeService";
+    private static volatile boolean sCollectionScrapeInProgress = false;
+    private static volatile int sNumberOfCollectionsRemainingToProcess = 0;
     private volatile boolean isForeground = false;
 
     private static Context mContext;
@@ -104,6 +105,15 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
     public static synchronized CollectionsService getCollectionService() {
         if (collectionService == null) reauth();
         return collectionService;
+    }
+
+    /** State consumed by the Leanback scanner/scraper progress overlay. */
+    public static boolean isCollectionScrapeInProgress() {
+        return sCollectionScrapeInProgress;
+    }
+
+    public static int getNumberOfCollectionsRemainingToProcess() {
+        return sNumberOfCollectionsRemainingToProcess;
     }
 
     /**
@@ -150,20 +160,21 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
     public void rescrapeCollection(Context context, Long collectionId) {
         if (log.isDebugEnabled()) log.debug("rescrapeCollection: {}", collectionId);
         if (collectionId != null && collectionId > 0) {
-            handleCursor(getCollectionCursor(collectionId));
+            handleCursor(getCollectionCursor(collectionId),
+                    getString(R.string.rescraping_collection) + " " + collectionId);
         }
         removeTask(collectionId);
     }
 
     public void rescrapeAllCollections(Context context) {
         if (log.isDebugEnabled()) log.debug("rescrapeAllCollections");
-        handleCursor(getAllCursor());
+        handleCursor(getAllCursor(), getString(R.string.rescraping_collections));
         removeAllTask();
     }
 
     public void rescrapeNoImageCollections(Context context) {
         if (log.isDebugEnabled()) log.debug("rescrapeNoImageCollections");
-        handleCursor(getNoImageCursor());
+        handleCursor(getNoImageCursor(), getString(R.string.rescraping_noimage_collections));
         removeNoImageTask();
     }
 
@@ -260,39 +271,42 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
 
     private void rescrapeAllCollections() {
         if (log.isDebugEnabled()) log.debug("rescrapeAllCollections");
-        nb.setContentText(getString(R.string.rescraping_collections));
-        nm.notify(NOTIFICATION_ID, nb.build());
-        handleCursor(getAllCursor());
+        handleCursor(getAllCursor(), getString(R.string.rescraping_collections));
         removeAllTask();
     }
 
     private void rescrapeNoImageCollections() {
         if (log.isDebugEnabled()) log.debug("rescrapeNoImageCollections");
-        nb.setContentText(getString(R.string.rescraping_noimage_collections));
-        nm.notify(NOTIFICATION_ID, nb.build());
-        handleCursor(getNoImageCursor());
+        handleCursor(getNoImageCursor(), getString(R.string.rescraping_noimage_collections));
         removeNoImageTask();
     }
 
     private void rescrapeCollection(Long collectionId) {
         if (log.isDebugEnabled()) log.debug("rescrapeCollection: {}", collectionId);
         if (collectionId != null && collectionId > 0) {
-            // update notification
-            nb.setContentText(getString(R.string.rescraping_collection) + " " + collectionId.toString());
-            nm.notify(NOTIFICATION_ID, nb.build());
-            handleCursor(getCollectionCursor(collectionId));
+            handleCursor(getCollectionCursor(collectionId),
+                    getString(R.string.rescraping_collection) + " " + collectionId);
         }
         removeTask(collectionId);
     }
 
-    private void handleCursor(Cursor cursor) {
+    private void handleCursor(Cursor cursor, String notificationTitle) {
+        if (cursor == null) {
+            sNumberOfCollectionsRemainingToProcess = 0;
+            sCollectionScrapeInProgress = false;
+            return;
+        }
 
-        if (log.isDebugEnabled()) log.debug("bind: {}", DatabaseUtils.dumpCursorToString(cursor));
-        
+        int remaining = cursor.getCount();
+        sNumberOfCollectionsRemainingToProcess = remaining;
+        sCollectionScrapeInProgress = remaining > 0;
+        updateNotification(notificationTitle, remaining);
+        if (log.isDebugEnabled()) log.debug("handleCursor: {} collection candidate(s)", remaining);
+
         // get configured language
         String language = Scraper.getLanguage(getApplicationContext());
 
-        if (cursor != null) {
+        try {
             // do the processing
             while (cursor.moveToNext() && isForeground) {
                 long collectionId = cursor.getLong(0);
@@ -313,9 +327,21 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
                     collectionTag.downloadImage(getApplicationContext());
                     collectionTag.save(getApplicationContext(), true);
                 }
+                remaining--;
+                sNumberOfCollectionsRemainingToProcess = remaining;
+                updateNotification(notificationTitle, remaining);
             }
+        } finally {
+            sNumberOfCollectionsRemainingToProcess = 0;
+            sCollectionScrapeInProgress = false;
             cursor.close();
         }
+    }
+
+    private void updateNotification(String title, int remaining) {
+        String countedTitle = remaining > 0 ? title + " (" + remaining + ")" : title;
+        nb.setContentTitle(countedTitle).setContentText("");
+        nm.notify(NOTIFICATION_ID, nb.build());
     }
 
     private static final Uri URI = ScraperStore.MovieCollections.URI.BASE;
@@ -347,6 +373,8 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
 
     private void cleanup() {
         isForeground = false;
+        sNumberOfCollectionsRemainingToProcess = 0;
+        sCollectionScrapeInProgress = false;
         // Clear the scheduled tasks
         sScheduledTasks.clear();
         // Cancel the notification

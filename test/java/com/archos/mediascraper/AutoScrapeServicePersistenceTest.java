@@ -71,12 +71,17 @@ public class AutoScrapeServicePersistenceTest {
 
     @Test
     public void databaseSaveFailureRemainsRetryable() {
-        assertFalse(AutoScrapeService.shouldMarkAsNotFound(true, true, false));
+        assertFalse(AutoScrapeService.shouldMarkAsNotFound(true, true, false, false));
     }
 
     @Test
     public void metadataMissIsMarkedAsNotFound() {
-        assertTrue(AutoScrapeService.shouldMarkAsNotFound(false, true, true));
+        assertTrue(AutoScrapeService.shouldMarkAsNotFound(false, true, true, false));
+    }
+
+    @Test
+    public void reidentificationMissPreservesExistingScrapedMetadata() {
+        assertFalse(AutoScrapeService.shouldMarkAsNotFound(false, true, true, true));
     }
 
     @Test
@@ -123,7 +128,7 @@ public class AutoScrapeServicePersistenceTest {
                 false /*nfoPersisted*/, true /*persistenceFailed*/,
                 true /*notScraped*/, true /*noScrapeError*/, true /*shouldRescrapAll*/));
         // ...and remains retryable rather than marked as not-found
-        assertFalse(AutoScrapeService.shouldMarkAsNotFound(true, true, false));
+        assertFalse(AutoScrapeService.shouldMarkAsNotFound(true, true, false, false));
     }
 
     @Test
