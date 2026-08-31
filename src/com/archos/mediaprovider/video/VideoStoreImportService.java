@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -598,42 +599,82 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             return;
         }
 
-        // note: seems that the delete is performed not as a table trigger anymore but elsewhere
-        // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
-        // note that the db is being modified during import
-        while (isForeground) {
-            try {
-                c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                cCount = c.getCount();
-                if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
-                if (cCount == 0) {
-                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files no more data");
-                    break; // break out if no more data
-                }
-                while (c.moveToNext() && isForeground) {
-                    long id = c.getLong(0);
-                    String path = c.getString(1);
-                    long count = c.getLong(2);
-                    if (log.isTraceEnabled()) log.trace("processDeleteFileAndVobCallback: delete_files {} path {} count {}", id, path, count);
-                    DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
-                    delCb.callback(DeleteFileCallbackArgs);
-                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                    try {
-                        // path should not be null but deal with it and remove entry in this case
-                        if (path == null)
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id));
-                        else
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    } catch (SQLException sqlE) {
-                        log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
+        int remainingDeleteFiles;
+        try {
+            // COUNT(*) produces one scalar row; unlike the paged SELECT below it
+            // cannot fill a CursorWindow with delete_files entries.
+            remainingDeleteFiles = (int) DatabaseUtils.longForQuery(db,
+                    "SELECT COUNT(*) FROM delete_files", null);
+        } catch (RuntimeException e) {
+            log.error("processDeleteFileAndVobCallback: unable to count delete_files", e);
+            return;
+        }
+        boolean cleanupProgressStarted = remainingDeleteFiles > 0;
+        if (remainingDeleteFiles > 0) {
+            // doFull/doIncrementalImport has already returned to IDLE. Re-enter the
+            // local-import state so the existing L:D overlay can report this cleanup.
+            ImportState.VIDEO.setState(ImportState.State.REGULAR_IMPORT);
+            ImportState.VIDEO.setDeleting(true);
+            ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remainingDeleteFiles);
+            updateDeleteNotification(remainingDeleteFiles, "");
+        }
+        try {
+            // note: seems that the delete is performed not as a table trigger anymore but elsewhere
+            // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+            // note that the db is being modified during import
+            while (isForeground) {
+                try {
+                    int deletedFromBatch = 0;
+                    c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
+                    cCount = c.getCount();
+                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
+                    if (cCount == 0) {
+                        if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files no more data");
+                        break; // break out if no more data
                     }
+                    while (c.moveToNext() && isForeground) {
+                        long id = c.getLong(0);
+                        String path = c.getString(1);
+                        long count = c.getLong(2);
+                        if (log.isTraceEnabled()) log.trace("processDeleteFileAndVobCallback: delete_files {} path {} count {}", id, path, count);
+                        DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
+                        delCb.callback(DeleteFileCallbackArgs);
+                        // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                        try {
+                            // path should not be null but deal with it and remove entry in this case
+                            if (path == null)
+                                deletedFromBatch += db.delete("delete_files", BaseColumns._ID + "=?",
+                                        new String[] {String.valueOf(id)});
+                            else
+                                deletedFromBatch += db.delete("delete_files", BaseColumns._ID + "=? AND name=?",
+                                        new String[] {String.valueOf(id), path});
+                        } catch (SQLException sqlE) {
+                            log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
+                        }
+                    }
+                    if (remainingDeleteFiles > 0) {
+                        remainingDeleteFiles = Math.max(0, remainingDeleteFiles - deletedFromBatch);
+                        ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remainingDeleteFiles);
+                        updateDeleteNotification(remainingDeleteFiles, "");
+                        if (deletedFromBatch == 0) {
+                            log.error("processDeleteFileAndVobCallback: delete_files batch made no progress ({} remaining), stopping cleanup for this import",
+                                    remainingDeleteFiles);
+                            break;
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException or CursorWindowAllocationException",e);
+                    if (CRASH_ON_ERROR) throw new RuntimeException(e);
+                    break;
+                } finally {
+                    if (c != null) c.close();
                 }
-            } catch (RuntimeException e) {
-                log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException or CursorWindowAllocationException",e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
-            } finally {
-                if (c != null) c.close();
+            }
+        } finally {
+            if (cleanupProgressStarted) {
+                ImportState.VIDEO.setDeleting(false);
+                ImportState.VIDEO.setNumberOfFilesRemainingToDelete(0);
+                ImportState.VIDEO.setState(ImportState.State.IDLE);
             }
         }
 
