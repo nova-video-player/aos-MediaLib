@@ -210,6 +210,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.ORIGINAL_TITLE, mOriginalTitle);
         values.put(ScraperStore.Movie.SPOKEN_LANGUAGES, mSpokenLanguages);
         values.put(ScraperStore.Movie.TITLE_LANGUAGE, mTitleLanguage);
+        values.put(ScraperStore.Movie.SORT_NAME, com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(mTitle, mTitleLanguage));
         values.put(ScraperStore.Movie.RATING, Float.valueOf(mRating));
         values.put(ScraperStore.Movie.COLLECTION_ID, Integer.valueOf(mCollectionId));
 

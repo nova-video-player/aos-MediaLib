@@ -261,6 +261,7 @@ public class ShowTags extends VideoTags {
             values.put(ScraperStore.Show.ORIGINAL_TITLE, mOriginalTitle);
             values.put(ScraperStore.Show.SPOKEN_LANGUAGES, mSpokenLanguages);
             values.put(ScraperStore.Show.TITLE_LANGUAGE, mTitleLanguage);
+            values.put(ScraperStore.Show.SORT_NAME, com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(finalTitle, mTitleLanguage));
 
             values.put(ScraperStore.Show.ACTORS_FORMATTED, getActorsFormatted());
             values.put(ScraperStore.Show.DIRECTORS_FORMATTED, getDirectorsFormatted());

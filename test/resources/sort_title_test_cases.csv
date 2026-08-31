@@ -1,0 +1,68 @@
+# Title|Language|ExpectedSortTitle
+# English articles: The, A, An, Ye
+The Matrix|en|Matrix, The
+A Beautiful Mind|en|Beautiful Mind, A
+An American in Paris|en|American in Paris, An
+Ye Olde Curiosity Shop|en|Olde Curiosity Shop, Ye
+Die Hard|en|Die Hard
+Alien|en|Alien
+
+# French articles: Le, La, Les, Un, Une, Des, L', D'
+Les Misérables|fr|Misérables, Les
+Le Fabuleux Destin d'Amélie Poulain|fr|Fabuleux Destin d'Amélie Poulain, Le
+La Grande Vadrouille|fr|Grande Vadrouille, La
+Un Prophète|fr|Prophète, Un
+Une Vie Meilleure|fr|Vie Meilleure, Une
+Les Choristes|fr|Choristes, Les
+Des Hommes du président|fr|Hommes du président, Des
+L'Auberge Espagnole|fr|Auberge Espagnole, L'
+L’Auberge Espagnole|fr|Auberge Espagnole, L'
+D'Artagnan|fr|Artagnan, D'
+D’Artagnan|fr|Artagnan, D'
+A bout de souffle|fr|A bout de souffle
+
+# German articles: Der, Die, Das, Ein, Eine, Einen, Einem, Eines, Einer
+Die Blechtrommel|de|Blechtrommel, Die
+Das Boot|de|Boot, Das
+Der Untergang|de|Untergang, Der
+Ein Freund von mir|de|Freund von mir, Ein
+Die Verlorene Ehre der Katharina Blum|de|Verlorene Ehre der Katharina Blum, Die
+
+# Spanish articles: El, La, Los, Las, Un, Una, Unos, Unas
+El Laberinto del Fauno|es|Laberinto del Fauno, El
+La Piel que habito|es|Piel que habito, La
+Los Otros|es|Otros, Los
+Las Trece Rosas|es|Trece Rosas, Las
+Una Tesis sobre un homicidio|es|Tesis sobre un homicidio, Una
+
+# Italian articles: Il, Lo, La, I, Gli, Le, Un, Uno, Una, L', Un'
+Il Postino|it|Postino, Il
+Il Gattopardo|it|Gattopardo, Il
+L'Avventura|it|Avventura, L'
+L’Avventura|it|Avventura, L'
+L'Albero degli zoccoli|it|Albero degli zoccoli, L'
+
+# Portuguese articles: O, A, Os, As, Um, Uma, Uns, Umas
+O Auto da Compadecida|pt|Auto da Compadecida, O
+A Cidade de Deus|pt|Cidade de Deus, A
+Os Capitães da Areia|pt|Capitães da Areia, Os
+As Meninas|pt|Meninas, As
+
+# Dutch articles: De, Het, Een, 't
+De Aanslag|nl|Aanslag, De
+Het Witte Waan|nl|Witte Waan, Het
+'t Vrije Schaep|nl|Vrije Schaep, 't
+’t Vrije Schaep|nl|Vrije Schaep, 't
+
+# Undetermined / Unknown languages (no inversion)
+The Matrix|und|The Matrix
+Die Hard|und|Die Hard
+A bout de souffle|und|A bout de souffle
+L'Auberge Espagnole|und|L'Auberge Espagnole
+The Matrix|null|The Matrix
+The Matrix||The Matrix
+
+# Edge cases & whitespace
+  The Matrix  |en|Matrix, The
+The|en|The
+A|en|A

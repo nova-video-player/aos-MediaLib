@@ -42,6 +42,8 @@ public final class ScraperStore {
         public static final String SPOKEN_LANGUAGES = "spoken_languages_movie";
         /** Language of the TMDb title currently stored in {@link #NAME}, ISO 639-1 or "und". */
         public static final String TITLE_LANGUAGE = "title_language_movie";
+        /** Normalized sort title ("Title, Article") */
+        public static final String SORT_NAME = "sort_name_movie";
         public static final String RATING = "rating_movie";
         public static final String COVER = "cover_movie";
         public static final String PLOT = "plot_movie";
@@ -124,6 +126,8 @@ public final class ScraperStore {
         public static final String SPOKEN_LANGUAGES = "spoken_languages_show";
         /** Language of the TMDb name currently stored in {@link #NAME}, ISO 639-1 or "und". */
         public static final String TITLE_LANGUAGE = "title_language_show";
+        /** Normalized sort title ("Title, Article") */
+        public static final String SORT_NAME = "sort_name_show";
         /** place to store local path to backdrop image */
         public static final String BACKDROP = "backdrop_show";
         /** the url to a backdrop image */
@@ -435,6 +439,8 @@ public final class ScraperStore {
     public static class MovieCollections {
         public static final String ID = "m_coll_id";
         public static final String NAME = "m_coll_name";
+        /** Normalized sort title */
+        public static final String SORT_NAME = "m_coll_sort_name";
         public static final String DESCRIPTION = "m_coll_description";
         public static final String POSTER_LARGE_URL = "m_coll_po_large_url";
         public static final String POSTER_LARGE_FILE = "m_coll_po_large_file";

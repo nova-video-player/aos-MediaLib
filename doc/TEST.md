@@ -189,6 +189,36 @@ Class command:
 
 Uses `test/resources/movie_test_cases.csv`.
 
+### Sort title extraction ("Title, Article")
+
+Class command:
+
+```bash
+./gradlew --offline :MediaLib:testDebugUnitTest \
+  --tests 'com.archos.mediascraper.preprocess.SortTitleUtilsTest'
+```
+
+- `com.archos.mediascraper.preprocess.SortTitleUtilsTest.testSortTitlesFromResourceFile`
+- `com.archos.mediascraper.preprocess.SortTitleUtilsTest.testWhitespaceAndEmpty`
+
+Uses `test/resources/sort_title_test_cases.csv` to verify language-specific leading article inversion (e.g. `The Matrix` -> `Matrix, The` for `en`, `L'Auberge Espagnole` -> `Auberge Espagnole, L'` for `fr`) and undetermined/unknown language preservation (`und` or empty language keeps title unmodified).
+
+#### Expanding Sort Title Tests
+
+To add new sort title test cases, append rows to `MediaLib/test/resources/sort_title_test_cases.csv` following the format:
+
+```text
+Title|Language|ExpectedSortTitle
+```
+
+Examples:
+```csv
+The Big Lebowski|en|Big Lebowski, The
+La Grande Illusion|fr|Grande Illusion, La
+Das Boot|de|Boot, Das
+The Matrix|und|The Matrix
+```
+
 ### Scraper integration
 
 Class command:

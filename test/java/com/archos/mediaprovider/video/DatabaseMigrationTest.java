@@ -151,6 +151,142 @@ public class DatabaseMigrationTest {
     }
 
     @Test
+    public void testMigrationV60AddsSortNameColumnsIndexesAndBackfills() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v60.db";
+        context.deleteDatabase(dbName);
+
+        // 1. Setup v59 database with fixtures
+        VideoOpenHelper helper59 = new VideoOpenHelper(context, dbName, 59);
+        SQLiteDatabase db = helper59.getWritableDatabase();
+        db.execSQL("PRAGMA foreign_keys = OFF");
+
+        // Files (media_type = 3: video, volume_hidden = 0, Archos_smbserver = 0)
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (1, 1, '/path/matrix.mkv', 'Matrix File Title', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (2, 2, '/path/auberge.mkv', 'Auberge File Title', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (3, 3, '/path/diehard.mkv', 'Die Hard File Title', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (4, 4, '/path/legacy.mkv', 'Legacy File Title', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (20, 20, '/path/home_video.mp4', 'Family Vacation', 2000, 3, 0, 0)");
+
+        // Movies: English with article, French with apostrophe article, Undetermined with article
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, title_language_movie) VALUES (1, 1, 'The Matrix', 'en')");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, title_language_movie) VALUES (2, 2, 'L''Auberge Espagnole', 'fr')");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, title_language_movie) VALUES (3, 3, 'Die Hard', 'en')");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, title_language_movie) VALUES (4, 4, 'The Legacy Und', 'und')");
+
+        // Shows: French with article, German with article, Undetermined
+        db.execSQL("INSERT INTO show (_id, name_show, title_language_show) VALUES (1, 'Les Misérables', 'fr')");
+        db.execSQL("INSERT INTO show (_id, name_show, title_language_show) VALUES (2, 'Die Blechtrommel', 'de')");
+        db.execSQL("INSERT INTO show (_id, name_show, title_language_show) VALUES (3, 'The Legacy Show Und', 'und')");
+
+        // Collections
+        db.execSQL("INSERT INTO movie_collection (m_coll_id, m_coll_name) VALUES (1, 'The Matrix Collection')");
+
+        db.close();
+
+        // 2. Upgrade to v60
+        VideoOpenHelper helper60 = new VideoOpenHelper(context, dbName, 60);
+        SQLiteDatabase upgraded = helper60.getWritableDatabase();
+
+        assertEquals(60, upgraded.getVersion());
+        assertTrue(columnExists(upgraded, "movie", ScraperStore.Movie.SORT_NAME));
+        assertTrue(columnExists(upgraded, "show", ScraperStore.Show.SORT_NAME));
+        assertTrue(columnExists(upgraded, "movie_collection", ScraperStore.MovieCollections.SORT_NAME));
+        assertTrue(columnExists(upgraded, "video", VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME));
+        assertTrue(columnExists(upgraded, "video", VideoStore.Video.VideoColumns.SCRAPER_M_SORT_NAME));
+        assertTrue(columnExists(upgraded, "video", VideoStore.Video.VideoColumns.SCRAPER_S_SORT_NAME));
+        assertTrue(columnExists(upgraded, "video", VideoStore.Video.VideoColumns.SCRAPER_C_SORT_NAME));
+
+        assertTrue(indexExists(upgraded, "idx_movie_sort_name"));
+        assertTrue(indexExists(upgraded, "idx_show_sort_name"));
+        assertTrue(indexExists(upgraded, "idx_coll_sort_name"));
+
+        // Verify language-aware backfills
+        assertEquals("Matrix, The", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 1"));
+        assertEquals("Auberge Espagnole, L'", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 2"));
+        assertEquals("Die Hard", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 3"));
+        assertEquals("The Legacy Und", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 4"));
+
+        assertEquals("Misérables, Les", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Show.SORT_NAME + " FROM show WHERE _id = 1"));
+        assertEquals("Blechtrommel, Die", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Show.SORT_NAME + " FROM show WHERE _id = 2"));
+        assertEquals("The Legacy Show Und", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Show.SORT_NAME + " FROM show WHERE _id = 3"));
+
+        // Collections keep raw title
+        assertEquals("The Matrix Collection", querySingleString(upgraded, "SELECT " +
+                ScraperStore.MovieCollections.SORT_NAME + " FROM movie_collection WHERE m_coll_id = 1"));
+
+        // Query video view for scraped video: sort_name = 'Matrix, The', m_name = 'The Matrix'
+        assertEquals("Matrix, The", querySingleString(upgraded, "SELECT " + VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME + " FROM video WHERE _id = 1"));
+        assertEquals("The Matrix", querySingleString(upgraded, "SELECT " + VideoStore.Video.VideoColumns.SCRAPER_M_NAME + " FROM video WHERE _id = 1"));
+
+        // Query video view for unscraped video: sort_name is NULL, file title is 'Family Vacation'
+        assertNull(querySingleStringOrNull(upgraded, "SELECT " + VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME + " FROM video WHERE _id = 20"));
+        assertEquals("Family Vacation", querySingleString(upgraded, "SELECT title FROM video WHERE _id = 20"));
+
+        // Effective null-safe sort expression matching runtime SortUtils for VIDEO_VIEW: COALESCE(NULLIF(sort_name, ''), name)
+        String effectiveSortExpr = "COALESCE(NULLIF(" + VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME + ", ''), name)";
+        assertEquals("Matrix, The", querySingleString(upgraded, "SELECT " + effectiveSortExpr + " FROM video WHERE _id = 1"));
+        assertEquals("Family Vacation", querySingleString(upgraded, "SELECT " + effectiveSortExpr + " FROM video WHERE _id = 20"));
+
+        assertEquals("ok", querySingleString(upgraded, "PRAGMA integrity_check"));
+        upgraded.execSQL("PRAGMA foreign_keys = OFF");
+        upgraded.execSQL("DELETE FROM movie WHERE _id IN (1, 2, 3, 4)");
+        upgraded.execSQL("DELETE FROM show WHERE _id IN (1, 2, 3)");
+        upgraded.execSQL("DELETE FROM movie_collection WHERE m_coll_id = 1");
+        upgraded.execSQL("DELETE FROM files WHERE _id IN (1, 2, 3, 4, 20)");
+        assertEquals(0, foreignKeyViolationCount(upgraded));
+        upgraded.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
+    public void testFreshDatabaseCreationV60() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_fresh_v60.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper = new VideoOpenHelper(context, dbName, 60);
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+        assertEquals(60, db.getVersion());
+        assertTrue(columnExists(db, "movie", ScraperStore.Movie.SORT_NAME));
+        assertTrue(columnExists(db, "show", ScraperStore.Show.SORT_NAME));
+        assertTrue(columnExists(db, "movie_collection", ScraperStore.MovieCollections.SORT_NAME));
+        assertTrue(columnExists(db, "video", VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME));
+        assertTrue(columnExists(db, "video", VideoStore.Video.VideoColumns.SCRAPER_M_SORT_NAME));
+        assertTrue(columnExists(db, "video", VideoStore.Video.VideoColumns.SCRAPER_S_SORT_NAME));
+        assertTrue(columnExists(db, "video", VideoStore.Video.VideoColumns.SCRAPER_C_SORT_NAME));
+
+        assertTrue(indexExists(db, "idx_movie_sort_name"));
+        assertTrue(indexExists(db, "idx_show_sort_name"));
+        assertTrue(indexExists(db, "idx_coll_sort_name"));
+
+        // Insert fresh rows directly into v60 schema and verify video view
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (1, 1, '/path/matrix.mkv', 'Matrix File Title', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (2, 2, '/path/unscraped.mp4', 'Unscraped Title', 2000, 3, 0, 0)");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, sort_name_movie, title_language_movie) VALUES (1, 1, 'The Matrix', 'Matrix, The', 'en')");
+
+        assertEquals("Matrix, The", querySingleString(db, "SELECT " + VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME + " FROM video WHERE _id = 1"));
+        assertNull(querySingleStringOrNull(db, "SELECT " + VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME + " FROM video WHERE _id = 2"));
+
+        String effectiveSortExpr = "COALESCE(NULLIF(" + VideoStore.Video.VideoColumns.SCRAPER_SORT_NAME + ", ''), name)";
+        assertEquals("Matrix, The", querySingleString(db, "SELECT " + effectiveSortExpr + " FROM video WHERE _id = 1"));
+        assertEquals("Unscraped Title", querySingleString(db, "SELECT " + effectiveSortExpr + " FROM video WHERE _id = 2"));
+
+        assertEquals("ok", querySingleString(db, "PRAGMA integrity_check"));
+        assertEquals(0, foreignKeyViolationCount(db));
+        db.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
     public void testMigrationV43RecreatesScannerTriggers() {
         Context context = ApplicationProvider.getApplicationContext();
         String dbName = "test_migration_v43.db";
@@ -601,6 +737,14 @@ public class DatabaseMigrationTest {
         Cursor cursor = db.rawQuery(sql, null);
         assertTrue(cursor.moveToFirst());
         String value = cursor.getString(0);
+        cursor.close();
+        return value;
+    }
+
+    private String querySingleStringOrNull(SQLiteDatabase db, String sql) {
+        Cursor cursor = db.rawQuery(sql, null);
+        assertTrue(cursor.moveToFirst());
+        String value = cursor.isNull(0) ? null : cursor.getString(0);
         cursor.close();
         return value;
     }

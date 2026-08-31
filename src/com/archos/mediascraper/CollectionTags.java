@@ -171,6 +171,7 @@ public class CollectionTags implements Parcelable {
         }
 
         cop.withValue(ScraperStore.MovieCollections.NAME, mTitle);
+        cop.withValue(ScraperStore.MovieCollections.SORT_NAME, mTitle);
         cop.withValue(ScraperStore.MovieCollections.DESCRIPTION, mPlot);
         cop.withValue(ScraperStore.MovieCollections.POSTER_LARGE_URL, mPosterLargeUrl);
         cop.withValue(ScraperStore.MovieCollections.POSTER_LARGE_FILE, mPosterLargeFile);

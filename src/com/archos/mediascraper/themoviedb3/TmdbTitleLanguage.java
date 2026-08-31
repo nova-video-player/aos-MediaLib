@@ -28,13 +28,17 @@ final class TmdbTitleLanguage {
     private static String find(String value, String requestedLanguage, String originalValue,
             String originalLanguage, Translations translations, boolean show) {
         if (TextUtils.isEmpty(value)) return "und";
+        String original = normalize(originalLanguage);
+        // If the title is identical to the original title and original_language is known,
+        // preserve the original language instead of treating it as translated (e.g. English titles
+        // retained unchanged in French or other translations).
+        if (value.equals(originalValue) && !"und".equals(original)) {
+            return original;
+        }
         String requested = normalize(requestedLanguage);
-        // A matching requested translation is unambiguous, including when its text equals the
-        // original title (for example an English title requested in English).
+        // A matching requested translation is unambiguous
         String match = findTranslation(value, requested, translations, show);
         if (match != null) return match;
-        String original = normalize(originalLanguage);
-        if (value.equals(originalValue) && !"und".equals(original)) return original;
 
         // TMDb can fall back to a different translation. Only accept it when the returned text
         // identifies exactly one language; otherwise preserve the explicit unknown value.

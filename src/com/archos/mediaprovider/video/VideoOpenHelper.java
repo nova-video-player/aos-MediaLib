@@ -47,7 +47,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 59;
+    private static final int DATABASE_VERSION = 60;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1333,6 +1333,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    date_modified,\n" +
                     "    inserted,\n" +
                     "    coalesce( archos_title, title ) AS title,\n" +
+                    "    coalesce( archos_title, title ) AS name,\n" +
                     "    title AS android_title,\n" +
                     "    archos_title,\n" +
                     "    duration,\n" +
@@ -1528,6 +1529,17 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     VideoColumns.SCRAPER_ORIGINAL_LANGUAGE + ",\n" +
                     "    coalesce(title_language_movie, title_language_show) AS " +
                     VideoColumns.SCRAPER_TITLE_LANGUAGE + ",\n");
+
+    private static final String CREATE_VIDEO_VIEW_V60 = CREATE_VIDEO_VIEW_V59.replace(
+            "    coalesce(name_movie, name_show) AS scraper_name,\n",
+            "    coalesce(name_movie, name_show) AS scraper_name,\n" +
+                    "    coalesce(sort_name_movie, sort_name_show) AS " + VideoColumns.SCRAPER_SORT_NAME + ",\n" +
+                    "    sort_name_movie AS " + VideoColumns.SCRAPER_M_SORT_NAME + ",\n" +
+                    "    sort_name_show AS " + VideoColumns.SCRAPER_S_SORT_NAME + ",\n")
+            .replace(
+            "    c.m_coll_name AS m_coll_name,\n",
+            "    c.m_coll_name AS m_coll_name,\n" +
+                    "    c.m_coll_sort_name AS " + VideoColumns.SCRAPER_C_SORT_NAME + ",\n");
 
     // ------------- ---##[ Video Thumbnails     ]## ---------------------------
     public static final String VIDEOTHUMBNAIL_TABLE_NAME = "videothumbnails";
@@ -1958,6 +1970,12 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 59);
             db.execSQL(CREATE_VIDEO_VIEW_V59);
+        }
+        if (oldVersion < 60 && newVersion >= 60) {
+            if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding sort_name columns and updating video view", 60);
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
+            ScraperTables.upgradeTo(db, 60);
+            db.execSQL(CREATE_VIDEO_VIEW_V60);
         }
     }
 
