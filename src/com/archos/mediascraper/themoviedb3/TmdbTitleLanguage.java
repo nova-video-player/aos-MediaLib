@@ -29,12 +29,39 @@ final class TmdbTitleLanguage {
             String originalLanguage, Translations translations, boolean show) {
         if (TextUtils.isEmpty(value)) return "und";
         String original = normalize(originalLanguage);
-        // If the title is identical to the original title and original_language is known,
+        // 1. If the title is identical to the original title and original_language is known,
         // preserve the original language instead of treating it as translated (e.g. English titles
         // retained unchanged in French or other translations).
         if (value.equals(originalValue) && !"und".equals(original)) {
             return original;
         }
+
+        // 2. Check if the title matches the English translation from TMDb (e.g. Asian films like
+        // "The Assassin" or "The Raid" whose French title is identical to the English international title).
+        String englishTranslation = findTranslation(translations, "en", show);
+        if (englishTranslation != null && value.equals(englishTranslation)) {
+            return "en";
+        }
+
+        // 3. Check if the localized title starts with the original English title
+        // (e.g. "The Amazing Spider-Man : Le Destin d'un héros", "The Dark Knight : Le Chevalier noir",
+        // "The Big Short : Le Casse du Siècle", "The King's Man : Première Mission").
+        if ("en".equals(original) && !TextUtils.isEmpty(originalValue)) {
+            // Strip trailing sequence digits e.g. "The Amazing Spider-Man 2" -> "The Amazing Spider-Man"
+            String baseOriginal = originalValue.replaceFirst("(?i)\\s*\\d+$", "").trim();
+            if (value.startsWith(originalValue) || (!baseOriginal.isEmpty() && value.startsWith(baseOriginal))) {
+                return "en";
+            }
+        }
+
+        // 4. Check if the localized title starts with the English translation title
+        if (englishTranslation != null && !englishTranslation.isEmpty()) {
+            String baseEnglish = englishTranslation.replaceFirst("(?i)\\s*\\d+$", "").trim();
+            if (value.startsWith(englishTranslation) || (!baseEnglish.isEmpty() && value.startsWith(baseEnglish))) {
+                return "en";
+            }
+        }
+
         String requested = normalize(requestedLanguage);
         // A matching requested translation is unambiguous
         String match = findTranslation(value, requested, translations, show);
@@ -53,6 +80,19 @@ final class TmdbTitleLanguage {
             }
         }
         return unique == null ? "und" : unique;
+    }
+
+    private static String findTranslation(Translations translations, String targetLanguage, boolean show) {
+        if ("und".equals(targetLanguage) || translations == null || translations.translations == null) return null;
+        for (Translation translation : translations.translations) {
+            if (targetLanguage.equals(normalize(translation.iso_639_1))) {
+                if (translation != null && translation.data != null) {
+                    String translated = show ? translation.data.name : translation.data.title;
+                    if (!TextUtils.isEmpty(translated)) return translated;
+                }
+            }
+        }
+        return null;
     }
 
     private static String findTranslation(String value, String requested, Translations translations,

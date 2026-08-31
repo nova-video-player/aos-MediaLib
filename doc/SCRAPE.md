@@ -30,6 +30,11 @@ its overview as the collection description.
 `title_language_*` records the language of the title/name TMDb actually returned. It is inferred
 from TMDb's appended translations in the same details response, so it adds no HTTP request. It
 may therefore differ from the requested scrape language when TMDb falls back. If the returned
+title is identical to the original title and the original language is known, Nova preserves
+the original language. Additionally, if the localized title matches the English international title
+or begins with the English title/prefix (for example, localized subtitles appended after an English
+franchise title such as `The Amazing Spider-Man : Le Destin d'un héros`), Nova recognizes `en` to
+ensure grammatical leading articles are handled accurately during alphabetical title sorting. If the returned
 text cannot identify one language unambiguously, Nova stores `und`; rows that predate v59 are
 also backfilled to `und`.
 
