@@ -47,7 +47,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 58;
+    private static final int DATABASE_VERSION = 59;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1521,6 +1521,14 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
                     "    coalesce(original_language_movie, original_language_show) AS " +
                     VideoColumns.SCRAPER_ORIGINAL_LANGUAGE + ",\n");
 
+    private static final String CREATE_VIDEO_VIEW_V59 = CREATE_VIDEO_VIEW_V58.replace(
+            "    coalesce(original_language_movie, original_language_show) AS " +
+                    VideoColumns.SCRAPER_ORIGINAL_LANGUAGE + ",\n",
+            "    coalesce(original_language_movie, original_language_show) AS " +
+                    VideoColumns.SCRAPER_ORIGINAL_LANGUAGE + ",\n" +
+                    "    coalesce(title_language_movie, title_language_show) AS " +
+                    VideoColumns.SCRAPER_TITLE_LANGUAGE + ",\n");
+
     // ------------- ---##[ Video Thumbnails     ]## ---------------------------
     public static final String VIDEOTHUMBNAIL_TABLE_NAME = "videothumbnails";
     private static final String CREATE_VIDEOTHUMBNAIL_TABLE =
@@ -1944,6 +1952,12 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
             ScraperTables.upgradeTo(db, 58);
             db.execSQL(CREATE_VIDEO_VIEW_V58);
+        }
+        if (oldVersion < 59 && newVersion >= 59) {
+            if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding localized title language metadata", 59);
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
+            ScraperTables.upgradeTo(db, 59);
+            db.execSQL(CREATE_VIDEO_VIEW_V59);
         }
     }
 

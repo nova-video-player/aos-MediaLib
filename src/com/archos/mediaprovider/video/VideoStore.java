@@ -1151,6 +1151,11 @@ public final class VideoStore {
              */
             public static final String SCRAPER_ORIGINAL_LANGUAGE = "scraper_original_language";
             /**
+             * MediaScraper: Language of the localized title currently displayed for the movie or show.
+             * <P>TYPE: <code>String</code>, ISO 639-1 code or <code>und</code> if unknown<P>
+             */
+            public static final String SCRAPER_TITLE_LANGUAGE = "scraper_title_language";
+            /**
              * MediaScraper: Movie title
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
              */

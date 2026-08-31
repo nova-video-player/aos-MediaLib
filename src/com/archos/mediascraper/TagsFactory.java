@@ -597,6 +597,7 @@ public class TagsFactory {
             String originalLanguage = getStringCol(cur, ScraperStore.Movie.ORIGINAL_LANGUAGE);
             String originalTitle = getStringCol(cur, ScraperStore.Movie.ORIGINAL_TITLE);
             String spokenLanguages = getStringCol(cur, ScraperStore.Movie.SPOKEN_LANGUAGES);
+            String titleLanguage = getStringCol(cur, ScraperStore.Movie.TITLE_LANGUAGE);
             String plot = getStringCol(cur, ScraperStore.Movie.PLOT);
             String cover = getStringCol(cur, ScraperStore.Movie.COVER);
             String actorName = getStringCol(cur, ScraperStore.Movie.Actor.NAME);
@@ -626,6 +627,7 @@ public class TagsFactory {
             tag.setOriginalTitle(originalTitle);
             tag.setSpokenLanguages(spokenLanguages == null || spokenLanguages.isEmpty() ? null :
                     java.util.Arrays.asList(spokenLanguages.split(",")));
+            tag.setTitleLanguage(titleLanguage);
             tag.setPlot(plot);
 
             if(cover != null)
@@ -664,6 +666,7 @@ public class TagsFactory {
             String originalLanguage = getStringCol(cur, ScraperStore.Show.ORIGINAL_LANGUAGE);
             String originalTitle = getStringCol(cur, ScraperStore.Show.ORIGINAL_TITLE);
             String spokenLanguages = getStringCol(cur, ScraperStore.Show.SPOKEN_LANGUAGES);
+            String titleLanguage = getStringCol(cur, ScraperStore.Show.TITLE_LANGUAGE);
             String plot = getStringCol(cur, ScraperStore.Show.PLOT);
             String cover = getStringCol(cur, ScraperStore.Show.COVER);
             String actorName = getStringCol(cur, ScraperStore.Show.Actor.NAME);
@@ -688,6 +691,7 @@ public class TagsFactory {
             if(premiered >= 0)
                 tag.setPremiered(premiered);
             tag.setOriginalLanguage(originalLanguage);
+            tag.setTitleLanguage(titleLanguage);
             tag.setOriginalTitle(originalTitle);
             tag.setSpokenLanguages(spokenLanguages == null || spokenLanguages.isEmpty() ? null :
                     java.util.Arrays.asList(spokenLanguages.split(",")));

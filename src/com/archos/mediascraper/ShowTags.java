@@ -55,6 +55,7 @@ public class ShowTags extends VideoTags {
     private String mOriginalLanguage = "und";
     private String mOriginalTitle = "";
     private String mSpokenLanguages = "";
+    private String mTitleLanguage = "und";
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
     public static final Parcelable.Creator<ShowTags> CREATOR = new Parcelable.Creator<ShowTags>() { 
@@ -124,6 +125,14 @@ public class ShowTags extends VideoTags {
 
     public String getSpokenLanguages() { return mSpokenLanguages; }
 
+    /** Language of the localized title returned by TMDb, ISO 639-1 or {@code und}. */
+    public void setTitleLanguage(String titleLanguage) {
+        String normalized = titleLanguage == null ? "" : ISO639codes.getISO6391ForLetterCode(titleLanguage);
+        mTitleLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    public String getTitleLanguage() { return mTitleLanguage; }
+
     private static final String[] BASE_PROJECTION = {
         ScraperStore.Show.ID,              // 0
         ScraperStore.Show.COVER,           // 1
@@ -137,7 +146,8 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.PLOT,            // 9
         ScraperStore.Show.ORIGINAL_LANGUAGE, // 10
         ScraperStore.Show.ORIGINAL_TITLE,    // 11
-        ScraperStore.Show.SPOKEN_LANGUAGES   // 12
+        ScraperStore.Show.SPOKEN_LANGUAGES,  // 12
+        ScraperStore.Show.TITLE_LANGUAGE     // 13
     };
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
@@ -250,6 +260,7 @@ public class ShowTags extends VideoTags {
             values.put(ScraperStore.Show.ORIGINAL_LANGUAGE, mOriginalLanguage);
             values.put(ScraperStore.Show.ORIGINAL_TITLE, mOriginalTitle);
             values.put(ScraperStore.Show.SPOKEN_LANGUAGES, mSpokenLanguages);
+            values.put(ScraperStore.Show.TITLE_LANGUAGE, mTitleLanguage);
 
             values.put(ScraperStore.Show.ACTORS_FORMATTED, getActorsFormatted());
             values.put(ScraperStore.Show.DIRECTORS_FORMATTED, getDirectorsFormatted());
@@ -447,6 +458,7 @@ public class ShowTags extends VideoTags {
         setOriginalTitle(in.readString());
         mSpokenLanguages = in.readString();
         if (mSpokenLanguages == null) mSpokenLanguages = "";
+        setTitleLanguage(in.readString());
     }
 
     @Override
@@ -456,6 +468,7 @@ public class ShowTags extends VideoTags {
         out.writeString(mOriginalLanguage);
         out.writeString(mOriginalTitle);
         out.writeString(mSpokenLanguages);
+        out.writeString(mTitleLanguage);
     }
 
     public void setPremiered(String string) {
@@ -683,6 +696,7 @@ public class ShowTags extends VideoTags {
                 String storedOriginalLanguage = cursor.getString(10);
                 String storedOriginalTitle = cursor.getString(11);
                 String storedSpokenLanguages = cursor.getString(12);
+                String storedTitleLanguage = cursor.getString(13);
 
                 if (log.isDebugEnabled()) {
                     log.debug("updateInfo: show onlineId={} stored original_language={} original_title={} spoken_languages={} parsed original_language={} original_title={} spoken_languages={}",
@@ -710,7 +724,8 @@ public class ShowTags extends VideoTags {
                                 newStringIsBetter(storedPlot, mPlot) ||
                                 newStringIsBetter(storedOriginalLanguage, mOriginalLanguage) ||
                                 newStringIsBetter(storedOriginalTitle, mOriginalTitle) ||
-                                newStringIsBetter(storedSpokenLanguages, mSpokenLanguages);
+                                newStringIsBetter(storedSpokenLanguages, mSpokenLanguages) ||
+                                newStringIsBetter(storedTitleLanguage, mTitleLanguage);
 
                 if (log.isDebugEnabled()) log.debug("updateInfo: show found in db: updateCover {}, updateBackdrop {} baseInfoChanged {}",
                         updateCover, updateBackdrop, baseInfoChanged);

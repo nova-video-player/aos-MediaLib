@@ -14,7 +14,7 @@ preserves these independently from the localized title/overview used for display
 row and the existing `movie_collection` relation.
 
 Movie and TV-show rows use equivalent `original_title_*`,
-`original_language_*`, and `spoken_languages_*` columns. The original title is
+`original_language_*`, `spoken_languages_*`, and `title_language_*` columns. The original title is
 the source title, while the localized display title remains `name_movie` or
 `name_show`. Spoken languages are a stable comma-separated list of
 non-translated ISO 639-1 codes. TMDb currently returns ISO 639-1 two-letter
@@ -26,6 +26,12 @@ stored as empty strings. Existing rows receive those same defaults during the
 v58 migration. `belongs_to_collection` already has a normalized
 `movie_collection` table keyed by TMDb collection id; the scraper now also saves
 its overview as the collection description.
+
+`title_language_*` records the language of the title/name TMDb actually returned. It is inferred
+from TMDb's appended translations in the same details response, so it adds no HTTP request. It
+may therefore differ from the requested scrape language when TMDb falls back. If the returned
+text cannot identify one language unambiguously, Nova stores `und`; rows that predate v59 are
+also backfilled to `und`.
 
 ---
 

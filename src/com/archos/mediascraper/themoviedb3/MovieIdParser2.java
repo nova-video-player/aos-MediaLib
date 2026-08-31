@@ -64,12 +64,14 @@ public class MovieIdParser2 {
 
     private static Context mContext;
 
-    public static MovieTags getResult(Movie movie, Context context) {
+    public static MovieTags getResult(Movie movie, Context context, String requestedLanguage) {
         mContext = context;
         MovieTags result = new MovieTags();
         if (movie.id != null) result.setOnlineId(movie.id);
         result.setOriginalLanguage(movie.original_language);
         result.setOriginalTitle(movie.original_title);
+        result.setTitleLanguage(TmdbTitleLanguage.forMovie(movie.title, requestedLanguage,
+                movie.original_title, movie.original_language, movie.translations));
         if (movie.spoken_languages != null) {
             List<String> spokenLanguages = new ArrayList<String>();
             for (SpokenLanguage spokenLanguage : movie.spoken_languages) {

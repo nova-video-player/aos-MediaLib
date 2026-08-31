@@ -40,6 +40,8 @@ public final class ScraperStore {
         public static final String ORIGINAL_TITLE = "original_title_movie";
         /** Comma-separated TMDb spoken-language ISO 639-1 codes. */
         public static final String SPOKEN_LANGUAGES = "spoken_languages_movie";
+        /** Language of the TMDb title currently stored in {@link #NAME}, ISO 639-1 or "und". */
+        public static final String TITLE_LANGUAGE = "title_language_movie";
         public static final String RATING = "rating_movie";
         public static final String COVER = "cover_movie";
         public static final String PLOT = "plot_movie";
@@ -120,6 +122,8 @@ public final class ScraperStore {
         public static final String ORIGINAL_TITLE = "original_title_show";
         /** Comma-separated TMDb spoken-language ISO 639-1 codes. */
         public static final String SPOKEN_LANGUAGES = "spoken_languages_show";
+        /** Language of the TMDb name currently stored in {@link #NAME}, ISO 639-1 or "und". */
+        public static final String TITLE_LANGUAGE = "title_language_show";
         /** place to store local path to backdrop image */
         public static final String BACKDROP = "backdrop_show";
         /** the url to a backdrop image */

@@ -41,7 +41,7 @@ public class ShowId {
         if (log.isDebugEnabled()) log.debug("getBaseInfo: quering tmdb for showId {} in {}", showId, language);
         try {
             // use appendToResponse to get imdbId
-            Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS)).execute();
+            Response<TvShow> seriesResponse = tmdb.tvService().tv(showId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.TRANSLATIONS)).execute();
             switch (seriesResponse.code()) {
                 case 401: // auth issue
                     if (log.isDebugEnabled()) log.debug("search: auth error");
@@ -61,7 +61,7 @@ public class ShowId {
                     if (seriesResponse.isSuccessful()) {
                         if (seriesResponse.body() != null) {
                             // TODO change year null but ShowId not used for now
-                            parserResult = ShowIdParser.getResult(seriesResponse.body(), null, context);
+                            parserResult = ShowIdParser.getResult(seriesResponse.body(), null, context, language);
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {

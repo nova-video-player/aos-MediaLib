@@ -54,7 +54,7 @@ public class MovieId2 {
 
         if (log.isDebugEnabled()) log.debug("getBaseInfo: quering tmdb for movieId {} in {} with image languages: {}", movieId, language, imageLanguages);
         try {
-            movieResponse = moviesService.summary((int) movieId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.RELEASE_DATES, AppendToResponseItem.VIDEOS), options).execute();
+            movieResponse = moviesService.summary((int) movieId, language, new AppendToResponse(AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.IMAGES, AppendToResponseItem.CREDITS, AppendToResponseItem.RELEASE_DATES, AppendToResponseItem.VIDEOS, AppendToResponseItem.TRANSLATIONS), options).execute();
             switch (movieResponse.code()) {
                 case 401: // auth issue
                     if (log.isDebugEnabled()) log.debug("search: auth error");
@@ -73,7 +73,7 @@ public class MovieId2 {
                 default:
                     if (movieResponse.isSuccessful()) {
                         if (movieResponse.body() != null) {
-                            parserResult = MovieIdParser2.getResult(movieResponse.body(), context);
+                            parserResult = MovieIdParser2.getResult(movieResponse.body(), context, language);
                             myResult.tag = parserResult;
                             myResult.status = ScrapeStatus.OKAY;
                         } else {

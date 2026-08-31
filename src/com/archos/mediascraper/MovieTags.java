@@ -54,6 +54,7 @@ public class MovieTags extends VideoTags {
     private String mOriginalLanguage = "und";
     private String mOriginalTitle = "";
     private String mSpokenLanguages = "";
+    private String mTitleLanguage = "und";
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
     public static final Parcelable.Creator<MovieTags> CREATOR = new Parcelable.Creator<MovieTags>() { 
@@ -121,6 +122,14 @@ public class MovieTags extends VideoTags {
 
     /** Comma-separated ISO 639-1 spoken-language codes, or an empty string when unknown. */
     public String getSpokenLanguages() { return mSpokenLanguages; }
+
+    /** Language of the localized title returned by TMDb, ISO 639-1 or {@code und}. */
+    public void setTitleLanguage(String titleLanguage) {
+        String normalized = titleLanguage == null ? "" : ISO639codes.getISO6391ForLetterCode(titleLanguage);
+        mTitleLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    public String getTitleLanguage() { return mTitleLanguage; }
 
     protected int mCollectionId = -1;
     public void setCollectionId(int collectionId) { mCollectionId = collectionId; }
@@ -200,6 +209,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.ORIGINAL_LANGUAGE, mOriginalLanguage);
         values.put(ScraperStore.Movie.ORIGINAL_TITLE, mOriginalTitle);
         values.put(ScraperStore.Movie.SPOKEN_LANGUAGES, mSpokenLanguages);
+        values.put(ScraperStore.Movie.TITLE_LANGUAGE, mTitleLanguage);
         values.put(ScraperStore.Movie.RATING, Float.valueOf(mRating));
         values.put(ScraperStore.Movie.COLLECTION_ID, Integer.valueOf(mCollectionId));
 
@@ -454,6 +464,7 @@ public class MovieTags extends VideoTags {
         setOriginalTitle(in.readString());
         mSpokenLanguages = in.readString();
         if (mSpokenLanguages == null) mSpokenLanguages = "";
+        setTitleLanguage(in.readString());
     }
 
     @Override
@@ -464,6 +475,7 @@ public class MovieTags extends VideoTags {
         out.writeString(mOriginalLanguage);
         out.writeString(mOriginalTitle);
         out.writeString(mSpokenLanguages);
+        out.writeString(mTitleLanguage);
     }
 
     /** Add this (local) image as the default poster */

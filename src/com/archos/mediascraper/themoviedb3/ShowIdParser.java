@@ -40,7 +40,7 @@ public class ShowIdParser {
 
     private static Context mContext;
 
-    public static ShowTags getResult(TvShow serie, String year, Context context) {
+    public static ShowTags getResult(TvShow serie, String year, Context context, String requestedLanguage) {
         mContext = context;
         ShowTags result = new ShowTags();
 
@@ -60,6 +60,8 @@ public class ShowIdParser {
         }
         result.setOriginalLanguage(serie.original_language);
         result.setOriginalTitle(serie.original_name);
+        result.setTitleLanguage(TmdbTitleLanguage.forShow(serie.name, requestedLanguage,
+                serie.original_name, serie.original_language, serie.translations));
         if (serie.spoken_languages != null) {
             List<String> spokenLanguages = new ArrayList<String>();
             for (SpokenLanguage spokenLanguage : serie.spoken_languages) {

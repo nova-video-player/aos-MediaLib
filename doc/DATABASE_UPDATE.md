@@ -31,7 +31,7 @@ There are two version constants in `VideoOpenHelper`:
 
 ```java
 private static final int DATABASE_CREATE_VERSION = 36; // the frozen base schema
-private static final int DATABASE_VERSION        = 58; // the current schema
+private static final int DATABASE_VERSION        = 59; // the current schema
 ```
 
 `onCreate()` builds the **frozen version-36 base schema** and then immediately
@@ -431,6 +431,14 @@ to both `movie` and `show` through `ScraperTables.upgradeTo(db, 58)`:
   including rows from incomplete/external restores.
 - The v58 recreation of the `video` view exposes the applicable movie/show value
   as `scraper_original_language`, so playback can use it without a second query.
+
+## 9. Version 59: localized title language
+
+Version 59 adds `title_language_movie` and `title_language_show`. Each contains the ISO 639-1
+language of the title/name actually returned by TMDb. It is deliberately distinct from both the
+requested scrape language and `original_language_*`: TMDb can fall back to another translation.
+Rows created before this information was collected are backfilled to `und`. The `video` view
+exposes the result as `scraper_title_language`.
 - `belongs_to_collection` remains in the existing normalized `movie_collection`
   table introduced in v38; the scraper now persists its overview as the
   collection description, so no v58 table change is needed for it.

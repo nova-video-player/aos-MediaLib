@@ -421,7 +421,7 @@ public class ShowScraper4 extends BaseScraper2 {
                     // parse result to get global show basic info
                     if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
                         return new ScrapeDetailResult(new ShowTags(), true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                    else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                    else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext, resultLanguage);
                     if (refreshShowMetadata) {
                         refreshedShowMetadata = showTags;
                         if (log.isDebugEnabled()) log.debug("getDetailsInternal: explicit manual refresh fetched source metadata for show {}", showId);
@@ -437,7 +437,7 @@ public class ShowScraper4 extends BaseScraper2 {
                         String fallbackShowKey = cleanShowName + "|" + showId + "|en";
                         ShowIdTvSearchResult enShowIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(fallbackShowKey + requestCacheSuffix, showId, "en", adultScrape, requestTmdb);
                         if (enShowIdTvSearchResult.status == ScrapeStatus.OKAY) {
-                            ShowTags enShowTags = ShowIdParser.getResult(enShowIdTvSearchResult.tvShow, result.getYear(), mContext);
+                            ShowTags enShowTags = ShowIdParser.getResult(enShowIdTvSearchResult.tvShow, result.getYear(), mContext, "en");
                             // merge only the missing fields, preserve the rest of the localized showTags (images, etc.)
                             if (showTags.getPlot() == null || showTags.getPlot().trim().length() == 0) showTags.setPlot(enShowTags.getPlot());
                             if (showTags.getTitle() == null || showTags.getTitle().trim().length() == 0) showTags.setTitle(enShowTags.getTitle());

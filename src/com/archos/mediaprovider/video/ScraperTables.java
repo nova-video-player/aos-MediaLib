@@ -1485,6 +1485,20 @@ public final class ScraperTables {
             db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.SPOKEN_LANGUAGES +
                     " = '' WHERE " + ScraperStore.Show.SPOKEN_LANGUAGES + " IS NULL");
         }
+        if (toVersion == 59) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding localized title language metadata", toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.TITLE_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.TITLE_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            // Existing rows predate the information; retain an explicit, stable unknown value.
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.TITLE_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Movie.TITLE_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Movie.TITLE_LANGUAGE + ") = ''");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.TITLE_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Show.TITLE_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Show.TITLE_LANGUAGE + ") = ''");
+        }
     }
 
     /**
