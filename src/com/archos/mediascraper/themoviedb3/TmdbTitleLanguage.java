@@ -47,8 +47,7 @@ final class TmdbTitleLanguage {
         // (e.g. "The Amazing Spider-Man : Le Destin d'un héros", "The Dark Knight : Le Chevalier noir",
         // "The Big Short : Le Casse du Siècle", "The King's Man : Première Mission").
         if ("en".equals(original) && !TextUtils.isEmpty(originalValue)) {
-            // Strip trailing sequence digits e.g. "The Amazing Spider-Man 2" -> "The Amazing Spider-Man"
-            String baseOriginal = originalValue.replaceFirst("(?i)\\s*\\d+$", "").trim();
+            String baseOriginal = originalValue.split("[:–—\\-]")[0].replaceFirst("(?i)\\s*\\d+$", "").trim();
             if (value.startsWith(originalValue) || (!baseOriginal.isEmpty() && value.startsWith(baseOriginal))) {
                 return "en";
             }
@@ -56,7 +55,7 @@ final class TmdbTitleLanguage {
 
         // 4. Check if the localized title starts with the English translation title
         if (englishTranslation != null && !englishTranslation.isEmpty()) {
-            String baseEnglish = englishTranslation.replaceFirst("(?i)\\s*\\d+$", "").trim();
+            String baseEnglish = englishTranslation.split("[:–—\\-]")[0].replaceFirst("(?i)\\s*\\d+$", "").trim();
             if (value.startsWith(englishTranslation) || (!baseEnglish.isEmpty() && value.startsWith(baseEnglish))) {
                 return "en";
             }

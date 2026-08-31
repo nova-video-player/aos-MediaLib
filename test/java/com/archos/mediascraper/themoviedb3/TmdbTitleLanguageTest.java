@@ -94,4 +94,72 @@ public class TmdbTitleLanguageTest {
         String lang = TmdbTitleLanguage.forMovie("Les Misérables", "fr", "The Miserable Ones", "en", translations);
         assertEquals("fr", lang);
     }
+
+    @Test
+    public void testMovieDetectsEnglishForFranchiseTitlesWithLocalizedSubtitles() {
+        // "The Big Short : Le Casse du Siècle" (Original: "The Big Short")
+        Translations translations1 = new Translations();
+        translations1.translations = new ArrayList<>();
+        translations1.translations.add(createMovieTranslation("fr", "The Big Short : Le Casse du Siècle"));
+        translations1.translations.add(createMovieTranslation("en", "The Big Short"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The Big Short : Le Casse du Siècle", "fr", "The Big Short", "en", translations1));
+
+        // "The Dark Knight : Le Chevalier noir" (Original: "The Dark Knight")
+        Translations translations2 = new Translations();
+        translations2.translations = new ArrayList<>();
+        translations2.translations.add(createMovieTranslation("fr", "The Dark Knight : Le Chevalier noir"));
+        translations2.translations.add(createMovieTranslation("en", "The Dark Knight"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The Dark Knight : Le Chevalier noir", "fr", "The Dark Knight", "en", translations2));
+
+        // "The King's Man : Première Mission" (Original: "The King's Man")
+        Translations translations3 = new Translations();
+        translations3.translations = new ArrayList<>();
+        translations3.translations.add(createMovieTranslation("fr", "The King's Man : Première Mission"));
+        translations3.translations.add(createMovieTranslation("en", "The King's Man"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The King's Man : Première Mission", "fr", "The King's Man", "en", translations3));
+
+        // "The Witcher : Les sirènes des abysses" (Original: "The Witcher: Sirens of the Deep")
+        Translations translations4 = new Translations();
+        translations4.translations = new ArrayList<>();
+        translations4.translations.add(createMovieTranslation("fr", "The Witcher : Les sirènes des abysses"));
+        translations4.translations.add(createMovieTranslation("en", "The Witcher: Sirens of the Deep"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The Witcher : Les sirènes des abysses", "fr", "The Witcher: Sirens of the Deep", "en", translations4));
+    }
+
+    @Test
+    public void testMovieDetectsEnglishForAsianAndForeignFilmsWithEnglishInternationalTitles() {
+        // "The Killer" (Original Cantonese: 喋血雙雄)
+        Translations translations1 = new Translations();
+        translations1.translations = new ArrayList<>();
+        translations1.translations.add(createMovieTranslation("fr", "The Killer"));
+        translations1.translations.add(createMovieTranslation("en", "The Killer"));
+        translations1.translations.add(createMovieTranslation("zh", "喋血双雄"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The Killer", "fr", "喋血雙雄", "cn", translations1));
+
+        // "The Raid" (Original Cantonese: 財叔之橫掃千軍)
+        Translations translations2 = new Translations();
+        translations2.translations = new ArrayList<>();
+        translations2.translations.add(createMovieTranslation("fr", "The Raid"));
+        translations2.translations.add(createMovieTranslation("en", "The Raid"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The Raid", "fr", "財叔之橫掃千軍", "cn", translations2));
+
+        // "The Seven Deadly Sins : Prisoners of the Sky" (Original Japanese: 劇場版 七つの大罪 天空の囚われ人)
+        Translations translations3 = new Translations();
+        translations3.translations = new ArrayList<>();
+        translations3.translations.add(createMovieTranslation("fr", "The Seven Deadly Sins : Prisoners of the Sky"));
+        translations3.translations.add(createMovieTranslation("en", "The Seven Deadly Sins: Prisoners of the Sky"));
+        assertEquals("en", TmdbTitleLanguage.forMovie("The Seven Deadly Sins : Prisoners of the Sky", "fr", "劇場版 七つの大罪 天空の囚われ人", "ja", translations3));
+    }
+
+    @Test
+    public void testShowPreservesOriginalLanguageWhenTitleMatchesOriginal() {
+        // "The Franchise 2024" / "The Franchise"
+        Translations translations = new Translations();
+        translations.translations = new ArrayList<>();
+        translations.translations.add(createShowTranslation("fr", "The Franchise"));
+        translations.translations.add(createShowTranslation("en", "The Franchise"));
+
+        String lang = TmdbTitleLanguage.forShow("The Franchise", "fr", "The Franchise", "en", translations);
+        assertEquals("en", lang);
+    }
 }
