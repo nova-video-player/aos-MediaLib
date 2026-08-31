@@ -805,6 +805,30 @@ public final class ScraperTables {
                     + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
                     + " = OLD.cover_movie));" +
                     "END";
+    private static final String MOVIE_DELETE_TRIGGER_CREATE_v3 =
+            "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
+                    "BEGIN " +
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
+                    "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
+                    "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
+                    + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + " WHERE " + ScraperStore.Movie.COVER
+                    + " = OLD.cover_movie));" +
+                    "DELETE FROM movie_collection WHERE " + ScraperStore.MovieCollections.ID + " = OLD."
+                    + ScraperStore.Movie.COLLECTION_ID + " AND OLD." + ScraperStore.Movie.COLLECTION_ID + " > 0 " +
+                    "AND NOT EXISTS (SELECT 1 FROM " + MOVIE_TABLE_NAME + " WHERE "
+                    + ScraperStore.Movie.COLLECTION_ID + " = OLD." + ScraperStore.Movie.COLLECTION_ID + ");" +
+                    "END";
+    private static final String MOVIE_COLLECTION_REFERENCE_UPDATE_TRIGGER_CREATE =
+            "CREATE TRIGGER movie_collection_reference_update AFTER UPDATE OF " +
+                    ScraperStore.Movie.COLLECTION_ID + " ON " + MOVIE_TABLE_NAME + " " +
+                    "WHEN OLD." + ScraperStore.Movie.COLLECTION_ID + " IS NOT NEW." +
+                    ScraperStore.Movie.COLLECTION_ID + " " +
+                    "BEGIN " +
+                    "DELETE FROM movie_collection WHERE " + ScraperStore.MovieCollections.ID + " = OLD."
+                    + ScraperStore.Movie.COLLECTION_ID + " AND OLD." + ScraperStore.Movie.COLLECTION_ID + " > 0 " +
+                    "AND NOT EXISTS (SELECT 1 FROM " + MOVIE_TABLE_NAME + " WHERE "
+                    + ScraperStore.Movie.COLLECTION_ID + " = OLD." + ScraperStore.Movie.COLLECTION_ID + ");" +
+                    "END";
     private static final String SHOW_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS show_delete";
     private static final String SHOW_DELETE_TRIGGER_CREATE =
             "CREATE TRIGGER show_delete AFTER DELETE ON show " +
@@ -1184,6 +1208,18 @@ public final class ScraperTables {
                     ScraperStore.MovieCollections.BACKDROP_THUMB_URL + " TEXT,\n" +
                     ScraperStore.MovieCollections.BACKDROP_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE\n" +
                     ")";
+    private static final String MOVIE_COLLECTION_DELETE_TRIGGER_CREATE =
+            "CREATE TRIGGER movie_collection_delete AFTER DELETE ON " + MOVIE_COLLECTION_TABLE_NAME + " " +
+                    "BEGIN " +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.POSTER_LARGE_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.POSTER_LARGE_FILE + " IS NOT NULL;" +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.BACKDROP_LARGE_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.BACKDROP_LARGE_FILE + " IS NOT NULL;" +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.POSTER_THUMB_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.POSTER_THUMB_FILE + " IS NOT NULL;" +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.BACKDROP_THUMB_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.BACKDROP_THUMB_FILE + " IS NOT NULL;" +
+                    "END";
 
     public static void create(SQLiteDatabase db) {
         db.execSQL(MOVIE_TABLE_CREATE);
@@ -1563,6 +1599,18 @@ public final class ScraperTables {
                 }
                 cColl.close();
             }
+        }
+        if (toVersion == 61) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - cleaning orphan movie collections", toVersion);
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] {"movie_delete", "movie_collection_reference_update", "movie_collection_delete"},
+                    MOVIE_DELETE_TRIGGER_CREATE_v3,
+                    MOVIE_COLLECTION_REFERENCE_UPDATE_TRIGGER_CREATE,
+                    MOVIE_COLLECTION_DELETE_TRIGGER_CREATE);
+            db.execSQL("DELETE FROM " + MOVIE_COLLECTION_TABLE_NAME + " WHERE " +
+                    ScraperStore.MovieCollections.ID + " > 0 AND NOT EXISTS (SELECT 1 FROM " +
+                    MOVIE_TABLE_NAME + " WHERE " + ScraperStore.Movie.COLLECTION_ID + " = " +
+                    MOVIE_COLLECTION_TABLE_NAME + "." + ScraperStore.MovieCollections.ID + ")");
         }
     }
 

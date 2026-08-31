@@ -35,6 +35,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.archos.medialib.R;
+import com.archos.mediaprovider.video.ScraperTables;
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediascraper.themoviedb3.CollectionInfo;
 import com.archos.mediascraper.themoviedb3.CollectionResult;
@@ -348,7 +349,10 @@ public class AllCollectionScrapeService extends Service implements DefaultLifecy
     private static final String[] PROJECTION = {
             ScraperStore.MovieCollections.ID    // 0
     };
-    private static final String SELECTION_ALL = ScraperStore.MovieCollections.ID + " > 0";
+    // Refresh only collections still represented in the current movie library.
+    private static final String SELECTION_ALL = ScraperStore.MovieCollections.ID + " IN (SELECT DISTINCT "
+            + ScraperStore.Movie.COLLECTION_ID + " FROM " + ScraperTables.MOVIE_TABLE_NAME + " WHERE "
+            + ScraperStore.Movie.COLLECTION_ID + " > 0)";
     private static final String SELECTION_COLLECTION = ScraperStore.MovieCollections.ID + " = ?";
 
     private static final String SELECTION_NOIMAGE = ScraperStore.MovieCollections.ID + " > 0 AND ( "

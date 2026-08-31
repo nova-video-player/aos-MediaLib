@@ -52,6 +52,8 @@ public class DatabaseMigrationTest {
             assertEquals("Foreign-key failure after upgrading version " + sourceVersion,
                     0, foreignKeyViolationCount(db));
             assertTrue(triggerExists(db, "movie_delete"));
+            assertTrue(triggerExists(db, "movie_collection_reference_update"));
+            assertTrue(triggerExists(db, "movie_collection_delete"));
             assertTrue(triggerExists(db, "show_delete"));
             assertTrue(triggerExists(db, "episode_delete"));
             assertEquals(0, getWritableSchema(db));
@@ -282,6 +284,54 @@ public class DatabaseMigrationTest {
 
         assertEquals("ok", querySingleString(db, "PRAGMA integrity_check"));
         assertEquals(0, foreignKeyViolationCount(db));
+        db.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
+    @Config(sdk = 23)
+    public void testMigrationV61RemovesOrphanCollectionsAndCleansFutureOnes() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v61.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper60 = new VideoOpenHelper(context, dbName, 60);
+        SQLiteDatabase db = helper60.getWritableDatabase();
+        db.execSQL("PRAGMA foreign_keys = OFF");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) " +
+                "VALUES (1, 1, '/path/movie.mkv', 'Movie', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO movie_collection (m_coll_id, m_coll_name, m_coll_po_large_file) " +
+                "VALUES (10, 'Live collection', 'live-poster.jpg')");
+        db.execSQL("INSERT INTO movie_collection (m_coll_id, m_coll_name, m_coll_po_large_file) " +
+                "VALUES (20, 'Orphan collection', 'orphan-poster.jpg')");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, m_coll_id) VALUES (1, 1, 'Movie', 10)");
+        db.close();
+
+        VideoOpenHelper helper61 = new VideoOpenHelper(context, dbName, 61);
+        db = helper61.getWritableDatabase();
+        assertEquals(61, db.getVersion());
+        assertTrue(triggerExists(db, "movie_collection_delete"));
+        assertTrue(triggerExists(db, "movie_collection_reference_update"));
+        assertEquals("1", querySingleString(db, "SELECT COUNT(*) FROM movie_collection WHERE m_coll_id = 10"));
+        assertEquals("0", querySingleString(db, "SELECT COUNT(*) FROM movie_collection WHERE m_coll_id = 20"));
+        assertEquals("orphan-poster.jpg", querySingleString(db,
+                "SELECT name FROM delete_files WHERE name = 'orphan-poster.jpg'"));
+
+        db.execSQL("UPDATE movie SET m_coll_id = 0 WHERE _id = 1");
+        assertEquals("0", querySingleString(db, "SELECT COUNT(*) FROM movie_collection WHERE m_coll_id = 10"));
+        assertEquals("live-poster.jpg", querySingleString(db,
+                "SELECT name FROM delete_files WHERE name = 'live-poster.jpg'"));
+
+        db.execSQL("INSERT INTO movie_collection (m_coll_id, m_coll_name, m_coll_po_large_file) " +
+                "VALUES (30, 'Deleted collection', 'deleted-poster.jpg')");
+        db.execSQL("UPDATE movie SET m_coll_id = 30 WHERE _id = 1");
+        db.execSQL("DELETE FROM movie WHERE _id = 1");
+        assertEquals("0", querySingleString(db, "SELECT COUNT(*) FROM movie_collection WHERE m_coll_id = 30"));
+        assertEquals("deleted-poster.jpg", querySingleString(db,
+                "SELECT name FROM delete_files WHERE name = 'deleted-poster.jpg'"));
+        assertEquals("ok", querySingleString(db, "PRAGMA integrity_check"));
+        assertEquals(0, foreignKeyViolationCount(db));
+        assertEquals(0, getWritableSchema(db));
         db.close();
         context.deleteDatabase(dbName);
     }
