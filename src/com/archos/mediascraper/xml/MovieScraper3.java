@@ -257,6 +257,25 @@ public class MovieScraper3 extends BaseScraper2 {
                     break;
                 }
             }
+
+            // Unified scoring normally always runs both candidate passes (see class doc /
+            // MediaLib/doc/SCRAPE.md Section 4), which doubles the TMDb request count for the
+            // common case (see issue #1923: scene filenames rarely parenthesize the year, so
+            // most movies go through this branch). Short-circuit here too, but only when the
+            // pass just run already resolved unambiguously to a single exact-title match against
+            // the string that was actually searched for (searchQuery, not the cleaned name: e.g.
+            // for a year-at-start title like "2001 A Space Odyssey", pass 1 searches the
+            // unstripped original name, so the exact-match check must compare against that, not
+            // against the year-stripped "A Space Odyssey"). This still lets genuinely ambiguous
+            // candidates (no exact match, or a title collision like "Dune" 1984 vs. 2021 both
+            // matching exactly) fall through to the second pass so the pooled unified scoring in
+            // Section 4.2 can disambiguate them.
+            if (!allResults.isEmpty() && useUnifiedScoring) {
+                if (countExactTitleMatches(allResults, searchQuery) == 1) {
+                    if (log.isDebugEnabled()) log.debug("getMatches2: single exact title match for '{}', stopping early before second unified-scoring pass", searchQuery);
+                    break;
+                }
+            }
         }
 
         // Fallback: if no results found with year constraint, retry primary candidate without year
@@ -475,6 +494,26 @@ public class MovieScraper3 extends BaseScraper2 {
             }
         }
         return false;
+    }
+
+    /**
+     * Counts distinct movies (by TMDb id) in {@code results} whose title or original title
+     * exactly matches {@code query}. Used to tell a genuinely unambiguous exact match (exactly
+     * one) apart from a title collision (two or more distinct movies sharing the exact title,
+     * e.g. a remake such as "Dune" 1984 vs. 2021), which still needs the second unified-scoring
+     * pass to disambiguate.
+     */
+    private int countExactTitleMatches(List<SearchResult> results, String query) {
+        if (results == null || query == null) return 0;
+        String normalizedQuery = normalizeTitleForExactMatch(query);
+        java.util.Set<Integer> matchingIds = new java.util.HashSet<>();
+        for (SearchResult result : results) {
+            if (normalizedQuery.equals(normalizeTitleForExactMatch(result.getTitle()))
+                    || normalizedQuery.equals(normalizeTitleForExactMatch(result.getOriginalTitle()))) {
+                matchingIds.add(result.getId());
+            }
+        }
+        return matchingIds.size();
     }
 
     private String normalizeTitleForExactMatch(String title) {
