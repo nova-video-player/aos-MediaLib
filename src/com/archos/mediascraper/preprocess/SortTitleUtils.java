@@ -45,10 +45,12 @@ public final class SortTitleUtils {
     private static final Pattern ITALIAN_APOSTROPHE_PATTERN = Pattern.compile("^(?i)(l|un|d)['’‘](.+)$");
     private static final Pattern DUTCH_APOSTROPHE_PATTERN = Pattern.compile("^(?i)('t|'n|’t|’n)\\s+(.+)$");
 
+    private static final Pattern ENGLISH_FALLBACK_PATTERN = Pattern.compile("^(?i)(an|the|ye)\\s+(.+)$");
+
     /**
      * Extracts the sort title for a given title and its language.
-     * When title language is known and supported, strictly applies that language's rules.
-     * When language is unknown ("und", null, or unsupported), returns the title as-is.
+     * When title language is known and supported, applies that language's rules, falling back to English.
+     * When language is unknown ("und", null, or unsupported), falls back to system locale rules then English.
      *
      * @param title Raw title to format
      * @param language ISO 639-1 language code of the title (e.g. "en", "fr", "de"), or "und"
@@ -66,9 +68,34 @@ public final class SortTitleUtils {
 
         String lang = normalizeLanguage(language);
         if ("und".equals(lang)) {
-            return trimmed;
+            // For legacy / untagged databases, try system default locale first, then fall back to English
+            String defaultLocaleLang = normalizeLanguage(java.util.Locale.getDefault().getLanguage());
+            if (!"und".equals(defaultLocaleLang)) {
+                String localeResult = extractForLanguage(trimmed, defaultLocaleLang);
+                if (!localeResult.equals(trimmed)) {
+                    return localeResult;
+                }
+            }
+            return formatMatch(trimmed, ENGLISH_SPACE_PATTERN.matcher(trimmed), false);
         }
 
+        // Apply primary language rules
+        String result = extractForLanguage(trimmed, lang);
+        if (!result.equals(trimmed)) {
+            return result;
+        }
+
+        // Fallback to English for hybrid titles (e.g. English franchise title with localized subtitle like "The Amazing Spider-Man : ...").
+        // When falling back from a known non-English language, use unambiguous English articles ("the", "an", "ye")
+        // to avoid misinterpreting non-English words like French preposition "À" in "À bout de souffle".
+        if (!"en".equals(lang)) {
+            return formatMatch(trimmed, ENGLISH_FALLBACK_PATTERN.matcher(trimmed), false);
+        }
+
+        return trimmed;
+    }
+
+    private static String extractForLanguage(String trimmed, String lang) {
         switch (lang) {
             case "en":
                 return formatMatch(trimmed, ENGLISH_SPACE_PATTERN.matcher(trimmed), false);

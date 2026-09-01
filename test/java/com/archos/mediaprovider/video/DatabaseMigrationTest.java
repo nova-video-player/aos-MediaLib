@@ -210,14 +210,14 @@ public class DatabaseMigrationTest {
                 ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 2"));
         assertEquals("Die Hard", querySingleString(upgraded, "SELECT " +
                 ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 3"));
-        assertEquals("The Legacy Und", querySingleString(upgraded, "SELECT " +
+        assertEquals("Legacy Und, The", querySingleString(upgraded, "SELECT " +
                 ScraperStore.Movie.SORT_NAME + " FROM movie WHERE _id = 4"));
 
         assertEquals("Misérables, Les", querySingleString(upgraded, "SELECT " +
                 ScraperStore.Show.SORT_NAME + " FROM show WHERE _id = 1"));
         assertEquals("Blechtrommel, Die", querySingleString(upgraded, "SELECT " +
                 ScraperStore.Show.SORT_NAME + " FROM show WHERE _id = 2"));
-        assertEquals("The Legacy Show Und", querySingleString(upgraded, "SELECT " +
+        assertEquals("Legacy Show Und, The", querySingleString(upgraded, "SELECT " +
                 ScraperStore.Show.SORT_NAME + " FROM show WHERE _id = 3"));
 
         // Collections keep raw title

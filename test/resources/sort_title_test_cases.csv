@@ -54,13 +54,11 @@ Het Witte Waan|nl|Witte Waan, Het
 't Vrije Schaep|nl|Vrije Schaep, 't
 ’t Vrije Schaep|nl|Vrije Schaep, 't
 
-# Undetermined / Unknown languages (no inversion)
-The Matrix|und|The Matrix
+# Undetermined / Unknown languages (falls back to device locale then English)
+The Matrix|und|Matrix, The
+The Matrix|null|Matrix, The
+The Matrix||Matrix, The
 Die Hard|und|Die Hard
-A bout de souffle|und|A bout de souffle
-L'Auberge Espagnole|und|L'Auberge Espagnole
-The Matrix|null|The Matrix
-The Matrix||The Matrix
 
 # Subtitles / Franchise titles
 The Amazing Spider-Man : Le Destin d'un héros|en|Amazing Spider-Man : Le Destin d'un héros, The

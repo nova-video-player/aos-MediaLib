@@ -201,7 +201,7 @@ Class command:
 - `com.archos.mediascraper.preprocess.SortTitleUtilsTest.testSortTitlesFromResourceFile`
 - `com.archos.mediascraper.preprocess.SortTitleUtilsTest.testWhitespaceAndEmpty`
 
-Uses `test/resources/sort_title_test_cases.csv` to verify language-specific leading article inversion (e.g. `The Matrix` -> `Matrix, The` for `en`, `L'Auberge Espagnole` -> `Auberge Espagnole, L'` for `fr`) and undetermined/unknown language preservation (`und` or empty language keeps title unmodified).
+Uses `test/resources/sort_title_test_cases.csv` to verify language-specific leading article inversion (e.g. `The Matrix` -> `Matrix, The` for `en`, `L'Auberge Espagnole` -> `Auberge Espagnole, L'` for `fr`), hybrid English franchise titles (`The Amazing Spider-Man : Le Destin d'un héros` -> `Amazing Spider-Man : Le Destin d'un héros, The`), and undetermined/unknown language fallback (`und` or empty language falls back to system locale then English).
 
 #### Expanding Sort Title Tests
 
@@ -216,7 +216,7 @@ Examples:
 The Big Lebowski|en|Big Lebowski, The
 La Grande Illusion|fr|Grande Illusion, La
 Das Boot|de|Boot, Das
-The Matrix|und|The Matrix
+The Matrix|und|Matrix, The
 ```
 
 ### Scraper integration
