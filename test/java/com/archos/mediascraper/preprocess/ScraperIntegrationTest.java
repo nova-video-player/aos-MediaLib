@@ -21,16 +21,22 @@ import android.preference.PreferenceManager;
 import com.archos.mediascraper.ScrapeSearchResult;
 import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.SearchResult;
+import com.archos.mediascraper.perf.PerfCacheTmdb;
+import com.archos.mediascraper.xml.MovieScraper3;
+import com.archos.mediascraper.xml.ShowScraper4;
 import com.archos.filecorelibrary.FileUtilsQ;
 import com.archos.medialib.R;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
@@ -41,19 +47,57 @@ import static org.mockito.Mockito.*;
 @Config(sdk = 33)
 public class ScraperIntegrationTest {
 
+    private static final String STUB_TMDB_API_KEY = "051012651ba326cf5b1e2f482342eaa2";
+
     private Context context;
     private Scraper scraper;
+    private PerfCacheTmdb cachedTmdb;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         context = spy(ApplicationProvider.getApplicationContext());
         // Stub the API key to avoid resource lookup failure in library test context
-        doReturn("051012651ba326cf5b1e2f482342eaa2").when(context).getString(R.string.tmdb_api_key);
-        
+        doReturn(STUB_TMDB_API_KEY).when(context).getString(R.string.tmdb_api_key);
+
         // Initialize FileUtilsQ to ensure static fields like publicAppDirectory are set
         FileUtilsQ.getInstance(context);
-        
+
         scraper = new Scraper(context);
+
+        // Opt-in: NOVA_TEST_CACHE_DIR replays TMDb responses from a long-lived on-disk cache
+        // (see MediaLib/test/java/com/archos/mediascraper/perf/PerfCacheTmdb.java) instead of
+        // hitting the live API, for fast/offline local iteration. Left unset (the default), this
+        // test still exercises real, live TMDb data so it keeps catching correctness drift - do
+        // not enable in CI.
+        String cacheDirPath = System.getenv("NOVA_TEST_CACHE_DIR");
+        if (cacheDirPath != null && !cacheDirPath.isBlank()) {
+            cachedTmdb = new PerfCacheTmdb(STUB_TMDB_API_KEY, new File(cacheDirPath));
+            System.out.println("ScraperIntegrationTest: using TMDb response cache at " + cacheDirPath);
+            swapStaticTmdb(cachedTmdb);
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (cachedTmdb != null) {
+            // Avoid leaking the cached client into any other test class running afterward in the
+            // same JVM/classloader: next access will lazily reauth() with a real client again.
+            swapStaticTmdb(null);
+        }
+    }
+
+    private static void swapStaticTmdb(PerfCacheTmdb perfTmdb) throws Exception {
+        setStaticField(MovieScraper3.class, "tmdb", perfTmdb);
+        setStaticField(MovieScraper3.class, "searchService", perfTmdb != null ? perfTmdb.searchService() : null);
+        setStaticField(MovieScraper3.class, "moviesService", perfTmdb != null ? perfTmdb.moviesService() : null);
+        setStaticField(MovieScraper3.class, "collectionService", perfTmdb != null ? perfTmdb.collectionService() : null);
+        setStaticField(ShowScraper4.class, "tmdb", perfTmdb);
+    }
+
+    private static void setStaticField(Class<?> clazz, String name, Object value) throws Exception {
+        Field field = clazz.getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(null, value);
     }
 
     @Test

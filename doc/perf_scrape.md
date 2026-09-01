@@ -19,6 +19,31 @@ unlabeled library filename list (e.g. exported via `find` from an actual library
 expected-TMDb-ID column required, since they only measure request counts and coverage, not
 top-match correctness.
 
+### Opt-in TMDb cache for `ScraperIntegrationTest`
+
+`ScraperIntegrationTest` itself can optionally replay from a `PerfCacheTmdb`-backed cache too, via
+the `NOVA_TEST_CACHE_DIR` env var (unset by default):
+
+```bash
+NOVA_TEST_CACHE_DIR=/path/to/persistent/cache \
+  ./gradlew :MediaLib:testDebugUnitTest --tests "com.archos.mediascraper.preprocess.ScraperIntegrationTest"
+```
+
+This is for fast/offline local iteration only - **not** a substitute for the default (env var
+unset) behavior, and not meant to be enabled in CI. Unlike the perf tools above,
+`ScraperIntegrationTest` is a correctness suite: it exists to catch cases where the scraper's
+ranking/cascade logic disagrees with real TMDb data, including real-world data drift (title
+changes, new/removed entries affecting title-collision cases). A long-lived cache freezes TMDb's
+answers at recording time, so a regression that happens to still match a stale cached response
+would go undetected, and legitimate drift would never surface. Only reach for this when you
+already trust the cached corpus is representative (e.g. iterating on code changes with no
+suspected TMDb-side drift) and want to skip live network calls.
+
+Swaps both `MovieScraper3`'s (`tmdb`, `searchService`, `moviesService`, `collectionService`) and
+`ShowScraper4`'s (`tmdb`) static fields via reflection, the same pattern used by
+`ScraperPerfQueryCountTest` below, and resets them to `null` in `@After` so a real client is
+lazily re-created for any test running afterward in the same JVM.
+
 ## Tools
 
 All added under `test/java/com/archos/mediascraper/perf/` (test-only code, not referenced by
