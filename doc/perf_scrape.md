@@ -104,6 +104,24 @@ NOVA_PERF_CACHE_DIR=/path/to/persistent/cache \
   ./gradlew :MediaLib:testDebugUnitTest --tests "com.archos.mediascraper.perf.ScraperPerfNoCascadeTest"
 ```
 
+### `ScraperPerfCascadeOrderTest`
+
+Diagnostic (exploratory, not part of the fix): answers "would swapping the order of the two
+unified-scoring candidate queries increase the short-circuit's hit rate?" For every eligible-bucket
+movie it issues BOTH candidate queries unconditionally (both are normally already cached from a
+prior `ScraperPerfQueryCountTest` run, so this costs no extra network calls) and independently
+checks each one against the same `countExactTitleMatches() == 1` condition the short-circuit uses.
+Tallies, per scenario (year-at-start vs. year-at-end/middle), how many movies only the *current*
+first candidate resolves vs. how many only the *other* (currently second) candidate would have
+resolved - the latter is exactly the short-circuit rate that would be gained by swapping the order,
+at the cost of losing it on the "current only" movies instead.
+
+```bash
+NOVA_PERF_VIDEO_LIST=/path/to/video.lst \
+NOVA_PERF_CACHE_DIR=/path/to/persistent/cache \
+  ./gradlew :MediaLib:testDebugUnitTest --tests "com.archos.mediascraper.perf.ScraperPerfCascadeOrderTest"
+```
+
 ## Findings (real library, 19,476 filenames)
 
 Corpus: 2,396 movies, 17,080 TV episodes (TV unaffected by this change, excluded below).
@@ -150,6 +168,40 @@ fallback, aggressive word-dropping) exist specifically to rescue those 109 movie
 short-circuit fix keeps all of that rescue behavior and only removes redundant queries on cases
 that were never ambiguous.
 
+### Would a different candidate order help?
+
+Ran `ScraperPerfCascadeOrderTest` to check whether swapping which candidate is tried first in the
+unified-scoring branch would increase the short-circuit's hit rate.
+
+**Scenario B - year at end/middle (578 eligible movies; current order = cleaned name+year first,
+then raw original name):**
+
+| | Movies | Share |
+|---|---:|---:|
+| Both candidates hit (order-independent) | 38 | 6.6% |
+| Only current-first (cleaned name+year) hits | 360 | 62.3% |
+| Only swapped-first (raw original name) hits | 2 | 0.3% |
+| Neither hits | 178 | 30.8% |
+
+Net effect of swapping: **-358 movies** (lose 360 short-circuits, gain 2).
+
+**Scenario A - year at start (23 eligible movies; current order = raw original name first, then
+cleaned name+year):** too small a sample to be conclusive (year-led filenames like "2001 A Space
+Odyssey" are rare in this corpus), but 0/23 hit either way - no evidence swapping helps here either.
+
+**Conclusion: no, reordering would not help.** The current order already puts the more-likely-correct
+candidate first in both scenarios by construction:
+- Scenario B: the cleaned, year-stripped name is the accurate title for scene-release filenames
+  (`Movie.Name.2015.1080p...` -> "Movie Name"); the raw original name still contains junk tokens
+  (resolution, codec, group tags) and almost never exact-matches (0.3% hit rate).
+- Scenario A: when the year is literally the first token of the real title (`2001 A Space
+  Odyssey`), year-stripping incorrectly removes it, so the "cleaned" candidate is the broken one
+  ("A Space Odyssey") and the untouched original name is correct - hence it is already tried
+  first.
+
+Swapping would cost ~358 of the 1,187 eligible-bucket movies their pass-1 short-circuit, undoing
+most of the short-circuit fix's -21% request reduction in that bucket.
+
 ## Reproducing / re-running
 
 1. Get a real filename list, one path or filename per line (e.g. `find <library> -type f > video.lst`).
@@ -162,3 +214,5 @@ that were never ambiguous.
    including runs of a different `MovieScraper3.java` variant, replay from disk.
 5. To compare code variants, `git stash` / `git stash pop` around the change in `MovieScraper3.java`
    between two `ScraperPerfQueryCountTest` runs, same cache directory.
+6. `ScraperPerfCascadeOrderTest` is optional and only useful when questioning the candidate order
+   itself; it reuses the same cache and needs no extra network calls once step 4 has populated it.
