@@ -1551,54 +1551,8 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_coll_sort_name ON " + MOVIE_COLLECTION_TABLE_NAME +
                     "(" + ScraperStore.MovieCollections.SORT_NAME + " COLLATE LOCALIZED)");
 
-            // Backfill movie sort names
-            Cursor cMovie = db.query(MOVIE_TABLE_NAME,
-                    new String[]{ScraperStore.Movie.ID, ScraperStore.Movie.NAME, ScraperStore.Movie.TITLE_LANGUAGE},
-                    null, null, null, null, null);
-            if (cMovie != null) {
-                while (cMovie.moveToNext()) {
-                    long id = cMovie.getLong(0);
-                    String name = cMovie.getString(1);
-                    String lang = cMovie.getString(2);
-                    String sortName = com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(name, lang);
-                    ContentValues cv = new ContentValues(1);
-                    cv.put(ScraperStore.Movie.SORT_NAME, sortName != null ? sortName : "");
-                    db.update(MOVIE_TABLE_NAME, cv, ScraperStore.Movie.ID + "=?", new String[]{String.valueOf(id)});
-                }
-                cMovie.close();
-            }
-
-            // Backfill show sort names
-            Cursor cShow = db.query(SHOW_TABLE_NAME,
-                    new String[]{ScraperStore.Show.ID, ScraperStore.Show.NAME, ScraperStore.Show.TITLE_LANGUAGE},
-                    null, null, null, null, null);
-            if (cShow != null) {
-                while (cShow.moveToNext()) {
-                    long id = cShow.getLong(0);
-                    String name = cShow.getString(1);
-                    String lang = cShow.getString(2);
-                    String sortName = com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(name, lang);
-                    ContentValues cv = new ContentValues(1);
-                    cv.put(ScraperStore.Show.SORT_NAME, sortName != null ? sortName : "");
-                    db.update(SHOW_TABLE_NAME, cv, ScraperStore.Show.ID + "=?", new String[]{String.valueOf(id)});
-                }
-                cShow.close();
-            }
-
-            // Backfill collection sort names (raw name)
-            Cursor cColl = db.query(MOVIE_COLLECTION_TABLE_NAME,
-                    new String[]{ScraperStore.MovieCollections.ID, ScraperStore.MovieCollections.NAME},
-                    null, null, null, null, null);
-            if (cColl != null) {
-                while (cColl.moveToNext()) {
-                    long id = cColl.getLong(0);
-                    String name = cColl.getString(1);
-                    ContentValues cv = new ContentValues(1);
-                    cv.put(ScraperStore.MovieCollections.SORT_NAME, name != null ? name : "");
-                    db.update(MOVIE_COLLECTION_TABLE_NAME, cv, ScraperStore.MovieCollections.ID + "=?", new String[]{String.valueOf(id)});
-                }
-                cColl.close();
-            }
+            // Backfill sort names
+            recreateSortNames(db);
         }
         if (toVersion == 61) {
             if (log.isDebugEnabled()) log.debug("upgradeTo: {} - cleaning orphan movie collections", toVersion);
@@ -1896,6 +1850,66 @@ public final class ScraperTables {
                 new String[] { String.valueOf(ownerId), file },
                 null, null, "_id", "1")) {
             return cursor.moveToFirst() ? cursor.getLong(0) : null;
+        }
+    }
+
+    /**
+     * Recreates and updates sort names for all movies, TV shows, and movie collections in the database.
+     */
+    public static void recreateSortNames(SQLiteDatabase db) {
+        db.beginTransaction();
+        try {
+            // Recreate movie sort names
+            Cursor cMovie = db.query(MOVIE_TABLE_NAME,
+                    new String[]{ScraperStore.Movie.ID, ScraperStore.Movie.NAME, ScraperStore.Movie.TITLE_LANGUAGE},
+                    null, null, null, null, null);
+            if (cMovie != null) {
+                while (cMovie.moveToNext()) {
+                    long id = cMovie.getLong(0);
+                    String name = cMovie.getString(1);
+                    String lang = cMovie.getString(2);
+                    String sortName = com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(name, lang);
+                    ContentValues cv = new ContentValues(1);
+                    cv.put(ScraperStore.Movie.SORT_NAME, sortName != null ? sortName : "");
+                    db.update(MOVIE_TABLE_NAME, cv, ScraperStore.Movie.ID + "=?", new String[]{String.valueOf(id)});
+                }
+                cMovie.close();
+            }
+
+            // Recreate show sort names
+            Cursor cShow = db.query(SHOW_TABLE_NAME,
+                    new String[]{ScraperStore.Show.ID, ScraperStore.Show.NAME, ScraperStore.Show.TITLE_LANGUAGE},
+                    null, null, null, null, null);
+            if (cShow != null) {
+                while (cShow.moveToNext()) {
+                    long id = cShow.getLong(0);
+                    String name = cShow.getString(1);
+                    String lang = cShow.getString(2);
+                    String sortName = com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(name, lang);
+                    ContentValues cv = new ContentValues(1);
+                    cv.put(ScraperStore.Show.SORT_NAME, sortName != null ? sortName : "");
+                    db.update(SHOW_TABLE_NAME, cv, ScraperStore.Show.ID + "=?", new String[]{String.valueOf(id)});
+                }
+                cShow.close();
+            }
+
+            // Recreate collection sort names (raw name)
+            Cursor cColl = db.query(MOVIE_COLLECTION_TABLE_NAME,
+                    new String[]{ScraperStore.MovieCollections.ID, ScraperStore.MovieCollections.NAME},
+                    null, null, null, null, null);
+            if (cColl != null) {
+                while (cColl.moveToNext()) {
+                    long id = cColl.getLong(0);
+                    String name = cColl.getString(1);
+                    ContentValues cv = new ContentValues(1);
+                    cv.put(ScraperStore.MovieCollections.SORT_NAME, name != null ? name : "");
+                    db.update(MOVIE_COLLECTION_TABLE_NAME, cv, ScraperStore.MovieCollections.ID + "=?", new String[]{String.valueOf(id)});
+                }
+                cColl.close();
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
     }
 }
