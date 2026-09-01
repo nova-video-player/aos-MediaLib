@@ -1,0 +1,17 @@
+# Small synthetic sample used to validate the perf test harness itself (see
+# ScraperPerfClassificationTest / ScraperPerfQueryCountTest). Deliberately NOT taken from any
+# real user library - just representative filenames covering the buckets the perf tests report
+# on: confident year "(YYYY)", non-confident year at start, non-confident year at end/middle,
+# no year at all, and a TV show episode (skipped by the query-count test, counted by the
+# classification test). For real measurements, point NOVA_PERF_VIDEO_LIST at a real, large
+# filename list instead (see class docs).
+Inception (2010) 1080p BluRay x264.mkv
+The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv
+2001 A Space Odyssey.mkv
+Class of 1999.mkv
+Wonders of the Sea 3D (2017) MULTi VFI 2160p 10bit 4KLight HDR BluRay DD+5.1 x265-QTZ.mkv
+Some Movie Without Any Year At All.mkv
+Le.Voyage.Dans.La.Lune.1902.FRENCH.DVDRip.XviD.avi
+Dune.1984.EXTENDED.1080p.BluRay.x264-GROUP.mkv
+Dune.2021.1080p.BluRay.x264-GROUP.mkv
+Breaking.Bad.S01E01.1080p.BluRay.x264-GROUP.mkv
