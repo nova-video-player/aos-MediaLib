@@ -282,6 +282,38 @@ public class LibAvos {
         nativeSetPassthrough(forcePassthrough);
     }
 
+    /** Dolby Vision playback mode: route the DV bitstream to the device DV decoder. */
+    public static final int DOLBY_VISION_MODE_PASSTHROUGH = 0;
+    /** Dolby Vision playback mode: software HEVC decode + GPU tone-mapping to HDR10 (mpv/libplacebo style). */
+    public static final int DOLBY_VISION_MODE_TONEMAP = 1;
+
+    public static void setDolbyVisionMode(int mode) {
+        if (DBG) Log.d(TAG, "setDolbyVisionMode: " + mode);
+        nativeSetDolbyVisionMode(mode);
+    }
+
+    /**
+     * Dolby Vision tone-map target luminance in nits.
+     * 0 (or negative) = automatic: display-reported max luminance when the
+     * caller resolved it, otherwise the renderer falls back to the source
+     * HDR max luminance.
+     */
+    public static void setDolbyVisionTargetNits(float nits) {
+        if (DBG) Log.d(TAG, "setDolbyVisionTargetNits: " + nits);
+        nativeSetDolbyVisionTargetNits(nits);
+    }
+
+    /**
+     * Plane scaler for the Dolby Vision tone-map path (EL residual + chroma
+     * upscaling inside libplacebo - the equivalent of mpv's --cscale).
+     * 0 = default (lanczos), 1 = bilinear (cheapest for the GPU),
+     * 2 = bicubic, 3 = ewa_lanczossharp (best quality, highest GPU cost).
+     */
+    public static void setDolbyVisionPlaneScaler(int scaler) {
+        if (DBG) Log.d(TAG, "setDolbyVisionPlaneScaler: " + scaler);
+        nativeSetDolbyVisionPlaneScaler(scaler);
+    }
+
     public static void setHdmiSupportedAudioCodecs(long hdmiAudioCodecsFlag) {
         nativeSetHdmiSupportedAudioCodecs(hdmiAudioCodecsFlag);
     }
@@ -361,6 +393,10 @@ public class LibAvos {
     private static native void nativeSetOutputSampleRate(int sampleRate);
 
     private static native void nativeSetPassthrough(int forcePassthrough);
+
+    private static native void nativeSetDolbyVisionMode(int mode);
+    private static native void nativeSetDolbyVisionTargetNits(float nits);
+    private static native void nativeSetDolbyVisionPlaneScaler(int scaler);
 
     private static native void nativeSetHdmiSupportedAudioCodecs(long hdmiAudioCodecsFlag);
     private static native void nativeSetMaxPcmChannels(int maxChannels);

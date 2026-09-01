@@ -126,6 +126,7 @@ public interface IMediaPlayer {
     public void setOnRelativePositionUpdateListener(OnRelativePositionUpdateListener listener);
     public void setOnSeekCompleteListener(OnSeekCompleteListener listener);
     public void setOnVideoSizeChangedListener(OnVideoSizeChangedListener listener);
+    public void setOnVideoFpsListener(OnVideoFpsListener listener);
     public void setOnSubtitleListener(OnSubtitleListener listener);
     public void setOnNextTrackListener(OnNextTrackListener listener);
     public int  getAudioSessionId();
@@ -165,6 +166,13 @@ public interface IMediaPlayer {
     public interface OnVideoSizeChangedListener {
         public void onVideoSizeChanged(IMediaPlayer mp, int width, int height);
         public void onVideoAspectChanged(IMediaPlayer mp, double aspect);
+    }
+
+    /** Frame rate in milli-fps (fps * 1000, e.g. 23976 for 23.976) reported
+     *  when the container exposes it; 0 = unknown. Used for display refresh
+     *  rate matching (closest Hz mode). */
+    public interface OnVideoFpsListener {
+        public void onVideoFps(IMediaPlayer mp, int milliFps);
     }
 
     public interface OnSubtitleListener  {
