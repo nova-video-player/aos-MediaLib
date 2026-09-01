@@ -16,9 +16,10 @@ package com.archos.mediacenter.utils;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.ImageView;
 
-public class ImageLabel extends ImageView {
+import androidx.appcompat.widget.AppCompatImageView;
+
+public class ImageLabel extends AppCompatImageView {
 
 
 	public ImageLabel(Context context) {

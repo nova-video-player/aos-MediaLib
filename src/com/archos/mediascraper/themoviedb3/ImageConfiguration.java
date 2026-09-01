@@ -18,24 +18,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /*
- * From http://api.themoviedb.org/3/configuration?api_key=4ec3ebcebce0900124fde6d164606823,
- * could be done dynamically
+ * From https://api.themoviedb.org/3/configuration
  *
- * "base_url": "http://cf2.imgobject.com/t/p/",
- * "poster_sizes": [
- *   "w92",
- *   "w154",
- *   "w185",
- *   "w342",
- *   "w500",
- *   "original"
- * ],
- * "backdrop_sizes": [
- *   "w300",
- *   "w780",
- *   "w1280",
- *   "original"
- * ],
+ * "base_url": "http://image.tmdb.org/t/p/",
+ * "secure_base_url": "https://image.tmdb.org/t/p/",
+ * "poster_sizes": ["w92","w154","w185","w342","w500","w780","original"],
+ * "backdrop_sizes": ["w300","w780","w1280","original"],
+ * "still_sizes": ["w92","w185","w300","original"],
+ * "profile_sizes": ["w45","w185","h632","original"],
+ * "logo_sizes": ["w45","w92","w154","w185","w300","w500","original"]
  */
 public class ImageConfiguration {
     private static final String BASE_URL = "https://image.tmdb.org/t/p/";
@@ -45,6 +36,7 @@ public class ImageConfiguration {
         W185("w185"),
         W342("w342"),
         W500("w500"),
+        W780("w780"),
         ORIGINAL("original");
 
         public final String urlValue;

@@ -112,16 +112,19 @@ class TvShowPathMatcher implements InputMatcher {
         if (matcher.matches()) {
             String showName = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
             Pair<String, String> nameYear = parenthesisYearExtractor(showName);
+            String year = nameYear.second;
+            if (! ParseUtils.isValidYear(year)) year = null;
             String name = cleanUpName(nameYear.first);
             Pair<String, String>  nameCountry = getCountryOfOrigin(name);
             int season = StringUtils.parseInt(matcher.group(2), 0);
             int episode = StringUtils.parseInt(matcher.group(3), 0);
-            String year = nameYear.second;
             if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
                 nameYear = yearExtractorEndString(nameCountry.first);
                 if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
-                    name = nameYear.first;
-                    year = nameYear.second;
+                    if (ParseUtils.isValidYear(nameYear.second)) {
+                        name = nameYear.first;
+                        year = nameYear.second;
+                    }
                 }
             }
             if (log.isDebugEnabled()) log.debug("getFileInputMatch: {} season {} episode {} year {} country {}",

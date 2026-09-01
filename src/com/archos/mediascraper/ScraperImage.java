@@ -20,7 +20,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.BaseColumns;
 import android.util.DisplayMetrics;
@@ -35,14 +34,18 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ScraperImage {
 
     private static final Logger log = LoggerFactory.getLogger(ScraperImage.class);
 
     // ratio is 1.5, match poster width of TMDB: there is no rescaling if image size lower or equal to defined dimension for posters and screen size for backdrops
-    public static int POSTER_WIDTH = 342; //240
-    public static int POSTER_HEIGHT = 513; // 360
+    public static int POSTER_WIDTH = 780;
+    public static int POSTER_HEIGHT = 1170;
 
     // 780x439 64K or 300x169 16K or 185x104 8K or 92x52 4K
     public static int PICTURE_WIDTH = 300;
@@ -50,12 +53,12 @@ public class ScraperImage {
 
     // cf. https://www.themoviedb.org/talk/5abcef779251411e97025408 and formats available https://api.themoviedb.org/3/configuration?api_key=051012651ba326cf5b1e2f482342eaa2
     final static String TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/";
-    final static String POSTER_THUMB = "w154";
-    final static String POSTER_LARGE = "w342";
+    final static String POSTER_THUMB = "w185";
+    public final static String POSTER_LARGE = "w500";
     final static String BACKDROP_THUMB = "w300";
     final static String BACKDROP_LARGE = "w1280";
-    final static String STILL_THUMB = "w154"; // w780
-    final static String STILL_LARGE = "w342"; // w780
+    final static String STILL_THUMB = "w185";
+    final static String STILL_LARGE = "w300";
     // for poster
     public final static String TMPT = TMDB_IMAGE_URL + POSTER_THUMB;
     public final static String TMPL = TMDB_IMAGE_URL + POSTER_LARGE;
@@ -445,6 +448,13 @@ public class ScraperImage {
     }
 
     private static final MultiLock<String> sLock = new MultiLock<String>();
+    /** Local artwork targets already refreshed during the current scrape pass. */
+    private static final Set<String> sRefreshedLocalFiles = ConcurrentHashMap.newKeySet();
+
+    /** Start a new scrape pass: each distinct local target may be refreshed once again. */
+    public static void resetLocalArtworkRefreshState() {
+        sRefreshedLocalFiles.clear();
+    }
 
     public final boolean download(Context context) {
         // fallback to thumbnail if there is no full poster/backdrop e.g. when thetvdb is fubar
@@ -487,7 +497,9 @@ public class ScraperImage {
         try {
             if (log.isDebugEnabled()) log.debug("download: download {}", mType.name());
             // maybe large file exists already
-            if (fileIfExists(file) != null) {
+            boolean localSource = isLocalImageUrl(url);
+            boolean refreshLocal = file != null && localSource && !sRefreshedLocalFiles.contains(file);
+            if (fileIfExists(file) != null && !refreshLocal) {
                 if (log.isDebugEnabled()) log.debug("download: using existing file.");
                 success = true;
             } else if (url == null) {
@@ -504,6 +516,7 @@ public class ScraperImage {
                 if (log.isDebugEnabled()) log.debug("download: file does not exist: download it!");
                 // rescaling happens here only if rescaling type different from NONE and size of the image higher than maxWidth x maxHeight
                 success = saveSizedImage(context, url, file, mType, thumb, maxWidth, maxHeight, fake);
+                if (success && localSource) sRefreshedLocalFiles.add(file);
             }
         } finally {
             sLock.unlock(lockString);
@@ -519,6 +532,12 @@ public class ScraperImage {
                 return f;
         }
         return null;
+    }
+
+    private static boolean isLocalImageUrl(String url) {
+        if (url == null || url.isEmpty()) return false;
+        String lower = url.toLowerCase(Locale.ROOT);
+        return !lower.startsWith("http://") && !lower.startsWith("https://");
     }
 
     private static boolean saveSizedImage(Context context, String url, String targetName, Type type,
@@ -594,6 +613,15 @@ public class ScraperImage {
         }
         boolean saveOk = ImageScaler.scale(imageSource, targetName, maxWidth, maxHeight, type.scaleType);
         if (log.isDebugEnabled()) log.debug("saveSizedImage: going through ImageScaler to convert {} -> {} went {}", imageSource.getPath(), targetName, saveOk);
+        // delete cached download after successful save to avoid storing the image twice
+        // (cache is only a temporary download buffer, all subsequent accesses use the saved storage file)
+        if (saveOk && "file".equals(imageSource.getScheme())) {
+            File cachedFile = new File(imageSource.getPath());
+            if (cachedFile.exists()) {
+                if (log.isDebugEnabled()) log.debug("saveSizedImage: deleting cached file {}", cachedFile.getPath());
+                cachedFile.delete();
+            }
+        }
         if (log.isTraceEnabled()) if (dbgTimer != null) log.trace("saveSizedImage: {}download() in total", dbgTimer.total());
         return saveOk;
     }
@@ -678,11 +706,10 @@ public class ScraperImage {
     }
 
     public void setAsDefaultAndDownloadAsync(final Context context) {
-        AsyncTask.execute(new Runnable() {
-            public void run() {
-                if (setAsDefault(context))
-                    download(context);
-            }
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            try { if (setAsDefault(context)) download(context); }
+            finally { exec.shutdown(); }
         });
     }
 

@@ -46,6 +46,12 @@ public class Scraper {
     public static final String ITEM_REQUEST_ALL_EPISODES = "WantAllEps";
     public static final String ITEM_RESULT_ALL_EPISODES = "allEpisodes";
 
+    /**
+     * For an explicit user-initiated re-scrape, refresh source metadata instead of reusing
+     * local or HTTP-cached scraper results.
+     */
+    public static final String ITEM_REQUEST_REFRESH_SHOW_METADATA = "RefreshShowMetadata";
+
     public static final String ITEM_REQUEST_BASIC_SHOW = "basicShow";
     public static final String ITEM_REQUEST_BASIC_VIDEO = "basicVideo";
 
@@ -114,7 +120,7 @@ public class Scraper {
         info.scrapeFromDB = scrapeFromDB;
 
         if (info.isTvShow())
-            return mShowScraper.search(info);
+            return mShowScraper.searchWithTitleCollisionFallback(info);
         return mMovieScraper.search(info);
     }
 

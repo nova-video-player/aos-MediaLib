@@ -49,12 +49,12 @@ public class DeleteFileCallback implements SQLiteDbProxy.CustomFunction {
             if(args.length > 1){
                 if (DBG) Log.d(TAG, SQLITE_FUNCTION_NOT_USED_NAME + "(" + args[0] + ", " + args[1] +")");
 
-                    if (Integer.parseInt(args[1])>0) {
-                        if (DBG)
-                            Log.d(TAG, SQLITE_FUNCTION_NOT_USED_NAME + "(" + args[0] + ", " + args[1] + ") is still used : aborting");
-                        return;
+                if (Integer.parseInt(args[1])>0) {
+                    if (DBG)
+                        Log.d(TAG, SQLITE_FUNCTION_NOT_USED_NAME + "(" + args[0] + ", " + args[1] + ") is still used : aborting");
+                    return;
 
-                    }
+                }
             }
             String file = args[0];
             if (file != null && !file.isEmpty() && file.charAt(0) == '/') {

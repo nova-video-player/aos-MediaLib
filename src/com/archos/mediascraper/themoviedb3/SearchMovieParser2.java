@@ -36,7 +36,7 @@ public class SearchMovieParser2 {
     private final static boolean SORT_POPULARITY = true; // used only if year specified
     private final static boolean SORT_YEAR = true; // used only if no year specified
 
-    private final static LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+    private final static LevenshteinDistance levenshteinDistance = LevenshteinDistance.getDefaultInstance();
 
     public static List<SearchResult> getResult(Response<MovieResultsPage> response, String movieName, String language, String year, Integer maxItems) {
         List<SearchResult> results;

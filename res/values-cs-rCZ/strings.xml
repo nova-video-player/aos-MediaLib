@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">Probíhá získání informací</string>
     <string name="remaining_videos_to_process">Zbývající mediální soubory ke zpracování:</string>
     <string name="video_store_import">Importování místních mediálních souborů</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

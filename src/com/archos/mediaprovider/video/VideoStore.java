@@ -1146,6 +1146,31 @@ public final class VideoStore {
              */
             public static final String SCRAPER_TITLE = "scraper_name";
             /**
+             * MediaScraper: Original language of the movie or show.
+             * <P>TYPE: <code>String</code>, ISO 639-1 code or <code>und</code> if unknown<P>
+             */
+            public static final String SCRAPER_ORIGINAL_LANGUAGE = "scraper_original_language";
+            /**
+             * MediaScraper: Language of the localized title currently displayed for the movie or show.
+             * <P>TYPE: <code>String</code>, ISO 639-1 code or <code>und</code> if unknown<P>
+             */
+            public static final String SCRAPER_TITLE_LANGUAGE = "scraper_title_language";
+            /**
+             * MediaScraper: Movie or Show sort title ("Title, Article")
+             * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
+             */
+            public static final String SCRAPER_SORT_NAME = "sort_name";
+            /**
+             * MediaScraper: Movie sort title ("Title, Article")
+             * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
+             */
+            public static final String SCRAPER_M_SORT_NAME = "m_sort_name";
+            /**
+             * MediaScraper: Show sort title ("Title, Article")
+             * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode
+             */
+            public static final String SCRAPER_S_SORT_NAME = "s_sort_name";
+            /**
              * MediaScraper: Movie title
              * <P>TYPE: <code>String</code> or <code>null</code> if not a movie
              */
@@ -1589,6 +1614,11 @@ public final class VideoStore {
              * <P>TYPE: <code>String</code> or <code>null</code>
              */
             public static final String SCRAPER_C_NAME = "m_coll_name";
+            /**
+             * MediaScraper: Movie Collection sort name
+             * <P>TYPE: <code>String</code> or <code>null</code>
+             */
+            public static final String SCRAPER_C_SORT_NAME = "m_coll_sort_name";
             /**
              * MediaScraper: Movie Collection description
              * <P>TYPE: <code>String</code> or <code>null</code>

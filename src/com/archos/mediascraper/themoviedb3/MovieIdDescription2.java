@@ -57,8 +57,9 @@ public class    MovieIdDescription2 {
                     } else // an error at this point is PARSER related
                         return false;
             }
-        } catch (IOException e) {
-            Log.e(TAG, "addDescription: caught IOException getting summary for movieId=" + movieId);
+        } catch (Exception e) {
+            Log.e(TAG, "addDescription: caught " + e.getClass().getSimpleName() + " getting summary for movieId=" + movieId);
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             return false;
         }
     }

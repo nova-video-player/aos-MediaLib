@@ -34,8 +34,11 @@ public class DbHolder {
     }
 
     public SQLiteDatabase get() {
+        SQLiteDatabase db = mDb;
         // double checked works if using volatile
-        if (mDb == null) {
+        // also reopen when the cached connection has been closed underneath us
+        // (e.g. media library backup/restore replacing media.db or low memory recycling)
+        if (db == null || !db.isOpen()) {
             // not 100% correct in all cases but it's enough for logging
             if (mLock.isLocked() && !mLock.isHeldByCurrentThread()) {
                 logUiThread();
@@ -43,14 +46,69 @@ public class DbHolder {
 
             mLock.lock();
             try {
-                if (mDb == null) {
-                    mDb = mDbHelper.getWritableDatabase();
+                db = mDb;
+                if (db == null || !db.isOpen()) {
+                    db = openDatabase();
+                    mDb = db;
                 }
             } finally {
                 mLock.unlock();
             }
         }
-        return mDb;
+        return db;
+    }
+
+    public void close() {
+        mLock.lock();
+        try {
+            if (mDb != null) {
+                if (mDb.isOpen()) {
+                    mDb.close();
+                }
+                mDb = null;
+            }
+            mDbHelper.close();
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    /**
+     * Acquire exclusive access to the database for a destructive operation (e.g.
+     * media library backup/restore that deletes and replaces the underlying file).
+     * Closes the cached connection and the helper so that any concurrent get()
+     * blocks on the lock instead of opening a connection on a file that is being
+     * deleted or rewritten. Must be paired with {@link #unlockExclusive()} in a
+     * finally block. After unlock, the next get() reopens a fresh, consistent
+     * connection.
+     */
+    public void lockExclusive() {
+        mLock.lock();
+        if (mDb != null) {
+            if (mDb.isOpen()) {
+                mDb.close();
+            }
+            mDb = null;
+        }
+        mDbHelper.close();
+    }
+
+    public void unlockExclusive() {
+        mLock.unlock();
+    }
+
+    private SQLiteDatabase openDatabase() {
+        try {
+            return mDbHelper.getWritableDatabase();
+        } catch (IllegalStateException e) {
+            // "attempt to re-open an already-closed object": the helper's cached
+            // connection was closed concurrently. Reset the helper and reopen a
+            // fresh connection.
+            Log.w(ArchosMediaCommon.TAG_PREFIX + DbHolder.class.getSimpleName(),
+                    "get: database was closed, reopening", e);
+            mDbHelper.close();
+            return mDbHelper.getWritableDatabase();
+        }
     }
 
     private static void logUiThread() {

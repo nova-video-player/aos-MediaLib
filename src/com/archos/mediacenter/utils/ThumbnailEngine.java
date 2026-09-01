@@ -165,23 +165,23 @@ public abstract class ThumbnailEngine {
     public void setThumbnailSize(int thumbnailWidth, int thumbnailHeight) {
         if(DBG) Log.d(TAG, "setThumbnailSize : " + thumbnailWidth + "x" + thumbnailHeight);
 
-		if (thumbnailWidth != mThumbnailWidth || thumbnailHeight != mThumbnailHeight) {
+        if (thumbnailWidth != mThumbnailWidth || thumbnailHeight != mThumbnailHeight) {
         	if(DBG) Log.d(TAG, "Clearing the thumbnail cache " + thumbnailWidth +"/"+ mThumbnailWidth+" "+thumbnailHeight+"/"+mThumbnailHeight);
         	clearThumbnailCache();
             // The hard-coded base footprint is for a regular mdpi device.
             // We need more for hdpi or xhdpi devices
-            final float density = mContext.getResources().getDisplayMetrics().scaledDensity;
+            final float density = mContext.getResources().getDisplayMetrics().density;
             final float actualFootprint = THUMBNAILS_POOL_BASE_FOOTPRINT_IN_BYTES * density * density;
         	// Compute the number of thumbnails to *approximately* fit the memory footprint we want
         	// We guess thumbs are RGB888 -> 3 bytes per pixel
         	// We don't take the data added by the derived classes (ThumbnailEngineVideo for example) into account
             int numberOgThumbs = (int)(actualFootprint/(thumbnailWidth*thumbnailHeight*3));
             if(DBG) Log.d(TAG, "setThumbnailSize: pool size = "+numberOgThumbs);
-        	mResultsPool =  new LruCache<Object, Result>(numberOgThumbs);
+            mResultsPool =  new LruCache<Object, Result>(numberOgThumbs);
         }
 
-		mThumbnailWidth = thumbnailWidth;
-		mThumbnailHeight = thumbnailHeight;
+        mThumbnailWidth = thumbnailWidth;
+        mThumbnailHeight = thumbnailHeight;
     }
     
     /**

@@ -19,7 +19,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
@@ -73,7 +75,6 @@ public abstract class BaseTags implements Parcelable {
     protected Map<String, String> mActors;
     protected Map<String, String> mSet; // for collection
     protected String mActorsFormatted;
-    protected SpannableString mSpannableActorsFormatted;
     protected List<String> mDirectors;
     protected List<String> mWriters;
     protected String mDirectorsFormatted;
@@ -175,43 +176,43 @@ public abstract class BaseTags implements Parcelable {
         }
     }
     
-    public SpannableString getSpannableActorsFormatted() {
-        ensureSpannableFormattedActors();
-        return mSpannableActorsFormatted;
-    }
-
-    private void ensureSpannableFormattedActors() {
-        if (mSpannableActorsFormatted == null && mActors != null && !mActors.isEmpty()) {
-            SpannableStringBuilder sb = new SpannableStringBuilder();
-            boolean firstTime = true;
-            for (Entry<String, String> item : mActors.entrySet()) {
-                if (firstTime) {
-                    firstTime = false;
-                } else {
-                    sb.append(", ");
-                }
-                String actor = item.getKey();
-                String role = item.getValue();
-                sb.append(actor);
-                if (role != null && !role.isEmpty()) {
-                    role = role.replaceAll("\\s*\\(.+\\)\\s*", "");
-                    String[] roles = role.split("(?<=[^\\/\\|])\\s*(?:\\/|\\|)\\s*(?=[^\\/\\|])");
-                    int color = Color.argb(164, 255, 255, 255);
-
-                    sb.append(" (");
-
-                    for (int i = 0; i < roles.length; i++) {
-                        sb.append(roles[i], new ForegroundColorSpan(color), 0);
-
-                        if (i != roles.length - 1)
-                            sb.append(" / ");
-                    }
-
-                    sb.append(')');
-                }
+    /**
+     * Returns spannable formatted actors with character names displayed at 2/3 alpha
+     * of the given text color.
+     * @param textColor the current text color of the view displaying the cast
+     */
+    public SpannableString getSpannableActorsFormatted(int textColor) {
+        if (mActors == null || mActors.isEmpty()) return null;
+        int roleColor = Color.argb(Color.alpha(textColor) * 2 / 3,
+                Color.red(textColor), Color.green(textColor), Color.blue(textColor));
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        boolean firstTime = true;
+        for (Entry<String, String> item : mActors.entrySet()) {
+            if (firstTime) {
+                firstTime = false;
+            } else {
+                sb.append(", ");
             }
-            mSpannableActorsFormatted = SpannableString.valueOf(sb);
+            String actor = item.getKey();
+            String role = item.getValue();
+            sb.append(actor);
+            if (role != null && !role.isEmpty()) {
+                role = role.replaceAll("\\s*\\(.+\\)\\s*", "");
+                String[] roles = role.split("(?<=[^\\/\\|])\\s*(?:\\/|\\|)\\s*(?=[^\\/\\|])");
+
+                sb.append(" (");
+
+                for (int i = 0; i < roles.length; i++) {
+                    sb.append(roles[i], new ForegroundColorSpan(roleColor), 0);
+
+                    if (i != roles.length - 1)
+                        sb.append(" / ");
+                }
+
+                sb.append(')');
+            }
         }
+        return SpannableString.valueOf(sb);
     }
 
     /** does nothing if mDirectorsFormatted is already set, otherwise builds from mDirectors */
@@ -344,11 +345,10 @@ public abstract class BaseTags implements Parcelable {
      * @param videoId _id of the video in media db
      */
     public void saveAsync(final Context context, final long videoId) {
-        AsyncTask.execute(new Runnable() {
-
-            public void run() {
-                save(context, videoId);
-            }
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            try { save(context, videoId); }
+            finally { exec.shutdown(); }
         });
     }
 
@@ -404,6 +404,7 @@ public abstract class BaseTags implements Parcelable {
     public void setWriters(List<String> writers) { mWriters = writers; }
 
     public abstract void setCover(File file);
+    public abstract void setBackdrop(File file);
 
     public void setFile(Uri searchFile) { mFile = searchFile; }
     public void setId(long id) { mId = id; }
@@ -444,12 +445,17 @@ public abstract class BaseTags implements Parcelable {
         return 0;
     }
 
+    @SuppressWarnings("deprecation") // readMap: API 33+ branch uses typed form; else branch suppressed
     private void readFromParcel(Parcel in) {
         mId = in.readLong();
         mTitle = in.readString();
         mRating = in.readFloat();
         mPlot = in.readString();
-        in.readMap(mActors, LinkedHashMap.class.getClassLoader());
+        if (Build.VERSION.SDK_INT >= 33) {
+            in.readMap(mActors, LinkedHashMap.class.getClassLoader(), String.class, String.class);
+        } else {
+            in.readMap(mActors, LinkedHashMap.class.getClassLoader());
+        }
         in.readStringList(mDirectors);
         in.readStringList(mWriters);
         mFile = Uri.parse(in.readString());

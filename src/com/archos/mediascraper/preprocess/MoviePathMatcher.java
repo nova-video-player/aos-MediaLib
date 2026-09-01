@@ -61,7 +61,11 @@ class MoviePathMatcher implements InputMatcher {
     public boolean matchesFileInput(Uri fileInput, Uri simplifiedUri) {
         if(simplifiedUri!=null)
             fileInput = simplifiedUri;
-        return PATTERN_.matcher(fileInput.toString()).matches();
+        Matcher m = PATTERN_.matcher(fileInput.toString());
+        if (m.matches()) {
+            return ParseUtils.isValidYear(m.group(2));
+        }
+        return false;
     }
 
     @Override
@@ -75,9 +79,11 @@ class MoviePathMatcher implements InputMatcher {
             file = simplifiedUri;
         Matcher matcher = PATTERN_.matcher(file.toString());
         if (matcher.matches()) {
-            String name = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
             String year = matcher.group(2);
-            return new MovieSearchInfo(file, name, year);
+            if (ParseUtils.isValidYear(year)) {
+                String name = ParseUtils.removeInnerAndOutterSeparatorJunk(matcher.group(1));
+                return new MovieSearchInfo(file, name, year);
+            }
         }
         return null;
     }

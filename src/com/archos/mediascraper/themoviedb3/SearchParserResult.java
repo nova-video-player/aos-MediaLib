@@ -50,6 +50,11 @@ public class SearchParserResult {
         if (sr1.getLevenshteinDistance() != sr2.getLevenshteinDistance()) {
             return Integer.compare(sr1.getLevenshteinDistance(), sr2.getLevenshteinDistance());
         }
+        Date date1 = sr1.getReleaseOrFirstAiredDate();
+        Date date2 = sr2.getReleaseOrFirstAiredDate();
+        if (shouldPreferOlderMovie(sr1, sr2, date1, date2)) {
+            return Long.compare(date1.getTime(), date2.getTime());
+        }
         Float pop1 = sr1.getPopularity();
         Float pop2 = sr2.getPopularity();
         // or highest popularity if it failed
@@ -59,8 +64,6 @@ public class SearchParserResult {
             return Float.compare(pop2, pop1);
         }
         // Or newest if it failed: first use releaseDate (movie) or firstAiredDate (show) and after year if it fails
-        Date date1 = sr1.getReleaseOrFirstAiredDate();
-        Date date2 = sr2.getReleaseOrFirstAiredDate();
         if (date1 == null && date2 == null) {
             //NB: year is a String not int
             if (sr1.getYear() != null && ! sr1.getYear().isEmpty() && sr2.getYear() != null && ! sr2.getYear().isEmpty())
@@ -71,6 +74,18 @@ public class SearchParserResult {
         if (date1 == null) return 1;  // date2 is considered less than date1 (date2 has a year this only consider this one)
         return Long.compare(date1.getTime(), date2.getTime());
     };
+
+    private static boolean shouldPreferOlderMovie(SearchResult sr1, SearchResult sr2, Date date1, Date date2) {
+        if (!sr1.isMovie() || !sr2.isMovie() || date1 == null || date2 == null) return false;
+        if (sr1.getYear() != null || sr2.getYear() != null) return false;
+
+        String title1 = sr1.getTitle();
+        String title2 = sr2.getTitle();
+        if (title1 == null || title2 == null || !title1.equalsIgnoreCase(title2)) return false;
+
+        String normalizedTitle = title1.replaceAll("[^\\p{L}\\p{N}]+", "");
+        return normalizedTitle.length() >= 4 && !normalizedTitle.matches("\\d+");
+    }
 
     public List<SearchResult> getResults(int maxItems) {
         List<SearchResult> results = new LinkedList<>();

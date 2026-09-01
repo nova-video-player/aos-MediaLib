@@ -38,7 +38,9 @@ import org.xml.sax.XMLReader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -142,11 +144,30 @@ public class NfoParser {
 
     static SAXParser getNewParser() {
         SAXParserFactory parserFactory = SAXParserFactory.newInstance();
+        // Handlers match element names through SAX localName. Make that contract
+        // explicit; otherwise standard JVM parsers return an empty localName.
+        parserFactory.setNamespaceAware(true);
+        // NFO files are untrusted external content (network shares, USB, downloaded
+        // libraries). Disable DOCTYPEs/external entities/external DTD loading to avoid
+        // XXE, SSRF and entity-expansion attacks. NFO files never legitimately need them.
+        setFeatureQuietly(parserFactory, "http://apache.org/xml/features/disallow-doctype-decl", true);
+        setFeatureQuietly(parserFactory, "http://xml.org/sax/features/external-general-entities", false);
+        setFeatureQuietly(parserFactory, "http://xml.org/sax/features/external-parameter-entities", false);
+        setFeatureQuietly(parserFactory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         try {
             return parserFactory.newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {
             log.error("Exception", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void setFeatureQuietly(SAXParserFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        } catch (ParserConfigurationException | SAXException e) {
+            // feature not supported on this XML stack, ignore
+            log.debug("setFeatureQuietly: {} not supported", feature);
         }
     }
 
@@ -185,30 +206,20 @@ public class NfoParser {
         if (videoParent == null)
             return result;
 
-        // check for our custom .arcnfo files, no show nfo since that is determined by parsed show title
+        // check for our custom .arcnfo files first
         Uri movieNfoFile = Uri.withAppendedPath(videoParent, videoNameNoExt + CUSTOM_NFO_EXTENSION);
         if (fileOk(movieNfoFile)) {
             result.videoNfo = movieNfoFile;
+            // a custom .archos.nfo episode resolves its show through the parsed show title,
+            // but a regular tvshow.nfo may still be the only show metadata available, so look it up too
+            result.showNfo = findShowNfo(videoParent);
         } else {
             // 1. there should be a "videoname.nfo" file
             Uri nfoFile = Uri.withAppendedPath(videoParent, videoNameNoExt + NFO_EXTENSION);
             if (fileOk(nfoFile)) {
                 result.videoNfo = nfoFile;
                 // 2. there could be a tvshow.nfo file in this or the parent folder if it is a tv show
-                Uri showNfoFile = Uri.withAppendedPath(videoParent, TV_SHOW_NFO);
-                if (fileOk(showNfoFile)) {
-                    result.showNfo = showNfoFile;
-                } else {
-                    // check in parent folder, "Simpsons/Season 1/Ep1.avi" could have
-                    // "Simpsons/tvshow.nfo"
-                    Uri parentParent = FileUtils.getParentUrl(videoParent);
-                    if (parentParent != null) {
-                        showNfoFile = Uri.withAppendedPath(parentParent, TV_SHOW_NFO);
-                        if (fileOk(showNfoFile)) {
-                            result.showNfo = showNfoFile;
-                        }
-                    }
-                }
+                result.showNfo = findShowNfo(videoParent);
             } else {
                 // 3. single movies in directories could be represented by a movie.nfo file
                 movieNfoFile = Uri.withAppendedPath(videoParent, MOVIE_NFO);
@@ -220,6 +231,21 @@ public class NfoParser {
         return result;
     }
 
+    /** Locates a tvshow.nfo in the given folder, falling back to its parent folder
+     * ("Simpsons/Season 1/Ep1.avi" -> "Simpsons/tvshow.nfo"). Returns null if none. */
+    private static Uri findShowNfo(Uri videoParent) {
+        Uri showNfoFile = Uri.withAppendedPath(videoParent, TV_SHOW_NFO);
+        if (fileOk(showNfoFile))
+            return showNfoFile;
+        Uri parentParent = FileUtils.getParentUrl(videoParent);
+        if (parentParent != null) {
+            showNfoFile = Uri.withAppendedPath(parentParent, TV_SHOW_NFO);
+            if (fileOk(showNfoFile))
+                return showNfoFile;
+        }
+        return null;
+    }
+
     private static boolean fileOk(Uri file) {
         if(file==null)
             return false;
@@ -227,7 +253,9 @@ public class NfoParser {
         try {
             metaFile2 = MetaFileFactoryWithUpnp.getMetaFileForUrl(file);
         } catch (Exception e) {
-            e.printStackTrace();
+            // Most calls are speculative existence probes, so a missing candidate is expected.
+            // Some backends (notably legacy SFTP) report missing files as a generic permission error.
+            if (log.isDebugEnabled()) log.debug("fileOk: could not stat {}: {}", file, e.toString());
         }
         return metaFile2 != null && metaFile2.isFile();
     }
@@ -247,13 +275,19 @@ public class NfoParser {
             if (importContext == null)
                 importContext = new ImportContext();
             InputStream nfoInputStream = null;
+            NfoRootHandler rootHandler = null;
             try {
                 // relocate uri for local files to writeable location to comply with API30
-                nfoInputStream = FileEditorFactoryWithUpnp.getFileEditorForUrl(FileUtils.relocateNfoAppPublicDirForNfoJpgFiles(nfo.videoNfo), null).getInputStream();
-                NfoRootHandler rootHandler = importContext.getRootHandler();
+                nfoInputStream = FileEditorFactoryWithUpnp
+                        .getFileEditorForUrl(FileUtils.relocateNfoAppPublicDirForNfoJpgFiles(
+                                nfo.videoNfo), null).getInputStream();
+                rootHandler = importContext.getRootHandler();
+                // clear before parsing: handlers are reused across files in a shared
+                // ImportContext, and a previous parse aborted by an exception can leave
+                // stale movie/episode state behind
+                rootHandler.clear();
                 importContext.getParser().parse(nfoInputStream, rootHandler);
                 BaseTags tag = rootHandler.getResult(context, nfo.videoFile);
-                rootHandler.clear();
                 if (tag != null) {
                     if (tag instanceof MovieTags) {
                         MovieTags movieTags = (MovieTags) tag;
@@ -265,7 +299,7 @@ public class NfoParser {
                         }
 
                         // check if we can add local image to backdrops
-                        Uri backdrop = LocalImages.findBackdrop(nfo.videoFile, null);
+                        Uri backdrop = LocalImages.findBackdrop(nfo.videoFile, null, false);
                         if (backdrop != null) {
                             movieTags.addDefaultBackdrop(context, backdrop, nfo.videoFile);
                         }
@@ -276,17 +310,7 @@ public class NfoParser {
 
                     if (tag instanceof EpisodeTags) {
                         EpisodeTags epTags = (EpisodeTags) tag;
-                        ShowTags showTags = null;
-                        // try to parse show title based nfo file first
-                        String showTitleEncoded = StringUtils.fileSystemEncode(epTags.getShowTitle());
-                        if (!TextUtils.isEmpty(showTitleEncoded)) {
-                            Uri showNfoFile = Uri.withAppendedPath(nfo.videoFolder, showTitleEncoded + CUSTOM_SHOW_NFO_EXTENSION);
-                            showTags = getShowTagsCached(showNfoFile, nfo.videoFile, context, importContext);
-                        }
-                        // fallback to regular tvshow.nfo
-                        if (showTags == null && nfo.isShow()) {
-                            showTags = getShowTagsCached(nfo.showNfo, nfo.videoFile, context, importContext);
-                        }
+                        ShowTags showTags = resolveEpisodeShowTags(nfo, epTags, context, importContext);
 
                         if (showTags != null) {
                             String showTitle = showTags.getTitle();
@@ -312,6 +336,10 @@ public class NfoParser {
             } catch (Exception e) {
                 log.error("Failed to read the NFO file.", e);
             } finally {
+                // always clear so a partial result from an aborted parse cannot leak
+                // into the next file that reuses this ImportContext; only touch the handler
+                // if it was actually obtained so a construction failure stays fail-soft
+                if (rootHandler != null) rootHandler.clear();
                 if(nfoInputStream!=null)
                     try {
                         nfoInputStream.close();
@@ -321,6 +349,74 @@ public class NfoParser {
             }
         }
         return null;
+    }
+
+    /**
+     * Resolve the show metadata for an episode. SMB metadata probes can transiently report that a
+     * show-root {@code tvshow.nfo} does not exist even though opening that same URI succeeds. Do not
+     * make the episode import depend exclusively on the earlier stat result: try the conventional
+     * same-folder and parent-folder paths directly after any discovered/custom candidate.
+     */
+    private static ShowTags resolveEpisodeShowTags(NfoFile nfo, EpisodeTags epTags, Context context,
+            ImportContext importContext) {
+        Set<String> attempted = new HashSet<>();
+        String showTitleEncoded = StringUtils.fileSystemEncode(epTags.getShowTitle());
+
+        // Nova's custom show NFO may be next to the episode or in the show root. Only probe custom
+        // candidates that stat successfully; their absence is normal and must not emit an error.
+        if (!TextUtils.isEmpty(showTitleEncoded)) {
+            String customName = showTitleEncoded + CUSTOM_SHOW_NFO_EXTENSION;
+            ShowTags result = parseExistingShowCandidate(
+                    Uri.withAppendedPath(nfo.videoFolder, customName), nfo.videoFile, context,
+                    importContext, attempted);
+            if (result != null) return result;
+
+            Uri showFolder = FileUtils.getParentUrl(nfo.videoFolder);
+            if (showFolder != null) {
+                result = parseExistingShowCandidate(Uri.withAppendedPath(showFolder, customName),
+                        nfo.videoFile, context, importContext, attempted);
+                if (result != null) return result;
+            }
+        }
+
+        // Prefer the path discovered during determineNfoFile().
+        ShowTags result = parseShowCandidate(nfo.showNfo, nfo.videoFile, context, importContext,
+                attempted, true);
+        if (result != null) return result;
+
+        // Retry standard paths by opening them directly. This intentionally does not trust fileOk():
+        // the failing #1782 SMB trace found every episode NFO and local image but missed tvshow.nfo.
+        Uri sameFolder = Uri.withAppendedPath(nfo.videoFolder, TV_SHOW_NFO);
+        result = parseShowCandidate(sameFolder, nfo.videoFile, context, importContext, attempted,
+                false);
+        if (result != null) return result;
+
+        Uri showFolder = FileUtils.getParentUrl(nfo.videoFolder);
+        if (showFolder != null) {
+            Uri parentFolder = Uri.withAppendedPath(showFolder, TV_SHOW_NFO);
+            result = parseShowCandidate(parentFolder, nfo.videoFile, context, importContext,
+                    attempted, false);
+            if (result != null) return result;
+        }
+
+        log.warn("resolveEpisodeShowTags: no usable show NFO for {} after trying {}",
+                nfo.videoFile, attempted);
+        return null;
+    }
+
+    private static ShowTags parseExistingShowCandidate(Uri candidate, Uri videoFile, Context context,
+            ImportContext importContext, Set<String> attempted) {
+        if (candidate == null || !fileOk(candidate)) return null;
+        return parseShowCandidate(candidate, videoFile, context, importContext, attempted, true);
+    }
+
+    private static ShowTags parseShowCandidate(Uri candidate, Uri videoFile, Context context,
+            ImportContext importContext, Set<String> attempted, boolean logFailure) {
+        if (candidate == null || !attempted.add(candidate.toString())) return null;
+        if (log.isDebugEnabled()) {
+            log.debug("resolveEpisodeShowTags: trying {} for {}", candidate, videoFile);
+        }
+        return getShowTagsCached(candidate, videoFile, context, importContext, logFailure);
     }
 
     private static Uri findSeasonPosterCached(Uri videoFile, String showTitle, int season, ImportContext importContext) {
@@ -345,13 +441,14 @@ public class NfoParser {
         return result;
     }
 
-    private static ShowTags getShowTagsCached(Uri nfoFile, Uri videoFile, Context context, ImportContext importContext) {
+    private static ShowTags getShowTagsCached(Uri nfoFile, Uri videoFile, Context context,
+            ImportContext importContext, boolean logFailure) {
         // key = tvshow.nfo path
         String key = nfoFile.toString();
         ShowTags result = importContext.showCache.get(key);
         if (result == null) {
             // not cached, really parse file
-            result = parseShowNfo(nfoFile, videoFile, context, importContext);
+            result = parseShowNfo(nfoFile, videoFile, context, importContext, logFailure);
             // add local images & put in cache if successful
             if (result != null) {
                 String showTitle = result.getTitle();
@@ -363,7 +460,7 @@ public class NfoParser {
                 }
 
                 // check if we can add local image as show backdrop
-                Uri backdrop = LocalImages.findBackdrop(videoFile, showTitle);
+                Uri backdrop = LocalImages.findBackdrop(videoFile, showTitle, true);
                 if (backdrop != null) {
                     result.addDefaultBackdrop(context, backdrop);
                 }
@@ -375,23 +472,34 @@ public class NfoParser {
         return result;
     }
 
-    private static ShowTags parseShowNfo(Uri nfoFile, Uri videoFile, Context context, ImportContext importContext) {
+    private static ShowTags parseShowNfo(Uri nfoFile, Uri videoFile, Context context,
+            ImportContext importContext, boolean logFailure) {
         InputStream nfoInputStream = null;
+        NfoShowHandler showHandler = null;
         try {
-            nfoInputStream = FileEditorFactoryWithUpnp.getFileEditorForUrl(nfoFile, null).getInputStream();
-            NfoShowHandler showHandler = importContext.getShowHandler();
+            nfoInputStream = FileEditorFactoryWithUpnp
+                    .getFileEditorForUrl(nfoFile, null).getInputStream();
+            showHandler = importContext.getShowHandler();
             SAXParser parser = importContext.getParser();
+            // clear before parsing in case a previous parse left stale state behind
+            showHandler.clear();
             parser.parse(nfoInputStream, showHandler);
             ShowTags result = showHandler.getResult(context, videoFile);
-            showHandler.clear();
             return result;
         } catch (SAXException e) {
             // could not parse
-            log.error("XML parsing failed for the NFO file.", e);
+            if (logFailure) log.error("XML parsing failed for show NFO {}", nfoFile, e);
+            else log.debug("parseShowNfo: XML parsing failed for candidate {}: {}", nfoFile,
+                    e.toString());
         } catch (Exception e) {
             // could not read file
-            log.error("Failed to read the NFO file.", e);
+            if (logFailure) log.error("Failed to read show NFO {}", nfoFile, e);
+            else log.debug("parseShowNfo: could not read candidate {}: {}", nfoFile,
+                    e.toString());
         }finally {
+            // always clear so an aborted parse cannot leak into the next show parse;
+            // only if the handler was obtained, to keep a construction failure fail-soft
+            if (showHandler != null) showHandler.clear();
             if(nfoInputStream!=null)
                 try {
                     nfoInputStream.close();

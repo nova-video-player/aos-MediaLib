@@ -28,10 +28,15 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.BaseColumns;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 public class LibraryUtils {
 
 	private final static String TAG = "LibraryUtils";
+	private static final Logger log = LoggerFactory.getLogger(LibraryUtils.class);
 	private final static String AND = " AND ";
 	private final static String DESC = " DESC";
 	private final static String LIMIT = " LIMIT ";
@@ -98,10 +103,21 @@ public class LibraryUtils {
 		try {
 			ContentResolver resolver = context.getContentResolver();
 			if (resolver == null) {
+				if (log.isDebugEnabled()) log.debug("query: content resolver is null for uri={}", uri);
 				return null;
 			}
 			return resolver.query(uri, projection, selection, selectionArgs, sortOrder);
 		} catch (UnsupportedOperationException ex) {
+			if (log.isDebugEnabled()) {
+				log.debug("query: unsupported operation for uri={}, projection={}, selection={}, selectionArgs={}, sortOrder={}",
+						uri, Arrays.toString(projection), selection, Arrays.toString(selectionArgs), sortOrder, ex);
+			}
+			return null;
+		} catch (RuntimeException ex) {
+			if (log.isDebugEnabled()) {
+				log.debug("query: runtime failure for uri={}, projection={}, selection={}, selectionArgs={}, sortOrder={}",
+						uri, Arrays.toString(projection), selection, Arrays.toString(selectionArgs), sortOrder, ex);
+			}
 			return null;
 		}
 	}
@@ -122,18 +138,24 @@ public class LibraryUtils {
      * @param resumeAndBookmark: out. resumeAndBookmark[0] is resume ; resumeAndBookmark[1] is bookmark, must be != null at call
      *  Returns zero and zero if the file is not found
      */
-    public static void getVideoResumeAndBookmark(Context context, long videoId, int[] resumeAndBookmark) {
-    	Cursor c = query(context, VideoStore.Video.Media.EXTERNAL_CONTENT_URI, VIDEO_COLS,
-    			VideoStore.Video.Media._ID + " = '" + videoId + "'", null, null);
-    	if ((c!=null) && (c.getCount()==1)) {
-    		c.moveToFirst();
-    		resumeAndBookmark[0] = c.getInt(c.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.BOOKMARK));
-    		resumeAndBookmark[1] = c.getInt(c.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK));
-    	}
-    	else {
-    		resumeAndBookmark[0] = resumeAndBookmark[1] = 0;
-    	}
-    }
+	public static void getVideoResumeAndBookmark(Context context, long videoId, int[] resumeAndBookmark) {
+		Cursor c = query(context, VideoStore.Video.Media.EXTERNAL_CONTENT_URI, VIDEO_COLS,
+				VideoStore.Video.Media._ID + " = '" + videoId + "'", null, null);
+		try {
+			if ((c!=null) && (c.getCount()==1)) {
+				c.moveToFirst();
+				resumeAndBookmark[0] = c.getInt(c.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.BOOKMARK));
+				resumeAndBookmark[1] = c.getInt(c.getColumnIndexOrThrow(VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK));
+			}
+			else {
+				resumeAndBookmark[0] = resumeAndBookmark[1] = 0;
+			}
+		} finally {
+			if (c != null) {
+				c.close();
+			}
+		}
+	}
 
     // Common name for all MediaCenter shared preferences
     public final static String SHARED_PREFERENCES_NAME = "MediaCenter";

@@ -21,7 +21,8 @@ import com.archos.mediascraper.Scraper;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.util.Log;
 
 import java.io.File;
@@ -81,10 +82,10 @@ public class ScraperReceiver extends BroadcastReceiver {
         final Context localContext = context;
 
         // in background since that is blocking for a short time
-        AsyncTask.execute(new Runnable() {
-            public void run() {
-                Scraper scraper = new Scraper(localContext);
-            }
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            try { new Scraper(localContext); }
+            finally { exec.shutdown(); }
         });
     }
 

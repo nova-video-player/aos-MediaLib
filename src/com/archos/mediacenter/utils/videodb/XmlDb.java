@@ -15,7 +15,6 @@
 package com.archos.mediacenter.utils.videodb;
 
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Looper;
@@ -41,6 +40,8 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.FileNotFoundException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -52,9 +53,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jcifs.smb.NtStatus;
 import jcifs.smb.SmbException;
 
 public class XmlDb implements Callback {
@@ -71,9 +74,10 @@ public class XmlDb implements Callback {
     public static final String FILE_EXTENSION = "xml";
     public static final String FILE_NAME = ".archos.resume."+FILE_EXTENSION;
     private final Handler mUiThreadHandler = new Handler(Looper.getMainLooper(), this);
-    private static final Map<String, WriteTask> sRemoteWriteTasks = new HashMap<String, WriteTask>();
-    private static final Map<String, ParseTask> sRemoteParseTasks = new HashMap<String, ParseTask>();
+    private static final Map<String, WriteTask> sRemoteWriteTasks = new ConcurrentHashMap<>();
+    private static final Map<String, ParseTask> sRemoteParseTasks = new ConcurrentHashMap<>();
     private static final Map<Uri, VideoDbInfo> sRemoteCache = new HashMap<>();
+    private static final Map<Uri, Uri> sRemoteXmlLocationCache = new HashMap<>();
     private final ArrayList<ResumeChangeListener> mResumeChangeListener;
     private List<ParseListener> mOnParseListeners;
 
@@ -158,7 +162,10 @@ public class XmlDb implements Callback {
                 if (log.isDebugEnabled()) log.debug("endElement: last_time_played={}", mCurrentEntry.lastTimePlayed);
             } else if (localName.equals("network_database")) {
                 mResult = mCurrentEntry;
-                sRemoteCache.put(mCurrentEntry.uri, mCurrentEntry);
+                if (mCurrentEntry.uri != null) {
+                    sRemoteCache.put(mCurrentEntry.uri, mCurrentEntry);
+                    sRemoteXmlLocationCache.put(mCurrentEntry.uri, mLocation);
+                }
                 mCurrentEntry = null;
             }
         }
@@ -167,13 +174,17 @@ public class XmlDb implements Callback {
         }
     }
 
-    private static class ParseTask extends AsyncTask<Void, Integer, VideoDbInfo> {
+    private static class ParseTask {
         private final Uri mLocation;
-        private Listener mListener;
+        private volatile Listener mListener;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private volatile boolean isCancelled = false;
 
         private interface Listener {
             void onResult(VideoDbInfo result);
         }
+
         public ParseTask(Uri location) {
             mLocation = location;
         }
@@ -183,25 +194,37 @@ public class XmlDb implements Callback {
         }
 
         public void abort() {
-            cancel(true);
+            isCancelled = true;
             mListener = null;
+            executor.shutdownNow();
+            sRemoteParseTasks.remove(mLocation.toString());
         }
 
-        @Override
-        protected VideoDbInfo doInBackground(Void... params) {
-            return parseXml(mLocation);
-        }
-
-        @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
-        protected void onPostExecute(VideoDbInfo result) {
-
-            if (mListener != null)
-                mListener.onResult(result);
+        public void execute() {
+            sRemoteParseTasks.put(mLocation.toString(), this);
+            executor.execute(() -> {
+                VideoDbInfo result = null;
+                try {
+                    if (isCancelled || Thread.currentThread().isInterrupted()) {
+                        sRemoteParseTasks.remove(mLocation.toString());
+                        return;
+                    }
+                    result = parseXml(mLocation);
+                } catch (Exception e) {
+                    log.error("ParseTask failed", e);
+                } finally {
+                    executor.shutdown();
+                }
+                sRemoteParseTasks.remove(mLocation.toString());
+                if (isCancelled) return;
+                final VideoDbInfo finalResult = result;
+                final Listener listener = mListener;
+                handler.post(() -> {
+                    if (isCancelled) return;
+                    if (listener != null)
+                        listener.onResult(finalResult);
+                });
+            });
         }
     }
     public interface ResumeChangeListener{
@@ -220,35 +243,73 @@ public class XmlDb implements Callback {
         void onParseOk(ParseResult obj);
     }
 
-    private class WriteTask extends AsyncTask<Void, Integer, Void> {
-        private final VideoDbInfo mVideoDbInfo;
-        /**
-         *
-         *
-         * @param videoDbInfo
-         */
+    private class WriteTask {
+        private final String mKey;
+        private final Uri mPreviousXmlUri;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private VideoDbInfo mPendingVideoDbInfo;
+        private boolean mAcceptingWrites = true;
+
         public WriteTask(VideoDbInfo videoDbInfo) {
-            mVideoDbInfo = videoDbInfo;
+            mKey = videoDbInfo.uri.toString();
+            mPreviousXmlUri = sRemoteXmlLocationCache.get(videoDbInfo.uri);
+            enqueue(videoDbInfo);
         }
 
-        @Override
-        protected Void doInBackground(Void... params) {
-            if (log.isDebugEnabled()) log.debug("doInBackground: {}", mVideoDbInfo.uri);
-            boolean ret = writeXml(mVideoDbInfo);
-            if (log.isDebugEnabled()) log.debug("writeXml: {}", ret);
-            return null;
+        public synchronized boolean enqueue(VideoDbInfo videoDbInfo) {
+            if (!mAcceptingWrites) {
+                return false;
+            }
+            mPendingVideoDbInfo = new VideoDbInfo(videoDbInfo);
+            return true;
         }
 
-        @Override
-        protected void onPreExecute() {
-            sRemoteWriteTasks.put(mVideoDbInfo.uri.toString(), this);
+        private synchronized VideoDbInfo takePending() {
+            if (mPendingVideoDbInfo == null) {
+                mAcceptingWrites = false;
+                return null;
+            }
+            VideoDbInfo videoDbInfo = mPendingVideoDbInfo;
+            mPendingVideoDbInfo = null;
+            return videoDbInfo;
         }
 
-        @Override
-        protected void onPostExecute(Void result) {
-            sRemoteWriteTasks.remove(mVideoDbInfo.uri.toString());
-            sRemoteCache.put(mVideoDbInfo.uri, mVideoDbInfo);
-            notifyResumeChange(mVideoDbInfo.uri, (int) ((float) mVideoDbInfo.resume / (float) mVideoDbInfo.duration * 100.0));
+        public void execute() {
+            executor.execute(() -> {
+                Uri previousXmlUri = mPreviousXmlUri;
+                try {
+                    while (!Thread.currentThread().isInterrupted()) {
+                        VideoDbInfo videoDbInfo = takePending();
+                        if (videoDbInfo == null) {
+                            return;
+                        }
+                        boolean ret = false;
+                        if (log.isDebugEnabled()) log.debug("doInBackground: {}", videoDbInfo.uri);
+                        ret = writeXml(videoDbInfo, previousXmlUri);
+                        if (log.isDebugEnabled()) log.debug("writeXml: {}", ret);
+                        Uri writtenXmlUri = ret ? getXmlPath(videoDbInfo) : null;
+                        if (writtenXmlUri != null) {
+                            previousXmlUri = writtenXmlUri;
+                        }
+                        final boolean writeSuccess = ret;
+                        final VideoDbInfo writtenVideoDbInfo = videoDbInfo;
+                        final Uri currentXmlUri = writtenXmlUri;
+                        handler.post(() -> {
+                            sRemoteCache.put(writtenVideoDbInfo.uri, writtenVideoDbInfo);
+                            if (writeSuccess && currentXmlUri != null) {
+                                sRemoteXmlLocationCache.put(writtenVideoDbInfo.uri, currentXmlUri);
+                            }
+                            notifyResumeChange(writtenVideoDbInfo.uri, (int) ((float) writtenVideoDbInfo.resume / (float) writtenVideoDbInfo.duration * 100.0));
+                        });
+                    }
+                } catch (Exception e) {
+                    log.error("WriteTask failed", e);
+                } finally {
+                    executor.shutdown();
+                    sRemoteWriteTasks.remove(mKey, this);
+                }
+            });
         }
     }
     public synchronized void addResumeChangeListener(ResumeChangeListener listener){
@@ -278,6 +339,11 @@ public class XmlDb implements Callback {
             } catch (MalformedURLException e1) {
                 log.error("parseXml: Error: {}", e1);
                 return null;
+            } catch (SmbException e) {
+                if (!isMissingRemoteXml(e)) {
+                    log.error("parseXml: Error: {}", e);
+                }
+                return null;
             } catch (IOException e2) {
                 log.error("parseXml: Error: {}", e2);
                 return null;
@@ -301,7 +367,9 @@ public class XmlDb implements Callback {
         } catch (FileNotFoundException e) {
             // when file was never created.
         } catch (SmbException e) {
-            // when file was never created.
+            if (!isMissingRemoteXml(e)) {
+                log.error("parseXml: Error while reading files.", e);
+            }
         } catch (SAXException e) {
             log.error("parseXml: Error while parsing files.", e);
         } catch (IOException e) {
@@ -317,6 +385,13 @@ public class XmlDb implements Callback {
                 }
         }
         return null;
+    }
+
+    private static boolean isMissingRemoteXml(SmbException e) {
+        int status = e.getNtStatus();
+        return status == NtStatus.NT_STATUS_NO_SUCH_FILE
+                || status == NtStatus.NT_STATUS_OBJECT_NAME_NOT_FOUND
+                || status == NtStatus.NT_STATUS_OBJECT_PATH_NOT_FOUND;
     }
 
     /**
@@ -403,12 +478,14 @@ public class XmlDb implements Callback {
                     info.resume= (int) ((float) resume * (float) info.duration / 100.0);
                 else
                     info.resume = resume;
+                sRemoteXmlLocationCache.put(videoFileUri, fileUri);
             }
             else{
                 info = new VideoDbInfo(videoFileUri);
                 info.duration=-1;
                 info.resume=resume;
                 sRemoteCache.put(videoFileUri,info);
+                sRemoteXmlLocationCache.put(videoFileUri, fileUri);
             }
             return info;
         }
@@ -450,6 +527,24 @@ public class XmlDb implements Callback {
         }
     }
 
+    private static void deletePreviousResumeDatabase(Uri previousXmlUri, VideoDbInfo newEntry) {
+        if (previousXmlUri == null) {
+            return;
+        }
+        Uri newXmlUri = getXmlPath(newEntry);
+        if (previousXmlUri.equals(newXmlUri)) {
+            return;
+        }
+        try {
+            FileEditor fileEditor = FileEditorFactoryWithUpnp.getFileEditorForUrl(previousXmlUri, null);
+            if (fileEditor.exists()) {
+                fileEditor.delete();
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) log.debug("deletePreviousResumeDatabase: could not delete {}", previousXmlUri, e);
+        }
+    }
+
 
     /**
      * Write content of a VideoDbInfo to a specific path
@@ -457,13 +552,12 @@ public class XmlDb implements Callback {
      * @param entry
      * @return
      */
-    private static boolean writeXml(VideoDbInfo entry) {
+    private static boolean writeXml(VideoDbInfo entry, Uri previousXmlUri) {
         //first, merge remote cache with cache in memory
         if(entry==null)
             return false;
-        //delete old db files
 
-        deleteAssociatedResumeDatabase(entry.uri);
+        deletePreviousResumeDatabase(previousXmlUri, entry);
         final StringWriter writer = new StringWriter(5000);
         writer.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         writer.append("<!-- Archos MediaCenter metadata -->\n");
@@ -660,13 +754,14 @@ public class XmlDb implements Callback {
 
     }
 
-    public void writeXmlRemote(VideoDbInfo videoDbInfo) {
-        WriteTask task;
-        task = sRemoteWriteTasks.get(videoDbInfo.uri.toString());
-        if (task != null) {
-            task.cancel(true);
+    public synchronized void writeXmlRemote(VideoDbInfo videoDbInfo) {
+        String key = videoDbInfo.uri.toString();
+        WriteTask task = sRemoteWriteTasks.get(key);
+        if (task != null && task.enqueue(videoDbInfo)) {
+            return;
         }
         task = new WriteTask(videoDbInfo);
+        sRemoteWriteTasks.put(key, task);
         task.execute();
     }
 

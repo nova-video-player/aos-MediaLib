@@ -54,7 +54,11 @@ class MovieSceneMatcher implements InputMatcher {
     private static boolean matches(String matchString) {
         if (matchString == null || matchString.isEmpty())
             return false;
-        return NAME_YEAR_SCENE_PATTERN.matcher(matchString).matches();
+        Matcher m = NAME_YEAR_SCENE_PATTERN.matcher(matchString);
+        if (m.matches()) {
+            return ParseUtils.isValidYear(m.group(2));
+        }
+        return false;
     }
 
     @Override
@@ -72,10 +76,12 @@ class MovieSceneMatcher implements InputMatcher {
     private static SearchInfo getSearchInfo(String matchString, Uri file) {
         Matcher m = NAME_YEAR_SCENE_PATTERN.matcher(matchString);
         if (m.matches()) {
-            String name = StringUtils.replaceAll(m.group(1), " ", JUNK_PATTERN);
-            name = ParseUtils.removeInnerAndOutterSeparatorJunk(name);
             String year = m.group(2);
-            return new MovieSearchInfo(file, name, year);
+            if (ParseUtils.isValidYear(year)) {
+                String name = StringUtils.replaceAll(m.group(1), " ", JUNK_PATTERN);
+                name = ParseUtils.removeInnerAndOutterSeparatorJunk(name);
+                return new MovieSearchInfo(file, name, year);
+            }
         }
         return null;
     }

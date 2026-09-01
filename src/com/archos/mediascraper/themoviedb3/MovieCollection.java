@@ -72,8 +72,9 @@ public class MovieCollection {
                     }
                     break;
             }
-        } catch (IOException e) {
-            Log.e(TAG, "getInfo: caught IOException getting summary for movieId=" + collectionId);
+        } catch (Exception e) {
+            Log.e(TAG, "getInfo: caught " + e.getClass().getSimpleName() + " getting summary for movieId=" + collectionId);
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;
         }

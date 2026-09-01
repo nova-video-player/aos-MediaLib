@@ -48,7 +48,9 @@ import com.uwetrottmann.trakt5.entities.SyncResponse;
 import com.uwetrottmann.trakt5.entities.TraktList;
 import com.uwetrottmann.trakt5.entities.UserSlug;
 import com.uwetrottmann.trakt5.enums.Extended;
+import com.uwetrottmann.trakt5.enums.ExtendedShowsWatched;
 import com.uwetrottmann.trakt5.enums.ListPrivacy;
+import com.uwetrottmann.trakt5.enums.Specials;
 
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
@@ -82,8 +84,14 @@ public class Trakt {
     private static String API_KEY;
     private static String API_SECRET;
     public static final int SCROBBLE_THRESHOLD = 90;
+    /** Minimum progress percentage to record as a Trakt resume point: ignore accidental short plays. */
+    public static final float RESUME_THRESHOLD_PERCENT = 1.0f;
+    /** Minimum play duration in milliseconds to record as a Trakt resume point (30 seconds). */
+    public static final int RESUME_THRESHOLD_MS = 30000;
     // playback history size to synchronize: 50 is enough (it is anyway capped at 1k and incurs a huge processing delay)
     public static final int PLAYBACK_HISTORY_SIZE = 200;
+    // page size for paginated endpoints (watched/collection/list); 1000 is the Trakt hard cap
+    private static final int PAGE_LIMIT = 200;
 
     private static final String XML_PREFIX = ".trakt_";
     private static final String XML_SUFFIX = "_db.xml";
@@ -124,6 +132,8 @@ public class Trakt {
     private Listener mListener;
 
     private boolean mWatchingSuccess = false;
+
+    private Exception mLastExecException = null;
 
     static class MyTraktV2 extends TraktV2 {
 
@@ -257,6 +267,9 @@ public class Trakt {
         mTraktV2.accessToken(
                 getAccessTokenFromPreferences(
                         PreferenceManager.getDefaultSharedPreferences(context)));
+        mTraktV2.refreshToken(
+                getRefreshTokenFromPreferences(
+                        PreferenceManager.getDefaultSharedPreferences(context)));
 
         //test
         //mTraktV2.setAccessToken("911cfb2e98258328fd95a12d593f6e72e5412cff3f4ce9772e2b3a7b8af121fd");
@@ -298,17 +311,39 @@ public class Trakt {
         public int interval;
     }
 
-    public static accessToken getAccessToken(String code) throws AccountLockedError {
-        try {
-            // Single-shot auth call (Trakt SDK returns a synchronous Response)
-            final retrofit2.Response<AccessToken> response = getTraktV2().exchangeCodeForAccessToken(code);
-            final accessToken mAccessToken = new accessToken();
-            mAccessToken.access_token = response.body().access_token;
-            mAccessToken.refresh_token = response.body().refresh_token;
-            if (log.isDebugEnabled()) log.debug("getAccessToken: access_token is {}", mAccessToken.access_token);
-            return mAccessToken;
-        } catch (IOException | NullPointerException e) {
-            log.error("getAccessToken: caught IoException ", e);
+    public static class InvalidDeviceCodeResponseError extends Exception {
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    public static accessToken getAccessToken(String code) throws AccountLockedError, ForbiddenError, ServiceUnavailableError {
+        retrofit2.Response<AccessToken> response = null;
+        for (int attempt = 0; attempt < MAX_TRIAL; attempt++) {
+            response = null;
+            try {
+                response = getTraktV2().exchangeCodeForAccessToken(code);
+                if (response.isSuccessful() && response.body() != null) {
+                    final accessToken mAccessToken = new accessToken();
+                    mAccessToken.access_token = response.body().access_token;
+                    mAccessToken.refresh_token = response.body().refresh_token;
+                    if (log.isDebugEnabled()) log.debug("getAccessToken: access token obtained");
+                    return mAccessToken;
+                }
+                break; // got a response, no need to retry
+            } catch (IOException | NullPointerException e) {
+                log.error("getAccessToken: caught exception (attempt {}/{})", attempt + 1, MAX_TRIAL, e);
+                if (attempt < MAX_TRIAL - 1) {
+                    try { Thread.sleep(WAIT_BEFORE_NEXT_TRIAL); } catch (InterruptedException ignored) {}
+                }
+            }
+        }
+        if (response != null && !response.isSuccessful()) {
+            log.error("getAccessToken error: code={}, message={}", response.code(), response.message());
+            if (response.code() == 403) throw new ForbiddenError();
+            if (response.code() == 423) throw new AccountLockedError();
+            if (response.code() == 503) throw new ServiceUnavailableError();
         }
         return null;
     }
@@ -318,11 +353,21 @@ public class Trakt {
      * Display the user_code and verification_url to the user, then poll with the device_code.
      * @return deviceCode object with codes and verification URL, or null on error
      */
-    public static deviceCode generateDeviceCode() throws AccountLockedError {
+    public static deviceCode generateDeviceCode() throws AccountLockedError, ForbiddenError, ServiceUnavailableError, InvalidDeviceCodeResponseError {
+        retrofit2.Response<com.uwetrottmann.trakt5.entities.DeviceCode> response = null;
         try {
             // Single-shot auth call (Trakt SDK returns a synchronous Response)
-            final retrofit2.Response<com.uwetrottmann.trakt5.entities.DeviceCode> response = getTraktV2().generateDeviceCode();
+            response = getTraktV2().generateDeviceCode();
             if (response.isSuccessful() && response.body() != null) {
+                if (isBlank(response.body().device_code)
+                        || isBlank(response.body().user_code)
+                        || isBlank(response.body().verification_url)) {
+                    log.error("generateDeviceCode: invalid successful response missing fields device_code={}, user_code={}, verification_url={}",
+                            !isBlank(response.body().device_code),
+                            !isBlank(response.body().user_code),
+                            !isBlank(response.body().verification_url));
+                    throw new InvalidDeviceCodeResponseError();
+                }
                 final deviceCode code = new deviceCode();
                 code.device_code = response.body().device_code;
                 code.user_code = response.body().user_code;
@@ -335,6 +380,12 @@ public class Trakt {
         } catch (IOException | NullPointerException e) {
             log.error("generateDeviceCode: caught exception", e);
         }
+        if (response != null && !response.isSuccessful()) {
+            log.error("generateDeviceCode error: code={}, message={}", response.code(), response.message());
+            if (response.code() == 403) throw new ForbiddenError();
+            if (response.code() == 423) throw new AccountLockedError();
+            if (response.code() == 503) throw new ServiceUnavailableError();
+        }
         return null;
     }
 
@@ -344,22 +395,27 @@ public class Trakt {
      * @param deviceCode the device_code from generateDeviceCode()
      * @return accessToken if user authorized, null if still pending or error
      */
-    public static accessToken exchangeDeviceCodeForAccessToken(String deviceCode) throws AccountLockedError {
+    public static accessToken exchangeDeviceCodeForAccessToken(String deviceCode) throws AccountLockedError, ForbiddenError, ServiceUnavailableError {
+        retrofit2.Response<AccessToken> response = null;
         try {
             // Single-shot auth call (Trakt SDK returns a synchronous Response)
-            final retrofit2.Response<AccessToken> response = getTraktV2().exchangeDeviceCodeForAccessToken(deviceCode);
+            response = getTraktV2().exchangeDeviceCodeForAccessToken(deviceCode);
             if (response.isSuccessful() && response.body() != null) {
                 final accessToken mAccessToken = new accessToken();
                 mAccessToken.access_token = response.body().access_token;
                 mAccessToken.refresh_token = response.body().refresh_token;
                 if (log.isDebugEnabled()) log.debug("exchangeDeviceCodeForAccessToken: access_token obtained");
                 return mAccessToken;
-            } else {
-                // 400 = pending, 404 = not found, 410 = expired, 429 = polling too fast
-                if (log.isDebugEnabled()) log.debug("exchangeDeviceCodeForAccessToken: status={}", response.code());
             }
         } catch (IOException | NullPointerException e) {
             if (log.isDebugEnabled()) log.debug("exchangeDeviceCodeForAccessToken: still pending or error", e);
+        }
+        if (response != null && !response.isSuccessful()) {
+            // 400 = pending, 404 = not found, 410 = expired, 429 = polling too fast
+            if (log.isDebugEnabled()) log.debug("exchangeDeviceCodeForAccessToken: status={}", response.code());
+            if (response.code() == 403) throw new ForbiddenError();
+            if (response.code() == 423) throw new AccountLockedError();
+            if (response.code() == 503) throw new ServiceUnavailableError();
         }
         return null;
     }
@@ -429,7 +485,7 @@ public class Trakt {
             response = exec(mTraktV2.sync().deleteItemsFromCollection(param));
         }
         if (response == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, response, ObjectType.RESPONSE);
     }
 
@@ -521,7 +577,7 @@ public class Trakt {
 
             if (showParam.episode_tmdb_id == null || showParam.episode_tmdb_id.isEmpty()) {
                 log.warn("postWatching: missing episode_tmdb_id for show, skipping scrobble to avoid 404");
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
             }
 
             SyncEpisode se = new SyncEpisode();
@@ -531,7 +587,7 @@ public class Trakt {
                 ids.tmdb = Integer.valueOf(showParam.episode_tmdb_id);
             } catch (NumberFormatException nfe) {
                 log.warn("postWatching: invalid episode_tmdb_id {}, skipping scrobble", showParam.episode_tmdb_id);
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
             }
             se.id(ids);
             ScrobbleProgress ep = new ScrobbleProgress(se, progress, "", "");
@@ -559,7 +615,7 @@ public class Trakt {
 
             if (movieParam.tmdb_id == null || movieParam.tmdb_id.isEmpty()) {
                 log.warn("postWatching: missing movie tmdb_id, skipping scrobble to avoid 404");
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
             }
 
             MovieIds mi = new MovieIds();
@@ -567,7 +623,7 @@ public class Trakt {
                 mi.tmdb=Integer.valueOf(movieParam.tmdb_id);
             } catch (NumberFormatException nfe) {
                 log.warn("postWatching: invalid movie tmdb_id {}, skipping scrobble", movieParam.tmdb_id);
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
             }
             SyncMovie sm= new SyncMovie();
             sm.id(mi);
@@ -601,7 +657,7 @@ public class Trakt {
 
     public static void setRefreshToken(SharedPreferences sharedPreferences, String refreshToken) {
         Editor editor = sharedPreferences.edit();
-        if (log.isDebugEnabled()) log.debug("setRefreshToken: refreshToken={}", refreshToken);
+        if (log.isDebugEnabled()) log.debug("setRefreshToken: refresh token {}", refreshToken != null ? "updated" : "cleared");
         if (refreshToken != null) {
             editor.putString(KEY_TRAKT_REFRESH_TOKEN, refreshToken);
         } else {
@@ -626,16 +682,22 @@ public class Trakt {
         else {
             try {
                 retrofit2.Response<AccessToken> token = mTraktV2.refreshAccessToken(refreshToken);
-                if (!token.isSuccessful()) {
-                    if (log.isDebugEnabled()) log.debug("Failed refreshing token {}", token.toString());
+                if (token.isSuccessful() && token.body() != null) {
+                    mTraktV2.accessToken(token.body().access_token);
+                    setAccessToken(pref, token.body().access_token);
+                    setRefreshToken(pref, token.body().refresh_token);
+                    return true;
+                } else {
+                    log.error("Failed refreshing token code={}, message={}", token.code(), token.message());
+                    // If refresh token is definitively invalid (400 Bad Request or 401 Unauthorized), clear it
+                    if (token.code() == 400 || token.code() == 401) {
+                        wipePreferences(pref, false);
+                    }
                     Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
                     intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
                     mContext.sendBroadcast(intent);
+                    return false;
                 }
-                mTraktV2.accessToken(token.body().access_token);
-                setAccessToken(pref, token.body().access_token);
-                setRefreshToken(pref, token.body().refresh_token);
-                return true;
             } catch (IOException ioe) {
                 log.error("getAccessToken: caught IOException {}", ioe);
                 return false;
@@ -650,18 +712,21 @@ public class Trakt {
 
     private Result getAllShows(String library, int trial){
         if (log.isDebugEnabled()) log.debug("getAllShows");
-        List<BaseShow> ret = null;
-        if (library.equals(Trakt.LIBRARY_WATCHED)) {
-            ret = exec(mTraktV2.sync().watchedShows(Extended.EPISODES));
-            if (ret == null)
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
-            return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
-        } else {
-            ret = exec(mTraktV2.sync().collectionShows(Extended.EPISODES));
-            if (ret == null)
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
-            return handleRet(null, null, ret, ObjectType.SHOWS_PER_SEASON);
+        List<BaseShow> result = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            List<BaseShow> pageData;
+            if (library.equals(Trakt.LIBRARY_WATCHED))
+                pageData = exec(mTraktV2.sync().watchedShows(page, PAGE_LIMIT, ExtendedShowsWatched.PROGRESS, Specials.TRUE));
+            else
+                pageData = exec(mTraktV2.sync().collectionShows(page, PAGE_LIMIT, Extended.EPISODES));
+            if (pageData == null)
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
         }
+        return handleRet(null, null, result, ObjectType.SHOWS_PER_SEASON);
     }
 
     // get playback status from trakt: this covers only videos with progress/resume not watched!
@@ -669,19 +734,7 @@ public class Trakt {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         long lastSyncUtcSeconds = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_TIME_SYNC_TO_DB_PROGRESS, 1);
 
-        // Enhancement 0: Coarse-grained quick check using existing timestamps
-        // Avoids detailed checks and API calls if we know nothing changed
-        long movieTime = getLastTimeMovieWatched(prefs);
-        long showTime = getLastTimeShowWatched(prefs);
-        long coarseLastActivityUtc = Math.max(movieTime, showTime);
-
-        if (coarseLastActivityUtc > 0 && coarseLastActivityUtc <= lastSyncUtcSeconds) {
-            if (log.isDebugEnabled()) log.debug("getPlaybackStatus: coarse-grained check shows no activity since last sync (lastActivity={}, lastSync={}), skipping playback sync",
-                    coarseLastActivityUtc, lastSyncUtcSeconds);
-            return handleRet(null, null, new ArrayList<>(), ObjectType.MOVIES);
-        }
-
-        // Enhancement 1: Skip sync if no resume point activity since last sync (use paused_at timestamps)
+        // Skip sync if no resume point activity since last sync (use paused_at timestamps)
         long lastActivityMoviePausedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_MOVIE_PAUSED, 0);
         long lastActivityEpisodePausedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_PAUSED, 0);
         long lastActivityPausedUtc = Math.max(lastActivityMoviePausedUtc, lastActivityEpisodePausedUtc);
@@ -704,7 +757,7 @@ public class Trakt {
             List<PlaybackResponse> list = exec(mTraktV2.sync().playback(null, null, null, PLAYBACK_HISTORY_SIZE));
             if (list == null) {
                 if (log.isDebugEnabled()) log.debug("getPlaybackStatus: no playback history");
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
             } else {
                 if (log.isDebugEnabled()) log.debug("getPlaybackStatus: playback history size is {}", list.size());
                 return handleRet(null, null, list, ObjectType.MOVIES);
@@ -726,7 +779,7 @@ public class Trakt {
 
         if(list == null) {
             if (log.isDebugEnabled()) log.debug("getPlaybackStatus: no playback history");
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         } else {
             if (log.isDebugEnabled()) log.debug("getPlaybackStatus: playback history size is {}", list.size());
             return handleRet(null, null, list, ObjectType.MOVIES);
@@ -738,19 +791,7 @@ public class Trakt {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         long lastSyncUtcSeconds = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_TIME_SYNC_TO_DB_WATCHED, 1);
 
-        // Enhancement 0: Coarse-grained quick check using existing timestamps
-        // Avoids detailed checks and API calls if we know nothing changed
-        long movieTime = getLastTimeMovieWatched(prefs);
-        long showTime = getLastTimeShowWatched(prefs);
-        long coarseLastActivityUtc = Math.max(movieTime, showTime);
-
-        if (coarseLastActivityUtc > 0 && coarseLastActivityUtc <= lastSyncUtcSeconds) {
-            if (log.isDebugEnabled()) log.debug("getWatchedStatus: coarse-grained check shows no activity since last sync (lastActivity={}, lastSync={}), skipping watched status sync",
-                    coarseLastActivityUtc, lastSyncUtcSeconds);
-            return handleRet(null, null, new ArrayList<>(), ObjectType.MOVIES);
-        }
-
-        // Enhancement 1: Skip sync if no watched activity since last sync (use watched_at timestamps)
+        // Skip sync if no watched activity since last sync (use watched_at timestamps)
         long lastActivityMovieWatchedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_MOVIE_WATCHED, 0);
         long lastActivityEpisodeWatchedUtc = prefs.getLong(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_WATCHED, 0);
         long lastActivityWatchedUtc = Math.max(lastActivityMovieWatchedUtc, lastActivityEpisodeWatchedUtc);
@@ -773,7 +814,7 @@ public class Trakt {
             List<HistoryEntry> list = exec(mTraktV2.sync().history(null, PLAYBACK_HISTORY_SIZE, null, null, null));
             if (list == null) {
                 if (log.isDebugEnabled()) log.debug("getWatchedStatus: no watched history");
-                return handleRet(null, new Exception(), null, ObjectType.NULL);
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
             } else {
                 if (log.isDebugEnabled()) log.debug("getWatchedStatus: watched history size is {}", list.size());
                 return handleRet(null, null, list, ObjectType.MOVIES);
@@ -795,7 +836,7 @@ public class Trakt {
 
         if(list == null) {
             if (log.isDebugEnabled()) log.debug("getWatchedStatus: no watched history");
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         } else {
             if (log.isDebugEnabled()) log.debug("getWatchedStatus: watched history size is {}", list.size());
             return handleRet(null, null, list, ObjectType.MOVIES);
@@ -815,7 +856,7 @@ public class Trakt {
         List<PlaybackResponse> list = exec(mTraktV2.sync().playback(null, null, null, 1000)); // Trakt hard cap
         if (list == null || list.isEmpty()) {
             if (log.isDebugEnabled()) log.debug("getPlaybackStatusFullHistory: no playback history");
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         }
         if (log.isDebugEnabled()) log.debug("getPlaybackStatusFullHistory: playback history size is {}", list.size());
         return handleRet(null, null, list, ObjectType.MOVIES);
@@ -833,7 +874,7 @@ public class Trakt {
         // If needed, add movies separately; API returns combined history so above is usually enough
         if (all.isEmpty()) {
             if (log.isDebugEnabled()) log.debug("getWatchedStatusFullHistory: no watched history");
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         }
         if (log.isDebugEnabled()) log.debug("getWatchedStatusFullHistory: watched history size is {}", all.size());
         return handleRet(null, null, all, ObjectType.MOVIES);
@@ -849,8 +890,11 @@ public class Trakt {
 
     public static class AuthentificationError extends Exception{};
     public static class AccountLockedError extends Exception{};
+    public static class ForbiddenError extends Exception{};
+    public static class ServiceUnavailableError extends Exception{};
 
     public <T> T exec(retrofit2.Call<T> call) {
+        mLastExecException = null;
         return exec(call, MAX_TRIAL);
     }
     public <T> T exec(retrofit2.Call<T> call, int remaining) {
@@ -863,8 +907,11 @@ public class Trakt {
                     // 409	Conflict - resource already created is happening often but no retry...
                     if (res.code() == 401 || res.code() == 409 ) {
                         if (remaining > 0) {
-                            refreshAccessToken();
-                            return exec(call, 0);
+                            if (refreshAccessToken()) {
+                                return exec(call.clone(), 0);
+                            } else {
+                                throw new AuthentificationError();
+                            }
                         } else {
                             throw new AuthentificationError();
                         }
@@ -879,32 +926,44 @@ public class Trakt {
                 }
             }
             return res.body();
+        } catch(AuthentificationError e) {
+            mLastExecException = e;
+            return null;
         } catch(Exception e) {
+            mLastExecException = e;
             try { Thread.sleep(WAIT_BEFORE_NEXT_TRIAL); } catch (Exception a) {}
             if(remaining == 0) {
                 return null;
             }
-            return exec(call, remaining-1);
+            return exec(call.clone(), remaining-1);
         }
     }
 
     public Result getAllMovies(final String library, int trial) {
         if (log.isDebugEnabled()) log.debug("getAllMovies");
-        List<BaseMovie> arg0 = null;
-        if (library.equals(Trakt.LIBRARY_WATCHED))
-            arg0 = exec(mTraktV2.sync().watchedMovies(Extended.FULL));
-        else
-            arg0 = exec(mTraktV2.sync().collectionMovies(Extended.FULL));
-        if(arg0 == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
-        return handleRet(null, null, arg0, ObjectType.MOVIES);
+        List<BaseMovie> result = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            List<BaseMovie> pageData;
+            if (library.equals(Trakt.LIBRARY_WATCHED))
+                pageData = exec(mTraktV2.sync().watchedMovies(page, PAGE_LIMIT, null));
+            else
+                pageData = exec(mTraktV2.sync().collectionMovies(page, PAGE_LIMIT, Extended.FULL));
+            if (pageData == null)
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
+        }
+        return handleRet(null, null, result, ObjectType.MOVIES);
     }
 
+    @SuppressWarnings("deprecation") // Trakt v2 lastActivities API
     public Result getLastActivity(int trial) {
         if (log.isDebugEnabled()) log.debug("getLastActivity");
         LastActivities ret = exec(mTraktV2.sync().lastActivities());
         if(ret == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, ret, ObjectType.LAST_ACTIVITY);
     }
 
@@ -917,7 +976,7 @@ public class Trakt {
 
         TraktList result = exec(mTraktV2.users().createList(UserSlug.ME, list));
         if (result == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, result, ObjectType.LIST);
     }
 
@@ -925,7 +984,7 @@ public class Trakt {
         if (log.isDebugEnabled()) log.debug("deleteList");
         Void response = exec(mTraktV2.users().deleteList(UserSlug.ME, id));
         if (response == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, response, ObjectType.NULL);
         /*
         if (response.getStatus() == 200)
@@ -935,20 +994,29 @@ public class Trakt {
          */
     }
 
+    @SuppressWarnings("deprecation") // Trakt v2 users().lists API
     public Result getLists(int trial) {
         if (log.isDebugEnabled()) log.debug("getLists");
         List<TraktList> lists = exec(mTraktV2.users().lists(UserSlug.ME));
         if (lists == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, lists, ObjectType.LIST);
     }
 
     public Result getListContent(int trial, int listId) {
         if (log.isDebugEnabled()) log.debug("getListContent");
-        List<ListEntry> items = exec(mTraktV2.users().listItems(UserSlug.ME, String.valueOf(listId), null));
-        if (items == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
-        return handleRet(null, null, items, ObjectType.LIST);
+        List<ListEntry> result = new ArrayList<>();
+        String id = String.valueOf(listId);
+        int page = 1;
+        while (true) {
+            List<ListEntry> pageData = exec(mTraktV2.users().listItems(UserSlug.ME, id, page, PAGE_LIMIT, null));
+            if (pageData == null)
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
+        }
+        return handleRet(null, null, result, ObjectType.LIST);
     }
 
     public Result removeVideoFromList(int trial, int listId, ListEntry onlineItem) {
@@ -965,11 +1033,11 @@ public class Trakt {
         }
         SyncResponse ret = exec(mTraktV2.users().deleteListItems(UserSlug.ME, String.valueOf(listId), syncItems));
         if (ret == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         if(ret.deleted.episodes+ret.deleted.movies>0)
             return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
         else
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
     }
 
     public Result addVideoToList(int trial, int listId, VideoStore.VideoList.VideoItem videoItem) {
@@ -993,11 +1061,11 @@ public class Trakt {
             ret = exec(mTraktV2.users().addListItems(UserSlug.ME, String.valueOf(listId), sitems));
         }
         if (ret == null)
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         if(ret.added.episodes+ret.added.movies>0)
             return handleRet(null, null, ret, ObjectType.SYNC_RESPONSE);
         else
-            return handleRet(null, new Exception(), null, ObjectType.NULL);
+            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
     }
 
     public Result getLastActivity() {
@@ -1147,6 +1215,10 @@ public class Trakt {
         editor.remove(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_EPISODE_PAUSED);
         editor.remove(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_LIST);
         editor.remove(TraktService.PREFERENCE_TRAKT_LAST_ACTIVITY_TIME_CHECKED_UTC);
+        editor.remove(TraktService.PREFERENCE_TRAKT_LAST_SYNC_STATUS);
+        editor.remove(TraktService.PREFERENCE_TRAKT_SKIPPED_NO_DURATION);
+        editor.remove(TraktService.PREFERENCE_TRAKT_SKIPPED_NO_METADATA);
+        editor.remove("trakt_last_sync");
     }
 
     public static void setFlagSyncPreference(SharedPreferences preferences, int flag) {
@@ -1189,6 +1261,8 @@ public class Trakt {
             editor.remove(Trakt.KEY_TRAKT_SHA1);
             editor.remove(Trakt.KEY_TRAKT_LIVE_SCROBBLING);
             editor.remove(Trakt.KEY_TRAKT_SYNC_COLLECTION);
+            editor.remove(Trakt.KEY_TRAKT_ACCESS_TOKEN);
+            editor.remove(Trakt.KEY_TRAKT_REFRESH_TOKEN);
         }
         if (userChanged) {
             clearTraktSyncState(editor);

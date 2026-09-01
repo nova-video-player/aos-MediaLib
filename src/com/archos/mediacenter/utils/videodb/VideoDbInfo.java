@@ -20,6 +20,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.BaseColumns;
@@ -81,6 +82,10 @@ public class VideoDbInfo implements Parcelable {
     public String scraperMovieId = null;
     public String scraperShowId = null;
     public String scraperEpisodeId = null;
+    public String scraperMovieImdbId = null;
+    public String scraperShowImdbId = null;
+    public String scraperOriginalLanguage = null;
+    public String scraperTitleLanguage = null;
     public int traktSeen = -1;
     public int traktLibrary = -1;
     public int traktResume = 0; // a negative value means -> has been set but not synchronized with trakt
@@ -122,6 +127,10 @@ public class VideoDbInfo implements Parcelable {
             VideoStore.Video.VideoColumns.SCRAPER_E_ONLINE_ID,          // 25
             VideoStore.Video.VideoColumns.ARCHOS_MEDIA_SCRAPER_ID,      // 26
             VideoStore.Video.VideoColumns.SCRAPER_C_ID,                 // 27
+            VideoStore.Video.VideoColumns.SCRAPER_M_IMDB_ID,            // 28
+            VideoStore.Video.VideoColumns.SCRAPER_S_IMDB_ID,            // 29
+            VideoStore.Video.VideoColumns.SCRAPER_ORIGINAL_LANGUAGE,    // 30
+            VideoStore.Video.VideoColumns.SCRAPER_TITLE_LANGUAGE,       // 31
     };
 
     public static final int IDX_ID =                     0;
@@ -152,6 +161,10 @@ public class VideoDbInfo implements Parcelable {
     public static final int IDX_SCRAPER_E_ONLINE_ID =   25;
     public static final int IDX_SCRAPER_ID =            26;
     public static final int IDX_SCRAPER_M_COLLECTION_ID = 27;
+    public static final int IDX_SCRAPER_M_IMDB_ID =     28;
+    public static final int IDX_SCRAPER_S_IMDB_ID =     29;
+    public static final int IDX_SCRAPER_ORIGINAL_LANGUAGE = 30;
+    public static final int IDX_SCRAPER_TITLE_LANGUAGE = 31;
     public static VideoDbInfo fromId(ContentResolver cr, long id) {
         if (id >= 0) {
             String[] selectionArgs = { String.valueOf(id) };
@@ -238,6 +251,10 @@ public class VideoDbInfo implements Parcelable {
             result.scraperMovieId = c.getString(IDX_SCRAPER_M_ONLINE_ID);
             result.scraperShowId = c.getString(IDX_SCRAPER_S_ONLINE_ID);
             result.scraperEpisodeId = c.getString(IDX_SCRAPER_E_ONLINE_ID);
+            result.scraperMovieImdbId = c.getString(IDX_SCRAPER_M_IMDB_ID);
+            result.scraperShowImdbId = c.getString(IDX_SCRAPER_S_IMDB_ID);
+            result.scraperOriginalLanguage = c.getString(IDX_SCRAPER_ORIGINAL_LANGUAGE);
+            result.scraperTitleLanguage = c.getString(IDX_SCRAPER_TITLE_LANGUAGE);
             result.scraperCollectionID = c.getInt(IDX_SCRAPER_M_COLLECTION_ID);
         }
         return result;
@@ -352,11 +369,18 @@ public class VideoDbInfo implements Parcelable {
         videoStereo = another.videoStereo;
         videoDefinition = another.videoDefinition;
         scraperCollectionID = another.scraperCollectionID;
+        scraperOriginalLanguage = another.scraperOriginalLanguage;
+        scraperTitleLanguage = another.scraperTitleLanguage;
     }
 
+    @SuppressWarnings("deprecation") // readParcelable: API 33+ branch uses typed form; else branch suppressed
     public VideoDbInfo(Parcel in) {
         id = in.readLong();
-        uri = in.readParcelable(Uri.class.getClassLoader());
+        if (Build.VERSION.SDK_INT >= 33) {
+            uri = in.readParcelable(Uri.class.getClassLoader(), Uri.class);
+        } else {
+            uri = in.readParcelable(Uri.class.getClassLoader());
+        }
         title = in.readString();
         duration = in.readInt();
         resume = in.readInt();
@@ -386,6 +410,8 @@ public class VideoDbInfo implements Parcelable {
         videoStereo = in.readInt();
         videoDefinition = in.readInt();
         scraperCollectionID = in.readInt();
+        scraperOriginalLanguage = in.readString();
+        scraperTitleLanguage = in.readString();
     }
 
     @Override
@@ -425,6 +451,8 @@ public class VideoDbInfo implements Parcelable {
         dest.writeInt(videoStereo);
         dest.writeInt(videoDefinition);
         dest.writeInt(scraperCollectionID);
+        dest.writeString(scraperOriginalLanguage);
+        dest.writeString(scraperTitleLanguage);
     }
 
     public static final Parcelable.Creator<VideoDbInfo> CREATOR = new Parcelable.Creator<VideoDbInfo>() {

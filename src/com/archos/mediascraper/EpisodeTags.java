@@ -23,6 +23,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.OperationApplicationException;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
@@ -130,6 +131,11 @@ public class EpisodeTags extends BaseTags {
         // Save or update the data for the TV show if needed
         //---------------------------------------------------
         long showId = mShowTags.save(context, videoId);
+
+        if (showId < 0) {
+            log.error("Save aborted for episode {}: parent show could not be persisted", mTitle);
+            return -1;
+        }
 
         if (log.isDebugEnabled()) log.debug("Save called for episode {} showId {} onlineId {}", mTitle, showId, mOnlineId);
 
@@ -320,8 +326,13 @@ public class EpisodeTags extends BaseTags {
             mAired + " / SHOW ID=" + mShowId + " / SHOW TAGS=" + mShowTags;
     }
 
+    @SuppressWarnings("deprecation") // readParcelable: API 33+ branch uses typed form; else branch suppressed
     public void readFromParcel(Parcel in) {
-        mShowTags = in.readParcelable(ShowTags.class.getClassLoader());
+        if (Build.VERSION.SDK_INT >= 33) {
+            mShowTags = in.readParcelable(ShowTags.class.getClassLoader(), ShowTags.class);
+        } else {
+            mShowTags = in.readParcelable(ShowTags.class.getClassLoader());
+        }
         mShowId = in.readLong();
         mSeason = in.readInt();
         mEpisode = in.readInt();
@@ -383,6 +394,16 @@ public class EpisodeTags extends BaseTags {
         if (file == null) return;
         if (getPosters() == null) {
             setPosters(ScraperImage.fromExistingCover(file.getPath(), Type.EPISODE_POSTER).asList());
+        }
+    }
+
+    @Override
+    public void setBackdrop(File file) {
+        if (file == null) return;
+        if (mShowTags != null) {
+            mShowTags.setBackdrop(file);
+        } else if (getBackdrops() == null || getBackdrops().isEmpty()) {
+            setBackdrops(ScraperImage.fromExistingCover(file.getPath(), Type.SHOW_BACKDROP).asList());
         }
     }
 

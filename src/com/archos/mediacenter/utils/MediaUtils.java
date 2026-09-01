@@ -327,6 +327,7 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
         v.setBackground(new BitmapDrawable(v.getResources(), bg));
     }
 
+    @SuppressWarnings("deprecation") // setStreamMute: API < 23 fallback
     public static void setStreamMusicMute(AudioManager audioManager, boolean mute) {
         Method setStreamMuteSystemNoUI;
         try {

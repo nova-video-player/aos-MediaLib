@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -43,6 +44,7 @@ import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -52,6 +54,7 @@ import com.archos.environment.ArchosUtils;
 import com.archos.medialib.R;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.DeleteFileCallback;
+import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediaprovider.ImportState;
 import com.archos.mediaprovider.MediaRetrieverService;
 import com.archos.mediaprovider.VideoDb;
@@ -85,6 +88,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     protected Handler mHandler;
     private HandlerThread mHandlerThread;
+    private volatile boolean mCleanupCalled = false;
     private VideoStoreImportImpl mImporter;
     private ContentObserver mContentObserver;
     private boolean mNeedToInitScraper = false;
@@ -94,8 +98,9 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private static Context mContext;
 
-    private static final int NOTIFICATION_ID = 6;
+    static final int NOTIFICATION_ID = 6;
     private NotificationManager nm;
+    private NotificationCompat.Builder nb;
     private Notification n;
     private static final String notifChannelId = "VideoStoreImportService_id";
     private static final String notifChannelName = "VideoStoreImportService";
@@ -111,12 +116,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (log.isDebugEnabled()) log.debug("VideoStoreImportService CTOR");
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        if (log.isDebugEnabled()) log.debug("VideoStoreImportService DTOR");
-        super.finalize();
-    }
-
+    @SuppressWarnings("deprecation") // ACTION_MEDIA_SCANNER_SCAN_FILE reused as internal IPC action string
     public static boolean startIfHandles(Context context, Intent broadcast) {
         String action = broadcast.getAction();
         if (log.isDebugEnabled()) log.debug("startIfHandles: action {}, data {}, extra {}", action, broadcast.getData(), broadcast.getAction());
@@ -137,8 +137,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             Intent serviceIntent = new Intent(context, VideoStoreImportService.class);
             serviceIntent.setAction(action);
             serviceIntent.setData(broadcast.getData());
-            if(broadcast.getExtras()!=null)
-                serviceIntent.putExtras(broadcast.getExtras()); //in case we have an extra... such as "recordLogExtra"
             if (log.isDebugEnabled()) log.debug("startIfHandles: apps is foreground startService and pass intent to self");
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startIfHandles", "apps is foreground mContext.startService and pass intent to self");
             context.startService(serviceIntent);
@@ -159,13 +157,31 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             if (nm != null)
                 nm.createNotificationChannel(nc);
         }
-        return new NotificationCompat.Builder(this, notifChannelId)
+        nb = new NotificationCompat.Builder(this, notifChannelId)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle(getString(R.string.video_store_import))
                 .setContentText("")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true)
-                .build();
+                .setTicker(null).setOnlyAlertOnce(true).setOngoing(true).setAutoCancel(true);
+        return nb.build();
+    }
+
+    public void updateScanNotification(int count, String path) {
+        if (nm != null && nb != null) {
+            String title = (count > 0) ? getString(R.string.video_store_import) + " (" + count + ")" : getString(R.string.video_store_import);
+            nb.setContentTitle(title)
+              .setContentText(path != null ? path : "");
+            nm.notify(NOTIFICATION_ID, nb.build());
+        }
+    }
+
+    public void updateDeleteNotification(int count, String path) {
+        if (nm != null && nb != null) {
+            String title = (count > 0) ? getString(R.string.local_cleanup) + " (" + count + ")" : getString(R.string.local_cleanup);
+            nb.setContentTitle(title)
+              .setContentText(path != null ? path : "");
+            nm.notify(NOTIFICATION_ID, nb.build());
+        }
     }
 
     @Override
@@ -175,7 +191,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         n = createNotification();
         if (log.isDebugEnabled()) log.debug("onCreate: create notification + startService {}", NOTIFICATION_ID);
         ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onCreate", "created notification + startService " + NOTIFICATION_ID + " notification null? " + (n == null));
-        ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // importer logic
         mImporter = new VideoStoreImportImpl(this);
         // setup background worker thread
@@ -246,6 +261,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         return ! ImportState.VIDEO.isDirty();
     }
 
+    @SuppressWarnings("deprecation") // ACTION_MEDIA_SCANNER_SCAN_FILE reused as internal IPC action string
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // intents are delivered here.
@@ -356,7 +372,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         Intent intent = new Intent(context, VideoStoreImportService.class);
         ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.startService", "app in foreground calling startService");
         if (log.isDebugEnabled()) log.debug("startService: app in foreground, starting service");
-        context.startService(intent); // triggers an initial video import on local storage because files might have been created meanwhile
+        try {
+            context.startService(intent); // triggers an initial video import on local storage because files might have been created meanwhile
+        } catch (IllegalStateException e) {
+            log.warn("startService: Failed to start VideoStoreImportService despite lifecycle check - timing issue", e);
+        }
     }
 
     public static void stopService(Context context) {
@@ -404,7 +424,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 // Always clear the foreground notification when processing has finished. Some
                 // commands (remove file, metadata update, etc.) do not go through doImport()
                 // and were previously leaving the foreground notification visible forever.
-                stopForeground(true);
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
                 if (msg.arg1 != DONT_KILL_SELF){
                     if (log.isDebugEnabled()) log.debug("handleMessage: stopSelf");
                     ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.handleMessage", "MESSAGE_KILL: stopSelf");
@@ -416,24 +436,36 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 }
                 break;
             case MESSAGE_IMPORT_INCR:
+                // Incremental import: runs while user may be active (bookmarks, watched state).
+                // Do not throttle notifications so user-visible updates remain responsive.
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_IMPORT_INCR");
                 doImport(false);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_IMPORT_FULL:
+                // Full import: long-running bulk write (startup or new storage). Throttle
+                // notifications to avoid flooding UI CursorLoaders with SQLite interrupted errors.
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_IMPORT_FULL");
-                doImport(true);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                VideoProvider.setImportInProgress(true);
+                try {
+                    doImport(true);
+                } finally {
+                    VideoProvider.setImportInProgress(false);
+                    // Unconditional refresh: covers both normal completion and partial writes
+                    // if doImport() throws after DB mutations have already occurred.
+                    getContentResolver().notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                }
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_UPDATE_METADATA:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_UPDATE_METADATA");
                 mImporter.doScan((Uri)msg.obj);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_REMOVE_FILE:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_REMOVE_FILE");
                 mImporter.doRemove((Uri)msg.obj);
-                mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (!mCleanupCalled) mHandler.obtainMessage(MESSAGE_KILL, DONT_KILL_SELF, msg.arg2).sendToTarget();
                 break;
             case MESSAGE_HIDE_VOLUME:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_HIDE_VOLUME storageId={}", msg.arg2);
@@ -525,76 +557,124 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
         // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
         // note that the db is being modified during import
-        while (isForeground) {
-            try {
-                c = db.rawQuery("SELECT * FROM delete_files WHERE name IN (SELECT cover_movie FROM MOVIE UNION SELECT cover_show FROM SHOW UNION SELECT cover_episode FROM EPISODE) ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                cCount = c.getCount();
-                if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files cover_movie new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
-                if (cCount == 0) {
-                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files cover_movie no more data");
-                    break; // break out if no more data
+        // The goal here is to remove from delete_files table all files that are still referenced in the database
+        // so that they are not deleted from disk in the next loop.
+        boolean protectionSuccess = true;
+        try {
+            // Optimize by using targeted deletes instead of one massive UNION query which is slow and can fail
+            String[] tablesAndColumns = {
+                    "MOVIE:cover_movie", "MOVIE:backdrop_movie",
+                    "SHOW:cover_show", "SHOW:backdrop_show",
+                    "EPISODE:cover_episode", "EPISODE:picture_episode",
+                    "movie_posters:m_po_large_file", "movie_posters:m_po_thumb_file",
+                    "movie_backdrops:m_bd_large_file", "movie_backdrops:m_bd_thumb_file",
+                    "show_posters:s_po_large_file", "show_posters:s_po_thumb_file",
+                    "show_backdrops:s_bd_large_file", "show_backdrops:s_bd_thumb_file",
+                    "movie_collection:m_coll_po_large_file", "movie_collection:m_coll_bd_large_file",
+                    "movie_collection:m_coll_po_thumb_file", "movie_collection:m_coll_bd_thumb_file"
+            };
+
+            for (String item : tablesAndColumns) {
+                if (!isForeground) {
+                    return;
                 }
-                while (c.moveToNext() && isForeground) {
-                    long id = c.getLong(0);
-                    String path = c.getString(1);
-                    long count = c.getLong(2);
-                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: clean delete_files {} path {} count {}", id, path, count);
-                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                    try {
-                        // path should not be null but deal with it and remove entry in this case
-                        if (path == null)
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id));
-                        else
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    } catch (SQLException sqlE) {
-                        log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
-                    }
+                String[] split = item.split(":");
+                String table = split[0];
+                String column = split[1];
+                try {
+                    db.execSQL("DELETE FROM delete_files WHERE name IN (SELECT " + column + " FROM " + table + " WHERE " + column + " IS NOT NULL)");
+                } catch (SQLException e) {
+                    log.error("processDeleteFileAndVobCallback: Error protecting metadata from {}.{}", table, column, e);
+                    protectionSuccess = false;
+                    break;
                 }
-            } catch (RuntimeException e) {
-                log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException",e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
-            } finally {
-                if (c != null) c.close();
             }
+        } catch (Exception e) {
+            log.error("processDeleteFileAndVobCallback: unexpected error during protection phase", e);
+            protectionSuccess = false;
         }
 
-        // note: seems that the delete is performed not as a table trigger anymore but elsewhere
-        // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
-        // note that the db is being modified during import
-        while (isForeground) {
-            try {
-                c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
-                cCount = c.getCount();
-                if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
-                if (cCount == 0) {
-                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files no more data");
-                    break; // break out if no more data
-                }
-                while (c.moveToNext() && isForeground) {
-                    long id = c.getLong(0);
-                    String path = c.getString(1);
-                    long count = c.getLong(2);
-                    if (log.isTraceEnabled()) log.trace("processDeleteFileAndVobCallback: delete_files {} path {} count {}", id, path, count);
-                    DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
-                    delCb.callback(DeleteFileCallbackArgs);
-                    // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
-                    try {
-                        // path should not be null but deal with it and remove entry in this case
-                        if (path == null)
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id));
-                        else
-                            db.execSQL("DELETE FROM delete_files WHERE _id=" + String.valueOf(id) + " AND name='" + path + "'");
-                    } catch (SQLException sqlE) {
-                        log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
+        if (!protectionSuccess) {
+            log.error("processDeleteFileAndVobCallback: protection phase failed, ABORTING disk deletion to prevent data loss");
+            return;
+        }
+
+        int remainingDeleteFiles;
+        try {
+            // COUNT(*) produces one scalar row; unlike the paged SELECT below it
+            // cannot fill a CursorWindow with delete_files entries.
+            remainingDeleteFiles = (int) DatabaseUtils.longForQuery(db,
+                    "SELECT COUNT(*) FROM delete_files", null);
+        } catch (RuntimeException e) {
+            log.error("processDeleteFileAndVobCallback: unable to count delete_files", e);
+            return;
+        }
+        boolean cleanupProgressStarted = remainingDeleteFiles > 0;
+        if (remainingDeleteFiles > 0) {
+            // doFull/doIncrementalImport has already returned to IDLE. Re-enter the
+            // local-import state so the existing L:D overlay can report this cleanup.
+            ImportState.VIDEO.setState(ImportState.State.REGULAR_IMPORT);
+            ImportState.VIDEO.setDeleting(true);
+            ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remainingDeleteFiles);
+            updateDeleteNotification(remainingDeleteFiles, "");
+        }
+        try {
+            // note: seems that the delete is performed not as a table trigger anymore but elsewhere
+            // break down the scan in batch of WINDOW_SIZE in order to avoid SQLiteBlobTooBigException: Row too big to fit into CursorWindow crash
+            // note that the db is being modified during import
+            while (isForeground) {
+                try {
+                    int deletedFromBatch = 0;
+                    c = db.rawQuery("SELECT * FROM delete_files ORDER BY " + BaseColumns._ID + " ASC LIMIT " + WINDOW_SIZE, null);
+                    cCount = c.getCount();
+                    if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files new batch fetching window={} -> cursor has size {}", WINDOW_SIZE, cCount);
+                    if (cCount == 0) {
+                        if (log.isDebugEnabled()) log.debug("processDeleteFileAndVobCallback: delete_files no more data");
+                        break; // break out if no more data
                     }
+                    while (c.moveToNext() && isForeground) {
+                        long id = c.getLong(0);
+                        String path = c.getString(1);
+                        long count = c.getLong(2);
+                        if (log.isTraceEnabled()) log.trace("processDeleteFileAndVobCallback: delete_files {} path {} count {}", id, path, count);
+                        DeleteFileCallbackArgs = new String[] {path, String.valueOf(count)};
+                        delCb.callback(DeleteFileCallbackArgs);
+                        // purge the db: delete row even if file delete callback fails (file deletion could be handled elsewhere
+                        try {
+                            // path should not be null but deal with it and remove entry in this case
+                            if (path == null)
+                                deletedFromBatch += db.delete("delete_files", BaseColumns._ID + "=?",
+                                        new String[] {String.valueOf(id)});
+                            else
+                                deletedFromBatch += db.delete("delete_files", BaseColumns._ID + "=? AND name=?",
+                                        new String[] {String.valueOf(id), path});
+                        } catch (SQLException sqlE) {
+                            log.error("processDeleteFileAndVobCallback: SQLException", sqlE);
+                        }
+                    }
+                    if (remainingDeleteFiles > 0) {
+                        remainingDeleteFiles = Math.max(0, remainingDeleteFiles - deletedFromBatch);
+                        ImportState.VIDEO.setNumberOfFilesRemainingToDelete(remainingDeleteFiles);
+                        updateDeleteNotification(remainingDeleteFiles, "");
+                        if (deletedFromBatch == 0) {
+                            log.error("processDeleteFileAndVobCallback: delete_files batch made no progress ({} remaining), stopping cleanup for this import",
+                                    remainingDeleteFiles);
+                            break;
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException or CursorWindowAllocationException",e);
+                    if (CRASH_ON_ERROR) throw new RuntimeException(e);
+                    break;
+                } finally {
+                    if (c != null) c.close();
                 }
-            } catch (RuntimeException e) {
-                log.error("processDeleteFileAndVobCallback: SQLException or IllegalStateException or CursorWindowAllocationException",e);
-                if (CRASH_ON_ERROR) throw new RuntimeException(e);
-                break;
-            } finally {
-                if (c != null) c.close();
+            }
+        } finally {
+            if (cleanupProgressStarted) {
+                ImportState.VIDEO.setDeleting(false);
+                ImportState.VIDEO.setNumberOfFilesRemainingToDelete(0);
+                ImportState.VIDEO.setState(ImportState.State.IDLE);
             }
         }
 
@@ -743,6 +823,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private void cleanup() {
         if (log.isDebugEnabled()) log.debug("cleanup");
+        mCleanupCalled = true;
 
         // Remove lifecycle observer to prevent callbacks to destroyed service
         ProcessLifecycleOwner.get().getLifecycle().removeObserver(this);

@@ -30,8 +30,6 @@ import java.util.List;
 
 import retrofit2.Response;
 
-import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
-
 // Search Movie for name query for year in language (ISO 639-1 code)
 // does not include_adult (Toggle the inclusion of adult titles)
 public class SearchMovie2 {
@@ -99,8 +97,9 @@ public class SearchMovie2 {
                     }
                 }
             }
-        } catch (IOException e) {
-            log.error("searchMovie: caught IOException");
+        } catch (Exception e) {
+            log.error("searchMovie: caught {}", e.getClass().getSimpleName());
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (log.isDebugEnabled()) log.debug(e.getMessage(), e);
             myResult.result = SearchMovieResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;

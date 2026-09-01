@@ -42,7 +42,9 @@ public class SimpleFileProcessor extends ImageProcessor {
     public void loadBitmap(LoadTaskItem taskItem) {
         if (taskItem.loadObject instanceof String) {
             String file = (String) taskItem.loadObject;
-            Bitmap bm = BitmapFactory.decodeFile(file);
+            int reqW = (mScale && mWidth > 0) ? mWidth : 500;
+            int reqH = (mScale && mHeight > 0) ? mHeight : 750;
+            Bitmap bm = BitmapUtils.decodeSampledBitmapFromFile(file, reqW, reqH);
             if (mScale && bm != null) {
                 bm = BitmapUtils.scaleThumbnailCenterCrop(bm, mWidth, mHeight);
             }

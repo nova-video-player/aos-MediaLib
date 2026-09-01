@@ -39,7 +39,6 @@ import org.jupnp.registry.DefaultRegistryListener;
 import org.jupnp.registry.Registry;
 import org.jupnp.registry.RegistryListener;
 import org.jupnp.android.AndroidUpnpService;
-import org.jupnp.android.AndroidUpnpServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,29 +143,10 @@ public class UpnpServiceManager {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getOldValue() != evt.getNewValue()) {
                             if (log.isDebugEnabled()) log.debug("NetworkState for {} changed:{} -> {}", evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
-                            //we need to restart upnp service on network state change
-                            if (mAndroidUpnpService!=null&&mState==State.RUNNING&&mHasStarted) {
-                                if (log.isDebugEnabled()) log.debug("restarting");
-                                mDevices.clear();
-                                informListenersOfDeviceListUpdate(mListeners);
-                                mAndroidUpnpService.getRegistry().removeListener(mRegistryListener);
-                                // Release multicast lock before unbinding
-                                if (mMulticastLock != null && mMulticastLock.isHeld()) {
-                                    mMulticastLock.release();
-                                    if (log.isDebugEnabled()) log.debug("MulticastLock released before restart");
-                                }
-                                try {
-                                    // Only unbind if service was actually connected to prevent crashes in AndroidUpnpServiceImpl
-                                    if (mServiceConnected) {
-                                        mContext.unbindService(mServiceConnection);
-                                        mServiceConnected = false;
-                                    }
-                                } catch (java.lang.IllegalArgumentException e) {
-                                    //this is bad, but I haven't found any other way to avoid "java.lang.IllegalArgumentException: Service not registered"
-                                }
-                                mState = State.NOT_RUNNING;
-                                start();
-                            }
+                            // Network callbacks run on a HandlerThread while service connection callbacks run
+                            // on the main thread. Serialize the restart with the service lifecycle so the
+                            // binder cannot be cleared between checking and using it.
+                            mUiHandler.post(UpnpServiceManager.this::restartAfterNetworkChange);
                         }
                     }
                 };
@@ -175,6 +155,37 @@ public class UpnpServiceManager {
             mState = State.NOT_RUNNING;
             if (log.isDebugEnabled()) log.debug("State NOT_RUNNING");
         }
+    }
+
+    private void restartAfterNetworkChange() {
+        AndroidUpnpService upnpService = mAndroidUpnpService;
+        if (upnpService == null || mState != State.RUNNING || !mHasStarted) {
+            return;
+        }
+
+        if (log.isDebugEnabled()) log.debug("restarting");
+        mDevices.clear();
+        informListenersOfDeviceListUpdate(mListeners);
+        Registry registry = upnpService.getRegistry();
+        if (registry != null) {
+            registry.removeListener(mRegistryListener);
+        }
+        // Release multicast lock before unbinding
+        if (mMulticastLock != null && mMulticastLock.isHeld()) {
+            mMulticastLock.release();
+            if (log.isDebugEnabled()) log.debug("MulticastLock released before restart");
+        }
+        try {
+            // Only unbind if service was actually connected to prevent crashes in AndroidUpnpServiceImpl
+            if (mServiceConnected) {
+                mContext.unbindService(mServiceConnection);
+                mServiceConnected = false;
+            }
+        } catch (java.lang.IllegalArgumentException e) {
+            //this is bad, but I haven't found any other way to avoid "java.lang.IllegalArgumentException: Service not registered"
+        }
+        mState = State.NOT_RUNNING;
+        start();
     }
 
     /**
@@ -215,7 +226,7 @@ public class UpnpServiceManager {
      */
     public void start() {
         if (mState == State.NOT_RUNNING || mState == State.ERROR) {
-            boolean result = mContext.bindService(new Intent(mContext, AndroidUpnpServiceImpl.class), mServiceConnection, Context.BIND_AUTO_CREATE);
+            boolean result = mContext.bindService(new Intent(mContext, NovaUpnpService.class), mServiceConnection, Context.BIND_AUTO_CREATE);
             if (result) {
                 mState = State.STARTING;
                 if (log.isDebugEnabled()) log.debug("State STARTING");
@@ -307,15 +318,22 @@ public class UpnpServiceManager {
 
             // Listen for discovery stuff
             if (mAndroidUpnpService != null) {
-                mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
-                mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+                try {
+                    mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
+                    mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+                } catch (Exception e) {
+                    log.error("onServiceConnected: failed to start UPnP service", e);
+                    mState = State.ERROR;
+                }
             } else {
                 log.error("onServiceConnected: mAndroidUpnpService is null!");
             }
 
             // Start searching for servers periodically
             mUiHandler.removeCallbacks(mPeriodicSearchRunnable); // better safe than sorry
-            mUiHandler.post(mPeriodicSearchRunnable); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            if (mState == State.RUNNING) {
+                mUiHandler.post(mPeriodicSearchRunnable); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            }
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -476,23 +494,33 @@ public class UpnpServiceManager {
      * @return
      */
     protected int execute(ActionCallback callback) {
-        if (mState!=State.RUNNING) {
+        if (mState != State.RUNNING || mAndroidUpnpService == null) {
             return -1;
         }
-
-        mAndroidUpnpService.getControlPoint().execute(callback);
-        return 0;
+        try {
+            mAndroidUpnpService.getControlPoint().execute(callback);
+            return 0;
+        } catch (Exception e) {
+            log.error("execute: failed", e);
+            return -1;
+        }
     }
 
-    private Runnable  mPeriodicSearchRunnable = new Runnable() {
+    private Runnable mPeriodicSearchRunnable = new Runnable() {
         @Override
         public void run() {
-            if (mAndroidUpnpService!=null) {
+            if (mAndroidUpnpService != null && mState == State.RUNNING) {
                 if (log.isDebugEnabled()) log.debug("mPeriodicSearchRunnable search");
-                mAndroidUpnpService.getControlPoint().search(new UDADeviceTypeHeader(new UDADeviceType("MediaServer")));
+                try {
+                    mAndroidUpnpService.getControlPoint().search(new UDADeviceTypeHeader(new UDADeviceType("MediaServer")));
+                } catch (Exception e) {
+                    log.error("mPeriodicSearchRunnable search failed", e);
+                }
             }
             // program next search
-            mUiHandler.postDelayed(mPeriodicSearchRunnable, SERVER_SEARCH_PERIOD_MS); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            if (mState == State.RUNNING) {
+                mUiHandler.postDelayed(mPeriodicSearchRunnable, SERVER_SEARCH_PERIOD_MS); // probably does not have to be on UI thread but it makes no harm and avoid having yet another handler
+            }
         }
     };
     public String getDeviceFriendlyName(String key){

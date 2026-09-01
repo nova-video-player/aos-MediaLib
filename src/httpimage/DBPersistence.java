@@ -73,7 +73,7 @@ public class DBPersistence implements BitmapCache{
                 throw new RuntimeException("shouldn't reach here, make sure the NAME collumn is unique: " + key);
             }
             c.moveToFirst();
-            byte[] binary = c.getBlob(c.getColumnIndex(DBImageTable.DATA));
+            byte[] binary = c.getBlob(c.getColumnIndexOrThrow(DBImageTable.DATA));
             
             if( binary != null ) {
                 bitmap = BitmapUtil.decodeByteArray(binary, HttpImageManager.DECODING_MAX_PIXELS_DEFAULT);

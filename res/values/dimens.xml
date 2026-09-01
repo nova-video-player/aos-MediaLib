@@ -79,10 +79,10 @@
 
     <!-- ============ GLOBAL RESUME ============ -->
     <dimen name="global_resume_music_height">70dip</dimen>
-    <dimen name="global_resume_video_height">92dip</dimen>
+    <dimen name="global_resume_video_height">56dip</dimen>
     <dimen name="global_resume_playbutton_width">40dip</dimen>
     <dimen name="global_resume_playbutton_height">40dip</dimen>
-    <dimen name="global_resume_icon_padding_left">30dip</dimen>
+    <dimen name="global_resume_icon_padding_left">10dip</dimen>
     <dimen name="global_resume_icon_padding_right">10dip</dimen>
 
     <!-- ============ QUICK ACTION ============ -->
@@ -94,8 +94,9 @@
     <dimen name="multi_quick_action_arrow_up_margin">0px</dimen>
     <dimen name="single_quick_action_arrow_down_margin">-16px</dimen>
     <dimen name="multi_quick_action_arrow_down_margin">-16px</dimen>
-    <dimen name="quick_action_row_height">50dip</dimen>
+    <dimen name="quick_action_row_height">72dip</dimen>
     <dimen name="quick_action_anchor_size">24dip</dimen>    <!-- used to adjust the vertical distance between the popup and the anchor -->
+    <dimen name="popup_arrow_overlap">2dip</dimen>
 
     <!-- based on base/core/res/res/layout/popup_menu_item_layout.xml -->
     <dimen name="track_menu_minWidth">196dip</dimen>
@@ -147,5 +148,7 @@
     <dimen name="help_overlay_horizontal_offset">25dip</dimen>
     <dimen name="help_overlay_vertical_offset">10dip</dimen>
     <dimen name="help_overlay_button_height">30dip</dimen>
+
+    <dimen name="musicplayer_album_art_size">250dip</dimen>
 
 </resources>

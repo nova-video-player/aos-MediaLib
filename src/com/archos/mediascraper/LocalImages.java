@@ -226,6 +226,11 @@ public class LocalImages {
                 seasonFileNoExt + ".jpg",
                 seasonFileNoExt + ".png",
         };
+        // modern Kodi/Jellyfin convention: "season03-poster.(jpg/png)", stored in the show root
+        String[] seasonPosterFiles = {
+                seasonFileNoExt + "-poster.jpg",
+                seasonFileNoExt + "-poster.png",
+        };
 
         if (parent != null) {
             // 1. check if our custom file exists
@@ -240,14 +245,31 @@ public class LocalImages {
                 if (result != null)
                     return result;
             }
-            // 3. episodes can be in season subfolders like
+            // 3. check seasonXX-poster files (covers a flat layout with no season subfolder)
+            for (String filename : seasonPosterFiles) {
+                Uri result = getIfAvailable(parent, filename);
+                if (result != null)
+                    return result;
+            }
+            // 4. episodes can be in season subfolders like
             // smb://server/share/TvShows/The Simpsons/Season 01/TheSimpsons.S01E01.avi
             // so check for images like
+            // smb://server/share/TvShows/The Simpsons/season01-poster.jpg
             // smb://server/share/TvShows/The Simpsons/season01.tbn
 
             // relocate uri for local files to writeable location to comply with API30
             Uri grandParent = FileUtils.getParentUrl(FileUtils.relocateNfoAppPublicDir(parent));
             if (grandParent != null) {
+                for (String filename : seasonPosterFiles) {
+                    Uri result = getIfAvailable(grandParent, filename);
+                    if (result != null)
+                        return result;
+                }
+                for (String filename : seasonFiles) {
+                    Uri result = getIfAvailable(grandParent, filename);
+                    if (result != null)
+                        return result;
+                }
                 Uri result = getIfAvailable(grandParent, parent.getLastPathSegment() + ".tbn");
                 if (result != null)
                     return result;
@@ -267,14 +289,20 @@ public class LocalImages {
     private static final String[] MATCH_LIST_BD_STATIC = {
         "fanart.png",
         "fanart.jpg",
+        "background.png",
+        "background.jpg",
     };
 
     /**
      * Tries to find a backdrop / fanart image for given video.
      * If videoTitle is given also tries to find an image that is based on
-     * that title in addition to filename based images
+     * that title in addition to filename based images.
+     * When searchParentFolder is true (shows/episodes), static fanart is also
+     * looked up in the parent show folder to support episodes in season
+     * subdirectories. It must stay false for movies so a film does not wrongly
+     * inherit a sibling-spanning Movies/fanart.jpg.
      */
-    public static Uri findBackdrop(Uri video, String videoTitle) {
+    public static Uri findBackdrop(Uri video, String videoTitle, boolean searchParentFolder) {
         if (video == null)
             return null;
 
@@ -301,10 +329,27 @@ public class LocalImages {
                 if (result != null)
                     return result;
             }
-            for (String extension : MATCH_LIST_BD_STATIC) {
-                result = getIfAvailable(parent, nameNoExt + extension);
+            // static names like fanart.jpg / background.jpg are not based on the
+            // filename, probe them directly in the parent folder
+            for (String filename : MATCH_LIST_BD_STATIC) {
+                result = getIfAvailable(parent, filename);
                 if (result != null)
                     return result;
+            }
+            // episodes can be in season subfolders like
+            // smb://server/share/TvShows/The Simpsons/Season 01/TheSimpsons.S01E01.avi
+            // so check the parent show folder for static fanart too. Only do this
+            // for shows/episodes: movies share a parent (e.g. Movies/) with unrelated
+            // films and must not inherit a sibling-spanning fanart.jpg.
+            if (searchParentFolder) {
+                Uri grandParent = FileUtils.getParentUrl(parent);
+                if (grandParent != null) {
+                    for (String filename : MATCH_LIST_BD_STATIC) {
+                        result = getIfAvailable(grandParent, filename);
+                        if (result != null)
+                            return result;
+                    }
+                }
             }
         }
         return result;

@@ -35,6 +35,7 @@ public class MediaFactory {
     private static final String KEY_FORCE_SW = "force_software_decoding";
     private static final String KEY_DEC_CHOICE = "dec_choice";
     private static final String KEY_AUDIO_INTERFACE_CHOICE = "audio_interface_choice";
+    private static final String KEY_AUDIO_DECODER_CHOICE = "audio_decoder_choice";
     private static final String KEY_CODEPAGE = "codepage";
 
     private static final Method AUDIO_MANAGER_GET_PROPERTY_METHOD;
@@ -92,6 +93,7 @@ public class MediaFactory {
         String subtitlePath = MediaUtils.getSubsDir(ctx).getPath()+"/";
         int decoder, codepage = 0;
         int audio_interface = 0;
+        int audio_decoder = LibAvos.MP_AUDIO_DECODER_FFMPEG;
 
         String str = prefs.getString(KEY_DEC_CHOICE, null);
 
@@ -117,6 +119,11 @@ public class MediaFactory {
             audio_interface = Integer.parseInt(str);
         }
 
+        str = prefs.getString(KEY_AUDIO_DECODER_CHOICE, null);
+        if (str != null) {
+            audio_decoder = Integer.parseInt(str);
+        }
+
         try {
             codepage = Integer.parseInt(prefs.getString(KEY_CODEPAGE, "0"));
         } catch (NumberFormatException e) {}
@@ -139,6 +146,7 @@ public class MediaFactory {
         if (LibAvos.isAvailable()) {
             LibAvos.setDecoder(decoder);
             LibAvos.setAudioInterface(audio_interface);
+            LibAvos.setAudioDecoder(audio_decoder);
             LibAvos.setCodepage(codepage);
             LibAvos.setSubtitlePath(subtitlePath);
             if (outputSampleRate != -1)

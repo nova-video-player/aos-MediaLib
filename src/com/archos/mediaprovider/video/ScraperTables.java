@@ -14,7 +14,11 @@
 
 package com.archos.mediaprovider.video;
 
+import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+
+import com.archos.mediaprovider.SQLiteUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -765,16 +769,16 @@ public final class ScraperTables {
             "delete from studio where _id in (select _id from v_studio_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
             "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
-            // set scraper type / id to -1 if something is refering this episode
-            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+            // set scraper type / id to 0 if something is refering this episode
+            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
             "END";
     private static final String EPISODE_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER episode_delete AFTER DELETE ON episode " +
                     "BEGIN " +
                     "DELETE FROM SHOW WHERE SHOW._id = OLD.show_episode AND NOT EXISTS (SELECT 1 FROM EPISODE WHERE show_episode = OLD.show_episode LIMIT 1); " +
-                    // set scraper type / id to -1 if something is refering this episode
-                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+                    // set scraper type / id to 0 if something is refering this episode
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
                     "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_SHOW + ";" +
                     "END";
     private static final String MOVIE_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS movie_delete";
@@ -784,8 +788,8 @@ public final class ScraperTables {
             "delete from actor where _id in (select _id from v_actor_deletable); " +
             "delete from director where _id in (select _id from v_director_deletable); " +
             "delete from genre where _id in (select _id from v_genre_deletable); " +
-            // set scraper type / id to -1 if something is refering this episode
-            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+            // set scraper type / id to 0 if something is refering this episode
+            "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
             "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
             "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
             + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
@@ -794,12 +798,36 @@ public final class ScraperTables {
     private static final String MOVIE_DELETE_TRIGGER_CREATE_v2 =
             "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
                     "BEGIN " +
-                    // set scraper type / id to -1 if something is refering this episode
-                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=-1, ArchosMediaScraper_type=-1 " +
+                    // set scraper type / id to 0 if something is refering this episode
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
                     "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
                     "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
                     + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + "  WHERE " + ScraperStore.Movie.COVER
                     + " = OLD.cover_movie));" +
+                    "END";
+    private static final String MOVIE_DELETE_TRIGGER_CREATE_v3 =
+            "CREATE TRIGGER movie_delete AFTER DELETE ON movie " +
+                    "BEGIN " +
+                    "UPDATE " + VideoOpenHelper.FILES_TABLE_NAME + " SET ArchosMediaScraper_id=0, ArchosMediaScraper_type=0 " +
+                    "WHERE ArchosMediaScraper_id = OLD._id AND ArchosMediaScraper_type = " + ScraperStore.SCRAPER_TYPE_MOVIE + ";" +
+                    "INSERT INTO delete_files(name,use_count) VALUES(OLD.cover_movie, (SELECT COUNT("
+                    + ScraperStore.Movie.COVER + ") FROM " + MOVIE_TABLE_NAME + " WHERE " + ScraperStore.Movie.COVER
+                    + " = OLD.cover_movie));" +
+                    "DELETE FROM movie_collection WHERE " + ScraperStore.MovieCollections.ID + " = OLD."
+                    + ScraperStore.Movie.COLLECTION_ID + " AND OLD." + ScraperStore.Movie.COLLECTION_ID + " > 0 " +
+                    "AND NOT EXISTS (SELECT 1 FROM " + MOVIE_TABLE_NAME + " WHERE "
+                    + ScraperStore.Movie.COLLECTION_ID + " = OLD." + ScraperStore.Movie.COLLECTION_ID + ");" +
+                    "END";
+    private static final String MOVIE_COLLECTION_REFERENCE_UPDATE_TRIGGER_CREATE =
+            "CREATE TRIGGER movie_collection_reference_update AFTER UPDATE OF " +
+                    ScraperStore.Movie.COLLECTION_ID + " ON " + MOVIE_TABLE_NAME + " " +
+                    "WHEN OLD." + ScraperStore.Movie.COLLECTION_ID + " IS NOT NEW." +
+                    ScraperStore.Movie.COLLECTION_ID + " " +
+                    "BEGIN " +
+                    "DELETE FROM movie_collection WHERE " + ScraperStore.MovieCollections.ID + " = OLD."
+                    + ScraperStore.Movie.COLLECTION_ID + " AND OLD." + ScraperStore.Movie.COLLECTION_ID + " > 0 " +
+                    "AND NOT EXISTS (SELECT 1 FROM " + MOVIE_TABLE_NAME + " WHERE "
+                    + ScraperStore.Movie.COLLECTION_ID + " = OLD." + ScraperStore.Movie.COLLECTION_ID + ");" +
                     "END";
     private static final String SHOW_DELETE_TRIGGER_DROP = "DROP TRIGGER IF EXISTS show_delete";
     private static final String SHOW_DELETE_TRIGGER_CREATE =
@@ -1180,6 +1208,18 @@ public final class ScraperTables {
                     ScraperStore.MovieCollections.BACKDROP_THUMB_URL + " TEXT,\n" +
                     ScraperStore.MovieCollections.BACKDROP_THUMB_FILE + " TEXT UNIQUE ON CONFLICT IGNORE\n" +
                     ")";
+    private static final String MOVIE_COLLECTION_DELETE_TRIGGER_CREATE =
+            "CREATE TRIGGER movie_collection_delete AFTER DELETE ON " + MOVIE_COLLECTION_TABLE_NAME + " " +
+                    "BEGIN " +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.POSTER_LARGE_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.POSTER_LARGE_FILE + " IS NOT NULL;" +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.BACKDROP_LARGE_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.BACKDROP_LARGE_FILE + " IS NOT NULL;" +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.POSTER_THUMB_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.POSTER_THUMB_FILE + " IS NOT NULL;" +
+                    "INSERT INTO delete_files(name) SELECT OLD." + ScraperStore.MovieCollections.BACKDROP_THUMB_FILE +
+                    " WHERE OLD." + ScraperStore.MovieCollections.BACKDROP_THUMB_FILE + " IS NOT NULL;" +
+                    "END";
 
     public static void create(SQLiteDatabase db) {
         db.execSQL(MOVIE_TABLE_CREATE);
@@ -1304,25 +1344,12 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX PRODUCES_SHOW_idx ON PRODUCES_SHOW(studio_produces)");
             db.execSQL("CREATE INDEX files_scraper_idx ON files(ArchosMediaScraper_id, ArchosMediaScraper_type)");
             db.execSQL("CREATE INDEX MOVIE_cover_idx ON MOVIE(cover_movie)");
-            // create new triggers that does not call each time a clean of v_.*_deletable tables: do it once at startup
-            // for some reasons sometimes the triggers are not dropped, thus make sure it is deleted
-            db.execSQL("pragma writable_schema = ON");
-            if (log.isDebugEnabled()) log.debug("upgradeTo: removing trigger movie_delete");
-            db.execSQL("delete from sqlite_master where name = 'movie_delete'");
-            if (log.isDebugEnabled()) log.debug("upgradeTo: removing trigger show_delete");
-            db.execSQL("delete from sqlite_master where name = 'show_delete'");
-            if (log.isDebugEnabled()) log.debug("upgradeTo: removing trigger episode_delete");
-            db.execSQL("delete from sqlite_master where name = 'episode_delete'");
-            db.execSQL("pragma writable_schema = OFF");
-            //db.execSQL(EPISODE_DELETE_TRIGGER_DROP);
-            //db.execSQL(SHOW_DELETE_TRIGGER_DROP);
-            //db.execSQL(MOVIE_DELETE_TRIGGER_DROP);
-            if (log.isDebugEnabled()) log.debug("upgradeTo: creating episode_delete trigger {}", EPISODE_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(EPISODE_DELETE_TRIGGER_CREATE_v2);
-            if (log.isDebugEnabled()) log.debug("upgradeTo: creating show_delete trigger {}", SHOW_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(SHOW_DELETE_TRIGGER_CREATE_v2);
-            if (log.isDebugEnabled()) log.debug("upgradeTo: creating movie_delete trigger {}", MOVIE_DELETE_TRIGGER_CREATE_v2);
-            db.execSQL(MOVIE_DELETE_TRIGGER_CREATE_v2);
+            // Replace the deletion triggers without the per-delete cleanup of v_.*_deletable views.
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] {"episode_delete", "show_delete", "movie_delete"},
+                    EPISODE_DELETE_TRIGGER_CREATE_v2,
+                    SHOW_DELETE_TRIGGER_CREATE_v2,
+                    MOVIE_DELETE_TRIGGER_CREATE_v2);
             if (log.isDebugEnabled()) log.debug("upgradeTo: all good");
         }
         if (toVersion == 40) {
@@ -1432,6 +1459,443 @@ public final class ScraperTables {
             db.execSQL("CREATE INDEX movie_backdrops_idx ON movie_backdrops(movie_id)");
 
             if (log.isDebugEnabled()) log.debug("upgradeTo: {} - movie poster/backdrop tables successfully migrated", toVersion);
+        }
+        if (toVersion == 54) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding performance indexes for metadata protection", toVersion);
+            db.execSQL("CREATE INDEX IF NOT EXISTS MOVIE_backdrop_idx ON " + MOVIE_TABLE_NAME + "(" + ScraperStore.Movie.BACKDROP + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS SHOW_cover_idx ON " + SHOW_TABLE_NAME + "(" + ScraperStore.Show.COVER + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS SHOW_backdrop_idx ON " + SHOW_TABLE_NAME + "(" + ScraperStore.Show.BACKDROP + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS EPISODE_cover_idx ON " + EPISODE_TABLE_NAME + "(" + ScraperStore.Episode.COVER + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS EPISODE_picture_idx ON " + EPISODE_TABLE_NAME + "(" + ScraperStore.Episode.PICTURE + ")");
+
+            // Indexes for auxiliary tables used in the protection query
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_posters_large_file_idx ON movie_posters(m_po_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_posters_thumb_file_idx ON movie_posters(m_po_thumb_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_backdrops_large_file_idx ON movie_backdrops(m_bd_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS movie_backdrops_thumb_file_idx ON movie_backdrops(m_bd_thumb_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_posters_large_file_idx ON show_posters(s_po_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_posters_thumb_file_idx ON show_posters(s_po_thumb_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_backdrops_large_file_idx ON show_backdrops(s_bd_large_file)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS show_backdrops_thumb_file_idx ON show_backdrops(s_bd_thumb_file)");
+        }
+        if (toVersion == 55) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - recreating movie/show/episode deletion triggers with 0/0 reset", toVersion);
+            // Keep the v39 performance optimization while applying the -1 -> 0 reset.
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] {"episode_delete", "show_delete", "movie_delete"},
+                    EPISODE_DELETE_TRIGGER_CREATE_v2,
+                    SHOW_DELETE_TRIGGER_CREATE_v2,
+                    MOVIE_DELETE_TRIGGER_CREATE_v2);
+        }
+        if (toVersion == 56) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - making artwork rows owner-specific", toVersion);
+            upgradeArtworkOwnershipTo56(db);
+        }
+        if (toVersion == 58) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding original language and title metadata", toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.ORIGINAL_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.ORIGINAL_TITLE + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.SPOKEN_LANGUAGES + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.ORIGINAL_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.ORIGINAL_TITLE + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.SPOKEN_LANGUAGES + " TEXT NOT NULL DEFAULT ''");
+            // Explicitly normalize rows from partially upgraded or externally restored databases.
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.ORIGINAL_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Movie.ORIGINAL_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Movie.ORIGINAL_LANGUAGE + ") = ''");
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.ORIGINAL_TITLE +
+                    " = '' WHERE " + ScraperStore.Movie.ORIGINAL_TITLE + " IS NULL");
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.SPOKEN_LANGUAGES +
+                    " = '' WHERE " + ScraperStore.Movie.SPOKEN_LANGUAGES + " IS NULL");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.ORIGINAL_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Show.ORIGINAL_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Show.ORIGINAL_LANGUAGE + ") = ''");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.ORIGINAL_TITLE +
+                    " = '' WHERE " + ScraperStore.Show.ORIGINAL_TITLE + " IS NULL");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.SPOKEN_LANGUAGES +
+                    " = '' WHERE " + ScraperStore.Show.SPOKEN_LANGUAGES + " IS NULL");
+        }
+        if (toVersion == 59) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding localized title language metadata", toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.TITLE_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.TITLE_LANGUAGE + " TEXT NOT NULL DEFAULT 'und'");
+            // Existing rows predate the information; retain an explicit, stable unknown value.
+            db.execSQL("UPDATE " + MOVIE_TABLE_NAME + " SET " + ScraperStore.Movie.TITLE_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Movie.TITLE_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Movie.TITLE_LANGUAGE + ") = ''");
+            db.execSQL("UPDATE " + SHOW_TABLE_NAME + " SET " + ScraperStore.Show.TITLE_LANGUAGE +
+                    " = 'und' WHERE " + ScraperStore.Show.TITLE_LANGUAGE + " IS NULL OR " +
+                    "trim(" + ScraperStore.Show.TITLE_LANGUAGE + ") = ''");
+        }
+        if (toVersion == 60) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding sort_name columns, indexes and backfilling titles", toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.SORT_NAME + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.SORT_NAME + " TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + MOVIE_COLLECTION_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.MovieCollections.SORT_NAME + " TEXT NOT NULL DEFAULT ''");
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_movie_sort_name ON " + MOVIE_TABLE_NAME +
+                    "(" + ScraperStore.Movie.SORT_NAME + " COLLATE LOCALIZED)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_show_sort_name ON " + SHOW_TABLE_NAME +
+                    "(" + ScraperStore.Show.SORT_NAME + " COLLATE LOCALIZED)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_coll_sort_name ON " + MOVIE_COLLECTION_TABLE_NAME +
+                    "(" + ScraperStore.MovieCollections.SORT_NAME + " COLLATE LOCALIZED)");
+
+            // Backfill movie sort names
+            Cursor cMovie = db.query(MOVIE_TABLE_NAME,
+                    new String[]{ScraperStore.Movie.ID, ScraperStore.Movie.NAME, ScraperStore.Movie.TITLE_LANGUAGE},
+                    null, null, null, null, null);
+            if (cMovie != null) {
+                while (cMovie.moveToNext()) {
+                    long id = cMovie.getLong(0);
+                    String name = cMovie.getString(1);
+                    String lang = cMovie.getString(2);
+                    String sortName = com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(name, lang);
+                    ContentValues cv = new ContentValues(1);
+                    cv.put(ScraperStore.Movie.SORT_NAME, sortName != null ? sortName : "");
+                    db.update(MOVIE_TABLE_NAME, cv, ScraperStore.Movie.ID + "=?", new String[]{String.valueOf(id)});
+                }
+                cMovie.close();
+            }
+
+            // Backfill show sort names
+            Cursor cShow = db.query(SHOW_TABLE_NAME,
+                    new String[]{ScraperStore.Show.ID, ScraperStore.Show.NAME, ScraperStore.Show.TITLE_LANGUAGE},
+                    null, null, null, null, null);
+            if (cShow != null) {
+                while (cShow.moveToNext()) {
+                    long id = cShow.getLong(0);
+                    String name = cShow.getString(1);
+                    String lang = cShow.getString(2);
+                    String sortName = com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(name, lang);
+                    ContentValues cv = new ContentValues(1);
+                    cv.put(ScraperStore.Show.SORT_NAME, sortName != null ? sortName : "");
+                    db.update(SHOW_TABLE_NAME, cv, ScraperStore.Show.ID + "=?", new String[]{String.valueOf(id)});
+                }
+                cShow.close();
+            }
+
+            // Backfill collection sort names (raw name)
+            Cursor cColl = db.query(MOVIE_COLLECTION_TABLE_NAME,
+                    new String[]{ScraperStore.MovieCollections.ID, ScraperStore.MovieCollections.NAME},
+                    null, null, null, null, null);
+            if (cColl != null) {
+                while (cColl.moveToNext()) {
+                    long id = cColl.getLong(0);
+                    String name = cColl.getString(1);
+                    ContentValues cv = new ContentValues(1);
+                    cv.put(ScraperStore.MovieCollections.SORT_NAME, name != null ? name : "");
+                    db.update(MOVIE_COLLECTION_TABLE_NAME, cv, ScraperStore.MovieCollections.ID + "=?", new String[]{String.valueOf(id)});
+                }
+                cColl.close();
+            }
+        }
+        if (toVersion == 61) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - cleaning orphan movie collections", toVersion);
+            SQLiteUtils.replaceTriggersCompat(db,
+                    new String[] {"movie_delete", "movie_collection_reference_update", "movie_collection_delete"},
+                    MOVIE_DELETE_TRIGGER_CREATE_v3,
+                    MOVIE_COLLECTION_REFERENCE_UPDATE_TRIGGER_CREATE,
+                    MOVIE_COLLECTION_DELETE_TRIGGER_CREATE);
+            db.execSQL("DELETE FROM " + MOVIE_COLLECTION_TABLE_NAME + " WHERE " +
+                    ScraperStore.MovieCollections.ID + " > 0 AND NOT EXISTS (SELECT 1 FROM " +
+                    MOVIE_TABLE_NAME + " WHERE " + ScraperStore.Movie.COLLECTION_ID + " = " +
+                    MOVIE_COLLECTION_TABLE_NAME + "." + ScraperStore.MovieCollections.ID + ")");
+        }
+    }
+
+    /**
+     * Rebuilds artwork tables so the same physical image may be referenced by
+     * multiple metadata owners. Only rows are duplicated; image files remain
+     * shared and are protected by VideoStoreImportService before disk deletion.
+     *
+     * Keep this migration compatible with SQLite 3.8 (Android API 23): do not use
+     * UPSERT, window functions, RETURNING, generated columns, or modern ALTER
+     * TABLE extensions here.
+     */
+    private static void upgradeArtworkOwnershipTo56(SQLiteDatabase db) {
+        rebuildMoviePostersTo56(db);
+        rebuildMovieBackdropsTo56(db);
+        rebuildShowPostersTo56(db);
+        rebuildShowBackdropsTo56(db);
+
+        // Owner lookup indexes used by scraper queries and foreign-key cascades.
+        db.execSQL("CREATE INDEX movie_posters_idx ON movie_posters(movie_id)");
+        db.execSQL("CREATE INDEX movie_backdrops_idx ON movie_backdrops(movie_id)");
+        db.execSQL("CREATE INDEX show_posters_idx ON show_posters(show_id)");
+        db.execSQL("CREATE INDEX show_backdrops_idx ON show_backdrops(show_id)");
+
+        // Recreate the v54 protection indexes removed with the old tables.
+        db.execSQL("CREATE INDEX movie_posters_large_file_idx ON movie_posters(m_po_large_file)");
+        db.execSQL("CREATE INDEX movie_posters_thumb_file_idx ON movie_posters(m_po_thumb_file)");
+        db.execSQL("CREATE INDEX movie_backdrops_large_file_idx ON movie_backdrops(m_bd_large_file)");
+        db.execSQL("CREATE INDEX movie_backdrops_thumb_file_idx ON movie_backdrops(m_bd_thumb_file)");
+        db.execSQL("CREATE INDEX show_posters_large_file_idx ON show_posters(s_po_large_file)");
+        db.execSQL("CREATE INDEX show_posters_thumb_file_idx ON show_posters(s_po_thumb_file)");
+        db.execSQL("CREATE INDEX show_backdrops_large_file_idx ON show_backdrops(s_bd_large_file)");
+        db.execSQL("CREATE INDEX show_backdrops_thumb_file_idx ON show_backdrops(s_bd_thumb_file)");
+    }
+
+    private static void rebuildMoviePostersTo56(SQLiteDatabase db) {
+        db.execSQL(DROP_MOVIE_POSTERS_DELETE_TRIGGER);
+        db.execSQL("DROP TABLE IF EXISTS movie_posters_v56");
+        db.execSQL("CREATE TABLE movie_posters_v56 (" +
+                "_id INTEGER PRIMARY KEY," +
+                "movie_id INTEGER REFERENCES movie(_id) ON DELETE CASCADE ON UPDATE CASCADE," +
+                "m_po_thumb_url TEXT," +
+                "m_po_thumb_file TEXT," +
+                "m_po_large_url TEXT," +
+                "m_po_large_file TEXT," +
+                "UNIQUE(movie_id,m_po_thumb_file) ON CONFLICT IGNORE," +
+                "UNIQUE(movie_id,m_po_large_file) ON CONFLICT IGNORE)");
+        db.execSQL("INSERT OR IGNORE INTO movie_posters_v56 " +
+                "SELECT * FROM movie_posters ORDER BY _id");
+
+        // Restore all artwork choices for duplicate files scraped as the same
+        // online movie. V51 could retain the rows for only one of those owners.
+        db.execSQL("INSERT OR IGNORE INTO movie_posters_v56 " +
+                "(movie_id,m_po_thumb_url,m_po_thumb_file,m_po_large_url,m_po_large_file) " +
+                "SELECT target._id,p.m_po_thumb_url,p.m_po_thumb_file,p.m_po_large_url,p.m_po_large_file " +
+                "FROM MOVIE target JOIN MOVIE source ON source.m_online_id=target.m_online_id " +
+                "JOIN movie_posters p ON p.movie_id=source._id " +
+                "WHERE target.m_online_id IS NOT NULL AND target.m_online_id>0");
+        // Clone the selected row for its actual owner. This repairs v51-v55
+        // databases where a global conflict returned another movie's row id.
+        db.execSQL("INSERT OR IGNORE INTO movie_posters_v56 " +
+                "(movie_id,m_po_thumb_url,m_po_thumb_file,m_po_large_url,m_po_large_file) " +
+                "SELECT MOVIE._id,p.m_po_thumb_url,p.m_po_thumb_file,p.m_po_large_url,p.m_po_large_file " +
+                "FROM MOVIE JOIN movie_posters p ON p._id=MOVIE.m_poster_id");
+        // A dangling selected id can still be recovered from the direct path.
+        db.execSQL("INSERT OR IGNORE INTO movie_posters_v56(movie_id,m_po_large_file) " +
+                "SELECT _id,cover_movie FROM MOVIE WHERE cover_movie IS NOT NULL");
+
+        remapSelectedArtwork(db, "MOVIE", "_id", "_id", "m_poster_id", "cover_movie",
+                "movie_posters", "movie_posters_v56", "movie_id",
+                "m_po_large_file", "m_po_thumb_file");
+
+        db.execSQL("DROP TABLE movie_posters");
+        db.execSQL("ALTER TABLE movie_posters_v56 RENAME TO movie_posters");
+        db.execSQL(CREATE_MOVIE_POSTERS_DELETE_TRIGGER);
+    }
+
+    private static void rebuildMovieBackdropsTo56(SQLiteDatabase db) {
+        db.execSQL(DROP_MOVIE_BACKDROPS_DELETE_TRIGGER);
+        db.execSQL("DROP TABLE IF EXISTS movie_backdrops_v56");
+        db.execSQL("CREATE TABLE movie_backdrops_v56 (" +
+                "_id INTEGER PRIMARY KEY," +
+                "movie_id INTEGER REFERENCES movie(_id) ON DELETE CASCADE ON UPDATE CASCADE," +
+                "m_bd_thumb_url TEXT," +
+                "m_bd_thumb_file TEXT," +
+                "m_bd_large_url TEXT," +
+                "m_bd_large_file TEXT," +
+                "UNIQUE(movie_id,m_bd_thumb_file) ON CONFLICT IGNORE," +
+                "UNIQUE(movie_id,m_bd_large_file) ON CONFLICT IGNORE)");
+        db.execSQL("INSERT OR IGNORE INTO movie_backdrops_v56 " +
+                "SELECT * FROM movie_backdrops ORDER BY _id");
+        db.execSQL("INSERT OR IGNORE INTO movie_backdrops_v56 " +
+                "(movie_id,m_bd_thumb_url,m_bd_thumb_file,m_bd_large_url,m_bd_large_file) " +
+                "SELECT target._id,b.m_bd_thumb_url,b.m_bd_thumb_file,b.m_bd_large_url,b.m_bd_large_file " +
+                "FROM MOVIE target JOIN MOVIE source ON source.m_online_id=target.m_online_id " +
+                "JOIN movie_backdrops b ON b.movie_id=source._id " +
+                "WHERE target.m_online_id IS NOT NULL AND target.m_online_id>0");
+        db.execSQL("INSERT OR IGNORE INTO movie_backdrops_v56 " +
+                "(movie_id,m_bd_thumb_url,m_bd_thumb_file,m_bd_large_url,m_bd_large_file) " +
+                "SELECT MOVIE._id,b.m_bd_thumb_url,b.m_bd_thumb_file,b.m_bd_large_url,b.m_bd_large_file " +
+                "FROM MOVIE JOIN movie_backdrops b ON b._id=MOVIE.m_backdrop_id");
+        db.execSQL("INSERT OR IGNORE INTO movie_backdrops_v56(movie_id,m_bd_large_file) " +
+                "SELECT _id,backdrop_movie FROM MOVIE WHERE backdrop_movie IS NOT NULL");
+
+        remapSelectedArtwork(db, "MOVIE", "_id", "_id", "m_backdrop_id", "backdrop_movie",
+                "movie_backdrops", "movie_backdrops_v56", "movie_id",
+                "m_bd_large_file", "m_bd_thumb_file");
+
+        db.execSQL("DROP TABLE movie_backdrops");
+        db.execSQL("ALTER TABLE movie_backdrops_v56 RENAME TO movie_backdrops");
+        db.execSQL(CREATE_MOVIE_BACKDROPS_DELETE_TRIGGER);
+    }
+
+    private static void rebuildShowPostersTo56(SQLiteDatabase db) {
+        db.execSQL(DROP_SHOW_POSTERS_DELETE_TRIGGER);
+        db.execSQL("DROP TABLE IF EXISTS show_posters_v56");
+        db.execSQL("CREATE TABLE show_posters_v56 (" +
+                "_id INTEGER PRIMARY KEY," +
+                "show_id INTEGER REFERENCES show(_id) ON DELETE CASCADE ON UPDATE CASCADE," +
+                "s_po_thumb_url TEXT," +
+                "s_po_thumb_file TEXT," +
+                "s_po_large_url TEXT," +
+                "s_po_large_file TEXT," +
+                "s_po_season INTEGER DEFAULT(-1)," +
+                "UNIQUE(show_id,s_po_thumb_file) ON CONFLICT IGNORE," +
+                "UNIQUE(show_id,s_po_large_file) ON CONFLICT IGNORE)");
+        db.execSQL("INSERT OR IGNORE INTO show_posters_v56 " +
+                "SELECT * FROM show_posters ORDER BY _id");
+        db.execSQL("INSERT OR IGNORE INTO show_posters_v56 " +
+                "(show_id,s_po_thumb_url,s_po_thumb_file,s_po_large_url,s_po_large_file,s_po_season) " +
+                "SELECT target._id,p.s_po_thumb_url,p.s_po_thumb_file,p.s_po_large_url,p.s_po_large_file,p.s_po_season " +
+                "FROM SHOW target JOIN SHOW source ON source.s_online_id=target.s_online_id " +
+                "JOIN show_posters p ON p.show_id=source._id " +
+                "WHERE target.s_online_id IS NOT NULL AND target.s_online_id>0");
+        db.execSQL("INSERT OR IGNORE INTO show_posters_v56 " +
+                "(show_id,s_po_thumb_url,s_po_thumb_file,s_po_large_url,s_po_large_file,s_po_season) " +
+                "SELECT SHOW._id,p.s_po_thumb_url,p.s_po_thumb_file,p.s_po_large_url,p.s_po_large_file,p.s_po_season " +
+                "FROM SHOW JOIN show_posters p ON p._id=SHOW.s_poster_id");
+        db.execSQL("INSERT OR IGNORE INTO show_posters_v56 " +
+                "(show_id,s_po_thumb_url,s_po_thumb_file,s_po_large_url,s_po_large_file,s_po_season) " +
+                "SELECT EPISODE.show_episode,p.s_po_thumb_url,p.s_po_thumb_file,p.s_po_large_url,p.s_po_large_file,p.s_po_season " +
+                "FROM EPISODE JOIN show_posters p ON p._id=EPISODE.e_poster_id " +
+                "WHERE EPISODE.show_episode IS NOT NULL");
+        db.execSQL("INSERT OR IGNORE INTO show_posters_v56(show_id,s_po_large_file) " +
+                "SELECT _id,cover_show FROM SHOW WHERE cover_show IS NOT NULL");
+        db.execSQL("INSERT OR IGNORE INTO show_posters_v56(show_id,s_po_large_file) " +
+                "SELECT show_episode,cover_episode FROM EPISODE " +
+                "WHERE show_episode IS NOT NULL AND cover_episode IS NOT NULL");
+
+        remapSelectedArtwork(db, "SHOW", "_id", "_id", "s_poster_id", "cover_show",
+                "show_posters", "show_posters_v56", "show_id",
+                "s_po_large_file", "s_po_thumb_file");
+        remapSelectedArtwork(db, "EPISODE", "_id", "show_episode", "e_poster_id", "cover_episode",
+                "show_posters", "show_posters_v56", "show_id",
+                "s_po_large_file", "s_po_thumb_file");
+
+        db.execSQL("DROP TABLE show_posters");
+        db.execSQL("ALTER TABLE show_posters_v56 RENAME TO show_posters");
+        db.execSQL(CREATE_SHOW_POSTERS_DELETE_TRIGGER);
+    }
+
+    private static void rebuildShowBackdropsTo56(SQLiteDatabase db) {
+        db.execSQL(DROP_SHOW_BACKDROPS_DELETE_TRIGGER);
+        db.execSQL("DROP TABLE IF EXISTS show_backdrops_v56");
+        db.execSQL("CREATE TABLE show_backdrops_v56 (" +
+                "_id INTEGER PRIMARY KEY," +
+                "show_id INTEGER REFERENCES show(_id) ON DELETE CASCADE ON UPDATE CASCADE," +
+                "s_bd_thumb_url TEXT," +
+                "s_bd_thumb_file TEXT," +
+                "s_bd_large_url TEXT," +
+                "s_bd_large_file TEXT," +
+                "UNIQUE(show_id,s_bd_thumb_file) ON CONFLICT IGNORE," +
+                "UNIQUE(show_id,s_bd_large_file) ON CONFLICT IGNORE)");
+        db.execSQL("INSERT OR IGNORE INTO show_backdrops_v56 " +
+                "SELECT * FROM show_backdrops ORDER BY _id");
+        db.execSQL("INSERT OR IGNORE INTO show_backdrops_v56 " +
+                "(show_id,s_bd_thumb_url,s_bd_thumb_file,s_bd_large_url,s_bd_large_file) " +
+                "SELECT target._id,b.s_bd_thumb_url,b.s_bd_thumb_file,b.s_bd_large_url,b.s_bd_large_file " +
+                "FROM SHOW target JOIN SHOW source ON source.s_online_id=target.s_online_id " +
+                "JOIN show_backdrops b ON b.show_id=source._id " +
+                "WHERE target.s_online_id IS NOT NULL AND target.s_online_id>0");
+        db.execSQL("INSERT OR IGNORE INTO show_backdrops_v56 " +
+                "(show_id,s_bd_thumb_url,s_bd_thumb_file,s_bd_large_url,s_bd_large_file) " +
+                "SELECT SHOW._id,b.s_bd_thumb_url,b.s_bd_thumb_file,b.s_bd_large_url,b.s_bd_large_file " +
+                "FROM SHOW JOIN show_backdrops b ON b._id=SHOW.s_backdrop_id");
+        db.execSQL("INSERT OR IGNORE INTO show_backdrops_v56(show_id,s_bd_large_file) " +
+                "SELECT _id,backdrop_show FROM SHOW WHERE backdrop_show IS NOT NULL");
+
+        remapSelectedArtwork(db, "SHOW", "_id", "_id", "s_backdrop_id", "backdrop_show",
+                "show_backdrops", "show_backdrops_v56", "show_id",
+                "s_bd_large_file", "s_bd_thumb_file");
+
+        db.execSQL("DROP TABLE show_backdrops");
+        db.execSQL("ALTER TABLE show_backdrops_v56 RENAME TO show_backdrops");
+        db.execSQL(CREATE_SHOW_BACKDROPS_DELETE_TRIGGER);
+    }
+
+    /**
+     * Remap a selected image id without correlated UPDATE syntax. Some Android
+     * SQLite releases do not resolve the target table from nested JOIN clauses.
+     */
+    private static void remapSelectedArtwork(SQLiteDatabase db, String ownerTable,
+            String rowIdColumn, String imageOwnerSourceColumn, String selectedIdColumn,
+            String directFileColumn, String oldImageTable, String newImageTable,
+            String imageOwnerColumn, String largeFileColumn, String thumbFileColumn) {
+        String[] projection = {
+                rowIdColumn, imageOwnerSourceColumn, selectedIdColumn, directFileColumn
+        };
+        String selection = selectedIdColumn + " IS NOT NULL OR " + directFileColumn + " IS NOT NULL";
+        try (Cursor owners = db.query(ownerTable, projection, selection,
+                null, null, null, null)) {
+            while (owners.moveToNext()) {
+                long rowId = owners.getLong(0);
+                Long imageOwnerId = owners.isNull(1) ? null : owners.getLong(1);
+                Long selectedId = owners.isNull(2) ? null : owners.getLong(2);
+                String directFile = owners.getString(3);
+                Long remappedId = findOwnedArtworkId(db, oldImageTable, newImageTable,
+                        imageOwnerColumn, largeFileColumn, thumbFileColumn,
+                        imageOwnerId, selectedId, directFile);
+
+                ContentValues update = new ContentValues();
+                if (remappedId == null) {
+                    update.putNull(selectedIdColumn);
+                } else {
+                    update.put(selectedIdColumn, remappedId);
+                }
+                db.update(ownerTable, update, rowIdColumn + "=?",
+                        new String[] { String.valueOf(rowId) });
+            }
+        }
+    }
+
+    private static Long findOwnedArtworkId(SQLiteDatabase db, String oldImageTable,
+            String newImageTable, String imageOwnerColumn, String largeFileColumn,
+            String thumbFileColumn, Long ownerId, Long selectedId, String directFile) {
+        if (ownerId == null) {
+            return null;
+        }
+
+        String selectedLargeFile = null;
+        String selectedThumbFile = null;
+        if (selectedId != null) {
+            try (Cursor selected = db.query(oldImageTable,
+                    new String[] { largeFileColumn, thumbFileColumn }, "_id=?",
+                    new String[] { String.valueOf(selectedId) }, null, null, null)) {
+                if (selected.moveToFirst()) {
+                    selectedLargeFile = selected.getString(0);
+                    selectedThumbFile = selected.getString(1);
+                }
+            }
+        }
+
+        Long result = queryOwnedArtworkId(db, newImageTable, imageOwnerColumn,
+                largeFileColumn, ownerId, selectedLargeFile);
+        if (result == null) {
+            result = queryOwnedArtworkId(db, newImageTable, imageOwnerColumn,
+                    thumbFileColumn, ownerId, selectedThumbFile);
+        }
+        if (result == null && selectedId != null) {
+            try (Cursor sameId = db.query(newImageTable, new String[] { "_id" },
+                    "_id=? AND " + imageOwnerColumn + "=?",
+                    new String[] { String.valueOf(selectedId), String.valueOf(ownerId) },
+                    null, null, null)) {
+                if (sameId.moveToFirst()) {
+                    result = sameId.getLong(0);
+                }
+            }
+        }
+        if (result == null) {
+            result = queryOwnedArtworkId(db, newImageTable, imageOwnerColumn,
+                    largeFileColumn, ownerId, directFile);
+        }
+        return result;
+    }
+
+    private static Long queryOwnedArtworkId(SQLiteDatabase db, String imageTable,
+            String imageOwnerColumn, String fileColumn, long ownerId, String file) {
+        if (file == null) {
+            return null;
+        }
+        try (Cursor cursor = db.query(imageTable, new String[] { "_id" },
+                imageOwnerColumn + "=? AND " + fileColumn + "=?",
+                new String[] { String.valueOf(ownerId), file },
+                null, null, "_id", "1")) {
+            return cursor.moveToFirst() ? cursor.getLong(0) : null;
         }
     }
 }

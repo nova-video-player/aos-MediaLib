@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">Đang lấy thông tin</string>
     <string name="remaining_videos_to_process">Các tệp phương tiện còn lại sẽ được xử lý:</string>
     <string name="video_store_import">Nhập tệp phương tiện cục bộ</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

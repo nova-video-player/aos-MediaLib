@@ -14,22 +14,28 @@
 
 package com.archos.mediascraper;
 
-import android.app.IntentService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
+import android.os.Process;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.archos.medialib.R;
+import com.archos.mediaprovider.video.ScraperTables;
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediascraper.themoviedb3.CollectionInfo;
 import com.archos.mediascraper.themoviedb3.CollectionResult;
@@ -44,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import okhttp3.Cache;
 
-public class AllCollectionScrapeService extends IntentService implements DefaultLifecycleObserver {
+public class AllCollectionScrapeService extends Service implements DefaultLifecycleObserver {
     private static final String PREFERENCE_NAME = "themoviedb.org";
 
     private static final Logger log = LoggerFactory.getLogger(AllCollectionScrapeService.class);
@@ -63,6 +69,8 @@ public class AllCollectionScrapeService extends IntentService implements Default
     private static final String notifChannelId = "AllCollectionScrapeService_id";
     private static final String notifChannelName = "AllCollectionScrapeService";
     private static final String notifChannelDescr = "AllCollectionScrapeService";
+    private static volatile boolean sCollectionScrapeInProgress = false;
+    private static volatile int sNumberOfCollectionsRemainingToProcess = 0;
     private volatile boolean isForeground = false;
 
     private static Context mContext;
@@ -75,6 +83,21 @@ public class AllCollectionScrapeService extends IntentService implements Default
 
     static String apiKey = null;
 
+    private volatile Looper mServiceLooper;
+    private volatile ServiceHandler mServiceHandler;
+
+    private final class ServiceHandler extends Handler {
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            onHandleIntent((Intent) msg.obj);
+            stopSelf(msg.arg1);
+        }
+    }
+
     public static synchronized void reauth() {
         tmdb = new MyTmdb(apiKey, cache);
         collectionService = tmdb.collectionService();
@@ -83,6 +106,15 @@ public class AllCollectionScrapeService extends IntentService implements Default
     public static synchronized CollectionsService getCollectionService() {
         if (collectionService == null) reauth();
         return collectionService;
+    }
+
+    /** State consumed by the Leanback scanner/scraper progress overlay. */
+    public static boolean isCollectionScrapeInProgress() {
+        return sCollectionScrapeInProgress;
+    }
+
+    public static int getNumberOfCollectionsRemainingToProcess() {
+        return sNumberOfCollectionsRemainingToProcess;
     }
 
     /**
@@ -129,36 +161,38 @@ public class AllCollectionScrapeService extends IntentService implements Default
     public void rescrapeCollection(Context context, Long collectionId) {
         if (log.isDebugEnabled()) log.debug("rescrapeCollection: {}", collectionId);
         if (collectionId != null && collectionId > 0) {
-            handleCursor(getCollectionCursor(collectionId));
+            handleCursor(getCollectionCursor(collectionId),
+                    getString(R.string.rescraping_collection) + " " + collectionId);
         }
         removeTask(collectionId);
-        stopSelf();
     }
 
     public void rescrapeAllCollections(Context context) {
         if (log.isDebugEnabled()) log.debug("rescrapeAllCollections");
-        handleCursor(getAllCursor());
+        handleCursor(getAllCursor(), getString(R.string.rescraping_collections));
         removeAllTask();
-        stopSelf();
     }
 
     public void rescrapeNoImageCollections(Context context) {
         if (log.isDebugEnabled()) log.debug("rescrapeNoImageCollections");
-        handleCursor(getNoImageCursor());
+        handleCursor(getNoImageCursor(), getString(R.string.rescraping_noimage_collections));
         removeNoImageTask();
-        stopSelf();
     }
 
     public AllCollectionScrapeService() {
-        super(AllCollectionScrapeService.class.getSimpleName());
+        super();
         if (log.isDebugEnabled()) log.debug("AllCollectionScrapeService");
-        setIntentRedelivery(true);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
         if (log.isDebugEnabled()) log.debug("onCreate");
+
+        HandlerThread thread = new HandlerThread("AllCollectionScrapeService", Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+        mServiceLooper = thread.getLooper();
+        mServiceHandler = new ServiceHandler(mServiceLooper);
 
         // ensure cache is initialized
         synchronized (AllCollectionScrapeService.class) {
@@ -169,7 +203,7 @@ public class AllCollectionScrapeService extends IntentService implements Default
         // need to do that early to avoid ANR on Android 26+
         nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName, nm.IMPORTANCE_LOW);
+            NotificationChannel nc = new NotificationChannel(notifChannelId, notifChannelName, NotificationManager.IMPORTANCE_LOW);
             nc.setDescription(notifChannelDescr);
             if (nm != null) nm.createNotificationChannel(nc);
         }
@@ -187,6 +221,10 @@ public class AllCollectionScrapeService extends IntentService implements Default
     @Override
     public void onDestroy() {
         if (log.isDebugEnabled()) log.debug("onDestroy");
+        ProcessLifecycleOwner.get().getLifecycle().removeObserver(this);
+        if (mServiceLooper != null) {
+            mServiceLooper.quit();
+        }
         cleanup();
         super.onDestroy();
     }
@@ -206,15 +244,19 @@ public class AllCollectionScrapeService extends IntentService implements Default
             if (addNoImageTask() && addAllTask()) // if already AllTask, no need for NoImageTask
                 processIntent = true;
         }
-        if (processIntent) {
-            return super.onStartCommand(intent, flags, startId);
-        }
 
-        // super will pass an intent to onHandleIntent that is not handled
-        return super.onStartCommand(VOID_INTENT, flags, startId);
+        Message msg = mServiceHandler.obtainMessage();
+        msg.arg1 = startId;
+        msg.obj = processIntent ? intent : VOID_INTENT;
+        mServiceHandler.sendMessage(msg);
+        return START_REDELIVER_INTENT;
     }
 
     @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
     protected void onHandleIntent(Intent intent) {
         String action = intent != null ? intent.getAction() : null;
         Long collectionId = intent != null ? intent.getLongExtra("collectionId", -1) : null;
@@ -230,42 +272,42 @@ public class AllCollectionScrapeService extends IntentService implements Default
 
     private void rescrapeAllCollections() {
         if (log.isDebugEnabled()) log.debug("rescrapeAllCollections");
-        nb.setContentText(getString(R.string.rescraping_collections));
-        nm.notify(NOTIFICATION_ID, nb.build());
-        handleCursor(getAllCursor());
+        handleCursor(getAllCursor(), getString(R.string.rescraping_collections));
         removeAllTask();
-        stopSelf();
     }
 
     private void rescrapeNoImageCollections() {
         if (log.isDebugEnabled()) log.debug("rescrapeNoImageCollections");
-        nb.setContentText(getString(R.string.rescraping_noimage_collections));
-        nm.notify(NOTIFICATION_ID, nb.build());
-        handleCursor(getNoImageCursor());
+        handleCursor(getNoImageCursor(), getString(R.string.rescraping_noimage_collections));
         removeNoImageTask();
-        stopSelf();
     }
 
     private void rescrapeCollection(Long collectionId) {
         if (log.isDebugEnabled()) log.debug("rescrapeCollection: {}", collectionId);
         if (collectionId != null && collectionId > 0) {
-            // update notification
-            nb.setContentText(getString(R.string.rescraping_collection) + " " + collectionId.toString());
-            nm.notify(NOTIFICATION_ID, nb.build());
-            handleCursor(getCollectionCursor(collectionId));
+            handleCursor(getCollectionCursor(collectionId),
+                    getString(R.string.rescraping_collection) + " " + collectionId);
         }
         removeTask(collectionId);
-        stopSelf();
     }
 
-    private void handleCursor(Cursor cursor) {
+    private void handleCursor(Cursor cursor, String notificationTitle) {
+        if (cursor == null) {
+            sNumberOfCollectionsRemainingToProcess = 0;
+            sCollectionScrapeInProgress = false;
+            return;
+        }
 
-        if (log.isDebugEnabled()) log.debug("bind: {}", DatabaseUtils.dumpCursorToString(cursor));
-        
+        int remaining = cursor.getCount();
+        sNumberOfCollectionsRemainingToProcess = remaining;
+        sCollectionScrapeInProgress = remaining > 0;
+        updateNotification(notificationTitle, remaining);
+        if (log.isDebugEnabled()) log.debug("handleCursor: {} collection candidate(s)", remaining);
+
         // get configured language
         String language = Scraper.getLanguage(getApplicationContext());
 
-        if (cursor != null) {
+        try {
             // do the processing
             while (cursor.moveToNext() && isForeground) {
                 long collectionId = cursor.getLong(0);
@@ -286,16 +328,31 @@ public class AllCollectionScrapeService extends IntentService implements Default
                     collectionTag.downloadImage(getApplicationContext());
                     collectionTag.save(getApplicationContext(), true);
                 }
+                remaining--;
+                sNumberOfCollectionsRemainingToProcess = remaining;
+                updateNotification(notificationTitle, remaining);
             }
+        } finally {
+            sNumberOfCollectionsRemainingToProcess = 0;
+            sCollectionScrapeInProgress = false;
             cursor.close();
         }
+    }
+
+    private void updateNotification(String title, int remaining) {
+        String countedTitle = remaining > 0 ? title + " (" + remaining + ")" : title;
+        nb.setContentTitle(countedTitle).setContentText("");
+        nm.notify(NOTIFICATION_ID, nb.build());
     }
 
     private static final Uri URI = ScraperStore.MovieCollections.URI.BASE;
     private static final String[] PROJECTION = {
             ScraperStore.MovieCollections.ID    // 0
     };
-    private static final String SELECTION_ALL = ScraperStore.MovieCollections.ID + " > 0";
+    // Refresh only collections still represented in the current movie library.
+    private static final String SELECTION_ALL = ScraperStore.MovieCollections.ID + " IN (SELECT DISTINCT "
+            + ScraperStore.Movie.COLLECTION_ID + " FROM " + ScraperTables.MOVIE_TABLE_NAME + " WHERE "
+            + ScraperStore.Movie.COLLECTION_ID + " > 0)";
     private static final String SELECTION_COLLECTION = ScraperStore.MovieCollections.ID + " = ?";
 
     private static final String SELECTION_NOIMAGE = ScraperStore.MovieCollections.ID + " > 0 AND ( "
@@ -320,6 +377,8 @@ public class AllCollectionScrapeService extends IntentService implements Default
 
     private void cleanup() {
         isForeground = false;
+        sNumberOfCollectionsRemainingToProcess = 0;
+        sCollectionScrapeInProgress = false;
         // Clear the scheduled tasks
         sScheduledTasks.clear();
         // Cancel the notification

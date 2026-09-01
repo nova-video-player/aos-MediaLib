@@ -32,6 +32,30 @@ public class SQLiteUtils {
     public static void dropTrigger(SQLiteDatabase db, String name) {
         db.execSQL("DROP TRIGGER IF EXISTS " + name);
     }
+    public static void dropTriggersCompat(SQLiteDatabase db, String... names) {
+        for (String name : names) {
+            dropTrigger(db, name);
+        }
+
+        db.execSQL("PRAGMA writable_schema = ON");
+        try {
+            for (String name : names) {
+                db.execSQL("DELETE FROM sqlite_master WHERE name = '" + name + "'");
+            }
+        } finally {
+            db.execSQL("PRAGMA writable_schema = OFF");
+        }
+    }
+    public static void replaceTriggersCompat(SQLiteDatabase db, String[] names, String... createStatements) {
+        if (names.length != createStatements.length) {
+            throw new IllegalArgumentException("Trigger names and create statements must have equal length");
+        }
+
+        dropTriggersCompat(db, names);
+        for (String createStatement : createStatements) {
+            db.execSQL(createStatement);
+        }
+    }
     public static void dropIndex(SQLiteDatabase db, String name) {
         db.execSQL("DROP INDEX IF EXISTS " + name);
     }

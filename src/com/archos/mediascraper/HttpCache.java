@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -189,9 +190,9 @@ public class HttpCache {
         double timeSec = timeMs / 1000.0;
         double sizeKb = size / 1024.0;
         double speedKbs = sizeKb / timeSec;
-        String timeString = String.format("%.2f s", timeSec);
-        String speedString = String.format("%.2f kB/s", speedKbs);
-        String sizeString = String.format("%.2f kB", sizeKb);
+        String timeString = String.format(Locale.ROOT, "%.2f s", timeSec);
+        String speedString = String.format(Locale.ROOT, "%.2f kB/s", speedKbs);
+        String sizeString = String.format(Locale.ROOT, "%.2f kB", sizeKb);
         if (log.isDebugEnabled()) log.debug("XXSPEED [{}] {} in {} (~{})", url, sizeString, timeString, speedString);
     }
 

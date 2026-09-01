@@ -59,6 +59,8 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
     private static final int IMDBID = 28;
     private static final int TMDBID = 29;
     private static final int WRITER = 30;
+    private static final int RUNTIME = 31;
+    private static final int UNIQUEID = 32;
 
     static {
         STRINGS.addKey("episodedetails", ROOT);
@@ -81,6 +83,8 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
         STRINGS.addKey("bookmark", BOOKMARK);
         STRINGS.addKey("imdbid", IMDBID);
         STRINGS.addKey("tmdbid", TMDBID);
+        STRINGS.addKey("runtime", RUNTIME);
+        STRINGS.addKey("uniqueid", UNIQUEID);
 
         // fileinfo
         STRINGS.addKey("fileinfo", FILEINFO);
@@ -95,6 +99,9 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
     private String mActorName, mActorRole;
     private boolean mInActor;
     private boolean mInFileinfo, mInStreamdetails, mInVideo;
+    private String mUniqueIdType;
+    private long mUniqueIdTmdb;
+    private String mUniqueIdImdb;
 
     @Override
     protected void startFile() {
@@ -110,6 +117,9 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
         mInFileinfo = false;
         mInStreamdetails = false;
         mInVideo = false;
+        mUniqueIdType = null;
+        mUniqueIdTmdb = 0;
+        mUniqueIdImdb = null;
 
     }
 
@@ -157,6 +167,10 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                     case RESUME:
                     case IMDBID:
                     case TMDBID:
+                    case RUNTIME:
+                        return true;
+                    case UNIQUEID:
+                        mUniqueIdType = attributes.getValue("", "type");
                         return true;
                     // actor needs sub node parsing
                     case ACTOR:
@@ -255,6 +269,20 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
                     case TMDBID:
                         mResult.setOnlineId(getLong());
                         break;
+                    case RUNTIME:
+                        mResult.setRuntime(getLong(), TimeUnit.MINUTES);
+                        break;
+                    case UNIQUEID:
+                        if ("tmdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdTmdb = getLong();
+                        } else if ("imdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdImdb = getString();
+                        } else {
+                            // consume buffered text for unknown types (e.g. tvdb)
+                            getString();
+                        }
+                        mUniqueIdType = null;
+                        break;
                     default:
                         break;
                 }
@@ -293,6 +321,14 @@ public class NfoEpisodeHandler extends BasicSubParseHandler {
 
     public EpisodeTags getResult(Context context, Uri movieFile) {
         if (mCanParse) {
+            // type-aware <uniqueid> takes precedence over legacy <tmdbid>/<imdbid>,
+            // applied here so it wins regardless of element order
+            if (mUniqueIdTmdb > 0) {
+                mResult.setOnlineId(mUniqueIdTmdb);
+            }
+            if (mUniqueIdImdb != null && !mUniqueIdImdb.isEmpty()) {
+                mResult.setImdbId(mUniqueIdImdb);
+            }
             mResult.setFile(movieFile);
             return mResult;
         }

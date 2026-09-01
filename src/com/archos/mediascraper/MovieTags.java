@@ -28,9 +28,11 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
+import android.text.TextUtils;
 
 import com.archos.mediaprovider.video.ScraperStore;
 import com.archos.mediaprovider.video.VideoStore;
+import com.archos.mediacenter.utils.ISO639codes;
 import com.archos.mediascraper.ScraperImage.Type;
 
 
@@ -40,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,6 +51,10 @@ public class MovieTags extends VideoTags {
 
     protected int mYear;
     protected String mReleaseDate;
+    private String mOriginalLanguage = "und";
+    private String mOriginalTitle = "";
+    private String mSpokenLanguages = "";
+    private String mTitleLanguage = "und";
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
     public static final Parcelable.Creator<MovieTags> CREATOR = new Parcelable.Creator<MovieTags>() { 
@@ -74,6 +81,55 @@ public class MovieTags extends VideoTags {
 
     public void setReleaseDate(String releaseDate) { mReleaseDate = releaseDate; }
     public String getReleaseDate() { return mReleaseDate; }
+
+    /**
+     * Stores a language identifier, never a localized display name. TMDb supplies ISO 639-1;
+     * accepts ISO 639-2/3 input too and persists its ISO 639-1 equivalent when known.
+     */
+    public void setOriginalLanguage(String originalLanguage) {
+        if (originalLanguage == null) {
+            mOriginalLanguage = "und";
+            return;
+        }
+        String normalized = ISO639codes.getISO6391ForLetterCode(originalLanguage);
+        mOriginalLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    /** ISO 639-1 original language, or ISO 639-2 {@code und} when unknown. */
+    public String getOriginalLanguage() { return mOriginalLanguage; }
+
+    public void setOriginalTitle(String originalTitle) {
+        mOriginalTitle = originalTitle == null ? "" : originalTitle;
+    }
+
+    /** Original (non-localized) TMDb title, or an empty string when unavailable. */
+    public String getOriginalTitle() { return mOriginalTitle; }
+
+    /**
+     * Normalizes spoken-language codes and stores them as a stable comma-separated ISO 639-1 list.
+     * Empty means TMDb supplied no usable spoken-language metadata.
+     */
+    public void setSpokenLanguages(List<String> spokenLanguages) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<String>();
+        if (spokenLanguages != null) {
+            for (String language : spokenLanguages) {
+                String code = ISO639codes.getISO6391ForLetterCode(language);
+                if (!code.isEmpty()) normalized.add(code);
+            }
+        }
+        mSpokenLanguages = TextUtils.join(",", normalized);
+    }
+
+    /** Comma-separated ISO 639-1 spoken-language codes, or an empty string when unknown. */
+    public String getSpokenLanguages() { return mSpokenLanguages; }
+
+    /** Language of the localized title returned by TMDb, ISO 639-1 or {@code und}. */
+    public void setTitleLanguage(String titleLanguage) {
+        String normalized = titleLanguage == null ? "" : ISO639codes.getISO6391ForLetterCode(titleLanguage);
+        mTitleLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    public String getTitleLanguage() { return mTitleLanguage; }
 
     protected int mCollectionId = -1;
     public void setCollectionId(int collectionId) { mCollectionId = collectionId; }
@@ -132,6 +188,14 @@ public class MovieTags extends VideoTags {
     }
 
     @Override
+    public void setBackdrop(File file) {
+        if (file == null) return;
+        if (getBackdrops() == null || getBackdrops().isEmpty()) {
+            setBackdrops(ScraperImage.fromExistingCover(file.getPath(), Type.MOVIE_BACKDROP).asList());
+        }
+    }
+
+    @Override
     public long save(Context context, long videoId) {
         ContentResolver cr = context.getContentResolver();
         //------------------------------------------------------
@@ -142,6 +206,11 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.NAME, mTitle);
         values.put(ScraperStore.Movie.YEAR, Integer.valueOf(mYear));
         values.put(ScraperStore.Movie.RELEASE_DATE, mReleaseDate);
+        values.put(ScraperStore.Movie.ORIGINAL_LANGUAGE, mOriginalLanguage);
+        values.put(ScraperStore.Movie.ORIGINAL_TITLE, mOriginalTitle);
+        values.put(ScraperStore.Movie.SPOKEN_LANGUAGES, mSpokenLanguages);
+        values.put(ScraperStore.Movie.TITLE_LANGUAGE, mTitleLanguage);
+        values.put(ScraperStore.Movie.SORT_NAME, com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(mTitle, mTitleLanguage));
         values.put(ScraperStore.Movie.RATING, Float.valueOf(mRating));
         values.put(ScraperStore.Movie.COLLECTION_ID, Integer.valueOf(mCollectionId));
 
@@ -392,6 +461,11 @@ public class MovieTags extends VideoTags {
     private void readFromParcel(Parcel in) {
         mYear = in.readInt();
         mReleaseDate = in.readString();
+        setOriginalLanguage(in.readString());
+        setOriginalTitle(in.readString());
+        mSpokenLanguages = in.readString();
+        if (mSpokenLanguages == null) mSpokenLanguages = "";
+        setTitleLanguage(in.readString());
     }
 
     @Override
@@ -399,6 +473,10 @@ public class MovieTags extends VideoTags {
         super.writeToParcel(out, flags);
         out.writeInt(mYear);
         out.writeString(mReleaseDate);
+        out.writeString(mOriginalLanguage);
+        out.writeString(mOriginalTitle);
+        out.writeString(mSpokenLanguages);
+        out.writeString(mTitleLanguage);
     }
 
     /** Add this (local) image as the default poster */
@@ -441,6 +519,10 @@ public class MovieTags extends VideoTags {
 
     public void setTrailers(List<ScraperTrailer> trailers) {
         this.trailers = trailers;
+    }
+
+    public List<ScraperTrailer> getTrailers() {
+        return trailers;
     }
 
     /** Add this url as the default show poster */

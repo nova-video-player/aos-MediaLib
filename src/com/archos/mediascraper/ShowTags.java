@@ -31,6 +31,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 
 import com.archos.mediaprovider.video.ScraperStore;
+import com.archos.mediacenter.utils.ISO639codes;
 import com.archos.mediascraper.ScraperImage.Type;
 
 import com.archos.mediascraper.themoviedb3.SearchShowResult;
@@ -43,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,6 +52,10 @@ public class ShowTags extends VideoTags {
     private static final Logger log = LoggerFactory.getLogger(ShowTags.class);
     private static final SimpleDateFormat sDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     protected Date mPremiered;
+    private String mOriginalLanguage = "und";
+    private String mOriginalTitle = "";
+    private String mSpokenLanguages = "";
+    private String mTitleLanguage = "und";
 
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
     public static final Parcelable.Creator<ShowTags> CREATOR = new Parcelable.Creator<ShowTags>() { 
@@ -79,7 +85,53 @@ public class ShowTags extends VideoTags {
         }
     }
 
+    @Override
+    public void setBackdrop(File file) {
+        if (file == null) return;
+        if (getBackdrops() == null || getBackdrops().isEmpty()) {
+            setBackdrops(ScraperImage.fromExistingCover(file.getPath(), Type.SHOW_BACKDROP).asList());
+        }
+    }
+
     public Date getPremiered() { return mPremiered; }
+
+    public void setOriginalLanguage(String originalLanguage) {
+        if (originalLanguage == null) {
+            mOriginalLanguage = "und";
+            return;
+        }
+        String normalized = ISO639codes.getISO6391ForLetterCode(originalLanguage);
+        mOriginalLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    public String getOriginalLanguage() { return mOriginalLanguage; }
+
+    public void setOriginalTitle(String originalTitle) {
+        mOriginalTitle = originalTitle == null ? "" : originalTitle;
+    }
+
+    public String getOriginalTitle() { return mOriginalTitle; }
+
+    public void setSpokenLanguages(List<String> spokenLanguages) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<String>();
+        if (spokenLanguages != null) {
+            for (String language : spokenLanguages) {
+                String code = ISO639codes.getISO6391ForLetterCode(language);
+                if (!code.isEmpty()) normalized.add(code);
+            }
+        }
+        mSpokenLanguages = TextUtils.join(",", normalized);
+    }
+
+    public String getSpokenLanguages() { return mSpokenLanguages; }
+
+    /** Language of the localized title returned by TMDb, ISO 639-1 or {@code und}. */
+    public void setTitleLanguage(String titleLanguage) {
+        String normalized = titleLanguage == null ? "" : ISO639codes.getISO6391ForLetterCode(titleLanguage);
+        mTitleLanguage = normalized.isEmpty() ? "und" : normalized;
+    }
+
+    public String getTitleLanguage() { return mTitleLanguage; }
 
     private static final String[] BASE_PROJECTION = {
         ScraperStore.Show.ID,              // 0
@@ -90,7 +142,12 @@ public class ShowTags extends VideoTags {
         ScraperStore.Show.IMDB_ID,         // 5
         ScraperStore.Show.ONLINE_ID,       // 6
         ScraperStore.Show.POSTER_ID,       // 7
-        ScraperStore.Show.BACKDROP_ID      // 8
+        ScraperStore.Show.BACKDROP_ID,     // 8
+        ScraperStore.Show.PLOT,            // 9
+        ScraperStore.Show.ORIGINAL_LANGUAGE, // 10
+        ScraperStore.Show.ORIGINAL_TITLE,    // 11
+        ScraperStore.Show.SPOKEN_LANGUAGES,  // 12
+        ScraperStore.Show.TITLE_LANGUAGE     // 13
     };
 
     private static final String NAME_SELECTION = ScraperStore.Show.NAME + "=?";
@@ -182,6 +239,12 @@ public class ShowTags extends VideoTags {
         // only update info based on onlineId since it is the source of truth (not the name)
         updateInfo(ONLINEID_SELECTION, new String[] { String.valueOf(mOnlineId)  }, cr);
 
+        if (log.isDebugEnabled()) {
+            log.debug("save: show onlineId={} parsed original_language={} original_title={} spoken_languages={} showFound={} baseInfoChanged={}",
+                    mOnlineId, mOriginalLanguage, mOriginalTitle, mSpokenLanguages,
+                    showFound, baseInfoChanged);
+        }
+
         if (!showFound || baseInfoChanged) {
             if (log.isDebugEnabled()) log.debug("save: show not found in db or baseInfo changed");
             // got to insert or update the baseinfo.
@@ -194,6 +257,11 @@ public class ShowTags extends VideoTags {
             values.put(ScraperStore.Show.PREMIERED, mPremiered == null ? null : Long.valueOf(mPremiered.getTime()));
             values.put(ScraperStore.Show.RATING, Float.valueOf(mRating));
             values.put(ScraperStore.Show.PLOT, mPlot);
+            values.put(ScraperStore.Show.ORIGINAL_LANGUAGE, mOriginalLanguage);
+            values.put(ScraperStore.Show.ORIGINAL_TITLE, mOriginalTitle);
+            values.put(ScraperStore.Show.SPOKEN_LANGUAGES, mSpokenLanguages);
+            values.put(ScraperStore.Show.TITLE_LANGUAGE, mTitleLanguage);
+            values.put(ScraperStore.Show.SORT_NAME, com.archos.mediascraper.preprocess.SortTitleUtils.extractSortTitle(finalTitle, mTitleLanguage));
 
             values.put(ScraperStore.Show.ACTORS_FORMATTED, getActorsFormatted());
             values.put(ScraperStore.Show.DIRECTORS_FORMATTED, getDirectorsFormatted());
@@ -224,10 +292,20 @@ public class ShowTags extends VideoTags {
                 Uri inserted = cr.insert(uri, values);
                 long result = inserted == null ? -1 : ContentUris.parseId(inserted);
                 if (result == -1) {
-                    log.error("insert Show failed");
-                    return -1;
+                    // Another scrape worker may have inserted the show after our lookup.
+                    // Re-read by the stable online id, then by the unique display name.
+                    updateInfo(ONLINEID_SELECTION, new String[] { String.valueOf(mOnlineId) }, cr);
+                    if (!showFound) {
+                        updateInfo(NAME_SELECTION, new String[] { finalTitle }, cr);
+                    }
+                    if (!showFound) {
+                        log.error("insert Show failed and no existing row was found");
+                        return -1;
+                    }
+                    if (log.isDebugEnabled()) log.debug("insert Show raced with an existing row, reusing showId {}", showId);
+                } else {
+                    showId = result;
                 }
-                showId = result;
             }
         }
 
@@ -377,12 +455,21 @@ public class ShowTags extends VideoTags {
 
     private void readFromParcel(Parcel in) {
         mPremiered = readDate(in.readLong());
+        setOriginalLanguage(in.readString());
+        setOriginalTitle(in.readString());
+        mSpokenLanguages = in.readString();
+        if (mSpokenLanguages == null) mSpokenLanguages = "";
+        setTitleLanguage(in.readString());
     }
 
     @Override
     public void writeToParcel(Parcel out, int flags) {
         super.writeToParcel(out, flags);
         out.writeLong(nonNull(mPremiered));
+        out.writeString(mOriginalLanguage);
+        out.writeString(mOriginalTitle);
+        out.writeString(mSpokenLanguages);
+        out.writeString(mTitleLanguage);
     }
 
     public void setPremiered(String string) {
@@ -606,6 +693,18 @@ public class ShowTags extends VideoTags {
                 String storedBD = cursor.getString(4);
                 String storedImdb = cursor.getString(5);
                 long storedOnlineId = cursor.getLong(6);
+                String storedPlot = cursor.getString(9);
+                String storedOriginalLanguage = cursor.getString(10);
+                String storedOriginalTitle = cursor.getString(11);
+                String storedSpokenLanguages = cursor.getString(12);
+                String storedTitleLanguage = cursor.getString(13);
+
+                if (log.isDebugEnabled()) {
+                    log.debug("updateInfo: show onlineId={} stored original_language={} original_title={} spoken_languages={} parsed original_language={} original_title={} spoken_languages={}",
+                            storedOnlineId, storedOriginalLanguage, storedOriginalTitle,
+                            storedSpokenLanguages, mOriginalLanguage, mOriginalTitle,
+                            mSpokenLanguages);
+                }
 
                 updateCover = newStringIsNotEmpty(storedCover, newCover);
                 updateBackdrop = newStringIsNotEmpty(storedBD, newBackdrop);
@@ -622,7 +721,12 @@ public class ShowTags extends VideoTags {
                                 newFloatIsBetter(storedRating, mRating) ||
                                 newStringIsBetter(storedCRating, mContentRating) ||
                                 newStringIsBetter(storedImdb, mImdbId) ||
-                                newLongIsBetter(storedOnlineId, mOnlineId);
+                                newLongIsBetter(storedOnlineId, mOnlineId) ||
+                                newStringIsBetter(storedPlot, mPlot) ||
+                                newStringIsBetter(storedOriginalLanguage, mOriginalLanguage) ||
+                                newStringIsBetter(storedOriginalTitle, mOriginalTitle) ||
+                                newStringIsBetter(storedSpokenLanguages, mSpokenLanguages) ||
+                                newStringIsBetter(storedTitleLanguage, mTitleLanguage);
 
                 if (log.isDebugEnabled()) log.debug("updateInfo: show found in db: updateCover {}, updateBackdrop {} baseInfoChanged {}",
                         updateCover, updateBackdrop, baseInfoChanged);
@@ -642,7 +746,7 @@ public class ShowTags extends VideoTags {
 
     public static SearchShowResult getEpisodeResultIfAlreadyKnown(Context context, String searchQuery, String season, String episode, Uri fileUri) {
         ContentResolver contentResolver = context.getContentResolver();
-        String[] baseProjection = {ScraperStore.EpisodeShowCombined.SCRAPER_ID, ScraperStore.EpisodeShowCombined.SHOW_NAME,ScraperStore.EpisodeShowCombined.EPISODE_NAME}  ;
+        String[] baseProjection = {ScraperStore.EpisodeShowCombined.SCRAPER_ID, ScraperStore.EpisodeShowCombined.SHOW_NAME, ScraperStore.EpisodeShowCombined.EPISODE_NAME};
 
         //No Slash on the Query, i AM NOT tmdb!
         if (searchQuery.startsWith("/"))
@@ -657,22 +761,14 @@ public class ShowTags extends VideoTags {
         if (cursor != null) {
             try {
                 if (cursor.moveToFirst()) {
-                    //Get the columns, so we can grab the data.
-                    int idxVideoId = cursor.getColumnIndex(ScraperStore.EpisodeShowCombined.SCRAPER_ID);
-                    if (idxVideoId < 0)
-                        idxVideoId = cursor.getColumnIndexOrThrow(ScraperStore.Episode.ID);
-                    int idxName = cursor.getColumnIndex(ScraperStore.EpisodeShowCombined.EPISODE_NAME);
-                    if (idxName < 0)
-                        idxName = cursor.getColumnIndexOrThrow(ScraperStore.Episode.NAME);
-
                     //Create a Search Result and populate it.
                     SearchShowResult myResult = new SearchShowResult();
                     SearchResult result = new SearchResult();
                     result.setTvShow();
                     result.setFile(fileUri);
-                    result.setId((int) cursor.getLong(idxVideoId));
-                    result.setOriginalTitle( cursor.getString(idxName));
-                    result.setTitle(cursor.getString(idxName));
+                    result.setId((int) cursor.getLong(0));
+                    result.setOriginalTitle(cursor.getString(2));
+                    result.setTitle(cursor.getString(2));
                     result.setOriginSearchEpisode(Integer.parseInt(episode));
                     result.setOriginSearchSeason(Integer.parseInt(season));
                     result.fromDB = true;

@@ -16,9 +16,13 @@ package com.archos.mediacenter.utils;
 
 import android.animation.Animator.AnimatorListener;
 import android.content.Context;
+import android.graphics.Outline;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.Bitmap;
 import android.util.AttributeSet;
+import android.util.TypedValue;
+import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.view.ViewPropertyAnimator;
 import android.widget.RelativeLayout;
 
@@ -26,11 +30,21 @@ import android.widget.RelativeLayout;
 public class GlobalResumeView extends RelativeLayout {
 
     private static final String TAG = "GlobalResumeView";
+    private static final float CORNER_RADIUS_DP = 12f;
 
     Bitmap mImage;
 
     public GlobalResumeView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        float cornerRadiusPx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, CORNER_RADIUS_DP, getResources().getDisplayMetrics());
+        setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerRadiusPx);
+            }
+        });
+        setClipToOutline(true);
     }
 
     @Override

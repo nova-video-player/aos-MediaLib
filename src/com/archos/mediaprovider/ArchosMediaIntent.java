@@ -25,6 +25,7 @@ public final class ArchosMediaIntent {
 
     public static final String ACTION_VIDEO_SCANNER_SCAN_FILE = "archos.media.intent.action.VIDEO_SCANNER_SCAN_FILE";
     public static final String ACTION_VIDEO_SCANNER_REMOVE_FILE = "archos.media.intent.action.VIDEO_SCANNER_REMOVE_FILE";
+    public static final String EXTRA_INDEXED_ROOT_REMOVED = "archos.media.intent.extra.INDEXED_ROOT_REMOVED";
     /**
      * Broadcast intent that forces the internal video / media database to
      * rescan the metadata of a file / folder. The path to the directory or file

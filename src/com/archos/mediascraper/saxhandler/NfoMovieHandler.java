@@ -21,6 +21,7 @@ import android.util.Log;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.NfoParser;
 import com.archos.mediascraper.ScraperImage;
+import com.archos.mediascraper.ScraperTrailer;
 import com.archos.mediascraper.StringMatcher;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration;
 import com.archos.mediascraper.themoviedb3.ImageConfiguration.BackdropSize;
@@ -29,6 +30,7 @@ import com.archos.mediascraper.themoviedb3.ImageConfiguration.PosterSize;
 import org.xml.sax.Attributes;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.archos.mediascraper.themoviedb3.MovieCollectionImages.downloadCollectionImage;
@@ -75,6 +77,10 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private static final int BACKDROPLARGE = 31;
     private static final int BACKDROPTHUMB = 32;
     private static final int WRITER = 33;
+    private static final int PLOT = 34;
+    private static final int RELEASEDATE = 35;
+    private static final int TRAILER = 36;
+    private static final int UNIQUEID = 37;
 
     static {
         STRINGS.addKey("movie", ROOT_MOVIE);
@@ -82,6 +88,8 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("rating", RATING);
         STRINGS.addKey("year", YEAR);
         STRINGS.addKey("outline", OUTLINE);
+        STRINGS.addKey("plot", PLOT);
+        STRINGS.addKey("releasedate", RELEASEDATE);
         STRINGS.addKey("thumb", THUMB);
         STRINGS.addKey("mpaa", MPAA);
         STRINGS.addKey("id", ID);
@@ -94,6 +102,8 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         STRINGS.addKey("fanart", FANART);
         STRINGS.addKey("studio", STUDIO);
         STRINGS.addKey("tmdbid", TMDBID);
+        STRINGS.addKey("uniqueid", UNIQUEID);
+        STRINGS.addKey("trailer", TRAILER);
         STRINGS.addKey("runtime", RUNTIME);
         STRINGS.addKey("lastplayed", LASTPLAYED);
         STRINGS.addKey("resume", RESUME);
@@ -120,10 +130,14 @@ public class NfoMovieHandler extends BasicSubParseHandler {
     private String mActorName, mActorRole;
     private boolean mInActor;
     private boolean mInFanart;
+    private boolean mHasPlot;
     private boolean mInSet;
     private int mInSetId;
     private String mInSetName, mInSetOverview, mInSetPosterLarge, mInSetPosterThumb, mInSetBackdropLarge, mInSetBackdropThumb;
     private boolean mInFileinfo, mInStreamdetails, mInVideo;
+    private String mUniqueIdType;
+    private long mUniqueIdTmdb;
+    private String mUniqueIdImdb;
 
     @Override
     protected void startFile() {
@@ -139,6 +153,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         mActorRole = null;
         mInActor = false;
         mInFanart = false;
+        mHasPlot = false;
         mInFileinfo = false;
         mInStreamdetails = false;
         mInVideo = false;
@@ -150,6 +165,9 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         mInSetPosterThumb = null;
         mInSetBackdropLarge = null;
         mInSetBackdropThumb = null;
+        mUniqueIdType = null;
+        mUniqueIdTmdb = 0;
+        mUniqueIdImdb = null;
     }
 
     @Override
@@ -166,7 +184,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
             }
         } else {
             if (mCanParse)
-                return startMovie(hierarchyLevel, localName);
+                return startMovie(hierarchyLevel, localName, attributes);
         }
         return false;
     }
@@ -183,10 +201,13 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         // empty
     }
 
-    private boolean startMovie(int hierarchyLevel, String localName) {
+    private boolean startMovie(int hierarchyLevel, String localName, Attributes attributes) {
         switch (hierarchyLevel) {
             case 1:
                 switch (STRINGS.match(localName)) {
+                    case UNIQUEID:
+                        mUniqueIdType = attributes.getValue("", "type");
+                        return true;
                     // these are text nodes, return true to get text
                     case TITLE:
                     case RATING:
@@ -200,10 +221,13 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case WRITER:
                     case STUDIO:
                     case TMDBID:
+                    case RELEASEDATE:
+                    case TRAILER:
                     case RUNTIME:
                     case LASTPLAYED:
                     case BOOKMARK:
                     case RESUME:
+                    case PLOT:
                         return true;
                     // actor needs sub node parsing
                     case SET:
@@ -215,7 +239,7 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         mInSetPosterThumb = null;
                         mInSetBackdropLarge = null;
                         mInSetBackdropThumb = null;
-                        break;
+                        return true;
                     case ACTOR:
                         mInActor = true;
                         mActorName = null;
@@ -295,8 +319,22 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case YEAR:
                         mMovie.setYear(getInt());
                         break;
+                    case RELEASEDATE:
+                        mMovie.setReleaseDate(getString());
+                        break;
                     case OUTLINE:
-                        mMovie.setPlot(getString());
+                        if (!mHasPlot) {
+                            mMovie.setPlot(getString());
+                        } else {
+                            getString();
+                        }
+                        break;
+                    case PLOT:
+                        String plot = getString();
+                        if (!plot.isEmpty()) {
+                            mMovie.setPlot(plot);
+                            mHasPlot = true;
+                        }
                         break;
                     case THUMB:
                         mMoviePosterUrls.add(getString());
@@ -322,6 +360,20 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                     case TMDBID:
                         mMovie.setOnlineId(getLong());
                         break;
+                    case UNIQUEID:
+                        if ("tmdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdTmdb = getLong();
+                        } else if ("imdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdImdb = getString();
+                        } else {
+                            // consume buffered text for unknown types (e.g. tvdb)
+                            getString();
+                        }
+                        mUniqueIdType = null;
+                        break;
+                    case TRAILER:
+                        addTrailer(getString());
+                        break;
                     case ACTOR:
                         mInActor = false;
                         mMovie.addActorIfAbsent(mActorName, mActorRole);
@@ -346,6 +398,11 @@ public class NfoMovieHandler extends BasicSubParseHandler {
                         break;
                     case SET:
                         mInSet = false;
+                        // Handle simple <set>Name</set> format
+                        String setText = getString();
+                        if (mInSetName == null && setText != null && !setText.trim().isEmpty()) {
+                            mInSetName = setText.trim();
+                        }
                         mMovie.setCollectionId(mInSetId);
                         mMovie.setCollectionName(mInSetName);
                         mMovie.setCollectionDescription(mInSetOverview);
@@ -432,9 +489,50 @@ public class NfoMovieHandler extends BasicSubParseHandler {
         }
     }
 
+    private void addTrailer(String trailerUrl) {
+        if (trailerUrl == null || trailerUrl.isEmpty()) {
+            return;
+        }
+        Uri trailerUri = Uri.parse(trailerUrl);
+        String host = trailerUri.getHost();
+        String trailerKey = null;
+        String site = null;
+        if (host != null) {
+            if (host.contains("youtube.com")) {
+                trailerKey = trailerUri.getQueryParameter("v");
+                site = "YouTube";
+            } else if (host.contains("youtu.be")) {
+                String path = trailerUri.getPath();
+                if (path != null && path.length() > 1) {
+                    trailerKey = path.substring(1);
+                    site = "YouTube";
+                }
+            }
+        }
+        if (trailerKey == null || trailerKey.isEmpty()) {
+            trailerKey = trailerUrl;
+            site = "NFO";
+        }
+        ArrayList<ScraperTrailer> trailers = new ArrayList<ScraperTrailer>(1);
+        List<ScraperTrailer> existingTrailers = mMovie.getTrailers();
+        if (existingTrailers != null && !existingTrailers.isEmpty()) {
+            trailers.addAll(existingTrailers);
+        }
+        trailers.add(new ScraperTrailer(ScraperTrailer.Type.MOVIE_TRAILER, null, trailerKey, site, null));
+        mMovie.setTrailers(trailers);
+    }
+
     public MovieTags getResult(Context context, Uri movieFile) {
         if (DBG) Log.d(TAG, "getResult: processing " + movieFile.getPath());
         if (mCanParse) {
+            // type-aware <uniqueid> takes precedence over legacy <id>(imdb)/<tmdbid>,
+            // applied here so it wins regardless of element order
+            if (mUniqueIdTmdb > 0) {
+                mMovie.setOnlineId(mUniqueIdTmdb);
+            }
+            if (mUniqueIdImdb != null && !mUniqueIdImdb.isEmpty()) {
+                mMovie.setImdbId(mUniqueIdImdb);
+            }
             if (!mMoviePosterUrls.isEmpty()) {
                 ArrayList<ScraperImage> images = new ArrayList<ScraperImage>(mMoviePosterUrls.size());
                 for (String url : mMoviePosterUrls) {

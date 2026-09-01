@@ -210,6 +210,61 @@ public enum ShortcutDbAdapter {
         return getAllShortcuts(context, null, null);
     }
 
+    /**
+     * Returns a copied list of URIs that are marked for automatic rescan.
+     * Uses a local DatabaseHelper so the singleton mDb/mDbHelper state is never touched.
+     * Safe to call from any thread.
+     */
+    public List<Uri> getRescanUris(Context context) {
+        List<Uri> uris = new ArrayList<>();
+        DatabaseHelper helper = new DatabaseHelper(context.getApplicationContext());
+        try {
+            SQLiteDatabase db = helper.getReadableDatabase();
+            Cursor c = db.query(mDatabaseTable,
+                    new String[]{KEY_PATH, KEY_RESCAN},
+                    KEY_RESCAN + " = 1",
+                    null, null, null, null);
+            try {
+                while (c.moveToNext()) {
+                    String path = c.getString(c.getColumnIndexOrThrow(KEY_PATH));
+                    if (path != null) uris.add(Uri.parse(path));
+                }
+            } finally {
+                c.close();
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "getRescanUris: failed", e);
+        } finally {
+            helper.close();
+        }
+        return uris;
+    }
+
+    /** Returns every indexed root, or null if the database could not be read. */
+    public List<Uri> getIndexedUris(Context context) {
+        List<Uri> uris = new ArrayList<>();
+        DatabaseHelper helper = new DatabaseHelper(context.getApplicationContext());
+        try {
+            SQLiteDatabase db = helper.getReadableDatabase();
+            Cursor c = db.query(mDatabaseTable, new String[]{KEY_PATH},
+                    null, null, null, null, null);
+            try {
+                while (c.moveToNext()) {
+                    String path = c.getString(c.getColumnIndexOrThrow(KEY_PATH));
+                    if (path != null) uris.add(Uri.parse(path));
+                }
+            } finally {
+                c.close();
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "getIndexedUris: failed", e);
+            return null;
+        } finally {
+            helper.close();
+        }
+        return uris;
+    }
+
     public int numberOfShortcuts(Context context) {
         Cursor shortcuts = getAllShortcuts(context, null, null);
         if (shortcuts == null)

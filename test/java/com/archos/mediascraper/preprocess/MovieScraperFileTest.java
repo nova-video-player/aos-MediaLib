@@ -58,6 +58,9 @@ public class MovieScraperFileTest {
                 assertTrue("Result should be MovieSearchInfo", result instanceof MovieSearchInfo);
                 MovieSearchInfo movieResult = (MovieSearchInfo) result;
 
+                if (!expectedName.equals(movieResult.getName())) {
+                    System.out.println("  -> NAME MISMATCH: '" + expectedName + "' != '" + movieResult.getName() + "'");
+                }
                 assertEquals("Name mismatch for input: " + input, expectedName, movieResult.getName());
                 assertEquals("Year mismatch for input: " + input, expectedYear, movieResult.getYear());
                 assertEquals("Suggestion mismatch for input: " + input, expectedSuggestion, movieResult.getSearchSuggestion());

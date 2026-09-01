@@ -196,7 +196,7 @@ public class ImageViewSetter {
             try {
                 Thread worker = mThreadMap.remove(view);
                 if (worker != null) {
-                    Log.d(TAG, "interrupting " + worker.getId());
+                    Log.d(TAG, "interrupting " + worker.getName());
                     worker.interrupt();
                 }
             } finally {

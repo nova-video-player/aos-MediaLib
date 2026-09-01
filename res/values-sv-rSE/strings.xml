@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">Skrapning pågår</string>
     <string name="remaining_videos_to_process">Återstående mediafiler som ska behandlas:</string>
     <string name="video_store_import">Importerar lokala mediafiler</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

@@ -23,8 +23,9 @@ import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 
@@ -48,10 +49,14 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loader.OnLoadCompleteListener<Cursor> {
 
     private static final Logger log = LoggerFactory.getLogger(IndexHelper.class);
+    // Preserve write order across player lifecycle, metadata, network and Trakt updates.
+    private static final ExecutorService VIDEO_INFO_WRITER = Executors.newSingleThreadExecutor();
     private final Context mContext;
     private final LoaderManager mLoaderManager;
     private final int mLoaderManagerId;
@@ -75,11 +80,14 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
         void onScraped(ScrapeDetailResult result);
     }
 
-    public static class ScraperTask extends AsyncTask<Void, Integer, ScrapeDetailResult> {
+    public static class ScraperTask {
         private final Context mContext;
         private final Uri mFile;
         private final long mVideoId;
-        private Listener mListener;
+        private volatile Listener mListener;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        volatile boolean isCancelled = false;
 
         public interface Listener {
             void onScraperTaskResult(ScrapeDetailResult result);
@@ -97,95 +105,55 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
         public void abort() {
             sScraperTasks.remove(mFile);
-            cancel(true);
+            isCancelled = true;
+            executor.shutdownNow();
             mListener = null;
         }
 
-        @Override
-        protected ScrapeDetailResult doInBackground(Void... params) {
-            // check for nfo file
+        ScrapeDetailResult doWork() {
             BaseTags tags = NfoParser.getTagForFile(mFile, mContext);
             if (tags != null) {
                 if (mVideoId != -1)
                     tags.save(mContext, mVideoId);
                 return new ScrapeDetailResult(tags, tags instanceof MovieTags, null, ScrapeStatus.OKAY, null);
             }
-            if (isCancelled())
-                return null;
+            if (isCancelled) return null;
             SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(mFile, mFile);
-            if (isCancelled())
-                return null;
-
-            Scraper scraper = new Scraper(mContext); // can / should be re-used
-            if (isCancelled())
-                return null;
-
+            if (isCancelled) return null;
+            Scraper scraper = new Scraper(mContext);
+            if (isCancelled) return null;
             ScrapeDetailResult result = scraper.getAutoDetails(searchInfo);
-            if (isCancelled())
-                return null;
-
+            if (isCancelled) return null;
             return result;
         }
 
-        @Override
-        protected void onPreExecute() {
+        public void execute() {
             if (mListener != null)
                 sScraperTasks.put(mFile, this);
-        }
-
-        @Override
-        protected void onPostExecute(ScrapeDetailResult result) {
-            if (mListener != null) {
-                sScraperTasks.remove(mFile);
-                mListener.onScraperTaskResult(result);
-            }
-        }
-    }
-
-    private static class WriteVideoInfoTask extends AsyncTask<Void, Integer, Void> {
-        private final Context mContext;
-        private final VideoDbInfo mVideoInfo;
-        private final boolean mExportDb;
-
-        public WriteVideoInfoTask(Context context, VideoDbInfo videoInfo, boolean exportDb) {
-            mContext = context;
-            mVideoInfo = videoInfo;
-            mExportDb = exportDb;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            if (log.isDebugEnabled()) log.debug("position: {} - id: {}", mVideoInfo.resume, mVideoInfo.id);
-            if (mVideoInfo.id != -1) {
-                // this stores the audioTrack and subtitleTrack in the same column
-                int playerParams = VideoStore.paramsFromTracks(mVideoInfo.audioTrack, mVideoInfo.subtitleTrack);
-                final String where = VideoStore.Video.VideoColumns._ID + " = " + mVideoInfo.id;
-                ContentResolver resolver = mContext.getContentResolver();
-                ContentValues values = new ContentValues(8);
-                values.put(VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK, mVideoInfo.bookmark);
-                values.put(VideoStore.Video.VideoColumns.BOOKMARK, mVideoInfo.resume);
-                values.put(VideoStore.Video.VideoColumns.DURATION, mVideoInfo.duration);
-                values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS, playerParams);
-                values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, mVideoInfo.subtitleDelay);
-                values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, mVideoInfo.subtitleRatio);
-                values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, mVideoInfo.lastTimePlayed);
-                values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, mVideoInfo.traktResume);
-                resolver.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                values, where, null);
-            }
-            XmlDb xmlDb = null;
-            if (log.isDebugEnabled()) log.debug("mExportDb: {} - isLocal: {} isSlowRemote {}", mExportDb, FileUtils.isLocal(mVideoInfo.uri), FileUtils.isSlowRemote(mVideoInfo.uri));
-            if (mExportDb &&
-                    !FileUtils.isLocal(mVideoInfo.uri)&&
-                    mVideoInfo.duration>0
-                    &&UriUtils.isCompatibleWithRemoteDB(mVideoInfo.uri)) { //save on network
-                if (xmlDb == null)
-                    xmlDb = XmlDb.getInstance();
-                xmlDb.writeXmlRemote(mVideoInfo);
-            }
-            return null;
+            executor.execute(() -> {
+                ScrapeDetailResult result = null;
+                try {
+                    if (isCancelled || Thread.currentThread().isInterrupted()) return;
+                    result = doWork();
+                } catch (Exception e) {
+                    log.error("ScraperTask failed", e);
+                } finally {
+                    executor.shutdown();
+                }
+                if (isCancelled) return;
+                final ScrapeDetailResult finalResult = result;
+                final Listener listener = mListener;
+                handler.post(() -> {
+                    if (isCancelled) return;
+                    if (listener != null) {
+                        sScraperTasks.remove(mFile);
+                        listener.onScraperTaskResult(finalResult);
+                    }
+                });
+            });
         }
     }
+
     private class XmlObserver implements XmlDb.ParseListener {
         private final Uri mLocation;
 
@@ -360,26 +328,27 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
         if (task == null) {
             task = new ScraperTask(mContext, mUri, mTitle, mVideoId);
             task.setListener(listener);
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            task.execute();
         } else {
             // already in progress
-                task.setListener(listener);
-            }
+            task.setListener(listener);
+        }
     }
 
     public ScrapeDetailResult getScraping(Uri uri, long videoId, String title) {
         setupArgs(uri, videoId, title);
-
         if (mUri == null)
             return null;
         ScraperTask task = new ScraperTask(mContext, mUri, mTitle, mVideoId);
-        task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ExecutorService exec = Executors.newSingleThreadExecutor();
         try {
-            return task.get();
-        } catch (InterruptedException e) {
-        } catch (ExecutionException e) {
+            return exec.submit(task::doWork).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("getScraping failed", e);
+            return null;
+        } finally {
+            exec.shutdown();
         }
-        return null;
     }
 
 
@@ -421,11 +390,51 @@ public class IndexHelper implements LoaderManager.LoaderCallbacks<Cursor>, Loade
 
     @Override
     public void onLoadComplete(Loader<Cursor> loader, Cursor cursor) {
-        onLoadFinished(loader,cursor);
+        try {
+            onLoadFinished(loader,cursor);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     public void writeVideoInfo(VideoDbInfo videoInfo, boolean exportDb) {
         if (log.isDebugEnabled()) log.debug("writeVideoInfo {}", exportDb);
-        new WriteVideoInfoTask(mContext, videoInfo, exportDb).execute();
+        if (videoInfo == null) return;
+        // Callers share and continue mutating VideoDbInfo on the main thread. Snapshot it before
+        // crossing the asynchronous boundary so each queued write represents one coherent state.
+        final VideoDbInfo snapshot = new VideoDbInfo(videoInfo);
+        VIDEO_INFO_WRITER.execute(() -> {
+            try {
+                if (log.isDebugEnabled()) log.debug("position: {} - id: {}", snapshot.resume, snapshot.id);
+                if (snapshot.id != -1) {
+                    int playerParams = VideoStore.paramsFromTracks(snapshot.audioTrack, snapshot.subtitleTrack);
+                    final String where = VideoStore.Video.VideoColumns._ID + " = " + snapshot.id;
+                    ContentResolver resolver = mContext.getContentResolver();
+                    ContentValues values = new ContentValues(8);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_BOOKMARK, snapshot.bookmark);
+                    values.put(VideoStore.Video.VideoColumns.BOOKMARK, snapshot.resume);
+                    values.put(VideoStore.Video.VideoColumns.DURATION, snapshot.duration);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_PARAMS, playerParams);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_DELAY, snapshot.subtitleDelay);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_PLAYER_SUBTITLE_RATIO, snapshot.subtitleRatio);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_LAST_TIME_PLAYED, snapshot.lastTimePlayed);
+                    values.put(VideoStore.Video.VideoColumns.ARCHOS_TRAKT_RESUME, snapshot.traktResume);
+                    if (snapshot.subtitleLanguage != null && !snapshot.subtitleLanguage.isEmpty())
+                        values.put(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE, snapshot.subtitleLanguage);
+                    else
+                        values.putNull(VideoStore.Video.VideoColumns.ARCHOS_SUBTITLE_LANGUAGE);
+                    resolver.update(VideoStore.Video.Media.EXTERNAL_CONTENT_URI, values, where, null);
+                }
+                if (log.isDebugEnabled()) log.debug("mExportDb: {} - isLocal: {} isSlowRemote {}", exportDb, FileUtils.isLocal(snapshot.uri), FileUtils.isSlowRemote(snapshot.uri));
+                if (exportDb && !FileUtils.isLocal(snapshot.uri) && snapshot.duration > 0
+                        && UriUtils.isCompatibleWithRemoteDB(snapshot.uri)) {
+                    XmlDb.getInstance().writeXmlRemote(snapshot);
+                }
+            } catch (Exception e) {
+                log.error("writeVideoInfo failed", e);
+            }
+        });
     }
 }

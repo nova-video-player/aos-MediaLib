@@ -139,4 +139,5 @@
     <string name="scraping_in_progress">Απόκτηση πληροφοριών σε εξέλιξη</string>
     <string name="remaining_videos_to_process">Εναπομείναντα αρχεία για επεξεργασία:</string>
     <string name="video_store_import">Εισαγωγή τοπικών αρχείων</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

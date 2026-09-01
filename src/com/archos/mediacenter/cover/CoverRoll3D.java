@@ -188,12 +188,12 @@ public abstract class CoverRoll3D extends CoverGLSurfaceView implements OnKeyLis
 					}
 					return true; // consume the longpress
 				} else {
-				    if(DBG) Log.d(TAG, "ACTION_DOWN ShortPress");
+					if(DBG) Log.d(TAG, "ACTION_DOWN ShortPress");
 					return true; // consume the short-press in order to have a chance to get the long-press before losing the focus
 				}
 			}
 			else if (event.getAction() == KeyEvent.ACTION_UP) {
-			    if(DBG) Log.d(TAG, "ACTION_UP");
+				if(DBG) Log.d(TAG, "ACTION_UP");
 				if (mChangeFocusOnUp) {
 					// Give focus
 					if(DBG) Log.d(TAG, "Change focus on ACTION_UP");
@@ -333,7 +333,7 @@ public abstract class CoverRoll3D extends CoverGLSurfaceView implements OnKeyLis
 	public boolean onTouchEvent(MotionEvent event) {
 		if(DBG) Log.d(TAG, "onTouchEvent e = "+event);
 		// Check if finger is "upped" after scrolling
-                if (event.getButtonState() == MotionEvent.BUTTON_SECONDARY) return false;
+		if (event.getButtonState() == MotionEvent.BUTTON_SECONDARY) return false;
 		if ((mLabelScrolling!=0) && (event.getAction() == MotionEvent.ACTION_UP)) {
 			// Check if the scrolling has been far enough or if the label must go back to original position
 			if (Math.abs(mLabelScrolling)<getWidth()/6) { //MAGICAL
@@ -390,7 +390,7 @@ public abstract class CoverRoll3D extends CoverGLSurfaceView implements OnKeyLis
 	    final float height = h / getResources().getDisplayMetrics().density;
 	    final boolean bPortrait = (height/width > 1.5f);
 
-	    if(DBG) Log.d(TAG, "getEyeDistance: width="+width+" height="+height+" height/width="+height/width);
+		if(DBG) Log.d(TAG, "getEyeDistance: width="+width+" height="+height+" height/width="+height/width);
 
 		// PORTRAIT
 		if (bPortrait) {

@@ -22,7 +22,11 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -130,6 +134,7 @@ public enum FTPShortcutDbAdapter {
      */
     // TODO we should do this in an AsyncTask but browsers currently
     // expect a right a way answer.
+    @SuppressWarnings("unchecked")
     public void loadShortcuts(Context context) {
         if (mContext != null) {
             return;
@@ -178,7 +183,7 @@ public enum FTPShortcutDbAdapter {
                     String shortcutName = 	cursor.getString(shortcutNameIndex);
                     if(shortcutName==null)
                     	shortcutName = host;
-                   	mShortcuts[type].add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
+                    mShortcuts[type].add(new FTPShortcut(rowId,host, port, type, path, username, password,shortcutName));
 
                 } while (cursor.moveToNext());
             }
@@ -203,7 +208,26 @@ public enum FTPShortcutDbAdapter {
         // Add the new shortcut to the current list
         mShortcuts[shortcut.type].add(shortcut);
 
-        new AddToShortcutListTask().execute(shortcut);
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            Long rowId = null;
+            try {
+                shortcut.rowID = Long.valueOf(insertShortcut(shortcut));
+                rowId = shortcut.rowID;
+            } catch (Exception e) {
+                Log.e(TAG, "AddToShortcutListTask failed", e);
+            } finally {
+                exec.shutdown();
+            }
+            if (rowId == null) return;
+            final Long finalRowId = rowId;
+            new Handler(Looper.getMainLooper()).post(() -> {
+                mShortcutDbIdList.add(finalRowId);
+                Intent intent = new Intent(ACTION_SHORTCUTS_CHANGED);
+                intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                mContext.sendBroadcast(intent);
+            });
+        });
     }
     public void removeFromSFTPShortcutList(FTPShortcut shortcutPath) {
         // Remove the shortcut from the current list
@@ -227,7 +251,22 @@ public enum FTPShortcutDbAdapter {
             myList.remove(indexInArray);
         }
         	
-        new RemoveFromShortcutListTask().execute(rowId);
+        final Long finalRowId = rowId;
+        ExecutorService exec2 = Executors.newSingleThreadExecutor();
+        exec2.execute(() -> {
+            try {
+                deleteShortcut(finalRowId.longValue());
+            } catch (Exception e) {
+                Log.e(TAG, "RemoveFromShortcutListTask failed", e);
+            } finally {
+                exec2.shutdown();
+            }
+            new Handler(Looper.getMainLooper()).post(() -> {
+                Intent intent = new Intent(ACTION_SHORTCUTS_CHANGED);
+                intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                mContext.sendBroadcast(intent);
+            });
+        });
         
     }
 
@@ -347,40 +386,4 @@ public enum FTPShortcutDbAdapter {
         }
     }
 
-    private class AddToShortcutListTask extends AsyncTask<FTPShortcut, Void, Long> {
-
-        protected void onPostExecute(Long rowId) {
-            // Store the database id too so that we can retrieve it later without
-            // queries to the databse
-            mShortcutDbIdList.add(rowId);
-
-            // Tell all instances of browsers to update their display if needed
-            Intent intent = new Intent(ACTION_SHORTCUTS_CHANGED);
-            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-            mContext.sendBroadcast(intent);
-        }
-
-		@Override
-		protected Long doInBackground(FTPShortcut... params) {
-			// TODO Auto-generated method stub
-			params[0].rowID = Long.valueOf(insertShortcut(params[0]));
-
-			return params[0].rowID;
-		}
-    }
-
-    private class RemoveFromShortcutListTask extends AsyncTask<Long, Void, Void> {
-        protected Void doInBackground(Long... rowId) {
-            // Remove the shortcut from the database
-            deleteShortcut(rowId[0].longValue());
-            return null;
-        }
-
-        protected void onPostExecute(Void args) {
-            // Tell all instances of browsers to update their display if needed
-            Intent intent = new Intent(ACTION_SHORTCUTS_CHANGED);
-            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-            mContext.sendBroadcast(intent);
-        }
-    }
 }

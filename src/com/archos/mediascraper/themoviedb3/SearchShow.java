@@ -30,8 +30,6 @@ import java.io.IOException;
 
 import retrofit2.Response;
 
-import static com.archos.mediascraper.preprocess.ParseUtils.yearExtractor;
-
 // Search Show for name query for year in language (ISO 639-1 code)
 public class SearchShow {
     private static final Logger log = LoggerFactory.getLogger(SearchShow.class);
@@ -61,7 +59,9 @@ public class SearchShow {
             }
 
             String searchQueryString = searchInfo.getShowName();
-            showKey = ShowUtils.cleanUpName(searchQueryString.toLowerCase()) + "|" + language;
+            // include year: tmdb searchService().tv() applies server-side year filtering, so the
+            // cached response content depends on year and must not be shared across different years
+            showKey = ShowUtils.cleanUpName(searchQueryString.toLowerCase()) + "|" + year + "|" + language;
             if (log.isDebugEnabled()) log.debug("SearchShowResult: cache showKey {}", showKey);
             response = showCache.get(showKey);
             if (log.isTraceEnabled()) debugLruCache(showCache);
@@ -80,7 +80,52 @@ public class SearchShow {
                 if (response.body() == null)
                     isResponseEmpty = true;
                 else {
-                    if (response.body().total_results == 0) notFoundIssue = true;
+                    if (response.body().total_results == 0 && !language.equals("en")) {
+                        // Retry in English when native language search returns no results
+                        // since TMDB may only index the English title
+                        if (log.isDebugEnabled()) log.debug("search: no results in {}, retrying in en for {}", language, searchQueryString);
+                        response = tmdb.searchService().tv(searchQueryString, 1, "en", year, false).execute();
+                        if (response.isSuccessful()) isResponseOk = true;
+                    }
+                    if (response.body() == null || response.body().total_results == 0) {
+                        // Fallback for "and" vs "&" (e.g. "Asterix and Obelix" -> "Asterix & Obelix")
+                        String alternate = null;
+                        if (searchQueryString.toLowerCase().contains(" and ")) {
+                            alternate = searchQueryString.replaceAll("(?i)\\band\\b", "&");
+                        } else if (searchQueryString.contains("&")) {
+                            alternate = searchQueryString.replace("&", "and");
+                        }
+                        if (alternate != null) {
+                            if (log.isDebugEnabled()) log.debug("search: no results, retrying with alternate name: {}", alternate);
+                            response = tmdb.searchService().tv(alternate, 1, language, year, false).execute();
+                            if (response.isSuccessful()) isResponseOk = true;
+                            if (response.body() != null && response.body().total_results == 0 && !language.equals("en")) {
+                                if (log.isDebugEnabled()) log.debug("search: no results in {} for alternate, retrying in en", language);
+                                response = tmdb.searchService().tv(alternate, 1, "en", year, false).execute();
+                                if (response.isSuccessful()) isResponseOk = true;
+                            }
+                        }
+                    }
+                    if (response.body() == null || response.body().total_results == 0) {
+                        // Fallback for transliterated titles (e.g. German umlauts: 'ae' -> 'ä')
+                        boolean isGerman = (language != null && language.startsWith("de")) ||
+                                           "de".equals(java.util.Locale.getDefault().getLanguage());
+                        if (isGerman) {
+                            String transliterated = com.archos.mediascraper.preprocess.ParseUtils.transliterate(searchQueryString);
+                            if (!transliterated.equals(searchQueryString)) {
+                                if (log.isDebugEnabled()) log.debug("search: no results, retrying with transliterated name: {}", transliterated);
+                                response = tmdb.searchService().tv(transliterated, 1, language, year, false).execute();
+                                if (response.isSuccessful()) isResponseOk = true;
+                                if (response.body() != null && response.body().total_results == 0 && !language.equals("en")) {
+                                    if (log.isDebugEnabled()) log.debug("search: no results in {} for transliterated, retrying in en", language);
+                                    response = tmdb.searchService().tv(transliterated, 1, "en", year, false).execute();
+                                    if (response.isSuccessful()) isResponseOk = true;
+                                }
+                            }
+                        }
+                    }
+                    if (response.body() == null || response.body().total_results == 0) notFoundIssue = true;
+                    else notFoundIssue = false;
 
                     //We have a show, put it in cache before returning.
                     if (isResponseOk) {
@@ -119,11 +164,12 @@ public class SearchShow {
                     myResult.status = ScrapeStatus.OKAY;
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (log.isDebugEnabled())
-                log.error("search: caught IOException {}", e.getMessage(), e);
+                log.error("search: caught {} {}", e.getClass().getSimpleName(), e.getMessage(), e);
             else
-                log.error("search: caught IOException");
+                log.error("search: caught {}", e.getClass().getSimpleName());
             myResult.result = SearchShowResult.EMPTY_LIST;
             myResult.status = ScrapeStatus.ERROR_PARSER;
             myResult.reason = e;

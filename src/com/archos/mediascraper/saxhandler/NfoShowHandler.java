@@ -53,6 +53,10 @@ public class NfoShowHandler extends BasicHandler {
     private static final int THUMB = 13;
     private static final int FANART = 14;
     private static final int IMDBID = 15;
+    private static final int DIRECTOR = 16;
+    private static final int WRITER = 17;
+    private static final int YEAR = 18;
+    private static final int UNIQUEID = 19;
 
     static {
         STRINGS.addKey("tvshow", ROOT);
@@ -71,6 +75,10 @@ public class NfoShowHandler extends BasicHandler {
         STRINGS.addKey("thumb", THUMB);
         STRINGS.addKey("fanart", FANART);
         STRINGS.addKey("imdbid", IMDBID);
+        STRINGS.addKey("director", DIRECTOR);
+        STRINGS.addKey("writer", WRITER);
+        STRINGS.addKey("year", YEAR);
+        STRINGS.addKey("uniqueid", UNIQUEID);
     }
 
     private ShowTags mResult;
@@ -82,6 +90,10 @@ public class NfoShowHandler extends BasicHandler {
     private boolean mInActor;
     private boolean mInFanart;
     private int mPosterSeason;
+    private int mYear;
+    private String mUniqueIdType;
+    private long mUniqueIdTmdb;
+    private String mUniqueIdImdb;
 
     @Override
     protected void startFile() {
@@ -98,6 +110,10 @@ public class NfoShowHandler extends BasicHandler {
         mInActor = false;
         mInFanart = false;
         mPosterSeason = 0;
+        mYear = 0;
+        mUniqueIdType = null;
+        mUniqueIdTmdb = 0;
+        mUniqueIdImdb = null;
     }
 
     @Override
@@ -138,9 +154,15 @@ public class NfoShowHandler extends BasicHandler {
                     case ID:
                     case GENRE:
                     case IMDBID:
+                    case DIRECTOR:
+                    case WRITER:
+                    case YEAR:
                         return true;
                     case THUMB:
                         mPosterSeason = parseInt(attributes.getValue("", "season"));
+                        return true;
+                    case UNIQUEID:
+                        mUniqueIdType = attributes.getValue("", "type");
                         return true;
                     // actor needs sub node parsing
                     case ACTOR:
@@ -206,6 +228,26 @@ public class NfoShowHandler extends BasicHandler {
                     case IMDBID:
                         mResult.setImdbId(getString());
                         break;
+                    case DIRECTOR:
+                        mResult.addDirectorIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case WRITER:
+                        mResult.addWriterIfAbsent(getString(), NfoParser.STRING_SPLITTERS);
+                        break;
+                    case YEAR:
+                        mYear = parseInt(getString());
+                        break;
+                    case UNIQUEID:
+                        if ("tmdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdTmdb = getLong();
+                        } else if ("imdb".equalsIgnoreCase(mUniqueIdType)) {
+                            mUniqueIdImdb = getString();
+                        } else {
+                            // consume buffered text for unknown types (e.g. tvdb)
+                            getString();
+                        }
+                        mUniqueIdType = null;
+                        break;
                     case ACTOR:
                         mInActor = false;
                         mResult.addActorIfAbsent(mActorName, mActorRole);
@@ -253,6 +295,22 @@ public class NfoShowHandler extends BasicHandler {
 
     public ShowTags getResult(Context context, Uri movieFile) {
         if (mCanParse) {
+            // type-aware <uniqueid> takes precedence over legacy <id>/<imdbid>,
+            // applied here so it wins regardless of element order
+            if (mUniqueIdTmdb > 0) {
+                mResult.setOnlineId(mUniqueIdTmdb);
+            }
+            if (mUniqueIdImdb != null && !mUniqueIdImdb.isEmpty()) {
+                mResult.setImdbId(mUniqueIdImdb);
+            }
+            // <premiered> is the authoritative date; fall back to a bare <year>
+            // only when no usable premiered date was parsed
+            if (mYear > 0) {
+                java.util.Date premiered = mResult.getPremiered();
+                if (premiered == null || premiered.getTime() == 0) {
+                    mResult.setPremiered(String.format(java.util.Locale.ROOT, "%04d-01-01", Integer.valueOf(mYear)));
+                }
+            }
             String seed = mResult.getTitle();
             if (seed == null) {
                 // fallback to something useful

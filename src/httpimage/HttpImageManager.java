@@ -28,18 +28,18 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpEntity;
+
 
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
@@ -164,7 +164,7 @@ public class HttpImageManager{
                 digest.update(name.getBytes());
                 
                 byte[] result = digest.digest();
-                return String.format("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+                return String.format(Locale.ROOT, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
                         result[0], result[1], result[2], result[3], result[4], result[5], result[6], result[7],
                         result[8],result[9], result[10], result[11],result[12], result[13], result[14], result[15]);
             } 
@@ -323,40 +323,26 @@ public class HttpImageManager{
                             long millis = System.currentTimeMillis();
                             
                             byte[] binary = null;
-                            //HttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
-                            CloseableHttpResponse httpResp = mNetworkResourceLoader.load(request.getUri());
-
-                            Header[] headers = httpResp.getHeaders();
-                            for (Header header : headers) {
-                                if(DEBUG) Log.i(TAG, header.toString());
-                                if (header.getName().equalsIgnoreCase("Content-Type") && !header.getValue().startsWith("image"))
+                            try (NetworkResourceLoader.Response response = mNetworkResourceLoader.load(request.getUri())) {
+                                String contentType = response.getContentType();
+                                if (contentType != null && !contentType.startsWith("image")) {
                                     throw new RuntimeException("data from remote can't be decoded to bitmap");
-                            }
+                                }
 
-                            HttpEntity entity = httpResp.getEntity();
-                            if (entity != null) {
-                                InputStream responseStream = entity.getContent();
+                                InputStream responseStream = response.getInputStream();
                                 try {
-                                    /*
-                                    Header header = entity.getContentEncoding();
-                                    String contentEncoding = entity.getContentEncoding();
-                                    if (header != null && header.getValue() != null && header.getValue().contains("gzip")) {
-                                        responseStream =  new GZIPInputStream(responseStream);
-                                    }
-                                     */
-                                    String contentEncoding = entity.getContentEncoding();
+                                    String contentEncoding = response.getContentEncoding();
                                     if (DEBUG) Log.d(TAG, "contentEncoding=" + contentEncoding);
-                                    if (contentEncoding != null && contentEncoding.length() >0 && contentEncoding.contains("gzip")) {
-                                        responseStream =  new GZIPInputStream(responseStream);
+                                    if (contentEncoding != null && contentEncoding.length() > 0 && contentEncoding.contains("gzip")) {
+                                        responseStream = new GZIPInputStream(responseStream);
                                     }
 
-                                    responseStream = new FlushedInputStream(responseStream); //patch the inputstream
-                                    long contentSize = entity.getContentLength();
-                                    binary = readInputStreamProgressively(responseStream, (int)contentSize, request);
+                                    responseStream = new FlushedInputStream(responseStream); // patch the inputstream
+                                    long contentSize = response.getContentLength();
+                                    binary = readInputStreamProgressively(responseStream, (int) contentSize, request);
                                     data = BitmapUtil.decodeByteArray(binary, mMaxNumOfPixelsConstraint);
-                                } 
-                                finally {
-                                    if(responseStream != null) {
+                                } finally {
+                                    if (responseStream != null) {
                                         try { responseStream.close(); } catch (IOException e) {}
                                     }
                                 }
@@ -525,7 +511,7 @@ public class HttpImageManager{
     private BitmapCache mPersistence;
     private NetworkResourceLoader mNetworkResourceLoader = new NetworkResourceLoader(); 
 
-    private Handler mHandler = new Handler();
+    private Handler mHandler = new Handler(Looper.getMainLooper());
     private ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(1, 4, 10, TimeUnit.SECONDS, new LinkedBlockingStack<Runnable>());
     private Set<LoadRequest> mActiveRequests = new HashSet<LoadRequest>();
     private BitmapFilter mFilter;

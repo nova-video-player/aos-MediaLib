@@ -99,4 +99,5 @@
     <string name="scraping_in_progress">Reanálise em curso</string>
     <string name="remaining_videos_to_process">Ficheiros por processar:</string>
     <string name="video_store_import">A importar ficheiros locais</string>
+    <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>

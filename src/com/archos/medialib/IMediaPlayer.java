@@ -102,6 +102,8 @@ public interface IMediaPlayer {
 
     public boolean setAudioTrack(int stream) throws IllegalStateException;
 
+    public void refreshAudioOutput() throws IllegalStateException;
+
     public void checkSubtitles() throws IllegalStateException;
 
     public boolean setSubtitleTrack(int stream) throws IllegalStateException;
@@ -206,6 +208,15 @@ public interface IMediaPlayer {
     public static final int MEDIA_INFO_NOT_SEEKABLE = MediaPlayer.MEDIA_INFO_NOT_SEEKABLE;
 
     public static final int MEDIA_INFO_METADATA_UPDATE = MediaPlayer.MEDIA_INFO_METADATA_UPDATE;
+
+    /** AVOS-specific: {@code extra} contains the applied playback speed multiplied by 1000. */
+    public static final int MEDIA_INFO_AUDIO_SPEED_APPLIED = 803;
+
+    /** AVOS-specific asynchronous track-selection results; {@code extra} is the requested track. */
+    public static final int MEDIA_INFO_AUDIO_TRACK_APPLIED = 10001;
+    public static final int MEDIA_INFO_AUDIO_TRACK_FAILED = 10002;
+    public static final int MEDIA_INFO_SUBTITLE_TRACK_APPLIED = 10003;
+    public static final int MEDIA_INFO_SUBTITLE_TRACK_FAILED = 10004;
 
     // avos specific error
 
@@ -361,7 +372,8 @@ public interface IMediaPlayer {
     public static final int METADATA_KEY_VIDEO_TRACK_DECODER = 11;
     public static final int METADATA_KEY_VIDEO_TRACK_FPS_RATE = 12;
     public static final int METADATA_KEY_VIDEO_TRACK_FPS_SCALE = 13;
-    public static final int METADATA_KEY_VIDEO_TRACK_MAX = 14;
+    public static final int METADATA_KEY_VIDEO_TRACK_COLOR_TRC = 14;
+    public static final int METADATA_KEY_VIDEO_TRACK_MAX = 15;
 
     public static final int METADATA_KEY_AUDIO_TRACK = 20000;
     public static final int METADATA_KEY_AUDIO_TRACK_NAME = 0;
@@ -372,7 +384,8 @@ public interface IMediaPlayer {
     public static final int METADATA_KEY_AUDIO_TRACK_VBR = 5;
     public static final int METADATA_KEY_AUDIO_TRACK_SUPPORTED = 6;
     public static final int METADATA_KEY_AUDIO_TRACK_LANGUAGE = 7;
-    public static final int METADATA_KEY_AUDIO_TRACK_MAX = 8;
+    public static final int METADATA_KEY_AUDIO_TRACK_DISPOSITION = 8;
+    public static final int METADATA_KEY_AUDIO_TRACK_MAX = 9;
 
     public static final int METADATA_KEY_SUBTITLE_TRACK = 30000;
     public static final int METADATA_KEY_SUBTITLE_TRACK_NAME = 0;
@@ -380,5 +393,6 @@ public interface IMediaPlayer {
     public static final int METADATA_KEY_SUBTITLE_TRACK_IS_GFX = 2;
     public static final int METADATA_KEY_SUBTITLE_TRACK_FORMAT = 3;
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE = 4;
-    public static final int METADATA_KEY_SUBTITLE_TRACK_MAX = 5;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_DISPOSITION = 5;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_MAX = 6;
 }

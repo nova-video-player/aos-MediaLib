@@ -420,6 +420,8 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     public native boolean setAudioTrack(int stream);
 
+    public native void refreshAudioOutput();
+
     public native void setAudioFilter(int n, int night_on);
 
     public native void setAvDelay(int delay);
@@ -527,8 +529,12 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
             case MEDIA_SET_VIDEO_ASPECT:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_SET_VIDEO_ASPECT");
-                if (mOnVideoSizeChangedListener != null)
-                    mOnVideoSizeChangedListener.onVideoAspectChanged(mMediaPlayer, (double)msg.arg1 / (double) msg.arg2);
+                if (mOnVideoSizeChangedListener != null) {
+                    double aspect = videoAspectFromRatio(msg.arg1, msg.arg2);
+                    if (msg.arg1 <= 0 || msg.arg2 <= 0)
+                        log.warn("Invalid video sample aspect ratio {}/{}, using 1:1", msg.arg1, msg.arg2);
+                    mOnVideoSizeChangedListener.onVideoAspectChanged(mMediaPlayer, aspect);
+                }
                 return;
 
             case MEDIA_SET_VIDEO_FPS:
@@ -591,5 +597,12 @@ public class AvosMediaPlayer implements IMediaPlayer {
                 return;
             }
         }
+    }
+
+    static double videoAspectFromRatio(int numerator, int denominator) {
+        if (numerator <= 0 || denominator <= 0)
+            return 1.0;
+        double aspect = (double) numerator / (double) denominator;
+        return Double.isFinite(aspect) && aspect > 0.0 ? aspect : 1.0;
     }
 }

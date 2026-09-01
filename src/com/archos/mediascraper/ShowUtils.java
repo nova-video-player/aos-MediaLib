@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +86,10 @@ public final class ShowUtils {
             // Note: can detect movies that contain 3 digit numbers like "127 hours" or shows that have such numbers in their name like "zoey 101"
             // Limit first digit to be >0 in order not to identify "James Bond 007" as tv show
             //Pattern.compile("(.+)" + SEP_MANDATORY + "(?!(?:264|265|720))([1-9])(\\d{2,2})" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
+            // 4-digit SSEE format e.g. "Battlestar Galactica - 0208 - Final cut" -> Season 2, Episode 8
+            // Excludes year-prefixed numbers (19xx, 20xx) and resolution numbers preceded by 'x' (1920x1080)
+            // Also reject compact numbers followed by an explicit release year, e.g. "Chambre 1408 (2007)" is a movie, not S14E08.
+            Pattern.compile("(.+?)" + SEP_MANDATORY + "(?!(?:19|20)\\d{2})(?<![xX])([0-9]{2})([0-9]{2})(?!\\d)(?!" + SEP_MANDATORY + "(?:19|20)\\d{2}(?:$|" + SEP_MANDATORY + "))" + SEP_MANDATORY + ".*", Pattern.CASE_INSENSITIVE),
             // Daily shows The Talk 2023 05 05 XviD-AFG [eztv].mkv -> s2023e0505 ou s2023e(m*31+d)
             Pattern.compile("(.+?)" + SEP_MANDATORY + "(20\\d{2}|19\\d{2}|\\d{1,2})" + SEP_MANDATORY + "((\\d{2})" + SEP_MANDATORY + "(\\d{2})(?!\\d)).*", Pattern.CASE_INSENSITIVE),
             // Match show EXX -> one season?
@@ -117,6 +122,8 @@ public final class ShowUtils {
      */
     public static Map<String, String> parseShowName(String filename) {
         if (log.isDebugEnabled()) log.debug("parseShowName: {}", filename);
+        String rawCountryOfOrigin = getCountryOfOrigin(filename).second;
+        filename = ParseUtils.cleanTvPatternInput(filename);
         final HashMap<String, String> buffer = new HashMap<String, String>();
         Pair<String, String> nameYear;
         Pair<String, String> nameCountry;
@@ -126,21 +133,41 @@ public final class ShowUtils {
             try {
                 if(matcher.find()) {
                     nameYear = parenthesisYearExtractor(matcher.group(1));
+                    String year = nameYear.second;
+                    if (! ParseUtils.isValidYear(year)) year = null;
                     // remove junk behind () that was containing year
                     // applies to movieName (1928) junk -> movieName () junk -> movieName
                     name = removeAfterEmptyParenthesis(nameYear.first);
+
+                    // Strip common garbage (like '720p' or '(FR)') to help year extractor find the year if it's followed by junk
+                    // Do this before cleanUpName so we don't lose original separators that garbage patterns expect
+                    String nameForYear = ParseUtils.removeGarbage(name).trim();
+                    nameForYear = cleanUpName(nameForYear);
+
                     name = cleanUpName(name);
                     nameCountry = getCountryOfOrigin(name);
-                    String year = nameYear.second;
+                    if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                        nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                    }
+
                     if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
-                        nameYear = yearExtractorEndString(nameCountry.first);
+                        Pair<String, String> countryForYear = getCountryOfOrigin(nameForYear);
+                        nameYear = yearExtractorEndString(countryForYear.first);
                         if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
-                            name = nameYear.first;
-                            year = nameYear.second;
+                            if (ParseUtils.isValidYear(nameYear.second)) {
+                                name = nameYear.first;
+                                year = nameYear.second;
+                                // If we successfully extracted the year from the garbage-stripped string,
+                                // we must update the final name to also be garbage-stripped.
+                                nameCountry = getCountryOfOrigin(cleanUpName(nameYear.first));
+                                if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                                    nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                                }
+                            }
                         }
                     }
-                    if (log.isDebugEnabled()) log.debug("getMatch: patternsShowFirst {} season {} episode {} year {} country {}", name, matcher.group(2), matcher.group(3), year, nameCountry.second);
-                    buffer.put(SHOW, name);
+                    if (log.isDebugEnabled()) log.debug("getMatch: patternsShowFirst {} season {} episode {} year {} country {}", nameCountry.first, matcher.group(2), matcher.group(3), year, nameCountry.second);
+                    buffer.put(SHOW, nameCountry.first);
                     String season = matcher.group(2);
                     buffer.put(SEASON, (season == null || season.isEmpty()) ? "1" : season);
                     buffer.put(EPNUM, matcher.group(3).replaceAll(SEP_MANDATORY, ""));
@@ -156,20 +183,47 @@ public final class ShowUtils {
                 try {
                     if(matcher.find()) {
                         nameYear = parenthesisYearExtractor(matcher.group(3));
+                        String year = nameYear.second;
+                        if (! ParseUtils.isValidYear(year)) year = null;
                         // remove junk behind () that was containing year
                         // applies to movieName (1928) junk -> movieName () junk -> movieName
                         name = removeAfterEmptyParenthesis(nameYear.first);
+
+                        // Strip common garbage (like '720p' or '(FR)') to help year extractor find the year if it's followed by junk
+                        // Do this before cleanUpName so we don't lose original separators that garbage patterns expect
+                        String nameForYear = ParseUtils.removeGarbage(name).trim();
+                        nameForYear = cleanUpName(nameForYear);
+
                         name = cleanUpName(name);
                         nameCountry = getCountryOfOrigin(name);
-                        if (log.isDebugEnabled()) log.debug("getMatch: patternsEpisodeFirst {} season {} episode {} year {}", nameCountry.first, matcher.group(1), matcher.group(2), nameYear.second);
+                        if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                            nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                        }
+
+                        if (year == null || year.isEmpty()) { // if year empty perhaps this is Eric.2024-s01e01, find year in the end of the string
+                            Pair<String, String> countryForYear = getCountryOfOrigin(nameForYear);
+                            nameYear = yearExtractorEndString(countryForYear.first);
+                            if (nameYear.first != null && ! nameYear.first.isEmpty()) { // do it only if the remaining name is not empty
+                                if (ParseUtils.isValidYear(nameYear.second)) {
+                                    name = nameYear.first;
+                                    year = nameYear.second;
+                                    // If we successfully extracted the year from the garbage-stripped string,
+                                    // we must update the final name to also be garbage-stripped.
+                                    nameCountry = getCountryOfOrigin(cleanUpName(nameYear.first));
+                                    if (nameCountry.second == null && rawCountryOfOrigin != null) {
+                                        nameCountry = new Pair<>(nameCountry.first, rawCountryOfOrigin);
+                                    }
+                                }
+                            }
+                        }
+                        if (log.isDebugEnabled()) log.debug("getMatch: patternsEpisodeFirst {} season {} episode {} year {}", nameCountry.first, matcher.group(1), matcher.group(2), year);
                         buffer.put(SHOW, nameCountry.first);
                         buffer.put(SEASON, matcher.group(1));
                         buffer.put(EPNUM, matcher.group(2));
-                        buffer.put(YEAR, nameYear.second);
+                        buffer.put(YEAR, year);
                         buffer.put(ORIGIN, nameCountry.second);
                         return buffer;
-                    }
-                } catch (IllegalArgumentException ignored) {}
+                    }                } catch (IllegalArgumentException ignored) {}
             }
         return null;
     }
@@ -189,7 +243,7 @@ public final class ShowUtils {
             filename = FileUtils.getName(file);
         }
         // remove trailing '/' if it exists
-        filename = removeTrailingSlash(filename);
+        filename = ParseUtils.cleanTvPatternInput(removeTrailingSlash(filename));
         if (log.isDebugEnabled()) log.debug("isTvShow: parsing {}", filename);
         for(Pattern regexp: patternsShowFirst) {
             Matcher m = regexp.matcher(filename);
@@ -217,6 +271,50 @@ public final class ShowUtils {
 
     public static boolean isTvShow(String path) {
         return isTvShow(Uri.parse(path), null);
+    }
+
+    /**
+     * Extracts a clean episode title from the portion of the filename after SxxExx.
+     * For example, from "Doctor.Who.2024.S02E00.Joy.to.the.World.1080p.10bit.WEBRip.6CH.x265.HEVC-PSA"
+     * with season=2, episode=0, returns "Joy to the World".
+     *
+     * @param filename the filename without extension
+     * @param season the season number
+     * @param episode the episode number
+     * @return the cleaned episode title, or null if not found or empty
+     */
+    public static String extractEpisodeTitle(String filename, int season, int episode) {
+        // build SxxExx pattern to find in filename (case insensitive), tolerating extra
+        // leading zeros in the episode number (e.g. "S01E018" for episode 18)
+        String sxePattern = String.format(Locale.ROOT, "S%02dE0*%d(?!\\d)", season, episode);
+        Matcher matcher = Pattern.compile(sxePattern, Pattern.CASE_INSENSITIVE).matcher(filename);
+        if (!matcher.find()) return null;
+
+        // take everything after SxxExx
+        String remainder = filename.substring(matcher.end());
+        if (remainder.isEmpty()) return null;
+
+        // strip leading separators
+        remainder = remainder.replaceAll("^[\\s._-]+", "");
+        if (remainder.isEmpty()) return null;
+
+        String cleaned = ParseUtils.cleanExtractedTitle(remainder);
+        if (cleaned == null || cleaned.isEmpty() || !isPlausibleEpisodeTitle(cleaned)) return null;
+        return cleaned;
+    }
+
+    /**
+     * Guards fuzzy title matching (see ShowScraper4#fuzzyMatchEpisodeByTitle) from running
+     * against leftover release-tag garbage that the static GARBAGE_* lists in ParseUtils don't
+     * happen to cover (e.g. unlisted release group names, resolution/codec remnants). A genuine
+     * episode title is expected to have some actual wording, not just a short, mostly non-letter
+     * token.
+     */
+    private static boolean isPlausibleEpisodeTitle(String title) {
+        String trimmed = title.trim();
+        if (trimmed.length() < 3) return false;
+        // require at least two consecutive letters somewhere, rejects tokens like "5.1", "264", "H265"
+        return trimmed.matches(".*\\p{L}{2,}.*");
     }
 
     public static String urlEncode(String input) {

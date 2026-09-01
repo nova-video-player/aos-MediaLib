@@ -1,5 +1,5 @@
 # InputFile|ExpectedName|ExpectedYear|ExpectedSuggestion
-Blade Runner 2049|Blade Runner|2049|Blade Runner 2049
+Blade Runner 2049|Blade Runner 2049|null|Blade Runner 2049
 2001 A Space Odyssey|A Space Odyssey|2001|A Space Odyssey 2001
 Class of 1999|Class of|1999|Class of 1999
 Scream 2022|Scream|2022|Scream 2022
@@ -7,3 +7,30 @@ Transformers.2001.avi|Transformers|2001|Transformers 2001
 Titanic (2001).avi|Titanic|2001|Titanic 2001
 100. Toy Story 3 (2010).mp4|Toy Story 3|2010|Toy Story 3 2010
 The.Incredibles.DVDSCR.XviD.cd1.avi|The Incredibles|null|The Incredibles
+Paris Police 1900|Paris Police 1900|null|Paris Police 1900
+1984.mkv|1984|null|1984
+1917.2019.2160p.HDR10Plus.BluRay.8CH.x265.HEVC-PSA.mkv|1917|2019|1917 2019
+2067.2020.1080p.10bit.BluRay.6CH.x265.HEVC-PSA.mkv|2067|2020|2067 2020
+2001 - L'Odyssée De l'Espace (1968) (2001 - A Space Odyssey) 720p x264 AAC 5.1 MULTI [NOEX].mkv|2001 L'Odyssée De l'Espace|1968|2001 L'Odyssée De l'Espace 1968
+2012 (2009) MULTi TrueFrench 1080p HDLight x264.GHT.mkv|2012|2009|2012 2009
+1961 le cave se rebiffe 1920x1080 HD ABcollection gabin.mkv|le cave se rebiffe|1961|le cave se rebiffe 1961
+2046.2004.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4|2046|2004|2046 2004
+1-Le petit monde de Don CAMILLO.avi|Le petit monde de Don CAMILLO|null|Le petit monde de Don CAMILLO
+1933 La soupe au canard (Duck Soup).mkv|La soupe au canard|1933|La soupe au canard 1933
+22-La Cuisine Au Beurre (1963).mkv|La Cuisine Au Beurre|1963|La Cuisine Au Beurre 1963
+19-LES.101.DALMATIENS.mkv|LES 101 DALMATIENS|null|LES 101 DALMATIENS
+Amadeus (1984) Theatrical Multi VFI 2160p 4KLight DV HDR Bluray AC3 5.1 X265.mkv|Amadeus|1984|Amadeus 1984
+2 Guns (2013) Hybrid Multi VFF 2160p 10 bits 4KLight HDR Bluray DDP5.1 X265.mkv|2 Guns|2013|2 Guns 2013
+The Formula (2014).mkv|The Formula|2014|The Formula 2014
+300 (2007) MULTi VFF 2160p 10bit 4KLight HDR BluRay AC3 5.1 x265-QTZ.mkv|300|2007|300 2007
+# 4-digit SSEE collision risks: room/address numbers and franchise year suffixes
+# 1408 is below MIN_YEAR (1906) so never extracted as year; no separator before digits -> no SSEE match
+1408.mkv|1408|null|1408
+1408 (2007).mkv|1408|2007|1408 2007
+# Franchise year suffixes: "2000" starts with 20 -> excluded from SSEE pattern
+Death Race 2000.mkv|Death Race|2000|Death Race 2000
+Dracula 2000.mkv|Dracula|2000|Dracula 2000
+Fantasia 2000.mkv|Fantasia|2000|Fantasia 2000
+# Year-titled films: start with 19 -> excluded from SSEE pattern
+1922 (2017).mkv|1922|2017|1922 2017
+1941 (1979).mkv|1941|1979|1941 1979

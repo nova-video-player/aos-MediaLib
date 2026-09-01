@@ -23,6 +23,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -285,11 +286,11 @@ public class InfoDialog extends Dialog {
 
         ViewStub detailsStub = (ViewStub) findViewById(R.id.info_details_stub);
         if (detailsStub == null) {
-        	if(DBG) Log.e(TAG, "setDetailsLayout: detailsStub is null, returning false");
+            if(DBG) Log.e(TAG, "setDetailsLayout: detailsStub is null, returning false");
             return false;
         }
         if (detailsLayoutId == 0) {
-        	if(DBG) Log.e(TAG, "setDetailsLayout: detailsLayoutId is zero, returning false");
+            if(DBG) Log.e(TAG, "setDetailsLayout: detailsLayoutId is zero, returning false");
             return false;
         }
 
@@ -321,7 +322,7 @@ public class InfoDialog extends Dialog {
 
     private void updateFileSelectionInfo() {
         if (mFileSelection == null) {
-        	if(DBG) Log.w(TAG, "updateFileSelectionInfo: selection is empty");
+            if(DBG) Log.w(TAG, "updateFileSelectionInfo: selection is empty");
             return;
         }
 
@@ -418,8 +419,9 @@ public class InfoDialog extends Dialog {
     }
 
     // Handler to get some asynchronous info
-    private final Handler mHandler = new Handler() {
-        // @SuppressWarnings("unchecked")
+    private final Handler mHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        @SuppressWarnings("unchecked")
         public void handleMessage(Message msg) {
             if (msg.what == MSG_SIZE_COMPUTED) {
                 ArrayList<Object> list = (ArrayList<Object>) msg.obj;

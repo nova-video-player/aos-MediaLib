@@ -39,6 +39,7 @@ import com.archos.mediascraper.ShowTags;
 import com.archos.mediascraper.ShowUtils;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.TvShowSearchInfo;
+import com.archos.filecorelibrary.FileUtils;
 import com.archos.mediascraper.themoviedb3.MyTmdb;
 import com.archos.mediascraper.themoviedb3.SearchShow;
 import com.archos.mediascraper.themoviedb3.SearchShowResult;
@@ -54,6 +55,8 @@ import com.archos.mediascraper.themoviedb3.ShowIdTvSearch;
 import com.archos.mediascraper.themoviedb3.ShowIdTvSearchResult;
 import com.uwetrottmann.tmdb2.entities.TvEpisode;
 import com.uwetrottmann.tmdb2.entities.TvSeason;
+
+import org.apache.commons.text.similarity.LevenshteinDistance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,9 +157,114 @@ public class ShowScraper4 extends BaseScraper2 {
             }
         }
 
-        searchResult = SearchShow.search(searchInfo, language, maxItems, adultScrape,this, getTmdb());
-        if (log.isDebugEnabled()) if (searchResult.result.size() > 0) log.debug("getMatches2: match found {} id {}", searchResult.result.get(0).getTitle(), searchResult.result.get(0).getId());
+        List<SearchCandidate> candidates = new ArrayList<>();
+        // Prefer cleaned name with year filter (if any) first
+        candidates.add(new SearchCandidate(searchInfo.getShowName(), searchInfo.getFirstAiredYear()));
+        if (searchInfo.getFirstAiredYear() != null && !searchInfo.getFirstAiredYear().isEmpty()) {
+            // Fallback: try cleaned name without year filter if year search returns no results
+            candidates.add(new SearchCandidate(searchInfo.getShowName(), null));
+            // Fallback to suggestion (name + year) without year filter
+            candidates.add(new SearchCandidate(searchInfo.getShowName() + " " + searchInfo.getFirstAiredYear(), null));
+        }
+
+        for (SearchCandidate candidate : candidates) {
+            if (log.isDebugEnabled()) log.debug("getMatches2: trying candidate '{}' with year {}", candidate.query, candidate.year);
+            // Temporarily update searchInfo with candidate values for the search call
+            TvShowSearchInfo candidateInfo = new TvShowSearchInfo(
+                    searchInfo.getFile(),
+                    candidate.query,
+                    searchInfo.getSeason(),
+                    searchInfo.getEpisode(),
+                    candidate.year,
+                    searchInfo.getCountryOfOrigin()
+            );
+            searchResult = SearchShow.search(candidateInfo, language, maxItems, adultScrape, this, getTmdb());
+            if (searchResult.status == ScrapeStatus.OKAY && !searchResult.result.isEmpty()) {
+                if (log.isDebugEnabled()) log.debug("getMatches2: found results for '{}', stopping early", candidate.query);
+                break;
+            }
+        }
+
+        if (log.isDebugEnabled()) if (searchResult != null && !searchResult.result.isEmpty()) log.debug("getMatches2: match found {} id {}", searchResult.result.get(0).getTitle(), searchResult.result.get(0).getId());
         return new ScrapeSearchResult(searchResult.result, false, searchResult.status, searchResult.reason);
+    }
+
+    private static class SearchCandidate {
+        String query;
+        String year;
+        SearchCandidate(String query, String year) {
+            this.query = query;
+            this.year = year;
+        }
+    }
+
+    // Number of ranked candidates to consider for the title-collision fallback below.
+    // Costs no extra TMDB request: the initial tv() search already returns up to 20 results in
+    // one page, trimming to maxItems is done client-side in SearchParserResult.getResults().
+    private static final int CASCADE_CANDIDATE_LIMIT = 5;
+
+    /**
+     * TV-specific auto-scrape entry point used by {@link Scraper#getAutoDetails}. Mirrors
+     * {@link BaseScraper2#search} (which is final and shared with movies, so it cannot be
+     * overridden here) but adds one behavior: when the top-ranked candidate's requested
+     * season/episode cannot genuinely be found (see buildTag()), and the top candidate is an
+     * exact title match (Levenshtein distance 0, a genuine title collision, e.g. two shows
+     * sharing the exact same title such as a classic show and its reboot), retries against the
+     * next candidates that are also tied at distance 0.
+     * <p>
+     * This cascade is deliberately restricted to zero-distance tied candidates and only
+     * triggers extra TMDB requests in the failure branch, to avoid mis-attributing episodes to
+     * an unrelated, lower-ranked show and to avoid any extra cost in the (overwhelmingly
+     * common) success case. When the top candidate is merely a fuzzy/partial match (distance >
+     * 0), no cascade happens even if other candidates are tied at that same distance: only the
+     * top candidate is tried, same as a plain single-candidate lookup, since those ties are not
+     * genuine collisions with the top pick and retrying them would add several full-season/show
+     * TMDb fetches per candidate for no accuracy benefit.
+     */
+    public ScrapeDetailResult searchWithTitleCollisionFallback(SearchInfo info) {
+        if (info == null || !(info instanceof TvShowSearchInfo)) {
+            log.error("searchWithTitleCollisionFallback: bad search info");
+            return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR, null);
+        }
+        ScrapeSearchResult searchResult = getMatches2(info, CASCADE_CANDIDATE_LIMIT);
+        if (!searchResult.isOkay() || searchResult.results == null || searchResult.results.isEmpty()) {
+            return new ScrapeDetailResult(null, searchResult.isMovie, null, searchResult.status, searchResult.reason);
+        }
+
+        TvShowSearchInfo tvSearchInfo = (TvShowSearchInfo) info;
+        Bundle bundle = new Bundle();
+        bundle.putInt(Scraper.ITEM_REQUEST_BASIC_VIDEO, 1);
+        bundle.putInt(Scraper.ITEM_REQUEST_SEASON, tvSearchInfo.getSeason());
+        bundle.putInt(Scraper.ITEM_REQUEST_EPISODE, tvSearchInfo.getEpisode());
+        // keeping whole season boosts the perf since there is only one request for tmdb
+        bundle.putInt(Scraper.ITEM_REQUEST_ALL_EPISODES, tvSearchInfo.getSeason());
+
+        int topDistance = searchResult.results.get(0).getLevenshteinDistance();
+        // Only cascade through further tied candidates for genuine title collisions, i.e. an
+        // exact title match (distance 0, e.g. a classic show and its reboot sharing the same
+        // name). When the top match is merely a fuzzy/partial one (distance > 0), other
+        // candidates tied at that same non-zero distance are not true collisions with the top
+        // pick, so retrying them would add several full-season/show TMDb fetches per candidate
+        // without improving match precision. In that case behave like a plain single-candidate
+        // lookup, same as before this fallback existed.
+        boolean isGenuineTitleCollision = topDistance == 0;
+        ScrapeDetailResult result = null;
+        for (SearchResult candidate : searchResult.results) {
+            if (candidate.getLevenshteinDistance() != topDistance) break; // only tied candidates
+            result = getDetails(candidate, bundle);
+            boolean genuineMatch = result != null && result.tag instanceof EpisodeTags
+                    && ((EpisodeTags) result.tag).getTitle() != null;
+            if (genuineMatch) {
+                if (log.isDebugEnabled()) log.debug("searchWithTitleCollisionFallback: genuine match for '{}' (id {})", candidate.getTitle(), candidate.getId());
+                return result;
+            }
+            if (!isGenuineTitleCollision) break; // no cascade beyond the top candidate
+            log.info("searchWithTitleCollisionFallback: no genuine episode match for '{}' (id {}), trying next tied candidate", candidate.getTitle(), candidate.getId());
+        }
+        // no tied candidate yielded a genuine match: return the last attempted result (top
+        // candidate's placeholder), preserving existing behavior for legitimately-not-found
+        // episodes of the correct show
+        return result;
     }
 
     @Override
@@ -171,6 +279,12 @@ public class ShowScraper4 extends BaseScraper2 {
         boolean basicShow = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_SHOW);
         boolean basicEpisode = options != null && options.containsKey(Scraper.ITEM_REQUEST_BASIC_VIDEO);
         boolean getAllEpisodes = options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES);
+        boolean refreshShowMetadata = options != null
+                && options.getBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, false);
+        // Manual requests use an uncached client and separate LRU keys. This keeps automatic
+        // scans on the shared cache while making an explicit re-scrape genuinely current.
+        MyTmdb requestTmdb = refreshShowMetadata ? new MyTmdb(apiKey, null) : getTmdb();
+        String requestCacheSuffix = refreshShowMetadata ? "|manual-refresh" : "";
         int season = -1;
         int episode = -1;
         if (options != null) {
@@ -187,7 +301,7 @@ public class ShowScraper4 extends BaseScraper2 {
         int showId = result.getId();
 
         //If we got this result from the database, grab the tags from there and return them instead of going to TMDB.
-        if (result.fromDB){
+        if (result.fromDB && !refreshShowMetadata){
             EpisodeTags tag = TagsFactory.buildEpisodeTags(mContext, showId);
             return new ScrapeDetailResult(tag, false, null, ScrapeStatus.OKAY, null);
         }
@@ -197,6 +311,46 @@ public class ShowScraper4 extends BaseScraper2 {
         int requestedSeason = Integer.parseInt(result.getExtra().getString(ShowUtils.SEASON, "0"));
         int requestedEpisode = Integer.parseInt(result.getExtra().getString(ShowUtils.EPNUM, "0"));
 
+        // Remap SxxE00 (special episode encoded in regular season) to S00Eyy via title matching
+        if (requestedEpisode == 0 && requestedSeason > 0 && result.getFile() != null) {
+            String filename = FileUtils.getFileNameWithoutExtension(result.getFile());
+            String episodeTitle = ShowUtils.extractEpisodeTitle(filename, requestedSeason, 0);
+            if (episodeTitle != null && !episodeTitle.isEmpty()) {
+                if (log.isDebugEnabled()) log.debug("getDetailsInternal: SxxE00 detected, extracted title '{}', attempting season 0 remapping", episodeTitle);
+                String resultLanguage0 = TextUtils.isEmpty(result.getLanguage()) ? "en" : result.getLanguage();
+                String cleanShowName0 = ShowUtils.cleanUpName(result.getOriginalTitle().toLowerCase());
+                int matchedEpisode = -1;
+
+                // Try matching in the configured language first
+                String season0Key = cleanShowName0 + "|" + showId + "|0|all|" + resultLanguage0;
+                ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key + requestCacheSuffix, showId, 0, resultLanguage0, adultScrape, requestTmdb);
+                if (season0Result.status == ScrapeStatus.OKAY && season0Result.tvSeason != null && season0Result.tvSeason.episodes != null) {
+                    matchedEpisode = fuzzyMatchEpisodeByTitle(episodeTitle, season0Result.tvSeason.episodes);
+                }
+
+                // Fallback to English if no match found and language is not already English
+                // (filename titles are almost always in English)
+                if (matchedEpisode < 0 && !"en".equals(resultLanguage0)) {
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: no match in {}, retrying season 0 in English", resultLanguage0);
+                    String season0KeyEn = cleanShowName0 + "|" + showId + "|0|all|en";
+                    ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn + requestCacheSuffix, showId, 0, "en", adultScrape, requestTmdb);
+                    if (season0ResultEn.status == ScrapeStatus.OKAY && season0ResultEn.tvSeason != null && season0ResultEn.tvSeason.episodes != null) {
+                        matchedEpisode = fuzzyMatchEpisodeByTitle(episodeTitle, season0ResultEn.tvSeason.episodes);
+                    }
+                }
+
+                if (matchedEpisode >= 0) {
+                    log.info("getDetailsInternal: remapped S{}E00 '{}' -> S00E{}", requestedSeason, episodeTitle, matchedEpisode);
+                    requestedSeason = 0;
+                    requestedEpisode = matchedEpisode;
+                    season = 0;
+                    episode = matchedEpisode;
+                } else {
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: no fuzzy match found in season 0 for title '{}'", episodeTitle);
+                }
+            }
+        }
+
         // Use OPTIONS values if available (for re-scraping), otherwise use SearchResult extras (for manual scraping)
         // Manual scraping doesn't set season/episode in OPTIONS but has them in SearchResult.extras
         // Re-scraping sets season in OPTIONS but may not have SearchResult.extras populated
@@ -205,8 +359,8 @@ public class ShowScraper4 extends BaseScraper2 {
 
         //Build the Show and Episode keys.
         String cleanShowName = ShowUtils.cleanUpName(result.getOriginalTitle().toLowerCase());
-        String showKey = cleanShowName + "|" + resultLanguage;
-        String seasonKey =  cleanShowName + "|" + keySeasonValue  + "|all|" + resultLanguage;
+        String showKey = cleanShowName + "|" + showId + "|" + resultLanguage;
+        String seasonKey =  cleanShowName + "|" + showId + "|" + keySeasonValue  + "|all|" + resultLanguage;
         String episodeKey = showId + "|" + keySeasonValue + "|" + keyEpisodeValue + "|" + resultLanguage;
 
         if (log.isDebugEnabled()) log.debug("getDetailsInternal: {}({}) {} in {} (basicShow={}/basicEpisode={})",
@@ -214,10 +368,21 @@ public class ShowScraper4 extends BaseScraper2 {
 
         Map<String, EpisodeTags> allEpisodes = null;
         ShowTags showTags = null;
+        ShowTags refreshedShowMetadata = null;
         ShowIdImagesResult searchImages = null;
+        // set when the single-episode lookup below had to be remapped to TMDb's absolute
+        // episode numbering (see comment there); guards against redoing the same detection
+        // once it has already succeeded for this request
+        boolean absoluteNumberingRemap = false;
 
         if (log.isDebugEnabled()) log.debug("getDetailsInternal: probing cache for showKey {}", showKey);
         allEpisodes = sEpisodeCache.get(seasonKey);
+        // An explicit manual re-scrape must reach the show endpoint even when this season
+        // is cached: the cache keeps the pre-existing ShowTags and would retain its old
+        // source metadata indefinitely.
+        if (refreshShowMetadata) {
+            allEpisodes = null;
+        }
         if (log.isTraceEnabled()) debugLruCache(sEpisodeCache);
 
         if (allEpisodes == null) {
@@ -239,7 +404,7 @@ public class ShowScraper4 extends BaseScraper2 {
             Boolean isShowKnown = isShowAlreadyKnown(showId, mContext);
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: show known {}", isShowKnown);
 
-            if (!isShowKnown) {
+            if (!isShowKnown || refreshShowMetadata) {
                 String lang = resultLanguage;
                 // for getAllEpisodes we need to get the number of seasons thus get it
                 if (log.isDebugEnabled()) log.debug("getDetailsInternal: show {} not known or getAllEpisodes {}", showId, getAllEpisodes);
@@ -248,24 +413,37 @@ public class ShowScraper4 extends BaseScraper2 {
                 ShowMetadata cachedMetadata = sShowMetadataCache.get(showKey);
                 ShowIdTvSearchResult showIdTvSearchResult = null;
 
-                if (cachedMetadata == null) {
+                if (cachedMetadata == null || refreshShowMetadata) {
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: show metadata cache miss, fetching from API");
                     // query first tmdb
-                    showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey, showId, resultLanguage, adultScrape, getTmdb());
+                    showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey + requestCacheSuffix, showId, resultLanguage, adultScrape, requestTmdb);
 
                     // parse result to get global show basic info
                     if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
                         return new ScrapeDetailResult(new ShowTags(), true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                    else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                    else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext, resultLanguage);
+                    if (refreshShowMetadata) {
+                        refreshedShowMetadata = showTags;
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: explicit manual refresh fetched source metadata for show {}", showId);
+                    }
                     
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: downloaded showTags {} {}", showTags.getOnlineId(), showTags.getTitle());
 
                     // if there is no title or description research in en
                     if (showTags.getPlot() == null || showTags.getTitle() == null || showTags.getPlot().trim().length() == 0 || showTags.getTitle().trim().length() == 0) {
-                        showIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(showKey, showId, "en", adultScrape, getTmdb());
-                        if (showIdTvSearchResult.status != ScrapeStatus.OKAY)
-                            return new ScrapeDetailResult(showTags, true, null, showIdTvSearchResult.status, showIdTvSearchResult.reason);
-                        else showTags = ShowIdParser.getResult(showIdTvSearchResult.tvShow, result.getYear(), mContext);
+                        // use an "en" scoped key: showKey (built with resultLanguage) is already cached
+                        // with the localized (empty) result, reusing it here would just return that same
+                        // cached entry instead of querying tmdb in English
+                        String fallbackShowKey = cleanShowName + "|" + showId + "|en";
+                        ShowIdTvSearchResult enShowIdTvSearchResult = ShowIdTvSearch.getTvShowResponse(fallbackShowKey + requestCacheSuffix, showId, "en", adultScrape, requestTmdb);
+                        if (enShowIdTvSearchResult.status == ScrapeStatus.OKAY) {
+                            ShowTags enShowTags = ShowIdParser.getResult(enShowIdTvSearchResult.tvShow, result.getYear(), mContext, "en");
+                            // merge only the missing fields, preserve the rest of the localized showTags (images, etc.)
+                            if (showTags.getPlot() == null || showTags.getPlot().trim().length() == 0) showTags.setPlot(enShowTags.getPlot());
+                            if (showTags.getTitle() == null || showTags.getTitle().trim().length() == 0) showTags.setTitle(enShowTags.getTitle());
+                        } else {
+                            if (log.isDebugEnabled()) log.debug("getDetailsInternal: en fallback for show {} failed with status {}", showId, enShowIdTvSearchResult.status);
+                        }
                     }
 
                     // now we have the number of seasons if we need getAllEpisodes
@@ -318,19 +496,34 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (log.isDebugEnabled()) log.debug("getDetailsInternal: show {} is known: rebuild from tag", showId);
                 // showTags exits we get it from db
                 showTags = buildShowTagsOnlineId(mContext, showId);
+                if (showTags == null) {
+                    log.warn("getDetailsInternal: show {} not found in db, cannot rebuild tags", showId);
+                    return new ScrapeDetailResult(null, true, null, ScrapeStatus.ERROR_PARSER, null);
+                }
+                if (refreshedShowMetadata != null) {
+                    showTags.setOriginalLanguage(refreshedShowMetadata.getOriginalLanguage());
+                    showTags.setOriginalTitle(refreshedShowMetadata.getOriginalTitle());
+                    showTags.setSpokenLanguages(refreshedShowMetadata.getSpokenLanguages().isEmpty()
+                            ? null : java.util.Arrays.asList(refreshedShowMetadata.getSpokenLanguages().split(",")));
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: applied refreshed source metadata to known show {}: language={} title={} spoken={}",
+                            showId, showTags.getOriginalLanguage(), showTags.getOriginalTitle(),
+                            showTags.getSpokenLanguages());
+                }
             }
 
             // retreive now the desired episodes
             List<TvEpisode> tvEpisodes = new ArrayList<>();
             Map<Integer, TvSeason> tvSeasons = new HashMap<Integer, TvSeason>();
+            boolean fetchedFullSeason = false;
 
             if (getAllEpisodes) {
                 //I WILL GET EACH EASON AS NEEDED, I ONLY HAVE SOME SEASONS OF SOME SHOWS
-                ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, requestedSeason, resultLanguage, adultScrape, tmdb);
+                ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, requestedSeason, resultLanguage, adultScrape, requestTmdb);
                 if (showIdSeason.status == ScrapeStatus.OKAY) {
                     tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
                     if (! tvSeasons.containsKey(showIdSeason.tvSeason.season_number))
                         tvSeasons.put(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
+                    fetchedFullSeason = true;
                 } else {
                     log.warn("getDetailsInternal: scrapeStatus for s" + requestedSeason + " is NOK!");
                     return new ScrapeDetailResult(new EpisodeTags(showTags, requestedSeason, requestedEpisode), true, null, showIdSeason.status, showIdSeason.reason);
@@ -340,10 +533,55 @@ public class ShowScraper4 extends BaseScraper2 {
                 if (episode != -1) {
                     // get a single episode: should never get there since it means that we cannot infer poster/backdrop from single episode (need season)
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: get single episode for show {} s{}e{}", showId, season, episode);
-                    ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(episodeKey, showId, season, episode, resultLanguage, adultScrape, getTmdb());
+                    ShowIdEpisodeSearchResult showIdEpisode = ShowIdEpisodeSearch.getEpisodeShowResponse(episodeKey + requestCacheSuffix, showId, season, episode, resultLanguage, adultScrape, requestTmdb);
                     if (showIdEpisode.status == ScrapeStatus.OKAY)
                         tvEpisodes.add(showIdEpisode.tvEpisode);
-                    else {
+                    else if (showIdEpisode.status == ScrapeStatus.NOT_FOUND) {
+                        // some long-running shows (mostly anime split into arbitrary TMDb
+                        // "seasons") do not restart episode_number at 1 for each season, so a
+                        // direct season/episode lookup using the file's own per-season numbering
+                        // can 404 even though the show/season exist. Detect this by fetching the
+                        // full season and checking whether its first episode is numbered 1; if
+                        // not, remap the requested episode to the equivalent absolute number.
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} not found, checking for absolute episode numbering", season, episode);
+                        ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, season, resultLanguage, adultScrape, requestTmdb);
+                        TvEpisode matched = null;
+                        if (showIdSeason.status == ScrapeStatus.OKAY && showIdSeason.tvSeason != null
+                                && showIdSeason.tvSeason.episodes != null && !showIdSeason.tvSeason.episodes.isEmpty()) {
+                            TvEpisode firstEpisode = showIdSeason.tvSeason.episodes.get(0);
+                            if (firstEpisode.episode_number != null && firstEpisode.episode_number != 1) {
+                                int absoluteEpisode = firstEpisode.episode_number + episode - 1;
+                                if (log.isDebugEnabled()) log.debug("getDetailsInternal: season {} uses absolute numbering starting at {}, remapping e{} -> e{}", season, firstEpisode.episode_number, episode, absoluteEpisode);
+                                for (TvEpisode tvEpisode : showIdSeason.tvSeason.episodes) {
+                                    if (tvEpisode.episode_number != null && tvEpisode.episode_number == absoluteEpisode) {
+                                        matched = tvEpisode;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (matched != null) {
+                                tvSeasons.putIfAbsent(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
+                                // the fetched episode carries TMDb's absolute episode_number: adjust
+                                // episodeKey to match so the later allEpisodes.get(episodeKey) lookup
+                                // in buildTag succeeds instead of falling through to an empty tag
+                                episodeKey = showId + "|" + matched.season_number + "|" + matched.episode_number + "|" + resultLanguage;
+                                absoluteNumberingRemap = true;
+                            }
+                        }
+                        if (matched != null) {
+                            log.info("getDetailsInternal: remapped absolute numbering s{}e{} -> e{} for show {}", season, episode, matched.episode_number, showId);
+                            tvEpisodes.add(matched);
+                        } else {
+                            log.warn("getDetailsInternal: scrapeStatus for s{}e{} is NOK!", season, episode);
+                            // save showtag even if episodetag is empty
+                            EpisodeTags episodeTag = new EpisodeTags();
+                            episodeTag.setShowTags(showTags);
+                            // even if this is nok record season and episode not to end up with s00e00
+                            episodeTag.setSeason(requestedSeason);
+                            episodeTag.setEpisode(requestedEpisode);
+                            return new ScrapeDetailResult(episodeTag, true, null, showIdEpisode.status, showIdEpisode.reason);
+                        }
+                    } else {
                         log.warn("getDetailsInternal: scrapeStatus for s{}e{} is NOK!", season, episode);
                         // save showtag even if episodetag is empty
                         EpisodeTags episodeTag = new EpisodeTags();
@@ -363,10 +601,11 @@ public class ShowScraper4 extends BaseScraper2 {
                         return new ScrapeDetailResult(episodeTag, true, null, ScrapeStatus.ERROR_PARSER, null);
                     }
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: get full season for show {} s{}", showId, season);
-                    ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey, showId, season, resultLanguage, adultScrape, getTmdb());
+                    ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, season, resultLanguage, adultScrape, requestTmdb);
                     if (showIdSeason.status == ScrapeStatus.OKAY) {
                         tvEpisodes.addAll(showIdSeason.tvSeason.episodes);
                         tvSeasons.putIfAbsent(showIdSeason.tvSeason.season_number, showIdSeason.tvSeason);
+                        fetchedFullSeason = true;
                     } else {
                         // save showtag even if episodetag is empty
                         EpisodeTags episodeTag = new EpisodeTags();
@@ -380,18 +619,44 @@ public class ShowScraper4 extends BaseScraper2 {
                 }
             }
 
+            // some long-running shows (mostly anime split into arbitrary TMDb "seasons") do not
+            // restart episode_number at 1 for each season, so the file's own per-season episode
+            // number can miss the actual season's episode list entirely. Detect this once the
+            // full season is available (getAllEpisodes and season-only fetches above always
+            // pull the whole season) and remap requestedEpisode to the equivalent absolute
+            // TMDb episode number so the later allEpisodes.get(episodeKey) lookup succeeds.
+            if (fetchedFullSeason && !absoluteNumberingRemap && !tvEpisodes.isEmpty()) {
+                TvEpisode firstEpisode = tvEpisodes.get(0);
+                if (firstEpisode.episode_number != null && firstEpisode.episode_number != 1) {
+                    int absoluteEpisode = firstEpisode.episode_number + requestedEpisode - 1;
+                    for (TvEpisode tvEpisode : tvEpisodes) {
+                        if (tvEpisode.episode_number != null && tvEpisode.episode_number == absoluteEpisode) {
+                            if (log.isDebugEnabled()) log.debug("getDetailsInternal: season {} uses absolute numbering starting at {}, remapping e{} -> e{}", requestedSeason, firstEpisode.episode_number, requestedEpisode, absoluteEpisode);
+                            episodeKey = showId + "|" + tvEpisode.season_number + "|" + tvEpisode.episode_number + "|" + resultLanguage;
+                            absoluteNumberingRemap = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
             // get now all episodes in tvEpisodes
-            Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(seasonKey, showId, tvEpisodes, tvSeasons, showTags, resultLanguage, adultScrape, getTmdb(), mContext);
+            Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(seasonKey + requestCacheSuffix, showId, tvEpisodes, tvSeasons, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
             if (!searchEpisodes.isEmpty()) {
                 allEpisodes = searchEpisodes;
-                // put that result in cache.
-                if (log.isDebugEnabled()) log.debug("getDetailsInternal: sEpisodeCache put allEpisodes with key {}", episodeKey);
-                sEpisodeCache.put(seasonKey, allEpisodes);
+                // Cache only when the fetch path populated a full season map.
+                // Manual single-episode searches still bypass the season cache.
+                if (fetchedFullSeason) {
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: sEpisodeCache put allEpisodes with key {}", seasonKey);
+                    sEpisodeCache.put(seasonKey, allEpisodes);
+                } else {
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: single episode fetch, not caching under season key {}", seasonKey);
+                }
 
                 SparseArray<ScraperImage> seasonPosters = sSeasonPosterCache.get(showKey);
-                if (seasonPosters == null) {
+                if (seasonPosters == null && showTags != null) {
                     List<ScraperImage> postersFromDb = showTags.getAllPostersInDb(mContext);
-                    if (!postersFromDb.isEmpty()) {
+                    if (postersFromDb != null && !postersFromDb.isEmpty()) {
                         seasonPosters = buildSeasonPosterMap(postersFromDb, resultLanguage);
                         sSeasonPosterCache.put(showKey, seasonPosters);
                         if (log.isDebugEnabled()) log.debug("getDetailsInternal: cached season posters for show {}", showId);
@@ -416,12 +681,103 @@ public class ShowScraper4 extends BaseScraper2 {
             // get the showTags out of one random element, they all contain the same
             Iterator<EpisodeTags> iter = allEpisodes.values().iterator();
             if (iter.hasNext()) showTags = iter.next().getShowTags();
+
+            // the cached season may use TMDb absolute episode numbering (see comment on
+            // absoluteNumberingRemap above): a fresh fetch would have been remapped, but a
+            // cache hit skips that logic, so redo the same detection against the cached map.
+            // Derive minEpisode from the map's own keys (showId|season|episode|language, set
+            // by ShowIdEpisodes.getEpisodes from TMDb's season_number/episode_number) rather
+            // than from the cached EpisodeTags' own getSeason()/getEpisode(): those objects are
+            // shared across requests and must never be relied upon for this, only their key.
+            if (!allEpisodes.containsKey(episodeKey) && !allEpisodes.isEmpty()) {
+                int minEpisode = Integer.MAX_VALUE;
+                for (String key : allEpisodes.keySet()) {
+                    String[] parts = key.split("\\|");
+                    if (parts.length != 4) continue;
+                    try {
+                        if (Integer.parseInt(parts[1]) == keySeasonValue) {
+                            int ep = Integer.parseInt(parts[2]);
+                            if (ep < minEpisode) minEpisode = ep;
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+                if (minEpisode != Integer.MAX_VALUE && minEpisode != 1) {
+                    int absoluteEpisode = minEpisode + requestedEpisode - 1;
+                    String remappedKey = showId + "|" + keySeasonValue + "|" + absoluteEpisode + "|" + resultLanguage;
+                    if (allEpisodes.containsKey(remappedKey)) {
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: cached season {} uses absolute numbering starting at {}, remapping e{} -> e{}", keySeasonValue, minEpisode, requestedEpisode, absoluteEpisode);
+                        episodeKey = remappedKey;
+                        absoluteNumberingRemap = true;
+                    }
+                }
+            }
         }
         if (showTags == null) { // if there is no info about the show there is nothing we can do
             if (log.isDebugEnabled()) log.debug("getDetailsInternal: ScrapeStatus.ERROR_PARSER");
             return new ScrapeDetailResult(null, false, null, ScrapeStatus.ERROR_PARSER, null);
         }
-        EpisodeTags returnValue = buildTag(allEpisodes, episodeKey, requestedEpisode, requestedSeason, showTags);
+        String episodeTitleHint = null;
+        if (result.getFile() != null) {
+            String filenameForTitle = FileUtils.getFileNameWithoutExtension(result.getFile());
+            episodeTitleHint = ShowUtils.extractEpisodeTitle(filenameForTitle, keySeasonValue, keyEpisodeValue);
+        }
+        EpisodeTags returnValue = buildTag(allEpisodes, episodeKey, requestedEpisode, requestedSeason, showTags, episodeTitleHint);
+        if (returnValue.getTitle() == null && requestedSeason != 0 && episodeTitleHint != null && !episodeTitleHint.isEmpty()) {
+            // requested episode was found neither by number nor by title within its own
+            // requested season: some episodes only ever aired as specials and TMDb lists them
+            // solely under season 0, even though locally they may be filed under a regular
+            // season (e.g. Firefly's "Heart of Gold", filed on disk as S01E12 but classified by
+            // TMDb only as S00E03, since season 1 legitimately has just 11 episodes there).
+            // Retry the title match against season 0 before giving up. The returned tag keeps
+            // TMDb's own season/episode numbering (S00Exx), same as the SxxE00 remap above,
+            // so it groups correctly under Specials and season/next-episode logic downstream
+            // (which key purely off the stored season/episode) stays consistent with TMDb.
+            if (log.isDebugEnabled()) log.debug("getDetailsInternal: s{}e{} '{}' not found by number or title, trying season 0 fallback", requestedSeason, requestedEpisode, episodeTitleHint);
+            int matchedSpecial = -1;
+            String season0Key = cleanShowName + "|" + showId + "|0|all|" + resultLanguage;
+            ShowIdSeasonSearchResult season0Result = ShowIdSeasonSearch.getSeasonShowResponse(season0Key + requestCacheSuffix, showId, 0, resultLanguage, adultScrape, requestTmdb);
+            if (season0Result.status == ScrapeStatus.OKAY && season0Result.tvSeason != null && season0Result.tvSeason.episodes != null) {
+                matchedSpecial = fuzzyMatchEpisodeByTitle(episodeTitleHint, season0Result.tvSeason.episodes);
+            }
+            if (matchedSpecial < 0 && !"en".equals(resultLanguage)) {
+                String season0KeyEn = cleanShowName + "|" + showId + "|0|all|en";
+                ShowIdSeasonSearchResult season0ResultEn = ShowIdSeasonSearch.getSeasonShowResponse(season0KeyEn + requestCacheSuffix, showId, 0, "en", adultScrape, requestTmdb);
+                if (season0ResultEn.status == ScrapeStatus.OKAY && season0ResultEn.tvSeason != null && season0ResultEn.tvSeason.episodes != null) {
+                    matchedSpecial = fuzzyMatchEpisodeByTitle(episodeTitleHint, season0ResultEn.tvSeason.episodes);
+                    season0Result = season0ResultEn;
+                }
+            }
+            if (matchedSpecial >= 0) {
+                TvEpisode matchedTvEpisode = null;
+                for (TvEpisode ep : season0Result.tvSeason.episodes) {
+                    if (ep.episode_number != null && ep.episode_number == matchedSpecial) {
+                        matchedTvEpisode = ep;
+                        break;
+                    }
+                }
+                if (matchedTvEpisode != null) {
+                    List<TvEpisode> specialList = new ArrayList<>();
+                    specialList.add(matchedTvEpisode);
+                    Map<Integer, TvSeason> specialSeasons = new HashMap<>();
+                    specialSeasons.put(0, season0Result.tvSeason);
+                    Map<String, EpisodeTags> specialEpisodes = ShowIdEpisodes.getEpisodes(season0Key + requestCacheSuffix, showId, specialList, specialSeasons, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
+                    String specialKey = showId + "|0|" + matchedSpecial + "|" + resultLanguage;
+                    EpisodeTags specialTag = specialEpisodes.get(specialKey);
+                    if (specialTag != null) {
+                        log.info("getDetailsInternal: matched s{}e{} '{}' to season 0 special e{} via title fallback for show {}", requestedSeason, requestedEpisode, episodeTitleHint, matchedSpecial, showId);
+                        returnValue = specialTag;
+                    }
+                }
+            } else {
+                if (log.isDebugEnabled()) log.debug("getDetailsInternal: no season 0 fallback match found for '{}'", episodeTitleHint);
+            }
+        }
+        // Note: when absoluteNumberingRemap is set, returnValue already carries TMDb's own
+        // absolute episode_number (set by ShowIdEpisodes.getEpisodes from the matched
+        // TvEpisode) rather than the file's local per-season numbering. This is intentional:
+        // it keeps the stored season/episode consistent with TMDb (matching how TMDb's own
+        // season page numbers these episodes) so downstream season grouping and next-episode
+        // navigation, which key purely off the stored season/episode, stay self-consistent.
         if (log.isDebugEnabled()) log.debug("getDetailsInternal : ScrapeStatus.OKAY {} {} {}", returnValue.getShowTitle(), returnValue.getShowId(), returnValue.getTitle());
         Bundle extraOut = buildBundle(allEpisodes, options);
         return new ScrapeDetailResult(returnValue, false, extraOut, ScrapeStatus.OKAY, null);
@@ -464,12 +820,18 @@ public class ShowScraper4 extends BaseScraper2 {
         }
     }
 
-    private EpisodeTags buildTag(Map<String, EpisodeTags> allEpisodes, String episodeKey, int epnum, int season, ShowTags showTags) {
+    private EpisodeTags buildTag(Map<String, EpisodeTags> allEpisodes, String episodeKey, int epnum, int season, ShowTags showTags, String episodeTitleHint) {
         if (log.isDebugEnabled()) log.debug("buildTag allEpisodes.size={} epnum={}, season={}, showId={}", allEpisodes.size(), epnum, season, showTags.getId());
         EpisodeTags episodeTag = null;
         if (!allEpisodes.isEmpty()) {
             if (log.isDebugEnabled()) log.debug("buildTag: allEpisodes not empty trying to find {}", episodeKey);
             episodeTag = allEpisodes.get(episodeKey);
+        }
+        if (episodeTag == null && !allEpisodes.isEmpty()) {
+            // requested season/episode number was not found in the already-fetched season:
+            // try to recover it by matching the filename's episode title against the fetched
+            // episodes instead, without any extra TMDB request
+            episodeTag = fuzzyMatchEpisodeByTitle(episodeTitleHint, allEpisodes.values());
         }
         if (episodeTag == null) {
             if (log.isDebugEnabled()) log.debug("buildTag: shoot episode not in allEpisodes");
@@ -538,6 +900,104 @@ public class ShowScraper4 extends BaseScraper2 {
                 bundle.putParcelable(item.getKey(), item.getValue());
         }
         return bundle;
+    }
+
+    /**
+     * Fuzzy-matches an extracted episode title against TMDB season 0 episodes.
+     * Uses Levenshtein distance on lowercased titles with a threshold of 40% of the longer string length.
+     *
+     * @param extractedTitle the cleaned episode title from the filename
+     * @param episodes the list of episodes from TMDB season 0
+     * @return the matched episode number, or -1 if no match found
+     */
+    private static int fuzzyMatchEpisodeByTitle(String extractedTitle, List<TvEpisode> episodes) {
+        if (extractedTitle == null || extractedTitle.isEmpty() || episodes == null || episodes.isEmpty()) {
+            return -1;
+        }
+
+        LevenshteinDistance ld = LevenshteinDistance.getDefaultInstance();
+        String normalizedTitle = extractedTitle.toLowerCase(java.util.Locale.ROOT).trim();
+        int bestDistance = Integer.MAX_VALUE;
+        int bestEpisodeNumber = -1;
+
+        for (TvEpisode ep : episodes) {
+            if (ep.name == null || ep.episode_number == null) continue;
+            String epName = ep.name.toLowerCase(java.util.Locale.ROOT).trim();
+
+            int distance = ld.apply(normalizedTitle, epName);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestEpisodeNumber = ep.episode_number;
+            }
+        }
+
+        // threshold: allow up to 40% of the longer string length as edit distance
+        if (bestEpisodeNumber >= 0) {
+            int maxLen = Math.max(normalizedTitle.length(), 1);
+            for (TvEpisode ep : episodes) {
+                if (ep.episode_number != null && ep.episode_number == bestEpisodeNumber && ep.name != null) {
+                    maxLen = Math.max(normalizedTitle.length(), ep.name.length());
+                    break;
+                }
+            }
+            int threshold = (int) Math.ceil(maxLen * 0.4);
+            if (bestDistance <= threshold) {
+                if (log.isDebugEnabled()) log.debug("fuzzyMatchEpisodeByTitle: matched '{}' to episode {} with distance {}/{}", extractedTitle, bestEpisodeNumber, bestDistance, threshold);
+                return bestEpisodeNumber;
+            } else {
+                if (log.isDebugEnabled()) log.debug("fuzzyMatchEpisodeByTitle: best match for '{}' was episode {} but distance {} exceeds threshold {}", extractedTitle, bestEpisodeNumber, bestDistance, threshold);
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Fuzzy-matches an extracted episode title against an already-fetched season's episodes.
+     * Used as a fallback when the requested season/episode number does not exist in the
+     * fetched season data (e.g. local filename numbering diverges from TMDB's), so the
+     * episode can still be recovered without any additional TMDB request.
+     * Uses Levenshtein distance on lowercased titles with a threshold of 40% of the longer string length.
+     *
+     * @param extractedTitle the cleaned episode title from the filename
+     * @param episodes the already-fetched episodes for the requested season
+     * @return the matched EpisodeTags, or null if no confident match found
+     */
+    private static EpisodeTags fuzzyMatchEpisodeByTitle(String extractedTitle, java.util.Collection<EpisodeTags> episodes) {
+        if (extractedTitle == null || extractedTitle.isEmpty() || episodes == null || episodes.isEmpty()) {
+            return null;
+        }
+
+        LevenshteinDistance ld = LevenshteinDistance.getDefaultInstance();
+        String normalizedTitle = extractedTitle.toLowerCase(java.util.Locale.ROOT).trim();
+        int bestDistance = Integer.MAX_VALUE;
+        EpisodeTags bestMatch = null;
+
+        for (EpisodeTags ep : episodes) {
+            if (ep.getTitle() == null) continue;
+            String epName = ep.getTitle().toLowerCase(java.util.Locale.ROOT).trim();
+
+            int distance = ld.apply(normalizedTitle, epName);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestMatch = ep;
+            }
+        }
+
+        if (bestMatch != null) {
+            int maxLen = Math.max(normalizedTitle.length(), bestMatch.getTitle().trim().length());
+            int threshold = (int) Math.ceil(maxLen * 0.4);
+            if (bestDistance <= threshold) {
+                if (log.isDebugEnabled()) log.debug("fuzzyMatchEpisodeByTitle: matched '{}' to episode {} '{}' with distance {}/{}",
+                        extractedTitle, bestMatch.getEpisode(), bestMatch.getTitle(), bestDistance, threshold);
+                return bestMatch;
+            } else {
+                if (log.isDebugEnabled()) log.debug("fuzzyMatchEpisodeByTitle: best match for '{}' was episode {} '{}' but distance {} exceeds threshold {}",
+                        extractedTitle, bestMatch.getEpisode(), bestMatch.getTitle(), bestDistance, threshold);
+            }
+        }
+
+        return null;
     }
 
     public static boolean isShowAlreadyKnown(Integer showId, Context context) {

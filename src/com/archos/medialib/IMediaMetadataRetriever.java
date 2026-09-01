@@ -20,6 +20,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 import java.util.Map;
 
 public interface IMediaMetadataRetriever {
@@ -190,7 +191,7 @@ public interface IMediaMetadataRetriever {
      * Call it when one is done with the object. This method releases the memory
      * allocated internally.
      */
-    public void release();
+    public void release() throws IOException;
 
     /**
      * Option used in method {@link #getFrameAtTime(long, int)} to get a
@@ -430,12 +431,14 @@ public interface IMediaMetadataRetriever {
     public static final int METADATA_KEY_AUDIO_TRACK_VBR            = 5;
     public static final int METADATA_KEY_AUDIO_TRACK_SUPPORTED      = 6;
     public static final int METADATA_KEY_AUDIO_TRACK_LANGUAGE       = 7;
-    public static final int METADATA_KEY_AUDIO_TRACK_MAX            = 8;
+    public static final int METADATA_KEY_AUDIO_TRACK_DISPOSITION    = 8;
+    public static final int METADATA_KEY_AUDIO_TRACK_MAX            = 9;
 
     public static final int METADATA_KEY_SUBTITLE_TRACK_NAME        = 0;
     public static final int METADATA_KEY_SUBTITLE_TRACK_PATH        = 1;
     public static final int METADATA_KEY_SUBTITLE_TRACK_IS_GFX      = 2;
     public static final int METADATA_KEY_SUBTITLE_TRACK_FORMAT      = 3;
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE    = 4;
-    public static final int METADATA_KEY_SUBTITLE_TRACK_MAX         = 5;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_DISPOSITION = 5;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_MAX         = 6;
 }

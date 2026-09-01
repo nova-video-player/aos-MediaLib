@@ -104,7 +104,7 @@ public class SearchPreprocessor {
             };
 
             //Check Search Suggestion, Name and fallback to filename.
-            String searchQuery = file.toString();
+            String searchQuery = FileUtils.getFileNameWithoutExtension(file);
             for (String candidate : candidates) {
                 if (!(candidate == null || candidate.isBlank() || candidate.equalsIgnoreCase("null"))) {
                     searchQuery = candidate;

@@ -14,8 +14,7 @@
 
 package com.archos.mediascraper;
 
-import android.os.Build;
-import android.text.Html;
+import androidx.core.text.HtmlCompat;
 import android.util.Log;
 
 import java.nio.charset.Charset;
@@ -320,10 +319,6 @@ public class StringUtils {
     public static String removeHtmlTags(String input) {
         if (input == null) return null;
         String formattedString = input.replace("\n", "<br>");
-        if (Build.VERSION.SDK_INT >= 24) {
-            return Html.fromHtml(formattedString, Html.FROM_HTML_MODE_LEGACY).toString();
-        } else {
-            return Html.fromHtml(formattedString).toString();
-        }
+        return HtmlCompat.fromHtml(formattedString, HtmlCompat.FROM_HTML_MODE_LEGACY).toString();
     }
 }
