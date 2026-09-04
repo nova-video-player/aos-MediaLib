@@ -40,6 +40,14 @@ public abstract class SearchInfo {
     private boolean mForceReParse;
     public boolean aggressiveScan = false;
     public boolean scrapeFromDB = false;
+    /**
+     * Set by {@link SearchPreprocessor} when the file's path indicates it is not a scrapable main
+     * feature or episode (e.g. filed in a "Bonus"/"Extras" folder). When true, {@link
+     * com.archos.mediascraper.Scraper} skips the TMDb/TVDb query entirely and returns NOT_FOUND,
+     * since these files essentially never resolve to a correct match and querying them just
+     * produces confident-looking wrong results (see MediaLib/doc/scraper_improvements.md).
+     */
+    public boolean skipScraping = false;
     private Uri mOriginalUri = null;
 
     /** package private so outside can't construct these */

@@ -71,6 +71,10 @@ public class Scraper {
 
     private ScrapeSearchResult getMatches(SearchInfo info, int maxItems) {
         info = SearchPreprocessor.instance().reParseInfo(info);
+        if (info.skipScraping) {
+            if (log.isDebugEnabled()) log.debug("getMatches: skipScraping set for {}, not querying", info.getFile());
+            return new ScrapeSearchResult(null, !info.isTvShow(), ScrapeStatus.NOT_FOUND, null);
+        }
         if (info.isTvShow())
             return mShowScraper.getMatches2(info, maxItems);
         return mMovieScraper.getMatches2(info, maxItems);
@@ -118,6 +122,11 @@ public class Scraper {
         //Restore the flags.
         info.aggressiveScan = aggressiveScan;
         info.scrapeFromDB = scrapeFromDB;
+
+        if (info.skipScraping) {
+            if (log.isDebugEnabled()) log.debug("getAutoDetails: skipScraping set for {}, not querying", info.getFile());
+            return new ScrapeDetailResult(null, !info.isTvShow(), null, ScrapeStatus.NOT_FOUND, null);
+        }
 
         if (info.isTvShow())
             return mShowScraper.searchWithTitleCollisionFallback(info);

@@ -77,7 +77,12 @@ public class SearchPreprocessor {
                 }
                 if (log.isDebugEnabled()) log.debug("parseFileBased: result from {} for {} -> {}",
                         matcher.getMatcherName(), candidate, result.getSearchSuggestion());
-                return reParseInfo(result);
+                result = reParseInfo(result);
+                if (ParseUtils.isNonScrapableFolder(uri) || ParseUtils.isNonScrapableFolder(simplifiedUri)) {
+                    if (log.isDebugEnabled()) log.debug("parseFileBased: {} is in a bonus/extras folder, marking skipScraping", candidate);
+                    result.skipScraping = true;
+                }
+                return result;
             }
         }
         // default to something - should not happen

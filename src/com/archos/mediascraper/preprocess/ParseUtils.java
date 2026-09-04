@@ -15,6 +15,7 @@
 
 package com.archos.mediascraper.preprocess;
 
+import android.net.Uri;
 import android.util.Pair;
 
 import com.archos.mediascraper.StringUtils;
@@ -23,7 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,6 +81,39 @@ public class ParseUtils {
     private static final Pattern ROMAN_NUMERAL_PATTERN =
             Pattern.compile("^m*(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$");
 
+    // Folder segment names that mark DVD/BluRay bonus-disc content (deleted scenes, interviews,
+    // trailers, making-of, etc.) rather than the main feature or a real episode. These are almost
+    // never resolvable against TMDb/TVDb, and blindly querying them produces confident-looking but
+    // wrong matches (see MediaLib/doc/scraper_improvements.md). Matched as a *whole* path segment,
+    // never a substring or filename keyword, so real titles like the movie "Bonus" (TMDb id 47702)
+    // or the show "Extras" (2005) are never affected - only files actually filed inside a directory
+    // named exactly one of these are skipped. Deliberately excludes "Specials"/"Season 0": those are
+    // legitimate TV structure used for real episodes elsewhere.
+    private static final Set<String> NON_SCRAPABLE_FOLDER_NAMES = new HashSet<>();
+    static {
+        NON_SCRAPABLE_FOLDER_NAMES.add("bonus");
+        NON_SCRAPABLE_FOLDER_NAMES.add("bonuses");
+        NON_SCRAPABLE_FOLDER_NAMES.add("bonus features");
+        NON_SCRAPABLE_FOLDER_NAMES.add("extra");
+        NON_SCRAPABLE_FOLDER_NAMES.add("extras");
+    }
+
+    /**
+     * True if the file's path contains a directory segment that is exactly (not just containing)
+     * one of {@link #NON_SCRAPABLE_FOLDER_NAMES} (case-insensitive, underscores treated as spaces).
+     * The last segment (the filename itself) is never checked, only ancestor directories.
+     */
+    public static boolean isNonScrapableFolder(Uri uri) {
+        if (uri == null) return false;
+        List<String> segments = uri.getPathSegments();
+        if (segments == null || segments.size() < 2) return false;
+        // skip the last segment: that is the filename, not a folder
+        for (int i = 0; i < segments.size() - 1; i++) {
+            String normalized = segments.get(i).replace('_', ' ').trim().toLowerCase(Locale.ROOT);
+            if (NON_SCRAPABLE_FOLDER_NAMES.contains(normalized)) return true;
+        }
+        return false;
+    }
 
     /**
      * Removes leading numbering like "1. A Movie" => "A Movie",
