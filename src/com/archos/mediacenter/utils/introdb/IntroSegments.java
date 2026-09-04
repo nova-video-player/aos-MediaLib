@@ -214,9 +214,9 @@ public class IntroSegments {
     }
 
     private static String time(Long ms) {
-        if (ms == null) return "unknown";
+        if (ms == null || ms <= 0) return "00:00";
         String s = MediaUtils.formatTime(ms);
-        return (s == null || s.isEmpty()) ? "unknown" : s;
+        return (s == null || s.isEmpty()) ? "00:00" : s;
     }
 
     @Override
