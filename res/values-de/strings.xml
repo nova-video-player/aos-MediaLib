@@ -142,7 +142,14 @@ Auf Ihrer SD-Karte ist ein Fehler aufgetreten.</string>
     <string name="scraping_in_progress">Scraping im Gange</string>
     <string name="remaining_videos_to_process">Verbleibende zu verarbeitende Mediendateien:</string>
     <string name="video_store_import">Importieren lokaler Mediendateien</string>
+    <string name="local_cleanup">Lokale Bereinigung</string>
+    <string name="network_cleanup">Netzwerkbereinigung</string>
     <string name="current_video_title">Aktuell:</string>
     <string name="noresult_video_title">Nicht gescraped:</string>
     <!-- Status overlay badges (1-letter abbreviations) -->
+    <string name="badge_domain_local">L</string>
+    <string name="badge_domain_network">N</string>
+    <string name="badge_op_scan">S</string>
+    <string name="badge_op_delete">D</string>
+    <string name="badge_op_identify">I</string>
 </resources>
