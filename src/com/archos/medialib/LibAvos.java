@@ -297,6 +297,19 @@ public class LibAvos {
     }
 
     /**
+     * Presentation "no sync" free-run mode (GUI: refresh-rate sync mode 4):
+     * true = the native presenter swaps at a perfectly uniform content-fps
+     * grid and ignores vsync entirely (no present_at, no display-mode
+     * switch, no latch-feedback pacing correction) - for panels that override
+     * every refresh-rate hint (e.g. Samsung HRR) and judder under paced
+     * presents. Must be set before playback starts (read once at sink open).
+     */
+    public static void setPresentFreeRun(boolean enable) {
+        if (DBG) Log.d(TAG, "setPresentFreeRun: " + enable);
+        nativeSetPresentFreeRun(enable ? 1 : 0);
+    }
+
+    /**
      * Dolby Vision tone-map target luminance in nits.
      * 0 (or negative) = automatic: display-reported max luminance when the
      * caller resolved it, otherwise the renderer falls back to the source
@@ -412,6 +425,8 @@ public class LibAvos {
     private static native void nativeSetPassthrough(int forcePassthrough);
 
     private static native void nativeSetDolbyVisionMode(int mode);
+
+    private static native void nativeSetPresentFreeRun(int enable);
     private static native void nativeSetDolbyVisionTargetNits(float nits);
     private static native void nativeSetDolbyVisionPlaneScaler(int scaler);
 
