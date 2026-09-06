@@ -122,19 +122,23 @@ public class IntroSegments {
     }
 
     // Auto-skip: find an eligible segment (priority order) that contains positionMs and has
-    // a concrete end, then extend that end across any other eligible segments that overlap,
-    // so overlapping intervals (e.g. credits + outro) are skipped in a single jump to the
-    // furthest end. Returns null when nothing applies. Segments with no concrete end
-    // (null endMs = end of media) are skipped so we never jump to the end of the file.
+    // a concrete end (or reaches durationMs when durationMs > 0), then extend that end across
+    // any other eligible segments that overlap, so overlapping intervals (e.g. credits + outro)
+    // are skipped in a single jump to the furthest end. Returns null when nothing applies.
     // includeStandard covers intro/credits/outro/preview; includeRecap adds recap.
     public Skip findSkip(long positionMs, boolean includeStandard, boolean includeRecap) {
+        return findSkip(positionMs, -1, includeStandard, includeRecap);
+    }
+
+    public Skip findSkip(long positionMs, long durationMs, boolean includeStandard, boolean includeRecap) {
         Type[] types = eligibleTypes(includeStandard, includeRecap);
         for (Type type : types) {
             for (Segment s : get(type)) {
-                if (s.endMs == null) continue;    // need a concrete end to jump to
-                if (s.endMs <= positionMs) continue;
+                Long end = (s.endMs != null) ? s.endMs : (durationMs > 0 ? durationMs : null);
+                if (end == null) continue;    // need a concrete end or known duration to jump to
+                if (end <= positionMs) continue;
                 if (s.contains(positionMs))
-                    return new Skip(type, mergedEnd(s.endMs, types));
+                    return new Skip(type, mergedEnd(end, durationMs, types));
             }
         }
         return null;
@@ -142,16 +146,17 @@ public class IntroSegments {
 
     // Grow endMs while any eligible segment starts at or before the current end and ends
     // later, merging the chain of overlapping skippable segments into a single target.
-    private long mergedEnd(long endMs, Type[] types) {
+    private long mergedEnd(long endMs, long durationMs, Type[] types) {
         boolean extended = true;
         while (extended) {
             extended = false;
             for (Type type : types) {
                 for (Segment s : get(type)) {
-                    if (s.endMs == null) continue;
+                    Long end = (s.endMs != null) ? s.endMs : (durationMs > 0 ? durationMs : null);
+                    if (end == null) continue;
                     long start = (s.startMs != null) ? s.startMs : 0L;
-                    if (start <= endMs && s.endMs > endMs) {
-                        endMs = s.endMs;
+                    if (start <= endMs && end > endMs) {
+                        endMs = end;
                         extended = true;
                     }
                 }
