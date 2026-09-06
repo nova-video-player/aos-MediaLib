@@ -303,7 +303,7 @@ public class NfoWriter {
 
         String videoName = FileUtils.getFileNameWithoutExtension(video);
         Uri parent = FileUtils.getParentUrl(video);
-        Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(Uri.withAppendedPath(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
+        Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(FileUtils.buildChildUri(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget, null);
             BufferedWriter  writer = new BufferedWriter(new OutputStreamWriter(
@@ -335,7 +335,7 @@ public class NfoWriter {
         String videoName = FileUtils.getFileNameWithoutExtension(video);
         Uri parent = FileUtils.getParentUrl(video);
         // relocate uri for local files to writeable location to comply with API30
-        Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(Uri.withAppendedPath(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
+        Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(FileUtils.buildChildUri(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget,null);
             if (log.isTraceEnabled()) log.trace("exportInternal: {}", video);
@@ -370,7 +370,7 @@ public class NfoWriter {
         Uri parent = FileUtils.getParentUrl(video);
         String showTitle = StringUtils.fileSystemEncode(tag.getTitle());
         // relocate uri for local files to writeable location to comply with API30
-        Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(Uri.withAppendedPath(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION));
+        Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(FileUtils.buildChildUri(parent, showTitle + NfoParser.CUSTOM_SHOW_NFO_EXTENSION));
         // a single show NFO is shared by every episode; skip if already exported in this context
         String exportKey = exportTarget.toString();
         if (exportContext != null && exportContext.contains(exportKey)) {
@@ -464,7 +464,7 @@ public class NfoWriter {
             String imageName) {
 
         // relocate uri for local files to writeable location to comply with API30
-        Uri target = Uri.withAppendedPath(relocateNfoAppPublicDir(folder), imageName);
+        Uri target = FileUtils.buildChildUri(relocateNfoAppPublicDir(folder), imageName);
         if (image != null) {
             File file = image.getLargeFileF();
             Uri from = Uri.parse(file.getAbsolutePath());
