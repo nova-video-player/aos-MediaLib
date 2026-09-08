@@ -108,7 +108,7 @@ public class NfoWriterTest {
         tags.setTitle("Example Show");
         NfoWriter.ExportContext exportContext = new NfoWriter.ExportContext();
         File target = new File(parent, "Example Show" + NfoParser.CUSTOM_SHOW_NFO_EXTENSION);
-        Uri exportTarget = FileUtils.relocateNfoAppPublicDirForNfoJpgFiles(Uri.withAppendedPath(
+        Uri exportTarget = FileUtils.relocateNfoAppPublicDirForNfoJpgFiles(FileUtils.buildChildUri(
                 FileUtils.getParentUrl(Uri.fromFile(video)),
                 StringUtils.fileSystemEncode(tags.getTitle()) + NfoParser.CUSTOM_SHOW_NFO_EXTENSION));
         String exportKey = exportTarget.toString();

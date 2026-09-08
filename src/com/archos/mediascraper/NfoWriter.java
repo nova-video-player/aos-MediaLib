@@ -304,6 +304,7 @@ public class NfoWriter {
         String videoName = FileUtils.getFileNameWithoutExtension(video);
         Uri parent = FileUtils.getParentUrl(video);
         Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(FileUtils.buildChildUri(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
+        if (log.isDebugEnabled()) log.debug("exportInternal: {} -> {}", video, exportTarget);
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget, null);
             BufferedWriter  writer = new BufferedWriter(new OutputStreamWriter(
@@ -336,6 +337,7 @@ public class NfoWriter {
         Uri parent = FileUtils.getParentUrl(video);
         // relocate uri for local files to writeable location to comply with API30
         Uri exportTarget =  relocateNfoAppPublicDirForNfoJpgFiles(FileUtils.buildChildUri(parent, videoName + NfoParser.CUSTOM_NFO_EXTENSION));
+        if (log.isDebugEnabled()) log.debug("exportInternal: {} -> {}", video, exportTarget);
         try {
             FileEditor editor = FileEditorFactoryWithUpnp.getFileEditorForUrl(exportTarget,null);
             if (log.isTraceEnabled()) log.trace("exportInternal: {}", video);
@@ -465,6 +467,7 @@ public class NfoWriter {
 
         // relocate uri for local files to writeable location to comply with API30
         Uri target = FileUtils.buildChildUri(relocateNfoAppPublicDir(folder), imageName);
+        if (log.isDebugEnabled()) log.debug("exportImage: {} -> {}", folder, target);
         if (image != null) {
             File file = image.getLargeFileF();
             Uri from = Uri.parse(file.getAbsolutePath());
