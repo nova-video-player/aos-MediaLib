@@ -535,6 +535,12 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
         mOnSeekCompleteListener.onAllSeekComplete(this);
     }
 
+    /** Not supported by the framework MediaPlayer wrapper: no demuxer fps
+     *  event. Refresh-rate matching falls back to metadata fps. */
+    @Override
+    public void setOnVideoFpsListener(IMediaPlayer.OnVideoFpsListener listener) {
+        // no-op
+    }
     public void setOnVideoSizeChangedListener(IMediaPlayer.OnVideoSizeChangedListener listener) {
         setOnVideoSizeChangedListener(listener == null ? null : this);
         mOnVideoSizeChangedListener = listener;

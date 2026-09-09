@@ -130,11 +130,21 @@ tasks.register('ndkBuild', Exec) {
     workingDir = "../"
     // Let GNU Make manage native C/C++ dependency checking
     List<String> myCmd = new ArrayList<String>()
-    myCmd.add("make")
-    myCmd.add("native_libyuv")
-    myCmd.add("native_libnativehelper")
-    myCmd.add("native_avos_full")
-    myCmd.add("native_torrentd")
+    // On Windows the repo Makefile targets are not runnable (core.mk is Linux-only);
+    // the native libs are staged into MediaLib/libs by the WSL/CI build (or by invoking
+    // the ndk-build steps directly) before the gradle build runs.
+    if (!org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        myCmd.add("make")
+        myCmd.add("native_libyuv")
+        myCmd.add("native_libnativehelper")
+        myCmd.add("native_avos_full")
+        myCmd.add("native_torrentd")
+    } else {
+        myCmd.add("cmd")
+        myCmd.add("/c")
+        myCmd.add("exit")
+        myCmd.add("0")
+    }
     commandLine = myCmd
 }
 
