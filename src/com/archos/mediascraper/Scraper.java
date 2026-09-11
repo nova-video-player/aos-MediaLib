@@ -52,6 +52,14 @@ public class Scraper {
      */
     public static final String ITEM_REQUEST_REFRESH_SHOW_METADATA = "RefreshShowMetadata";
 
+    /**
+     * Explicit "update whole show" request (manual full-show rescrape UI only): together with
+     * {@link #ITEM_REQUEST_ALL_EPISODES}, makes the TV scraper fetch every season the show has
+     * instead of only the single season inferred from the search query. Must not be set for
+     * per-episode/per-season auto-scrape requests, since it costs one TMDb request per season.
+     */
+    public static final String ITEM_REQUEST_ALL_SEASONS = "WantAllSeasons";
+
     public static final String ITEM_REQUEST_BASIC_SHOW = "basicShow";
     public static final String ITEM_REQUEST_BASIC_VIDEO = "basicVideo";
 

@@ -281,6 +281,15 @@ public class ShowScraper4 extends BaseScraper2 {
         boolean getAllEpisodes = options != null && options.containsKey(Scraper.ITEM_REQUEST_ALL_EPISODES);
         boolean refreshShowMetadata = options != null
                 && options.getBoolean(Scraper.ITEM_REQUEST_REFRESH_SHOW_METADATA, false);
+        // Explicit "update whole show" request (manual full-show rescrape UI only, see
+        // ManualShowScrappingSearchFragment/VideoInfoShowScraperFragment): getAllEpisodes alone
+        // only ever fetches the single season encoded in the search query (always season 1, via
+        // the "<title> S1E1" search trick used to get show-only results), so every other season
+        // silently comes back empty and gets overwritten with blank plot/thumbnail placeholders
+        // (see aos-AVP#1838). This flag, only ever set together with refreshShowMetadata by that
+        // same UI, makes the fetch loop over every season the show actually has instead.
+        boolean fetchAllSeasons = options != null
+                && options.getBoolean(Scraper.ITEM_REQUEST_ALL_SEASONS, false);
         // Manual requests use an uncached client and separate LRU keys. This keeps automatic
         // scans on the shared cache while making an explicit re-scrape genuinely current.
         MyTmdb requestTmdb = refreshShowMetadata ? new MyTmdb(apiKey, null) : getTmdb();
@@ -369,6 +378,10 @@ public class ShowScraper4 extends BaseScraper2 {
         Map<String, EpisodeTags> allEpisodes = null;
         ShowTags showTags = null;
         ShowTags refreshedShowMetadata = null;
+        // populated below (only when fetchAllSeasons) from the freshly-fetched show metadata's
+        // own season list, so the full-show refresh loop covers exactly the seasons TMDb reports
+        // for this show (including specials, season 0) rather than guessing a numeric range
+        List<Integer> allShowSeasonNumbers = null;
         ShowIdImagesResult searchImages = null;
         // set when the single-episode lookup below had to be remapped to TMDb's absolute
         // episode numbering (see comment there); guards against redoing the same detection
@@ -425,6 +438,13 @@ public class ShowScraper4 extends BaseScraper2 {
                     if (refreshShowMetadata) {
                         refreshedShowMetadata = showTags;
                         if (log.isDebugEnabled()) log.debug("getDetailsInternal: explicit manual refresh fetched source metadata for show {}", showId);
+                    }
+                    if (fetchAllSeasons && showIdTvSearchResult.tvShow.seasons != null) {
+                        allShowSeasonNumbers = new ArrayList<>();
+                        for (TvSeason s : showIdTvSearchResult.tvShow.seasons) {
+                            if (s != null && s.season_number != null) allShowSeasonNumbers.add(s.season_number);
+                        }
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: full-show refresh found {} seasons for show {}", allShowSeasonNumbers.size(), showId);
                     }
                     
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: downloaded showTags {} {}", showTags.getOnlineId(), showTags.getTitle());
@@ -515,8 +535,62 @@ public class ShowScraper4 extends BaseScraper2 {
             List<TvEpisode> tvEpisodes = new ArrayList<>();
             Map<Integer, TvSeason> tvSeasons = new HashMap<Integer, TvSeason>();
             boolean fetchedFullSeason = false;
+            // populated instead of tvEpisodes/tvSeasons when fetchAllSeasons is honored below:
+            // one ShowIdEpisodes.getEpisodes() call is made per season (each with its own
+            // correctly-scoped cache key) and the results merged here, rather than aggregating
+            // tvEpisodes across seasons into a single call - ShowIdEpisodes' own en-fallback
+            // cache key is derived from the single seasonKey it is given and would otherwise be
+            // wrong for every season but the first
+            Map<String, EpisodeTags> allSeasonsMergedEpisodes = null;
 
-            if (getAllEpisodes) {
+            if (getAllEpisodes && fetchAllSeasons && (allShowSeasonNumbers == null || allShowSeasonNumbers.isEmpty())) {
+                // fetchAllSeasons was explicitly requested but the show's own TMDb season list
+                // came back missing/empty (malformed or partial show response): do NOT silently
+                // fall through to the legacy single-season branch below, since the caller (full-
+                // show rescrape UI) would then only get the one inferred season back and save
+                // blank placeholder tags for every other local season - the exact destructive
+                // behavior of aos-AVP#1838 this fetch mode exists to fix.
+                log.warn("getDetailsInternal: full-show refresh aborted for show {}, no usable season list", showId);
+                EpisodeTags episodeTag = new EpisodeTags();
+                episodeTag.setShowTags(showTags);
+                episodeTag.setSeason(requestedSeason);
+                episodeTag.setEpisode(requestedEpisode);
+                return new ScrapeDetailResult(episodeTag, true, null, ScrapeStatus.ERROR_NETWORK, null);
+            } else if (getAllEpisodes && fetchAllSeasons) {
+                allSeasonsMergedEpisodes = new HashMap<>();
+                // Every season listed in allShowSeasonNumbers comes from the show's own TMDb
+                // season list, so it is expected to exist: any failure here is a transient/
+                // network error, not a legitimately-missing season. Require ALL of them to
+                // succeed before letting the caller save anything - partially merging only the
+                // seasons that happened to succeed would make the caller's per-episode lookup
+                // miss every episode of the failed season(s) and overwrite them with blank
+                // placeholder tags on save, i.e. the exact destructive behavior of aos-AVP#1838
+                // this fetch mode exists to fix.
+                boolean allSeasonsOkay = true;
+                for (int seasonNumber : allShowSeasonNumbers) {
+                    String perSeasonKey = cleanShowName + "|" + showId + "|" + seasonNumber + "|all|" + resultLanguage;
+                    ShowIdSeasonSearchResult perSeasonResult = ShowIdSeasonSearch.getSeasonShowResponse(perSeasonKey + requestCacheSuffix, showId, seasonNumber, resultLanguage, adultScrape, requestTmdb);
+                    if (perSeasonResult.status == ScrapeStatus.OKAY && perSeasonResult.tvSeason != null && perSeasonResult.tvSeason.episodes != null) {
+                        Map<Integer, TvSeason> singleSeasonMap = new HashMap<>();
+                        singleSeasonMap.put(perSeasonResult.tvSeason.season_number, perSeasonResult.tvSeason);
+                        Map<String, EpisodeTags> seasonEpisodeTags = ShowIdEpisodes.getEpisodes(perSeasonKey + requestCacheSuffix, showId, perSeasonResult.tvSeason.episodes, singleSeasonMap, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
+                        allSeasonsMergedEpisodes.putAll(seasonEpisodeTags);
+                        sEpisodeCache.put(perSeasonKey, seasonEpisodeTags);
+                        if (log.isDebugEnabled()) log.debug("getDetailsInternal: full-show refresh fetched season {} for show {} ({} episodes)", seasonNumber, showId, seasonEpisodeTags.size());
+                    } else {
+                        allSeasonsOkay = false;
+                        log.warn("getDetailsInternal: full-show refresh failed to fetch season {} for show {}, status {}", seasonNumber, showId, perSeasonResult.status);
+                    }
+                }
+                if (!allSeasonsOkay) {
+                    log.warn("getDetailsInternal: full-show refresh aborted for show {}, not all seasons fetched successfully", showId);
+                    EpisodeTags episodeTag = new EpisodeTags();
+                    episodeTag.setShowTags(showTags);
+                    episodeTag.setSeason(requestedSeason);
+                    episodeTag.setEpisode(requestedEpisode);
+                    return new ScrapeDetailResult(episodeTag, true, null, ScrapeStatus.ERROR_NETWORK, null);
+                }
+            } else if (getAllEpisodes) {
                 //I WILL GET EACH EASON AS NEEDED, I ONLY HAVE SOME SEASONS OF SOME SHOWS
                 ShowIdSeasonSearchResult showIdSeason = ShowIdSeasonSearch.getSeasonShowResponse(seasonKey + requestCacheSuffix, showId, requestedSeason, resultLanguage, adultScrape, requestTmdb);
                 if (showIdSeason.status == ScrapeStatus.OKAY) {
@@ -528,7 +602,7 @@ public class ShowScraper4 extends BaseScraper2 {
                     log.warn("getDetailsInternal: scrapeStatus for s" + requestedSeason + " is NOK!");
                     return new ScrapeDetailResult(new EpisodeTags(showTags, requestedSeason, requestedEpisode), true, null, showIdSeason.status, showIdSeason.reason);
                 }
-            
+
             } else {
                 if (episode != -1) {
                     // get a single episode: should never get there since it means that we cannot infer poster/backdrop from single episode (need season)
@@ -640,13 +714,20 @@ public class ShowScraper4 extends BaseScraper2 {
                 }
             }
 
-            // get now all episodes in tvEpisodes
-            Map<String, EpisodeTags> searchEpisodes = ShowIdEpisodes.getEpisodes(seasonKey + requestCacheSuffix, showId, tvEpisodes, tvSeasons, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
+            // get now all episodes in tvEpisodes (or use the already-merged multi-season map
+            // built above when fetchAllSeasons was honored, skipping this redundant call)
+            Map<String, EpisodeTags> searchEpisodes = allSeasonsMergedEpisodes != null
+                    ? allSeasonsMergedEpisodes
+                    : ShowIdEpisodes.getEpisodes(seasonKey + requestCacheSuffix, showId, tvEpisodes, tvSeasons, showTags, resultLanguage, adultScrape, requestTmdb, mContext);
             if (!searchEpisodes.isEmpty()) {
                 allEpisodes = searchEpisodes;
-                // Cache only when the fetch path populated a full season map.
-                // Manual single-episode searches still bypass the season cache.
-                if (fetchedFullSeason) {
+                if (allSeasonsMergedEpisodes != null) {
+                    // each season was already individually cached under its own key above;
+                    // skip caching this merged multi-season map under the single-season seasonKey
+                    if (log.isDebugEnabled()) log.debug("getDetailsInternal: full-show refresh merged {} episodes across {} seasons for show {}", allEpisodes.size(), allShowSeasonNumbers.size(), showId);
+                } else if (fetchedFullSeason) {
+                    // Cache only when the fetch path populated a full season map.
+                    // Manual single-episode searches still bypass the season cache.
                     if (log.isDebugEnabled()) log.debug("getDetailsInternal: sEpisodeCache put allEpisodes with key {}", seasonKey);
                     sEpisodeCache.put(seasonKey, allEpisodes);
                 } else {
