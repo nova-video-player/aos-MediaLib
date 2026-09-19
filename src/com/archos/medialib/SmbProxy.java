@@ -81,19 +81,20 @@ public class SmbProxy extends Proxy{
     }
     
     public static SmbProxy setDataSource(Uri uri, IMediaPlayer mp, Map<String, String> headers) throws IOException {
-        SmbProxy smbProxy = new SmbProxy(uri);
-        Uri newUri = smbProxy.start();
-        if (newUri != null) {
-            if(headers!=null)
-                mp.setDataSource2(newUri.toString(), headers);
-            else
-                mp.setDataSource(newUri.toString());
-            return smbProxy;
-        } else {
-            throw new IOException();
+        SmbProxy proxy = new SmbProxy(uri);
+        boolean installed = false;
+        try {
+            Uri local = proxy.start();
+            if (local == null) throw new IOException("Unable to open proxy");
+            if (headers != null) mp.setDataSource2(local.toString(), headers);
+            else mp.setDataSource(local.toString());
+            installed = true;
+            return proxy;
+        } finally {
+            if (!installed) proxy.stop();
         }
     }
-    
+
     public static SmbProxy setDataSource(Uri uri, IMediaMetadataRetriever mr, Map<String, String> headers) throws IllegalArgumentException {
         SmbProxy proxy = new SmbProxy(uri);
         boolean installed = false;

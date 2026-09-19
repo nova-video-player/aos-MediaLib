@@ -58,6 +58,25 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private SurfaceHolder mSurfaceHolder;
     private boolean mStayAwake;
     private SmbProxy mSmbProxy = null;
+    private final Object mLifecycleLock = new Object();
+    private boolean mReleased;
+
+    private void ensureOpen() {
+        if (mReleased) throw new IllegalStateException("player released");
+    }
+
+    private void installProxy(SmbProxy proxy) {
+        SmbProxy previous;
+        synchronized (mLifecycleLock) {
+            if (mReleased) {
+                proxy.stop();
+                throw new IllegalStateException("player released");
+            }
+            previous = mSmbProxy;
+            mSmbProxy = proxy;
+        }
+        if (previous != null && previous != proxy) previous.stop();
+    }
 
     private native void create(Object weakReference);
 
@@ -98,7 +117,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
         String scheme = uri.getScheme();
         if (SmbProxy.needToStream(scheme)){
-            mSmbProxy = SmbProxy.setDataSource(uri, this, null);
+            installProxy(SmbProxy.setDataSource(uri, this, headers));
             return;
         }
 
@@ -198,30 +217,39 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private native void setVideoSurface(Surface surface);
 
     public void setDisplay(SurfaceHolder sh) {
-        mSurfaceHolder = sh;
-        Surface surface;
-        if (sh != null) {
-            surface = sh.getSurface();
-        } else {
-            surface = null;
+        synchronized (mLifecycleLock) {
+            ensureOpen();
+            Surface surface;
+            if (sh != null) {
+                surface = sh.getSurface();
+            } else {
+                surface = null;
+            }
+            setVideoSurface(surface);
+            mSurfaceHolder = sh;
+            updateSurfaceScreenOn();
         }
-        setVideoSurface(surface);
-        updateSurfaceScreenOn();
     }
 
     public void setSurface(Surface surface) {
-        if (mScreenOnWhilePlaying && surface != null) {
-            log.warn("setScreenOnWhilePlaying(true) is ineffective for Surface");
+        synchronized (mLifecycleLock) {
+            ensureOpen();
+            if (mScreenOnWhilePlaying && surface != null) {
+                log.warn("setScreenOnWhilePlaying(true) is ineffective for Surface");
+            }
+            setVideoSurface(surface);
+            mSurfaceHolder = null;
         }
-        mSurfaceHolder = null;
-        setVideoSurface(surface);
     }
 
     public void reset() {
-        stayAwake(false);
-        nativeReset();
-        // make sure none of the listeners get called anymore
-        mEventHandler.removeCallbacksAndMessages(null);
+        synchronized (mLifecycleLock) {
+            ensureOpen();
+            stayAwake(false);
+            nativeReset();
+            // make sure none of the listeners get called anymore
+            mEventHandler.removeCallbacksAndMessages(null);
+        }
     }
 
     private native void nativeReset();
@@ -315,22 +343,29 @@ public class AvosMediaPlayer implements IMediaPlayer {
 
     private native void nativeRelease();
     public void release() {
-        stayAwake(false);
-        updateSurfaceScreenOn();
-        mOnPreparedListener = null;
-        mOnCompletionListener = null;
-        mOnInfoListener = null;
-        mOnErrorListener = null;
-        mOnBufferingUpdateListener = null;
-        mOnRelativePositionUpdateListener = null;
-        mOnSeekCompleteListener = null;
-        mOnVideoSizeChangedListener = null;
-        mOnNextTrackListener = null;
-        mOnSubtitleListener = null;
-        nativeRelease();
-        if (mSmbProxy != null) {
-            mSmbProxy.stop();
+        synchronized (mLifecycleLock) {
+            if (mReleased) return;
+            mReleased = true;
+            stayAwake(false);
+            updateSurfaceScreenOn();
+            mOnPreparedListener = null;
+            mOnCompletionListener = null;
+            mOnInfoListener = null;
+            mOnErrorListener = null;
+            mOnBufferingUpdateListener = null;
+            mOnRelativePositionUpdateListener = null;
+            mOnSeekCompleteListener = null;
+            mOnVideoSizeChangedListener = null;
+            mOnNextTrackListener = null;
+            mOnSubtitleListener = null;
+            SmbProxy proxy = mSmbProxy;
             mSmbProxy = null;
+            try {
+                if (proxy != null) proxy.stop();
+            } finally {
+                nativeRelease();
+                if (mEventHandler != null) mEventHandler.removeCallbacksAndMessages(null);
+            }
         }
     }
 

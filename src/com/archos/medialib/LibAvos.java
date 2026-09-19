@@ -33,6 +33,59 @@ public class LibAvos {
     private static int sInitState = 0;
     private static final String NO_NEON_SUFFIX = "_no_neon";
 
+    public interface AudioRouteListener { void onAudioRouteChanged(); }
+    private static AudioRouteListener sAudioRouteListener;
+    private static final android.os.Handler sRouteHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private static android.media.AudioTrack sObservedTrack;
+    private static android.media.AudioDeviceInfo sRoutedDevice;
+    private static android.media.AudioTrack.OnRoutingChangedListener sRoutingListener;
+
+    public static void setAudioRouteListener(AudioRouteListener listener) {
+        sAudioRouteListener = listener;
+    }
+
+    // Called on the main thread by the application. Null means no route proof yet.
+    public static android.media.AudioDeviceInfo getRoutedAudioDevice() { return sRoutedDevice; }
+
+    // Called from native AudioTrack creation/close threads; all ownership is on main.
+    public static void observeAudioRoute(android.media.AudioTrack track) {
+        if (Build.VERSION.SDK_INT < 23) return;
+        sRouteHandler.post(() -> {
+            if (sObservedTrack != null && sRoutingListener != null) {
+                try { sObservedTrack.removeOnRoutingChangedListener(sRoutingListener); }
+                catch (RuntimeException ignored) { }
+            }
+            sObservedTrack = track;
+            sRoutingListener = changed -> publishAudioRoute(changed);
+            try {
+                track.addOnRoutingChangedListener(sRoutingListener, sRouteHandler);
+                publishAudioRoute(track);
+            } catch (RuntimeException ignored) { }
+        });
+    }
+
+    private static void publishAudioRoute(android.media.AudioTrack track) {
+        if (track != sObservedTrack) return;
+        android.media.AudioDeviceInfo device;
+        try { device = track.getRoutedDevice(); }
+        catch (RuntimeException ignored) { return; }
+        if (device == null) return; // A paused track is not evidence of a new route.
+        sRoutedDevice = device;
+        if (sAudioRouteListener != null) sAudioRouteListener.onAudioRouteChanged();
+    }
+
+    public static void forgetAudioRoute(android.media.AudioTrack track) {
+        if (Build.VERSION.SDK_INT < 23) return;
+        sRouteHandler.post(() -> {
+            if (sObservedTrack != track) return;
+            try { track.removeOnRoutingChangedListener(sRoutingListener); }
+            catch (RuntimeException ignored) { }
+            sObservedTrack = null;
+            sRoutingListener = null;
+            sRoutedDevice = null;
+        });
+    }
+
     public interface AudioTransformer {
 	    float[] transformAudio(float[] samples);
     }
