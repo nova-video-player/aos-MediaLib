@@ -884,7 +884,7 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
         boolean cancelRequest = "1".equals(uri.getQueryParameter("cancel"));
         Uri origUri = uri.buildUpon().encodedPath(
                 uri.getPath().replaceFirst("thumbnails", "media"))
-                .appendPath(origId).build();
+                .appendPath(origId).clearQuery().build();
 
         if (needBlocking && !waitForThumbnailReady(origUri)) {
             log.warn("original media doesn't exist or it's canceled.");
@@ -940,9 +940,8 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
         if (log.isDebugEnabled()) log.debug("waitForThumbnailReady");
 
         String origId = FileUtils.getName(origUri);
-        String[] whereArgs = new String[] { origId };
         Cursor c = query(origUri, new String[] { BaseColumns._ID, MediaColumns.DATA,
-                VideoColumns.MINI_THUMB_MAGIC, VideoColumns.ARCHOS_THUMB_TRY}, LIGHT_INDEX_STORAGE_QUERY, whereArgs , null);
+                VideoColumns.MINI_THUMB_MAGIC, VideoColumns.ARCHOS_THUMB_TRY}, null, null, null);
         if (log.isDebugEnabled()) log.debug("is cursor null ? {}", String.valueOf(c==null));
         if (c == null) return false;
 
@@ -977,11 +976,14 @@ public class VideoProvider extends ContentProvider implements DefaultLifecycleOb
             if (magic == 0) {
                 req = requestMediaThumbnail(path, id, origUri,
                         MediaThumbRequest.PRIORITY_HIGH);
-            } /* else {
+            } else {
                 if (log.isDebugEnabled()) log.debug("Don't need to generate, we have a magic number {}", String.valueOf(magic));
-            } */
+                c.close();
+                return true;
+            }
 
             if (req == null) {
+                c.close();
                 return false;
             }
             synchronized (req) {
