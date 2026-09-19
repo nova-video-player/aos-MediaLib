@@ -37,6 +37,30 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
     private long mMediaMetadataRetrieverHandle;
 
     private Proxy mFileProxy = null;
+    private final Object mSourceLock = new Object();
+    private final Object mProxyLock = new Object();
+    private boolean mReleased;
+
+    private void ensureOpen() {
+        synchronized (mProxyLock) {
+            if (mReleased) throw new IllegalStateException("retriever released");
+        }
+    }
+
+    private void replaceProxy(Proxy replacement) {
+        Proxy previous;
+        boolean released;
+        synchronized (mProxyLock) {
+            released = mReleased;
+            previous = mFileProxy;
+            if (!released) mFileProxy = replacement;
+        }
+        if (released) {
+            if (replacement != null) replacement.stop();
+            throw new IllegalStateException("retriever released");
+        }
+        if (previous != null && previous != replacement) previous.stop();
+    }
  
     private static final int EMBEDDED_PICTURE_TYPE_ANY = 0xFFFF;
 
@@ -50,31 +74,42 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
         return IMediaMetadataRetriever.TYPE_AVOS;
     }
 
-    public native void setDataSource(String path, String[] keys, String[] values) throws IllegalArgumentException;
+    private native void nativeSetDataSource(String path, String[] keys, String[] values) throws IllegalArgumentException;
+
+    public void setDataSource(String path, String[] keys, String[] values) throws IllegalArgumentException {
+        synchronized (mSourceLock) {
+            ensureOpen();
+            nativeSetDataSource(path, keys, values);
+            replaceProxy(null);
+        }
+    }
 
     public void setDataSource(String uri,  Map<String, String> headers)
             throws IllegalArgumentException {
-        if (Proxy.needToStream(Uri.parse(uri).getScheme())) {
-            mFileProxy = Proxy.setDataSource(Uri.parse(uri), this, headers);
-            return;
-        }
-
-        String[] keys = null;
-        String[] values = null;
-
-        if (headers != null) {
-            keys = new String[headers.size()];
-            values = new String[headers.size()];
-
-            int i = 0;
-            for (Map.Entry<String, String> entry: headers.entrySet()) {
-                keys[i] = entry.getKey();
-                values[i] = entry.getValue();
-                ++i;
+        synchronized (mSourceLock) {
+            ensureOpen();
+            if (Proxy.needToStream(Uri.parse(uri).getScheme())) {
+                replaceProxy(Proxy.setDataSource(Uri.parse(uri), this, headers));
+                return;
             }
-        }
 
-        setDataSource(uri, keys, values);
+            String[] keys = null;
+            String[] values = null;
+
+            if (headers != null) {
+                keys = new String[headers.size()];
+                values = new String[headers.size()];
+
+                int i = 0;
+                for (Map.Entry<String, String> entry: headers.entrySet()) {
+                    keys[i] = entry.getKey();
+                    values[i] = entry.getValue();
+                    ++i;
+                }
+            }
+
+            setDataSource(uri, keys, values);
+            }
     }
 
     public void setDataSource(String uri)
@@ -87,7 +122,11 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
 
     public void setDataSource(FileDescriptor fd, long offset, long length)
             throws IllegalArgumentException {
-        setDataSourceFD(fd, offset, length);
+        synchronized (mSourceLock) {
+            ensureOpen();
+            setDataSourceFD(fd, offset, length);
+            replaceProxy(null);
+            }
     }
 
     public void setDataSource(FileDescriptor fd)
@@ -98,62 +137,73 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
     
     public void setDataSource(Context context, Uri uri)
         throws IllegalArgumentException, SecurityException {
-        if (uri == null) {
-            throw new IllegalArgumentException();
-        }
+        synchronized (mSourceLock) {
+            ensureOpen();
+            if (uri == null) {
+                throw new IllegalArgumentException();
+            }
         
-        String scheme = uri.getScheme();
-        if (Proxy.needToStream(uri.getScheme())) {
-                mFileProxy = Proxy.setDataSource(uri, this, null);
+            String scheme = uri.getScheme();
+            if (Proxy.needToStream(uri.getScheme())) {
+                    replaceProxy(Proxy.setDataSource(uri, this, null));
+                    return;
+            }
+            if(scheme == null || scheme.equals("file")) {
+                setDataSource(uri.getPath());
                 return;
-        }
-        if(scheme == null || scheme.equals("file")) {
-            setDataSource(uri.getPath());
-            return;
-        }
+            }
 
-        AssetFileDescriptor fd = null;
-        try {
-            ContentResolver resolver = context.getContentResolver();
+            AssetFileDescriptor fd = null;
             try {
-                fd = resolver.openAssetFileDescriptor(uri, "r");
-            } catch(FileNotFoundException e) {
-                throw new IllegalArgumentException();
-            }
-            if (fd == null) {
-                throw new IllegalArgumentException();
-            }
-            FileDescriptor descriptor = fd.getFileDescriptor();
-            if (!descriptor.valid()) {
-                throw new IllegalArgumentException();
-            }
-            // Note: using getDeclaredLength so that our behavior is the same
-            // as previous versions when the content provider is returning
-            // a full file.
-            if (fd.getDeclaredLength() < 0) {
-                setDataSource(descriptor);
-            } else {
-                setDataSource(descriptor, fd.getStartOffset(), fd.getDeclaredLength());
-            }
-            return;
-        } catch (SecurityException ex) {
-        } finally {
-            try {
-                if (fd != null) {
-                    fd.close();
+                ContentResolver resolver = context.getContentResolver();
+                try {
+                    fd = resolver.openAssetFileDescriptor(uri, "r");
+                } catch(FileNotFoundException e) {
+                    throw new IllegalArgumentException();
                 }
-            } catch(IOException ioEx) {
+                if (fd == null) {
+                    throw new IllegalArgumentException();
+                }
+                FileDescriptor descriptor = fd.getFileDescriptor();
+                if (!descriptor.valid()) {
+                    throw new IllegalArgumentException();
+                }
+                // Note: using getDeclaredLength so that our behavior is the same
+                // as previous versions when the content provider is returning
+                // a full file.
+                if (fd.getDeclaredLength() < 0) {
+                    setDataSource(descriptor);
+                } else {
+                    setDataSource(descriptor, fd.getStartOffset(), fd.getDeclaredLength());
+                }
+                return;
+            } catch (SecurityException ex) {
+            } finally {
+                try {
+                    if (fd != null) {
+                        fd.close();
+                    }
+                } catch(IOException ioEx) {
+                }
             }
-        }
-        setDataSource(uri.toString(), null, null);
+            setDataSource(uri.toString(), null, null);
+            }
     }
 
     private native void nativeRelease();
     public void release() throws IOException {
-        nativeRelease();
-        if (mFileProxy != null) {
-            mFileProxy.stop();
+        Proxy proxy;
+        synchronized (mProxyLock) {
+            mReleased = true;
+            proxy = mFileProxy;
             mFileProxy = null;
+        }
+        // Do not hold the source-operation lock: release must cancel a reader
+        // even while another thread is opening/replacing the source.
+        try {
+            if (proxy != null) proxy.stop();
+        } finally {
+            nativeRelease();
         }
     }
 
