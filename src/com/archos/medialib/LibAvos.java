@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
+import androidx.annotation.RequiresApi;
 import android.content.Context;
 import android.os.Build;
 import android.util.Log;
@@ -38,7 +39,7 @@ public class LibAvos {
     private static final android.os.Handler sRouteHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static android.media.AudioTrack sObservedTrack;
     private static android.media.AudioDeviceInfo sRoutedDevice;
-    private static android.media.AudioTrack.OnRoutingChangedListener sRoutingListener;
+    private static Object sRoutingListener;
 
     public static void setAudioRouteListener(AudioRouteListener listener) {
         sAudioRouteListener = listener;
@@ -47,18 +48,72 @@ public class LibAvos {
     // Called on the main thread by the application. Null means no route proof yet.
     public static android.media.AudioDeviceInfo getRoutedAudioDevice() { return sRoutedDevice; }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private static class AudioRoutingApi24 {
+        static Object createListener() {
+            return (android.media.AudioRouting.OnRoutingChangedListener) router -> {
+                if (router instanceof android.media.AudioTrack) {
+                    publishAudioRoute((android.media.AudioTrack) router);
+                }
+            };
+        }
+
+        static void addListener(android.media.AudioTrack track, Object listener, android.os.Handler handler) {
+            if (listener instanceof android.media.AudioRouting.OnRoutingChangedListener) {
+                track.addOnRoutingChangedListener((android.media.AudioRouting.OnRoutingChangedListener) listener, handler);
+            }
+        }
+
+        static void removeListener(android.media.AudioTrack track, Object listener) {
+            if (listener instanceof android.media.AudioRouting.OnRoutingChangedListener) {
+                track.removeOnRoutingChangedListener((android.media.AudioRouting.OnRoutingChangedListener) listener);
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static class AudioRoutingApi23 {
+        static Object createListener() {
+            return (android.media.AudioTrack.OnRoutingChangedListener) LibAvos::publishAudioRoute;
+        }
+
+        static void addListener(android.media.AudioTrack track, Object listener, android.os.Handler handler) {
+            if (listener instanceof android.media.AudioTrack.OnRoutingChangedListener) {
+                track.addOnRoutingChangedListener((android.media.AudioTrack.OnRoutingChangedListener) listener, handler);
+            }
+        }
+
+        static void removeListener(android.media.AudioTrack track, Object listener) {
+            if (listener instanceof android.media.AudioTrack.OnRoutingChangedListener) {
+                track.removeOnRoutingChangedListener((android.media.AudioTrack.OnRoutingChangedListener) listener);
+            }
+        }
+    }
+
     // Called from native AudioTrack creation/close threads; all ownership is on main.
     public static void observeAudioRoute(android.media.AudioTrack track) {
-        if (Build.VERSION.SDK_INT < 23) return;
         sRouteHandler.post(() -> {
             if (sObservedTrack != null && sRoutingListener != null) {
-                try { sObservedTrack.removeOnRoutingChangedListener(sRoutingListener); }
-                catch (RuntimeException ignored) { }
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        AudioRoutingApi24.removeListener(sObservedTrack, sRoutingListener);
+                    } else {
+                        AudioRoutingApi23.removeListener(sObservedTrack, sRoutingListener);
+                    }
+                } catch (RuntimeException ignored) { }
             }
             sObservedTrack = track;
-            sRoutingListener = changed -> publishAudioRoute(changed);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                sRoutingListener = AudioRoutingApi24.createListener();
+            } else {
+                sRoutingListener = AudioRoutingApi23.createListener();
+            }
             try {
-                track.addOnRoutingChangedListener(sRoutingListener, sRouteHandler);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    AudioRoutingApi24.addListener(track, sRoutingListener, sRouteHandler);
+                } else {
+                    AudioRoutingApi23.addListener(track, sRoutingListener, sRouteHandler);
+                }
                 publishAudioRoute(track);
             } catch (RuntimeException ignored) { }
         });
@@ -75,11 +130,17 @@ public class LibAvos {
     }
 
     public static void forgetAudioRoute(android.media.AudioTrack track) {
-        if (Build.VERSION.SDK_INT < 23) return;
         sRouteHandler.post(() -> {
             if (sObservedTrack != track) return;
-            try { track.removeOnRoutingChangedListener(sRoutingListener); }
-            catch (RuntimeException ignored) { }
+            try {
+                if (sRoutingListener != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        AudioRoutingApi24.removeListener(track, sRoutingListener);
+                    } else {
+                        AudioRoutingApi23.removeListener(track, sRoutingListener);
+                    }
+                }
+            } catch (RuntimeException ignored) { }
             sObservedTrack = null;
             sRoutingListener = null;
             sRoutedDevice = null;
