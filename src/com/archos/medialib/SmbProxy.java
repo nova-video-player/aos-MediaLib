@@ -34,9 +34,15 @@ public class SmbProxy extends Proxy{
 
     private static final Logger log = LoggerFactory.getLogger(SmbProxy.class);
     private StreamOverHttp mStream;
+    private final StreamOverHttp.ReadMode mReadMode;
 
     protected SmbProxy(Uri uri) {
+        this(uri, StreamOverHttp.ReadMode.DEFAULT);
+    }
+
+    private SmbProxy(Uri uri, StreamOverHttp.ReadMode readMode) {
         super(uri);
+        mReadMode = readMode;
     }
     public static boolean needToStream(String scheme){
             return "smb".equalsIgnoreCase(scheme) ||
@@ -62,10 +68,10 @@ public class SmbProxy extends Proxy{
                 if (log.isTraceEnabled()) log.trace("start: error getting metafile for url {}", mUri, e);
             }
             if(file != null) {
-                mStream = new StreamOverHttp(file, mimeType);
+                mStream = new StreamOverHttp(file, mimeType, mReadMode);
             } else {
                 // sftp at least requires encodedUri
-                mStream = new StreamOverHttp(encodedUri, mimeType);
+                mStream = new StreamOverHttp(encodedUri, mimeType, mReadMode);
             }
         } catch (IOException e) {
             return null;
@@ -81,7 +87,7 @@ public class SmbProxy extends Proxy{
     }
     
     public static SmbProxy setDataSource(Uri uri, IMediaPlayer mp, Map<String, String> headers) throws IOException {
-        SmbProxy proxy = new SmbProxy(uri);
+        SmbProxy proxy = new SmbProxy(uri, StreamOverHttp.ReadMode.PLAYBACK);
         boolean installed = false;
         try {
             Uri local = proxy.start();
