@@ -438,9 +438,10 @@ public class LibAvos {
         nativeEnableAudioSpeed(enable);
     }
 
-    public static void disableAtempoFilter(boolean disable) {
-        if (DBG) Log.d(TAG, "disableAtempoFilter " + disable);
-        nativeDisableAtempoFilter(disable);
+    // backend: 0=atempo, 1=AudioTrack PlaybackParams, 2=Sonic
+    public static void setAudioSpeedBackend(int backend) {
+        if (DBG) Log.d(TAG, "setAudioSpeedBackend " + backend);
+        nativeSetAudioSpeedBackend(backend);
     }
 
     public static void setStreamMaxIframeSize(int size) {
@@ -507,7 +508,7 @@ public class LibAvos {
 
     private static native void nativeEnableAudioSpeed(boolean enable);
 
-    private static native void nativeDisableAtempoFilter(boolean disable);
+    private static native void nativeSetAudioSpeedBackend(int backend);
 
     private static native void nativeParserSyncMode(int mode);
 
