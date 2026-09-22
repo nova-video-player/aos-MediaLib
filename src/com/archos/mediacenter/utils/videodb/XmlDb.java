@@ -429,8 +429,11 @@ public class XmlDb implements Callback {
     public static List<MetaFile2> extractAssociatedWithUriDbXmlMetafileFromList(List<MetaFile2> metaFile2List, Uri videoFile){
         List<MetaFile2> toReturn = new ArrayList<>();
         String name = FileUtils.getName(videoFile);
+        if (log.isDebugEnabled()) log.debug("extractAssociatedWithUriDbXmlMetafileFromList: videoFile={}, decodedName=[{}]", videoFile, name);
             for(MetaFile2 mf : metaFile2List){
-                if(mf.getName().matches("^\\."+ Pattern.quote(name)+"\\.[0-9]*\\"+FILE_NAME)){
+                boolean match = mf.getName().matches("^\\."+ Pattern.quote(name)+"\\.[0-9]*\\"+FILE_NAME);
+                if (log.isDebugEnabled()) log.debug("extractAssociatedWithUriDbXmlMetafileFromList: candidate=[{}] match={}", mf.getName(), match);
+                if(match){
                     toReturn.add(mf);
                 }
             }
@@ -634,6 +637,7 @@ public class XmlDb implements Callback {
             //calculating percent
             double percent = (float) videoFile.resume/(float)videoFile.duration * 100.0;
             Uri xml = Uri.withAppendedPath(parentUri, "."+FileUtils.getName(videoFile.uri)+"."+((int)percent)+FILE_NAME);
+            if (log.isDebugEnabled()) log.debug("getXmlPath: videoFile.uri={}, decodedName=[{}], xmlUri={}", videoFile.uri, FileUtils.getName(videoFile.uri), xml);
             return xml;
         }
         return null;
