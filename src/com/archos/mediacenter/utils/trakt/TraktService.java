@@ -21,9 +21,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.hardware.display.DisplayManager;
 import android.net.Uri;
 import android.os.Binder;
 import androidx.core.content.IntentCompat;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -38,6 +40,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.preference.PreferenceManager;
 import android.provider.BaseColumns;
+import android.view.Display;
 import android.widget.Toast;
 
 import com.archos.mediacenter.utils.trakt.Trakt.Status;
@@ -94,6 +97,9 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
     private TraktHandler mBackgroundHandler;
     private Handler mUiHandler;
     private Toast mToast = null;
+    // Display the last caller was running on, so Toasts show up there instead of the default
+    // display. Stays on the primary display when the caller is not display-aware.
+    private int mToastDisplayId = Display.DEFAULT_DISPLAY;
     private NetworkState mNetworkState;
 
     private static final int MSG_RESULT = 0;
@@ -2055,11 +2061,24 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                         mToast.cancel();
                         mToast = null;
                     }
-                    mToast = Toast.makeText(getApplicationContext(), "trakt.tv: " + text, Toast.LENGTH_SHORT);
+                    mToast = Toast.makeText(getToastContext(), "trakt.tv: " + text, Toast.LENGTH_SHORT);
                     mToast.show();
                 }
             });
         }
+    }
+
+    /**
+     * Context whose display hosts the UI that triggered the sync, so that Toasts are shown on
+     * that display instead of the default one.
+     */
+    private Context getToastContext() {
+        if (mToastDisplayId != Display.DEFAULT_DISPLAY) {
+            DisplayManager dm = (DisplayManager) getSystemService(DISPLAY_SERVICE);
+            Display display = dm != null ? dm.getDisplay(mToastDisplayId) : null;
+            if (display != null) return createDisplayContext(display);
+        }
+        return getApplicationContext();
     }
 
     @Override
@@ -2114,6 +2133,10 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (log.isDebugEnabled()) log.debug("Received start id {}: {}", startId, intent);
+        if (intent != null) {
+            int displayId = intent.getIntExtra("display_id", Display.DEFAULT_DISPLAY);
+            if (displayId != Display.DEFAULT_DISPLAY) mToastDisplayId = displayId;
+        }
         networkState = NetworkState.instance(getApplicationContext());
         if (propertyChangeListener == null)
             propertyChangeListener = new PropertyChangeListener() {
@@ -2179,6 +2202,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
             Intent intent = new Intent(mContext, TraktService.class);
             intent.setAction(action);
             intent.putExtra("notify", mNotify);
+            intent.putExtra("display_id", getDisplayId(mContext));
             if (mNotify)
                 intent.putExtra("notify_time", System.currentTimeMillis());
             if (videoInfo != null)
@@ -2195,6 +2219,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
             Intent intent = new Intent(mContext, TraktService.class);
             intent.setAction(action);
             intent.putExtra("notify", mNotify);
+            intent.putExtra("display_id", getDisplayId(mContext));
             if (mNotify)
                 intent.putExtra("notify_time", System.currentTimeMillis());
             if (videoID != -1)
@@ -2206,6 +2231,17 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
             if (mMessenger != null)
                 intent.putExtra("messenger", mMessenger);
             return intent;
+        }
+        private static int getDisplayId(Context context) {
+            if (context != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    Display display = context.getDisplay();
+                    if (display != null) return display.getDisplayId();
+                } catch (UnsupportedOperationException ignored) {
+                    // Non-visual Context (such as Service or Application)
+                }
+            }
+            return Display.DEFAULT_DISPLAY;
         }
         private void startService(Intent intent, boolean checkForeground) {
             if (!checkForeground || isForeground) {
