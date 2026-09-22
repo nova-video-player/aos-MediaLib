@@ -622,7 +622,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         }
     }
     private static int mFoundFiles = 0;
-    private static final String IN_FOLDER_SELECT = MediaColumns.DATA + " LIKE ?||'%'";
+    private static final String IN_FOLDER_SELECT = "(" + MediaColumns.DATA + " LIKE ?||'%' OR " + MediaColumns.DATA + " LIKE ?||'%')";
     private static final String SELECT_ID = BaseColumns._ID + "=?";
     /** scans files into our db */
     void doScan(Uri what, long batchId) {
@@ -730,10 +730,15 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 }
                 if (log.isDebugEnabled()) log.debug("doScan: path identified is {}", path);
                 // query database for all files we have already in that directory
-                String[] selectionArgs = new String[]{path};
+                // also match paths that an earlier release stored percent-encoded (spaces/brackets)
+                // so those rows are reconciled instead of being duplicated
+                String[] selectionArgs = new String[]{path, FileUtils.encodeUri(Uri.parse(path)).toString()};
                 Cursor prescan = cr.query(VideoStoreInternal.FILES_SCANNED, PrescanItem.PROJECTION, IN_FOLDER_SELECT, selectionArgs, null);
                 // hashmap to contain all knows files + data, keyed by path
                 HashMap<String, PrescanItem> prescanItemsMap = new HashMap<String, NetworkScannerServiceVideo.PrescanItem>();
+                // index by decoded path so a row stored with percent-encoded spaces still matches the
+                // canonical path; when several rows map to the same file keep the oldest one (lowest _id)
+                HashMap<String, PrescanItem> decodedPrescanItemsMap = new HashMap<String, NetworkScannerServiceVideo.PrescanItem>();
                 if (prescan != null) {
                     while (prescan.moveToNext() && isForeground) {
                         PrescanItem item = new PrescanItem(prescan);
@@ -745,6 +750,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                             prescanItemsMap.put(item.unique_id, item);
                         else
                             prescanItemsMap.put(item._data, item);
+                        if (item._data != null) {
+                            String decodedPath = FileUtils.decodeUri(Uri.parse(item._data));
+                            PrescanItem kept = decodedPrescanItemsMap.get(decodedPath);
+                            if (kept == null || item._id < kept._id)
+                                decodedPrescanItemsMap.put(decodedPath, item);
+                        }
                     }
                     prescan.close();
                 }
@@ -760,7 +771,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
                 final String server = extractSmbServer(f.getUri());
                 final long serverId = getLightIndexServerId(server);
                 FileVisitListener fileVisitListener = new FileVisitListener(
-                        mBlacklist, prescanItemsMap, nfoScanEnabled, bulkHandler, serverId, this);
+                        mBlacklist, prescanItemsMap, decodedPrescanItemsMap, nfoScanEnabled, bulkHandler, serverId, this);
 
                 FileVisitor.visit(f, RECURSION_LIMIT, fileVisitListener);
                 boolean traversalHadError = fileVisitListener.hadListingError();
@@ -932,6 +943,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
 
         private final BulkOperationHandler mBulkHandler;
         private final HashMap<String, PrescanItem> mPrescanItemsMap;
+        private final HashMap<String, PrescanItem> mDecodedPrescanItemsMap;
         private final List<MetaFile2> mLastPlayedDbs = new ArrayList<MetaFile2>();
         private final boolean mNfoScanEnabled;
         private final long mServerId;
@@ -942,10 +954,12 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
         private final Blacklist mBlacklist;
 
         public FileVisitListener(Blacklist blacklist, HashMap<String, PrescanItem> prescanItemsMap,
+                HashMap<String, PrescanItem> decodedPrescanItemsMap,
                 boolean nfoScanEnabled, BulkOperationHandler bulkHandler, long serverId, NetworkScannerServiceVideo service) {
             if (log.isDebugEnabled()) log.debug("FileVisitListener: serverId={}", serverId);
             mBlacklist = blacklist;
             mPrescanItemsMap = prescanItemsMap;
+            mDecodedPrescanItemsMap = decodedPrescanItemsMap;
             mNfoScanEnabled = nfoScanEnabled;
             mBulkHandler = bulkHandler;
             mServerId = serverId;
@@ -1044,6 +1058,11 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             }
             else{
                 existingItem = mPrescanItemsMap.get(p);
+                if (existingItem == null) {
+                    // a row stored by an earlier release may have its path percent-encoded: match on the
+                    // decoded path so the file is updated in place instead of being inserted again
+                    existingItem = mDecodedPrescanItemsMap.get(FileUtils.decodeUri(file.getUri()));
+                }
                 uniqueId = p;
             }
             if (log.isTraceEnabled()) log.trace("FileVisitListener.onFile: existingItem {}", existingItem);
@@ -1138,12 +1157,19 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             if (!prefix.endsWith("/")) {
                 prefix = prefix + "/";
             }
+            String decodedDirectoryPath = FileUtils.decodeUri(directory.getUri());
+            String decodedPrefix = decodedDirectoryPath;
+            if (!decodedPrefix.endsWith("/")) {
+                decodedPrefix = decodedPrefix + "/";
+            }
             log.warn("onListingError: skip deletions under {} due to traversal error", prefix);
             for (PrescanItem item : mPrescanItemsMap.values()) {
                 if (item._data == null) {
                     continue;
                 }
-                if (item._data.equals(directoryPath) || item._data.startsWith(prefix)) {
+                String decodedData = FileUtils.decodeUri(Uri.parse(item._data));
+                if (item._data.equals(directoryPath) || item._data.startsWith(prefix)
+                        || decodedData.equals(decodedDirectoryPath) || decodedData.startsWith(decodedPrefix)) {
                     item.needsDelete = false;
                 }
             }
