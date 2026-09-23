@@ -50,6 +50,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private IMediaPlayer.OnRelativePositionUpdateListener mOnRelativePositionUpdateListener = null;
     private IMediaPlayer.OnSeekCompleteListener mOnSeekCompleteListener = null;
     private IMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = null;
+    private IMediaPlayer.OnVideoFpsListener mOnVideoFpsListener = null;
     private IMediaPlayer.OnNextTrackListener mOnNextTrackListener = null;
     private IMediaPlayer.OnSubtitleListener mOnSubtitleListener = null;
     private EventHandler mEventHandler;
@@ -305,6 +306,10 @@ public class AvosMediaPlayer implements IMediaPlayer {
         mOnVideoSizeChangedListener = listener;
     }
 
+    public void setOnVideoFpsListener(IMediaPlayer.OnVideoFpsListener listener) {
+        mOnVideoFpsListener = listener;
+    }
+
     public void setOnNextTrackListener(IMediaPlayer.OnNextTrackListener listener) {
         mOnNextTrackListener = listener;
     }
@@ -325,6 +330,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
         mOnRelativePositionUpdateListener = null;
         mOnSeekCompleteListener = null;
         mOnVideoSizeChangedListener = null;
+        mOnVideoFpsListener = null;
         mOnNextTrackListener = null;
         mOnSubtitleListener = null;
         nativeRelease();
@@ -457,6 +463,7 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private static final int MEDIA_RELATIVE_POSITION_UPDATE = 6;
     private static final int MEDIA_NEXT_TRACK = 7;
     private static final int MEDIA_SET_VIDEO_ASPECT = 8;
+    private static final int MEDIA_SET_VIDEO_FPS = 9;
     private static final int MEDIA_ERROR = 100;
     private static final int MEDIA_INFO = 200;
     private static final int MEDIA_SUBTITLE = 1000;
@@ -528,6 +535,12 @@ public class AvosMediaPlayer implements IMediaPlayer {
                         log.warn("Invalid video sample aspect ratio {}/{}, using 1:1", msg.arg1, msg.arg2);
                     mOnVideoSizeChangedListener.onVideoAspectChanged(mMediaPlayer, aspect);
                 }
+                return;
+
+            case MEDIA_SET_VIDEO_FPS:
+                if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_SET_VIDEO_FPS {}", msg.arg1);
+                if (mOnVideoFpsListener != null)
+                    mOnVideoFpsListener.onVideoFps(mMediaPlayer, msg.arg1);
                 return;
 
             case MEDIA_ERROR:
