@@ -317,6 +317,7 @@ public class LibAvos {
         loadLibrary(ctx, "avformat", armHasNeon, false);
         loadLibrary(ctx, "swscale", armHasNeon, false);
         loadLibrary(ctx, "swresample", armHasNeon, false);
+        loadLibrary(ctx, "mysofa", armHasNeon, false);
         loadLibrary(ctx, "avfilter", armHasNeon, false);
 
         // not used anymore
@@ -411,6 +412,13 @@ public class LibAvos {
     public static void setSpatializerCapabilities(int spatializerCapabilities) {
         nativeSetSpatializerCapabilities(spatializerCapabilities);
     }
+
+    /** mode: 0=off, 1=experimental TV speakers, 2=headphones. Refresh output after changing. */
+    public static boolean setSofaMode(int mode, String profilePath) {
+        return nativeSetSofaMode(mode, profilePath);
+    }
+
+    private static native boolean nativeSetSofaMode(int mode, String profilePath);
 
     public static void setSpatializerEnabled(boolean enabled) {
         nativeSetSpatializerEnabled(enabled);
