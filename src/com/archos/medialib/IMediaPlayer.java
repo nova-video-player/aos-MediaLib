@@ -128,7 +128,6 @@ public interface IMediaPlayer {
     public void setOnRelativePositionUpdateListener(OnRelativePositionUpdateListener listener);
     public void setOnSeekCompleteListener(OnSeekCompleteListener listener);
     public void setOnVideoSizeChangedListener(OnVideoSizeChangedListener listener);
-    public void setOnSubtitleListener(OnSubtitleListener listener);
     public void setOnNextTrackListener(OnNextTrackListener listener);
     public int  getAudioSessionId();
     /* returns 0 if it doesn't, 1 if it does, -1 if we don't know it yet */
@@ -167,10 +166,6 @@ public interface IMediaPlayer {
     public interface OnVideoSizeChangedListener {
         public void onVideoSizeChanged(IMediaPlayer mp, int width, int height);
         public void onVideoAspectChanged(IMediaPlayer mp, double aspect);
-    }
-
-    public interface OnSubtitleListener  {
-        public void onSubtitle(IMediaPlayer mp, Subtitle subtitle);
     }
 
     public interface OnNextTrackListener {
