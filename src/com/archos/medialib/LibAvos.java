@@ -445,11 +445,13 @@ public class LibAvos {
     }
 
     public static void setStreamMaxIframeSize(int size) {
+        size = StreamBufferSettings.frameSize(size);
         Log.d(TAG, "setStreamMaxIframeSize " + size);
         nativeSetStreamMaxIframeSize(size);
     }
 
     public static void setStreamBufferSize(int size) {
+        size = StreamBufferSettings.streamSize(size);
         Log.d(TAG, "setStreamBufferSize " + size);
         nativeSetStreamBufferSize(size);
     }

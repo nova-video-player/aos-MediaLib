@@ -109,13 +109,23 @@ public class AvosMediaPlayer implements IMediaPlayer {
     
     public void setDataSource(FileDescriptor fd, long offset, long length)
             throws IOException, IllegalArgumentException, IllegalStateException {
-        setDataSourceFD(fd, offset, length);
+        SmbProxy previous;
+        synchronized (mLifecycleLock) {
+            ensureOpen();
+            setDataSourceFD(fd, offset, length);
+            previous = mSmbProxy;
+            mSmbProxy = null;
+        }
+        if (previous != null) previous.stop();
     }
 
     public void setDataSource(Context context, Uri uri, Map<String, String> headers) throws IOException,
             IllegalArgumentException, SecurityException, IllegalStateException {
 
         String scheme = uri.getScheme();
+        if (ContentResolver.SCHEME_CONTENT.equals(scheme) && tryContentDescriptor(context, uri)) {
+            return;
+        }
         if (SmbProxy.needToStream(scheme)){
             installProxy(SmbProxy.setDataSource(uri, this, headers));
             return;
@@ -160,6 +170,26 @@ public class AvosMediaPlayer implements IMediaPlayer {
     public void setDataSource(Context context, Uri uri) throws IOException,
             IllegalArgumentException, SecurityException, IllegalStateException {
         setDataSource(context, uri, null);
+    }
+
+    private boolean tryContentDescriptor(Context context, Uri uri) {
+        AssetFileDescriptor asset = null;
+        try {
+            asset = ContentFileDescriptor.open(context.getContentResolver(), uri);
+            if (asset == null) return false;
+            // Native code duplicates the descriptor and keeps offsets relative to this slice.
+            setDataSource(asset.getFileDescriptor(), asset.getStartOffset(),
+                    Math.max(0, asset.getDeclaredLength()));
+            return true;
+        } catch (IOException | SecurityException | IllegalArgumentException e) {
+            log.debug("Provider descriptor unavailable; using HTTP relay", e);
+            return false;
+        } finally {
+            if (asset != null) {
+                try { asset.close(); }
+                catch (IOException e) { log.debug("Unable to close provider descriptor", e); }
+            }
+        }
     }
 
     public void setDataSource(String path) throws IOException, IllegalArgumentException,
