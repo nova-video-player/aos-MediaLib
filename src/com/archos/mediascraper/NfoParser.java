@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper;
 
+import com.archos.filecorelibrary.ReadOptions;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -280,7 +282,7 @@ public class NfoParser {
                 // relocate uri for local files to writeable location to comply with API30
                 nfoInputStream = FileEditorFactoryWithUpnp
                         .getFileEditorForUrl(FileUtils.relocateNfoAppPublicDirForNfoJpgFiles(
-                                nfo.videoNfo), null).getInputStream();
+                                nfo.videoNfo), null).getInputStream(ReadOptions.METADATA);
                 rootHandler = importContext.getRootHandler();
                 // clear before parsing: handlers are reused across files in a shared
                 // ImportContext, and a previous parse aborted by an exception can leave
@@ -478,7 +480,7 @@ public class NfoParser {
         NfoShowHandler showHandler = null;
         try {
             nfoInputStream = FileEditorFactoryWithUpnp
-                    .getFileEditorForUrl(nfoFile, null).getInputStream();
+                    .getFileEditorForUrl(nfoFile, null).getInputStream(ReadOptions.METADATA);
             showHandler = importContext.getShowHandler();
             SAXParser parser = importContext.getParser();
             // clear before parsing in case a previous parse left stale state behind

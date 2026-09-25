@@ -14,6 +14,8 @@
 
 package com.archos.mediascraper;
 
+import com.archos.filecorelibrary.ReadOptions;
+
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -107,7 +109,7 @@ public class ImageScaler {
         FileEditor fileEditor = FileEditorFactoryWithUpnp.getFileEditorForUrl(rawFile, null);
         InputStream stream = null;
         try {
-            stream = fileEditor.getInputStream();
+            stream = fileEditor.getInputStream(ReadOptions.METADATA);
             tmp = BitmapFactory.decodeStream(stream, null, opts);
         } catch (IOException e1) {
             Log.e(TAG, "Could not decode Bitmap " + rawFile.toString(), e1);
@@ -157,7 +159,7 @@ public class ImageScaler {
         try {
             Bitmap sampled;
             try {
-                stream = fileEditor.getInputStream();
+                stream = fileEditor.getInputStream(ReadOptions.METADATA);
                 sampled = BitmapFactory.decodeStream(stream, null, opts);
             } catch (Exception e) {
                 // Catch any exceptions including hardware decoder failures (e.g., JPEG_HDEC on Hisilicon)
@@ -316,7 +318,7 @@ public class ImageScaler {
 
             FileEditor fileEditor = FileEditorFactoryWithUpnp.getFileEditorForUrl(src,null);
             fos = new FileOutputStream(dest);
-            fis = fileEditor.getInputStream();
+            fis = fileEditor.getInputStream(ReadOptions.METADATA);
             int read;
             while ((read = fis.read(buf)) != -1) {
                 fos.write(buf, 0, read);
