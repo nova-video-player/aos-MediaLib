@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">Απόκτηση πληροφοριών για όλα</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Αδύναμία συγχρονισμού με το trakt</string>
+    <string name="trakt_toast_account_locked">Ο λογαριασμός Trakt κλειδώθηκε. Ο συγχρονισμός απενεργοποιήθηκε. Επαληθεύστε ξανά τις ρυθμίσεις για ενεργοποίηση ξανά.</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Δεν υπάρχει κάρτα SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,5 +140,9 @@
     <string name="scraping_in_progress">Απόκτηση πληροφοριών σε εξέλιξη</string>
     <string name="remaining_videos_to_process">Εναπομείναντα αρχεία για επεξεργασία:</string>
     <string name="video_store_import">Εισαγωγή τοπικών αρχείων</string>
+    <string name="local_cleanup">Τοπική εκκαθάριση</string>
+    <string name="network_cleanup">Καθαρισμός δικτύου</string>
+    <string name="current_video_title">Τρέχον:</string>
+    <string name="noresult_video_title">Χωρίς απόξεση:</string>
     <!-- Status overlay badges (1-letter abbreviations) -->
 </resources>
