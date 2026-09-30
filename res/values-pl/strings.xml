@@ -33,6 +33,7 @@
     <string name="rescrap_all_title">Aktualizuj wszystko</string>
     <!-- trakt.tv -->
     <string name="trakt_toast_syncing_error">Brak synchronizacji z usługą Trakt</string>
+    <string name="trakt_toast_account_locked">Konto Trakt zablokowane. Synchronizacja wyłączona. Zaloguj się ponownie.</string>
     <!-- Title of screen when no sd card is present -->
     <string name="sdcard_missing_title">Brak karty SD</string>
     <!-- label underneath icon used to indicate that no sd card is present -->
@@ -139,5 +140,14 @@
     <string name="scraping_in_progress">Scrapowanie w toku</string>
     <string name="remaining_videos_to_process">Pozostałe media do przetworzenia:</string>
     <string name="video_store_import">Importowanie lokalnych mediów</string>
+    <string name="local_cleanup">Czyszczenie lokalne</string>
+    <string name="network_cleanup">Czyszczenie sieciowe</string>
+    <string name="current_video_title">Aktualnie:</string>
+    <string name="noresult_video_title">Nieodnalezione:</string>
     <!-- Status overlay badges (1-letter abbreviations) -->
+    <string name="badge_domain_local">L</string>
+    <string name="badge_domain_network">N</string>
+    <string name="badge_op_scan">S</string>
+    <string name="badge_op_delete">D</string>
+    <string name="badge_op_identify">I</string>
 </resources>
