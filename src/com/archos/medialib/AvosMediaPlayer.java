@@ -51,7 +51,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private IMediaPlayer.OnSeekCompleteListener mOnSeekCompleteListener = null;
     private IMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = null;
     private IMediaPlayer.OnNextTrackListener mOnNextTrackListener = null;
-    private IMediaPlayer.OnSubtitleListener mOnSubtitleListener = null;
     private EventHandler mEventHandler;
     private PowerManager.WakeLock mWakeLock = null;
     private boolean mScreenOnWhilePlaying;
@@ -367,10 +366,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
         mOnNextTrackListener = listener;
     }
 
-    public void setOnSubtitleListener(OnSubtitleListener listener) {
-        mOnSubtitleListener = listener;
-    }
-
     private native void nativeRelease();
     public void release() {
         synchronized (mLifecycleLock) {
@@ -387,7 +382,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
             mOnSeekCompleteListener = null;
             mOnVideoSizeChangedListener = null;
             mOnNextTrackListener = null;
-            mOnSubtitleListener = null;
             SmbProxy proxy = mSmbProxy;
             mSmbProxy = null;
             try {
@@ -524,7 +518,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
     private static final int MEDIA_SET_VIDEO_ASPECT = 8;
     private static final int MEDIA_ERROR = 100;
     private static final int MEDIA_INFO = 200;
-    private static final int MEDIA_SUBTITLE = 1000;
 
     private class EventHandler extends Handler
     {
@@ -622,23 +615,6 @@ public class AvosMediaPlayer implements IMediaPlayer {
                     if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_INFO, no onInfoListener, not calling onInfo");
                 }
                 // No real default action so far.
-                return;
-            case MEDIA_SUBTITLE:
-                if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_SUBTITLE");
-                if (mOnSubtitleListener != null) {
-                    if (msg.obj == null) {
-                        log.error("MEDIA_SUBTITLE with null object");
-                        return;
-                    }
-                    if (msg.obj instanceof Subtitle) {
-                        if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_SUBTITLE msg is a Subtitle call onSubtitle");
-                        mOnSubtitleListener.onSubtitle(mMediaPlayer, (Subtitle) msg.obj);
-                    }
-                    else
-                        log.error("MEDIA_SUBTITLE with wrong object");
-                } else {
-                    if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_SUBTITLE, no onSubtitleListener, not calling onSubtitle");
-                }
                 return;
             case MEDIA_NOP: // interface test message - ignore
                 if (log.isDebugEnabled()) log.debug("handleMessage: MEDIA_NOP");

@@ -128,7 +128,6 @@ public interface IMediaPlayer {
     public void setOnRelativePositionUpdateListener(OnRelativePositionUpdateListener listener);
     public void setOnSeekCompleteListener(OnSeekCompleteListener listener);
     public void setOnVideoSizeChangedListener(OnVideoSizeChangedListener listener);
-    public void setOnSubtitleListener(OnSubtitleListener listener);
     public void setOnNextTrackListener(OnNextTrackListener listener);
     public int  getAudioSessionId();
     /* returns 0 if it doesn't, 1 if it does, -1 if we don't know it yet */
@@ -167,10 +166,6 @@ public interface IMediaPlayer {
     public interface OnVideoSizeChangedListener {
         public void onVideoSizeChanged(IMediaPlayer mp, int width, int height);
         public void onVideoAspectChanged(IMediaPlayer mp, double aspect);
-    }
-
-    public interface OnSubtitleListener  {
-        public void onSubtitle(IMediaPlayer mp, Subtitle subtitle);
     }
 
     public interface OnNextTrackListener {
@@ -382,7 +377,7 @@ public interface IMediaPlayer {
     public static final int METADATA_KEY_SUBTITLE_TRACK = 30000;
     public static final int METADATA_KEY_SUBTITLE_TRACK_NAME = 0;
     public static final int METADATA_KEY_SUBTITLE_TRACK_PATH = 1;
-    public static final int METADATA_KEY_SUBTITLE_TRACK_IS_GFX = 2;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_KIND = 2;
     public static final int METADATA_KEY_SUBTITLE_TRACK_FORMAT = 3;
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE = 4;
     public static final int METADATA_KEY_SUBTITLE_TRACK_DISPOSITION = 5;
