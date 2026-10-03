@@ -631,12 +631,13 @@ public class ScraperImage {
     }
 
     public boolean setAsDefault(Context context, int season) {
+        if (log.isDebugEnabled()) log.debug("setAsDefault: type={}, id={}, remoteId={}, onlineId={}, season={}", mType, mId, mRemoteId, mOnlineID, season);
         if (mRemoteId <= 0) {
-            log.error("saveSizedImage: setAsDefault - don't have remoteId, aborting.");
+            log.error("saveSizedImage: setAsDefault - don't have remoteId, aborting. type={}, id={}", mType, mId);
             return false;
         }
         if (mId <= 0) {
-            log.error("saveSizedImage: setAsDefault - don't have id, aborting.");
+            log.error("saveSizedImage: setAsDefault - don't have id, aborting. type={}, remoteId={}", mType, mRemoteId);
             return false;
         }
         boolean success = false;
@@ -702,6 +703,7 @@ public class ScraperImage {
         if (context != null && updateUri != null) {
             success = context.getContentResolver().update(updateUri, updateValues, selection, selectionArgs) > 0;
         }
+        if (log.isDebugEnabled()) log.debug("setAsDefault: type={} updateUri={} selection={} selectionArgs={} success={}", mType, updateUri, selection, selectionArgs == null ? "null" : java.util.Arrays.toString(selectionArgs), success);
         return success;
     }
 
