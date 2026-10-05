@@ -15,9 +15,11 @@
 package com.archos.mediaprovider.video;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.archos.mediascraper.GenreUtils;
 import com.archos.mediaprovider.SQLiteUtils;
 
 import org.slf4j.Logger;
@@ -1565,6 +1567,54 @@ public final class ScraperTables {
                     ScraperStore.MovieCollections.ID + " > 0 AND NOT EXISTS (SELECT 1 FROM " +
                     MOVIE_TABLE_NAME + " WHERE " + ScraperStore.Movie.COLLECTION_ID + " = " +
                     MOVIE_COLLECTION_TABLE_NAME + "." + ScraperStore.MovieCollections.ID + ")");
+        }
+        if (toVersion == 62) {
+            if (log.isDebugEnabled()) log.debug("upgradeTo: {} - adding language-independent genre ids", toVersion);
+            db.execSQL("ALTER TABLE " + MOVIE_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Movie.GENRE_IDS + " TEXT");
+            db.execSQL("ALTER TABLE " + SHOW_TABLE_NAME + " ADD COLUMN " +
+                    ScraperStore.Show.GENRE_IDS + " TEXT");
+            // The actual name->id backfill needs resources and is performed by VideoOpenHelper
+            // via backfillGenreIds once the schema is in place.
+        }
+    }
+
+    /**
+     * Backfills movie.m_genre_ids / show.s_genre_ids from the legacy localized name columns using
+     * the reverse name->id map built from every shipped locale. Rows whose names cannot be mapped
+     * (e.g. NFO imports with custom strings) are left NULL and keep using the name fallback.
+     */
+    public static void backfillGenreIds(SQLiteDatabase db, Context context) {
+        if (context == null) {
+            return;
+        }
+        backfillGenreIdsForTable(db, context, MOVIE_TABLE_NAME,
+                ScraperStore.Movie.ID, ScraperStore.Movie.GERNES_FORMATTED,
+                ScraperStore.Movie.GENRE_IDS, false);
+        backfillGenreIdsForTable(db, context, SHOW_TABLE_NAME,
+                ScraperStore.Show.ID, ScraperStore.Show.GERNES_FORMATTED,
+                ScraperStore.Show.GENRE_IDS, true);
+    }
+
+    private static void backfillGenreIdsForTable(SQLiteDatabase db, Context context, String table,
+            String idColumn, String namesColumn, String idsColumn, boolean isShow) {
+        Cursor cursor = null;
+        try {
+            cursor = db.query(table, new String[] {idColumn, namesColumn},
+                    namesColumn + " IS NOT NULL AND " + idsColumn + " IS NULL", null, null, null, null);
+            while (cursor.moveToNext()) {
+                long rowId = cursor.getLong(0);
+                String names = cursor.getString(1);
+                String ids = GenreUtils.genreIdsFromNames(context, names, isShow);
+                if (ids != null) {
+                    db.execSQL("UPDATE " + table + " SET " + idsColumn + "=? WHERE " + idColumn + "=?",
+                            new Object[] {ids, rowId});
+                }
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
         }
     }
 

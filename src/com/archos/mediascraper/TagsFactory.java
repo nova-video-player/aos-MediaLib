@@ -125,6 +125,8 @@ public class TagsFactory {
             directorsS = getCol(c, VideoColumns.SCRAPER_S_DIRECTORS);
             writersS = getCol(c, VideoColumns.SCRAPER_S_WRITERS);
             genresMS = getCol(c, VideoColumns.SCRAPER_GENRES);
+            genreIdsM = getCol(c, VideoColumns.SCRAPER_M_GENRE_IDS);
+            genreIdsS = getCol(c, VideoColumns.SCRAPER_S_GENRE_IDS);
             studiosMS = getCol(c, VideoColumns.SCRAPER_STUDIOS);
             seasonE = getCol(c, VideoColumns.SCRAPER_E_SEASON);
             episodeE = getCol(c, VideoColumns.SCRAPER_E_EPISODE);
@@ -196,6 +198,8 @@ public class TagsFactory {
         public final int writersME;
         public final int writersS;
         public final int genresMS;
+        public final int genreIdsM;
+        public final int genreIdsS;
         public final int studiosMS;
         public final int seasonE;
         public final int episodeE;
@@ -258,6 +262,8 @@ public class TagsFactory {
         VideoColumns.SCRAPER_S_DIRECTORS,
         VideoColumns.SCRAPER_S_WRITERS,
         VideoColumns.SCRAPER_GENRES,
+        VideoColumns.SCRAPER_M_GENRE_IDS,
+        VideoColumns.SCRAPER_S_GENRE_IDS,
         VideoColumns.SCRAPER_STUDIOS,
         VideoColumns.SCRAPER_E_SEASON,
         VideoColumns.SCRAPER_E_EPISODE,
@@ -375,6 +381,8 @@ public class TagsFactory {
             String directorsME = getStringCol(cur, cols.directorsME);
             String writersME = getStringCol(cur, cols.writersME);
             String genresMS = getStringCol(cur, cols.genresMS);
+            String genreIdsM = getStringCol(cur, cols.genreIdsM);
+            String genreIdsS = getStringCol(cur, cols.genreIdsS);
             String studiosMS = getStringCol(cur, cols.studiosMS);
             long backdropId = getLongCol(cur, cols.backdropId);
             String backdropLFile = getStringCol(cur, cols.backdropLFile);
@@ -421,6 +429,7 @@ public class TagsFactory {
                 tag.setDirectorsFormatted(directorsME);
                 tag.setWritersFormatted(writersME);
                 tag.setGenresFormatted(genresMS);
+                tag.setGenreIds(genreIdsM);
                 tag.setStudiosFormatted(studiosMS);
 
                 if(coverME != null && posterId <= 0)
@@ -536,6 +545,7 @@ public class TagsFactory {
                     sTag.setDirectorsFormatted(directorsS);
                     sTag.setWritersFormatted(writersS);
                     sTag.setGenresFormatted(genresMS);
+                    sTag.setGenreIds(genreIdsS);
                     sTag.setStudiosFormatted(studiosMS);
 
                     String coverS =getStringCol(cur, cols.coverS);

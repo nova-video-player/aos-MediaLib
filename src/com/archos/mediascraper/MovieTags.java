@@ -56,6 +56,11 @@ public class MovieTags extends VideoTags {
     private String mSpokenLanguages = "";
     private String mTitleLanguage = "und";
 
+    @Override
+    protected boolean isShowTags() {
+        return false;
+    }
+
     @SuppressWarnings("hiding") // this has to be defined for every parcelable this way
     public static final Parcelable.Creator<MovieTags> CREATOR = new Parcelable.Creator<MovieTags>() { 
         public MovieTags createFromParcel(Parcel in) {
@@ -234,6 +239,7 @@ public class MovieTags extends VideoTags {
         values.put(ScraperStore.Movie.DIRECTORS_FORMATTED, getDirectorsFormatted());
         values.put(ScraperStore.Movie.WRITERS_FORMATTED, getWritersFormatted());
         values.put(ScraperStore.Movie.GERNES_FORMATTED, getGenresFormatted());
+        values.put(ScraperStore.Movie.GENRE_IDS, getGenreIds());
         values.put(ScraperStore.Movie.STUDIOS_FORMATTED, getStudiosFormatted());
 
         // build list of operations

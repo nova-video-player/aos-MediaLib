@@ -1333,6 +1333,18 @@ public final class VideoStore {
              */
             public static final String SCRAPER_S_GENRES = "s_genres";
             /**
+             * MediaScraper: Movie Genres as language-independent TMDB genre ids
+             * <P>TYPE: <code>String</code> or <code>null</code> if not a movie / not scraped
+             * <P>FORMAT: ",16,10751," (delimiter wrapped so that LIKE '%,16,%' is unambiguous)
+             */
+            public static final String SCRAPER_M_GENRE_IDS = "m_genre_ids";
+            /**
+             * MediaScraper: Show Genres as language-independent TMDB genre ids
+             * <P>TYPE: <code>String</code> or <code>null</code> if not a show / episode / not scraped
+             * <P>FORMAT: ",16,10751," (delimiter wrapped so that LIKE '%,16,%' is unambiguous)
+             */
+            public static final String SCRAPER_S_GENRE_IDS = "s_genre_ids";
+            /**
              * MediaScraper: Movie Studios / Show Tv Stations
              * <P>TYPE: <code>String</code> or <code>null</code> if not scraped
              * <P>FORMAT: "Pixar, Universal, ..."

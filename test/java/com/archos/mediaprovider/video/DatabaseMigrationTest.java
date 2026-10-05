@@ -153,6 +153,51 @@ public class DatabaseMigrationTest {
     }
 
     @Test
+    public void testMigrationV62AddsGenreIdsAndBackfills() {
+        Context context = ApplicationProvider.getApplicationContext();
+        String dbName = "test_migration_v62.db";
+        context.deleteDatabase(dbName);
+
+        VideoOpenHelper helper61 = new VideoOpenHelper(context, dbName, 61);
+        SQLiteDatabase db = helper61.getWritableDatabase();
+        db.execSQL("PRAGMA foreign_keys = OFF");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (1, 1, '/storage/usb/Anime-movie.mkv', 'Anime movie', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO files (_id, remote_id, _data, title, date_added, media_type, volume_hidden, Archos_smbserver) VALUES (2, 2, '/storage/usb/Unknown-movie.mkv', 'Unknown movie', 1000, 3, 0, 0)");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, m_genres) VALUES (1, 1, 'Anime movie', 'Animazione, Azione')");
+        db.execSQL("INSERT INTO movie (_id, video_id, name_movie, m_genres) VALUES (2, 2, 'Unknown movie', 'Foo, Bar')");
+        db.execSQL("INSERT INTO show (_id, name_show, s_genres) VALUES (1, 'Anime show', 'Animazione')");
+        db.close();
+
+        VideoOpenHelper helper62 = new VideoOpenHelper(context, dbName, 62);
+        SQLiteDatabase upgraded = helper62.getWritableDatabase();
+
+        assertEquals(62, upgraded.getVersion());
+        assertTrue(columnExists(upgraded, "movie", ScraperStore.Movie.GENRE_IDS));
+        assertTrue(columnExists(upgraded, "show", ScraperStore.Show.GENRE_IDS));
+        assertTrue(columnExists(upgraded, "video", VideoStore.Video.VideoColumns.SCRAPER_M_GENRE_IDS));
+        assertTrue(columnExists(upgraded, "video", VideoStore.Video.VideoColumns.SCRAPER_S_GENRE_IDS));
+        assertTrue(columnExists(upgraded, "video", "genre_ids"));
+
+        assertEquals(",16,28,", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Movie.GENRE_IDS + " FROM movie WHERE _id = 1"));
+        assertNull(querySingleStringOrNull(upgraded, "SELECT " +
+                ScraperStore.Movie.GENRE_IDS + " FROM movie WHERE _id = 2"));
+        assertEquals(",16,", querySingleString(upgraded, "SELECT " +
+                ScraperStore.Show.GENRE_IDS + " FROM show WHERE _id = 1"));
+
+        assertEquals(",16,28,", querySingleString(upgraded, "SELECT " +
+                VideoStore.Video.VideoColumns.SCRAPER_M_GENRE_IDS + " FROM video WHERE _id = 1"));
+        assertEquals("ok", querySingleString(upgraded, "PRAGMA integrity_check"));
+        assertEquals(0, foreignKeyViolationCount(upgraded));
+
+        upgraded.execSQL("PRAGMA foreign_keys = OFF");
+        upgraded.execSQL("DELETE FROM movie WHERE _id IN (1, 2)");
+        upgraded.execSQL("DELETE FROM show WHERE _id = 1");
+        upgraded.close();
+        context.deleteDatabase(dbName);
+    }
+
+    @Test
     public void testMigrationV60AddsSortNameColumnsIndexesAndBackfills() {
         Context context = ApplicationProvider.getApplicationContext();
         String dbName = "test_migration_v60.db";

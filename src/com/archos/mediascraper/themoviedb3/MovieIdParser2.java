@@ -19,6 +19,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.archos.medialib.R;
+import com.archos.mediascraper.GenreUtils;
 import com.archos.mediascraper.MovieTags;
 import com.archos.mediascraper.ScrapeStatus;
 import com.archos.mediascraper.ScraperImage;
@@ -81,6 +82,11 @@ public class MovieIdParser2 {
         }
         if (movie.genres != null) {
             List<String> localizedGenres = getLocalizedGenres(movie.genres);
+            List<Integer> genreIds = new ArrayList<>();
+            for (Genre genre : movie.genres) {
+                if (genre.id > 0) genreIds.add(genre.id);
+            }
+            result.setGenreIds(GenreUtils.formatGenreIds(genreIds));
             for (String genre : localizedGenres)
                 result.addGenreIfAbsent(genre);
         }

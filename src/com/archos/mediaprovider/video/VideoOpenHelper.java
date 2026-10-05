@@ -47,7 +47,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 61;
+    private static final int DATABASE_VERSION = 62;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -1541,6 +1541,26 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
             "    c.m_coll_name AS m_coll_name,\n" +
                     "    c.m_coll_sort_name AS " + VideoColumns.SCRAPER_C_SORT_NAME + ",\n");
 
+    // Expose language-independent TMDB genre ids (delimiter wrapped) through the common video view.
+    // Built via a guarded helper because String.replace() silently returns the source unchanged when
+    // the anchor is not found, which would drop the genre id columns without any error.
+    private static final String CREATE_VIDEO_VIEW_V62 = createVideoViewV62();
+
+    private static String createVideoViewV62() {
+        final String anchor = "    coalesce(m_genres, s_genres) AS genres,\n" +
+                "    m_genres,\n" +
+                "    s_genres,\n";
+        final String view = CREATE_VIDEO_VIEW_V60.replace(anchor, anchor +
+                "    coalesce(m_genre_ids, s_genre_ids) AS genre_ids,\n" +
+                "    m_genre_ids,\n" +
+                "    s_genre_ids,\n");
+        if (view.equals(CREATE_VIDEO_VIEW_V60)) {
+            throw new IllegalStateException(
+                    "Video view v62 anchor not found; genre id columns would be silently missing");
+        }
+        return view;
+    }
+
     // ------------- ---##[ Video Thumbnails     ]## ---------------------------
     public static final String VIDEOTHUMBNAIL_TABLE_NAME = "videothumbnails";
     private static final String CREATE_VIDEOTHUMBNAIL_TABLE =
@@ -1980,6 +2000,13 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         if (oldVersion < 61 && newVersion >= 61) {
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - cleaning orphan movie collections", 61);
             ScraperTables.upgradeTo(db, 61);
+        }
+        if (oldVersion < 62 && newVersion >= 62) {
+            if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding language-independent genre ids", 62);
+            SQLiteUtils.dropView(db, VIDEO_VIEW_NAME);
+            ScraperTables.upgradeTo(db, 62);
+            ScraperTables.backfillGenreIds(db, mContext);
+            db.execSQL(CREATE_VIDEO_VIEW_V62);
         }
     }
 

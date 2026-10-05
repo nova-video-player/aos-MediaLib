@@ -27,6 +27,8 @@ public abstract class VideoTags extends BaseTags {
 
     protected List<String> mGenres = new ArrayList<String>();
     protected String mGenresFormatted;
+    /** language-independent TMDB genre ids, delimiter wrapped: ",16,10751," */
+    protected String mGenreIds;
 
     public VideoTags() {
         super();
@@ -47,6 +49,23 @@ public abstract class VideoTags extends BaseTags {
         ensureFormattedGenres();
         return mGenresFormatted;
     }
+
+    /** Stored language-independent TMDB genre ids (delimiter wrapped), or null. */
+    public String getGenreIds() { return mGenreIds; }
+
+    public void setGenreIds(String genreIds) { mGenreIds = genreIds; }
+
+    /**
+     * Localized genre display string derived from the stored genre ids for the current app locale,
+     * falling back to the stored (scrape-time localized) string when no ids are available.
+     */
+    public String getGenresFormatted(android.content.Context context) {
+        String derived = GenreUtils.formatGenreNames(context, mGenreIds, isShowTags());
+        return derived != null ? derived : getGenresFormatted();
+    }
+
+    /** Whether this tag describes a show (true) or a movie (false). */
+    protected abstract boolean isShowTags();
 
     public List<String> getStudios() { return mStudios; }
 
@@ -103,6 +122,7 @@ public abstract class VideoTags extends BaseTags {
     private void readFromParcel(Parcel in) {
         in.readStringList(mStudios);
         in.readStringList(mGenres);
+        mGenreIds = in.readString();
     }
 
     @Override
@@ -110,6 +130,7 @@ public abstract class VideoTags extends BaseTags {
         super.writeToParcel(out, flags);
         out.writeStringList(mStudios);
         out.writeStringList(mGenres);
+        out.writeString(mGenreIds);
     }
 
     public void addAllGenres(List<String> genres){

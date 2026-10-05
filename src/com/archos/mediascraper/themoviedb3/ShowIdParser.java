@@ -17,6 +17,7 @@ package com.archos.mediascraper.themoviedb3;
 import android.content.Context;
 
 import com.archos.medialib.R;
+import com.archos.mediascraper.GenreUtils;
 import com.archos.mediascraper.ScraperImage;
 import com.archos.mediascraper.ShowTags;
 import com.uwetrottmann.tmdb2.entities.CastMember;
@@ -86,6 +87,13 @@ public class ShowIdParser {
         result.setOnlineId(serie.id);
         if (log.isDebugEnabled()) log.debug("getResult: onlineId={}, imdbId={}", serie.id, serie.external_ids.imdb_id);
         result.setGenres(getLocalizedGenres(serie.genres));
+        if (serie.genres != null) {
+            List<Integer> genreIds = new ArrayList<>();
+            for (Genre genre : serie.genres) {
+                if (genre.id > 0) genreIds.add(genre.id);
+            }
+            result.setGenreIds(GenreUtils.formatGenreIds(genreIds));
+        }
 
         for (Network network : serie.networks)
             result.addStudioIfAbsent(network.name, '|', ',');

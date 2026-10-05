@@ -67,6 +67,8 @@ public final class ScraperStore {
         public static final String WRITERS_FORMATTED = "m_writers";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "m_genres";
+        /** genres as language-independent TMDB ids, delimiter wrapped: ",16,10751," */
+        public static final String GENRE_IDS = "m_genre_ids";
         /** studios preformatted */
         public static final String STUDIOS_FORMATTED = "m_studios";
 
@@ -148,6 +150,8 @@ public final class ScraperStore {
         public static final String WRITERS_FORMATTED = "s_writers";
         /** genres preformatted */
         public static final String GERNES_FORMATTED = "s_genres";
+        /** genres as language-independent TMDB ids, delimiter wrapped: ",16,10751," */
+        public static final String GENRE_IDS = "s_genre_ids";
         /** studios preformatted */
         public static final String STUDIOS_FORMATTED = "s_studios";
 
