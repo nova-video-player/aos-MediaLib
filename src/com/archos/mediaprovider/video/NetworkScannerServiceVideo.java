@@ -627,6 +627,7 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
     /** scans files into our db */
     void doScan(Uri what, long batchId) {
         if (log.isDebugEnabled()) log.debug("doScan {} (batch {})", what, batchId);
+        LoaderUtils.beginNetworkScan();
         long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         boolean scanResolved = false;
         boolean scanHadDbError = false;
@@ -640,13 +641,22 @@ public class NetworkScannerServiceVideo extends Service implements Handler.Callb
             // strand the batch and never start post-scan scraping). The error and success
             // state are aggregated across the whole batch under a single lock, so the decision
             // no longer depends on whichever thread happens to finish last.
-            com.archos.mediascraper.AutoScrapeService.NetworkScanCompletion completion =
-                    com.archos.mediascraper.AutoScrapeService.completeNetworkScan(batchId, scanHadDbError, scanResolved);
-            if (log.isDebugEnabled()) {
-                log.debug("doScan: completed network scan, completedBatch={}, batchHadError={}, batchHadSuccess={}",
-                        completion.completedBatch, completion.batchHadError, completion.batchHadSuccess);
+            try {
+                com.archos.mediascraper.AutoScrapeService.NetworkScanCompletion completion =
+                        com.archos.mediascraper.AutoScrapeService.completeNetworkScan(batchId, scanHadDbError, scanResolved);
+                if (log.isDebugEnabled()) {
+                    log.debug("doScan: completed network scan, completedBatch={}, batchHadError={}, batchHadSuccess={}",
+                            completion.completedBatch, completion.batchHadError, completion.batchHadSuccess);
+                }
+                com.archos.mediascraper.AutoScrapeService.handleNetworkScanCompletion(this, completion);
+            } finally {
+                try {
+                    LoaderUtils.endNetworkScan(this);
+                } catch (RuntimeException e) {
+                    // A refresh failure must not hide the scan failure being propagated above.
+                    log.warn("doScan: could not notify category loaders after scan completion", e);
+                }
             }
-            com.archos.mediascraper.AutoScrapeService.handleNetworkScanCompletion(this, completion);
         }
 
         if (log.isDebugEnabled()) {

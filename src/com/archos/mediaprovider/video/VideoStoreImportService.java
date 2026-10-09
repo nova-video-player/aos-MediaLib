@@ -252,6 +252,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (ImportState.VIDEO.isInitialImport() || ImportState.VIDEO.isRegularImport()) {
             if (log.isDebugEnabled()) log.debug("onDestroy - Resetting ImportState to IDLE");
             ImportState.VIDEO.setState(State.IDLE);
+            LoaderUtils.notifyCategoryRowsIfReady(this);
         }
         if (log.isDebugEnabled()) log.debug("onDestroy - ImportState after: {}", ImportState.VIDEO.getState());
     }
@@ -413,11 +414,13 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             case MESSAGE_KILL:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_KILL - ImportState before: {}", ImportState.VIDEO.getState());
                 // Reset ImportState to IDLE regardless of current state to prevent stuck spinner
+                boolean wasInitialImport = ImportState.VIDEO.isInitialImport();
                 if (ImportState.VIDEO.isInitialImport() || ImportState.VIDEO.isRegularImport()) {
                     if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_KILL - Resetting ImportState to IDLE");
                     ImportState.VIDEO.setState(State.IDLE);
                 }
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_KILL - ImportState after: {}", ImportState.VIDEO.getState());
+                if (wasInitialImport) LoaderUtils.notifyCategoryRowsIfReady(this);
                 // this service used to be created through bind. So it couldn't be killed with stopself unless it was unbind
                 // (which wasn't done). To have the same behavior, do not stop service for now
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_KILL -> leaving foreground");
@@ -517,6 +520,8 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         processDeleteFileAndVobCallback();
         ImportState.VIDEO.setDirty(false);
         if (log.isDebugEnabled()) log.debug("doImport: not dirty anymore");
+        boolean autoScrapeEnabled = com.archos.mediascraper.AutoScrapeService.isEnable(this);
+        if (autoScrapeEnabled) LoaderUtils.setPostScanScrapePending(true);
         // notify all that we have new stuff
         Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, null);
         intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
@@ -524,10 +529,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
         // Explicitly start AutoScrapeService after scan completes to ensure scraping happens
         // This is needed because the ContentObserver may not reliably trigger during batch inserts
-        if (com.archos.mediascraper.AutoScrapeService.isEnable(this)) {
+        if (autoScrapeEnabled) {
             if (log.isDebugEnabled()) log.debug("doImport: starting AutoScrapeService after scan completion");
             com.archos.mediascraper.AutoScrapeService.startService(this);
         }
+        if (!fullMode) LoaderUtils.notifyCategoryRowsIfReady(this);
     }
 
     private void processDeleteFileAndVobCallback() {

@@ -14,9 +14,15 @@
 
 package com.archos.mediaprovider.video;
 
+import android.content.Context;
+
 import com.archos.mediacenter.utils.trakt.Trakt;
+import com.archos.mediascraper.AutoScrapeService;
+import com.archos.mediaprovider.ImportState;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by vapillon on 29/05/15.
@@ -26,6 +32,17 @@ public class LoaderUtils {
     static public boolean mMustHideWatchedVideo = false;
     static public boolean mSmartRecentlyRows = false;
     static public volatile boolean mScrapeInProgress = false;
+    // True only for scrapes large enough to be disruptive to the browse rows (a full/incremental
+    // scrape of multiple files), as opposed to the one-file follow-up scrape triggered by a single
+    // delete or import. Set by AutoScrapeService from the work count at the start of a scrape and
+    // kept until that scrape finishes.
+    static public volatile boolean mBulkScrapeInProgress = false;
+    // True from the moment a network scan's follow-up scrape is requested until that scrape's
+    // worker has established its real deferral state (or finished). It covers the gap between
+    // the scanner's completion broadcast and the scrape worker counting its work, during which
+    // neither the scanner flag nor the bulk flag reflects the imminent scrape.
+    static public volatile boolean mPostScanScrapePending = false;
+    private static final AtomicInteger sNetworkScansInProgress = new AtomicInteger();
     public final static String HIDE_USER_HIDDEN_FILTER = VideoStore.Video.VideoColumns.ARCHOS_HIDDEN_BY_USER+"=0";
 
     public final static String HIDE_WATCHED_FILTER = "("+VideoStore.Video.VideoColumns.ARCHOS_TRAKT_SEEN+" IS NULL OR "+
@@ -46,6 +63,45 @@ public class LoaderUtils {
 
     static public boolean setScrapeInProgress(boolean isScrapeInProgress) {
         return mScrapeInProgress = isScrapeInProgress;
+    }
+
+    static public boolean setBulkScrapeInProgress(boolean isBulkScrapeInProgress) {
+        return mBulkScrapeInProgress = isBulkScrapeInProgress;
+    }
+
+    static public boolean setPostScanScrapePending(boolean isPending) {
+        return mPostScanScrapePending = isPending;
+    }
+
+    static public void clearPostScanScrapePending(Context context) {
+        mPostScanScrapePending = false;
+        notifyCategoryRowsIfReady(context);
+    }
+
+    /** Keep row loaders deferred until a network scan has decided whether to start scraping. */
+    static public void beginNetworkScan() {
+        sNetworkScansInProgress.incrementAndGet();
+    }
+
+    static public void endNetworkScan(Context context) {
+        sNetworkScansInProgress.decrementAndGet();
+        notifyCategoryRowsIfReady(context);
+    }
+
+    static public boolean isCategoryRowsDeferralActive() {
+        return sNetworkScansInProgress.get() > 0
+                || AutoScrapeService.getNetworkScanCount() > 0
+                || NetworkScannerReceiver.isScannerWorking()
+                || mPostScanScrapePending
+                || mBulkScrapeInProgress
+                || ImportState.VIDEO.isInitialImport();
+    }
+
+    /** The category raw-query cursors observe ALL_CONTENT_URI. Notify after work becomes safe. */
+    static public void notifyCategoryRowsIfReady(Context context) {
+        if (!isCategoryRowsDeferralActive()) {
+            context.getContentResolver().notifyChange(VideoStore.ALL_CONTENT_URI, null);
+        }
     }
     
     static public boolean isSmartRecentlyRows() {

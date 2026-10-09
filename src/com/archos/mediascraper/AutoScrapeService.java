@@ -106,6 +106,10 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
     // window size used to split queries to db
     private final static int WINDOW_SIZE = 2500;
 
+    // Defer category row rebuilds whenever a scrape starts with more than one pending file.
+    // A one-file follow-up after a single import can refresh normally.
+    private final static int BULK_SCRAPE_MIN_FILES = 2;
+
     static volatile int sNumberOfFilesRemainingToProcess = 0;
     static volatile int sTotalNumberOfFilesRemainingToProcess = 0;
     private static volatile boolean sNfoExportInProgress = false;
@@ -200,7 +204,14 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         try {
             context.startService(new Intent(context, AutoScrapeService.class));
         } catch (Exception e) {
+            clearPostScanPendingIfNoWorker(context);
             log.warn("startService: Failed to start AutoScrapeService - timing or background restriction issue", e);
+        }
+    }
+
+    private static void clearPostScanPendingIfNoWorker(Context context) {
+        if (sScrapeWorker.get() == null) {
+            LoaderUtils.clearPostScanScrapePending(context);
         }
     }
 
@@ -209,9 +220,14 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         mContext = context.getApplicationContext();
         Intent intent = new Intent(context, AutoScrapeService.class);
         intent.putExtra("FORCE_AFTER_NETWORK_SCAN", true);
+        // Mark the follow-up scrape as pending before it is requested: the scan's completion
+        // broadcast is delivered before doScan() reaches here, so the browse fragments would
+        // otherwise see neither the scanner flag nor the bulk flag and rebuild rows in the gap.
+        LoaderUtils.setPostScanScrapePending(true);
         try {
             context.startService(intent);
         } catch (Exception e) {
+            clearPostScanPendingIfNoWorker(context);
             log.warn("startServiceAfterNetworkScan: Failed to start AutoScrapeService - timing or background restriction issue", e);
         }
     }
@@ -368,6 +384,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
             saveDirtyState(true);
         }
         LoaderUtils.setScrapeInProgress(false);
+        // A live worker still owns the handoff; its finally clears it after writes stop.
+        clearPostScanPendingIfNoWorker(this);
         isForeground = false;
         // Note: isForceAfterNetworkScan is now managed by networkScanCount
         // Stop the scraping thread if it's running
@@ -445,6 +463,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
         } catch (Throwable t) {
             // Catch any unexpected exceptions during initialization to prevent service crash
             log.error("onStartCommand: Unexpected error during initialization", t);
+            clearPostScanPendingIfNoWorker(this);
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -492,6 +511,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                 if (LoaderUtils.getScrapeInProgress()) {
                     saveDirtyState(true);
                 }
+                clearPostScanPendingIfNoWorker(this);
             }
             // START_STICKY: Persistent service that monitors ContentObserver for new videos
             // If killed by system, it will restart and check dirty state to resume interrupted operations
@@ -502,6 +522,7 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
             if (LoaderUtils.getScrapeInProgress()) {
                 saveDirtyState(true);
             }
+            clearPostScanPendingIfNoWorker(this);
             return START_STICKY;
         }
     }
@@ -812,6 +833,17 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             }
                             sNumberOfFilesRemainingToProcess = numberOfRows;
                             sTotalNumberOfFilesRemainingToProcess = numberOfRows;
+                            // Latch the bulk state for the whole scrape: it is derived from the
+                            // initial work count and must not flip back as the remaining count
+                            // drains, otherwise the fragments would resume row rebuilds near the
+                            // end of a long scrape.
+                            if (numberOfRows >= BULK_SCRAPE_MIN_FILES) {
+                                LoaderUtils.setBulkScrapeInProgress(true);
+                            }
+                            // The worker has now established the real deferral state (bulk or not),
+                            // so the coarse pending marker has done its job and must not keep the
+                            // fragments waiting for a scrape that turned out to be small.
+                            LoaderUtils.clearPostScanScrapePending(AutoScrapeService.this);
                             // Publish immediately.  Waiting until the first item has completed
                             // makes explicit Settings refreshes appear to do nothing whenever
                             // lookup/save is quick or the batch is interrupted early.
@@ -1198,6 +1230,8 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                             sRescanOnlyNotFound = false;
                             //Global Scrape in Progress, so the browser can skip thumbs in scrape and not waste space in storage
                             LoaderUtils.setScrapeInProgress(false);
+                            LoaderUtils.setBulkScrapeInProgress(false);
+                            LoaderUtils.clearPostScanScrapePending(AutoScrapeService.this);
 
                             // Notify UI that scraping is complete so boxes can be refreshed
                             Intent intent = new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED, null);

@@ -49,6 +49,7 @@ public class NetworkScannerReceiver extends BroadcastReceiver {
             add(uri);
         } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_SCAN_FINISHED.equals(action)) {
             remove(uri);
+            LoaderUtils.notifyCategoryRowsIfReady(context);
         }
         if (log.isDebugEnabled()) dump();
     }
