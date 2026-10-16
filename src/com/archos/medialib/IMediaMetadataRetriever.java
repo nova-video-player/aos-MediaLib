@@ -436,7 +436,7 @@ public interface IMediaMetadataRetriever {
 
     public static final int METADATA_KEY_SUBTITLE_TRACK_NAME        = 0;
     public static final int METADATA_KEY_SUBTITLE_TRACK_PATH        = 1;
-    public static final int METADATA_KEY_SUBTITLE_TRACK_IS_GFX      = 2;
+    public static final int METADATA_KEY_SUBTITLE_TRACK_KIND        = 2;
     public static final int METADATA_KEY_SUBTITLE_TRACK_FORMAT      = 3;
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE    = 4;
     public static final int METADATA_KEY_SUBTITLE_TRACK_DISPOSITION = 5;
