@@ -1,7 +1,6 @@
 package com.archos.mediacenter.filecoreextension.upnp2;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 import android.net.Uri;
 
@@ -15,7 +14,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 34)
+@Config(sdk = 33)
 public class UpnpFile2Test {
 
     /**

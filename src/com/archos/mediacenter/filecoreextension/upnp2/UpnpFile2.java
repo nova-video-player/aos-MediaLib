@@ -80,7 +80,7 @@ public class UpnpFile2 extends MetaFile2 {
         mMimeType = mimeType;
         mIsDirectory = false;
         Long size = item.getFirstResource().getSize();
-        mLength = size != null ? size: -1L;
+        mLength = size != null ? size : -1L;
         mStreamingUri = contentPath;
         mContentPath = contentPath;
         if(thumbnailUri!=null)
