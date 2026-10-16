@@ -79,7 +79,8 @@ public class UpnpFile2 extends MetaFile2 {
         mName = item.getTitle();
         mMimeType = mimeType;
         mIsDirectory = false;
-        mLength = item.getFirstResource().getSize();
+        Long size = item.getFirstResource().getSize();
+        mLength = size != null ? size: -1L;
         mStreamingUri = contentPath;
         mContentPath = contentPath;
         if(thumbnailUri!=null)
