@@ -15,6 +15,7 @@
 package com.archos.mediacenter.utils;
 
 import org.jupnp.model.meta.Device;
+import org.jupnp.support.model.Res;
 import org.jupnp.support.model.container.Container;
 import org.jupnp.support.model.item.Item;
 
@@ -112,7 +113,8 @@ public class UpnpItemData implements Comparable<UpnpItemData> {
         if (data instanceof String)
             return (String)data;
         else if (upnpType == UPNP_ITEM){
-            return ((Item)data).getFirstResource().getValue();
+            Res res = ((Item)data).getFirstResource();
+            return res != null ? res.getValue() : null;
         }else if (upnpType == UPNP_CONTAINER || upnpType == UPNP_ITEM){
             return ((Container)data).getId();
         } else
