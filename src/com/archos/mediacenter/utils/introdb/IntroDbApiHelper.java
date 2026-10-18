@@ -35,7 +35,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 
-// TheIntroDB api helper, see https://theintrodb.org/docs (openapi v3).
+// TheIntroDB api helper, see https://theintrodb.org/docs (openapi v4).
 // GET-only (no api key required for /media). Modeled on OpenSubtitlesApiHelper,
 // with the OkHttp disk-cache + trace logging trick from MyTmdb for easier debug.
 public class IntroDbApiHelper {
@@ -44,7 +44,7 @@ public class IntroDbApiHelper {
 
     private static volatile IntroDbApiHelper sInstance;
 
-    private static final String API_BASE_URL = "https://api.theintrodb.org/v3/";
+    private static final String API_BASE_URL = "https://api.theintrodb.org/v4/";
     private static final String USER_AGENT = "User-Agent";
     private static final String USER_AGENT_VALUE = "novavideoplayer";
 
@@ -100,7 +100,9 @@ public class IntroDbApiHelper {
     public static String getLastQueryMessage() { return LAST_QUERY_MESSAGE; }
 
     // Query GET /media. Returns null on error or when no usable data was returned.
-    // The API uses ids in priority order tmdb_id -> tvdb_id -> imdb_id.
+    // v4 uses ids in priority order tvdb_id -> tmdb_id -> imdb_id; season/episode
+    // are read in the numbering of the id that resolves. We only set tmdb_id (and
+    // imdb_id for shows), so TMDB-derived season/episode keep TMDB numbering.
     public static IntroDbResult getMedia(IntroDbQueryParams params) throws IOException {
         getInstance();
         if (params == null || !params.hasIdentifier()) {
@@ -153,7 +155,7 @@ public class IntroDbApiHelper {
     private static IntroDbResult parseMedia(JSONObject json) {
         IntroDbResult result = new IntroDbResult();
         result.setType(json.optString("type", null));
-        if (json.has("tmdb_id") && !json.isNull("tmdb_id")) result.setTmdbId(json.optInt("tmdb_id"));
+        if (json.has("tvdb_id") && !json.isNull("tvdb_id")) result.setTvdbId(json.optInt("tvdb_id"));
         if (json.has("season") && !json.isNull("season")) result.setSeason(json.optInt("season"));
         if (json.has("episode") && !json.isNull("episode")) result.setEpisode(json.optInt("episode"));
         parseSegments(json, "intro", result.getIntro());
@@ -170,9 +172,11 @@ public class IntroDbApiHelper {
         for (int i = 0; i < array.length(); i++) {
             JSONObject segment = array.optJSONObject(i);
             if (segment == null) continue;
-            out.add(new IntroDbResult.Segment(
-                    optNullableLong(segment, "start_ms"),
-                    optNullableLong(segment, "end_ms")));
+            Long startMs = optNullableLong(segment, "start_ms");
+            Long endMs = optNullableLong(segment, "end_ms");
+            // v4 uses end_ms == 0 as the "no segment" marker: not a skip.
+            if (endMs != null && endMs <= 0) continue;
+            out.add(new IntroDbResult.Segment(startMs, endMs));
         }
     }
 

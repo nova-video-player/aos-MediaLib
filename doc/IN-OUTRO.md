@@ -15,7 +15,7 @@ This document covers the **query and fusion** half (MediaLib). The
 
 | Provider | Host | Endpoint | Keys it accepts | Segment types | Cardinality |
 |----------|------|----------|-----------------|---------------|-------------|
-| theintrodb.org | `api.theintrodb.org/v3/` | `GET /media` | `tmdb_id` → `tvdb_id` → `imdb_id` (+ `season`/`episode` for shows, optional `duration_ms`) | intro, recap, credits, preview | list per type |
+| theintrodb.org | `api.theintrodb.org/v4/` | `GET /media` | `tvdb_id` → `tmdb_id` → `imdb_id` (+ `season`/`episode` for shows, optional `duration_ms`); season/episode are read in the numbering of the id that resolves | intro, recap, credits, preview | list per type |
 | introdb.app | `api.introdb.app/` | `GET /segments` | `imdb_id` + `season` + `episode` (TV only) | intro, recap, outro | one segment per type |
 
 Neither provider requires an API key for these read endpoints. Both send
@@ -41,9 +41,9 @@ carrying every identifier either provider might need:
 
 | Field | Type | Used by | Notes |
 |-------|------|---------|-------|
-| `tmdbId` | Integer | theintrodb.org | preferred/canonical id |
+| `tmdbId` | Integer | theintrodb.org | canonical id the player sends; TMDB numbering for season/episode |
 | `imdbId` | String | both | show imdb id; **required** by introdb.app |
-| `tvdbId` | Integer | theintrodb.org | fallback id |
+| `tvdbId` | Integer | theintrodb.org | highest-priority v4 id, but never set by the player (keeps TMDB coordinates authoritative) |
 | `isShow` | boolean | both | gates season/episode handling |
 | `season` | Integer | both | shows only |
 | `episode` | Integer | both | shows only |
@@ -51,6 +51,12 @@ carrying every identifier either provider might need:
 
 - `hasIdentifier()` → true if any of tmdb/imdb/tvdb is present. A query with no
   identifier is rejected before any network call.
+
+v4 keys every response by `tvdb_id` (`tmdb_id` is no longer echoed), and
+resolves `tmdb_id`/`imdb_id` server-side. The player scrapes TMDB numbering, so
+it sends `tmdb_id` (and `imdb_id` for shows) and never `tvdb_id`; that keeps
+season/episode in the numbering the request names. v2/v3 are frozen and are
+removed on 2027-01-18.
 
 ### Per-provider preconditions
 
@@ -161,14 +167,16 @@ helpers:
 ### Request construction
 
 - **theintrodb.org** (`getMedia`): adds `tmdb_id`, `tvdb_id`, `imdb_id` when
-  present; adds `season`/`episode` only for shows; adds `duration_ms` when > 0.
+  present (only `tmdb_id`/`imdb_id` are ever populated today); adds
+  `season`/`episode` only for shows; adds `duration_ms` when > 0.
 - **introdb.app** (`getSegments`): always adds `imdb_id`, `season`, `episode`
   (validated by `IntroDbAppQueryParams.isValid()` before the call).
 
 ### Parsing
 
-- theintrodb.org: `intro`/`recap`/`credits`/`preview` are JSON **arrays**;
-  each element yields a `Segment(start_ms, end_ms)` with nullable longs.
+- theintrodb.org: response `tvdb_id` is the identity; `intro`/`recap`/
+  `credits`/`preview` are JSON **arrays**; each element yields a
+  `Segment(start_ms, end_ms)` with nullable longs.
 - introdb.app: `intro`/`recap`/`outro` are single JSON **objects**; each yields
   a `Segment(start_ms, end_ms, confidence, submission_count)` or null if the
   bounds are missing/invalid.

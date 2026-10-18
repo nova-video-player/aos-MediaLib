@@ -15,8 +15,10 @@
 package com.archos.mediacenter.utils.introdb;
 
 // Input parameters for a TheIntroDB GET /media query.
-// See https://theintrodb.org/docs (openapi v3).
-// tmdb_id is the preferred/canonical identifier; imdb_id/tvdb_id are fallbacks.
+// See https://theintrodb.org/docs (openapi v4).
+// v4 resolves ids in the order tvdb_id -> tmdb_id -> imdb_id, and reads
+// season/episode in the numbering of the id it resolves. Callers feed
+// TMDB-derived coordinates, so tmdb_id must stay the identifier actually sent.
 public class IntroDbQueryParams {
     private Integer tmdbId;
     private String imdbId;

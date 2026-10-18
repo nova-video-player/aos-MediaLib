@@ -50,7 +50,7 @@ public class IntroDbResult {
     }
 
     private String type; // "movie" or "tv"
-    private Integer tmdbId;
+    private Integer tvdbId;
     private Integer season;
     private Integer episode;
 
@@ -60,12 +60,12 @@ public class IntroDbResult {
     private final List<Segment> preview = new ArrayList<>();
 
     public void setType(String type) { this.type = type; }
-    public void setTmdbId(Integer tmdbId) { this.tmdbId = tmdbId; }
+    public void setTvdbId(Integer tvdbId) { this.tvdbId = tvdbId; }
     public void setSeason(Integer season) { this.season = season; }
     public void setEpisode(Integer episode) { this.episode = episode; }
 
     public String getType() { return type; }
-    public Integer getTmdbId() { return tmdbId; }
+    public Integer getTvdbId() { return tvdbId; }
     public Integer getSeason() { return season; }
     public Integer getEpisode() { return episode; }
 
@@ -80,7 +80,7 @@ public class IntroDbResult {
 
     @Override
     public String toString() {
-        return "IntroDbResult{type=" + type + ", tmdbId=" + tmdbId + ", season=" + season +
+        return "IntroDbResult{type=" + type + ", tvdbId=" + tvdbId + ", season=" + season +
                 ", episode=" + episode + ", intro=" + intro + ", recap=" + recap +
                 ", credits=" + credits + ", preview=" + preview + '}';
     }
