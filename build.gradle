@@ -4,6 +4,7 @@ repositories {
     google()
     mavenCentral()
     mavenLocal()
+    maven { url = 'https://jitpack.io' }
 }
 
 ext {
@@ -186,9 +187,13 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
     // stick with 2.10.0 since errors are showing up in sentry when using 2.11.0
     implementation 'com.uwetrottmann.tmdb2:tmdb-java:2.13.0'
-    api 'org.jupnp:org.jupnp:3.0.5'
-    api 'org.jupnp:org.jupnp.support:3.0.5'
-    api 'org.jupnp:org.jupnp.android:3.0.5'
+    //api 'org.jupnp:org.jupnp:3.0.5'
+    //api 'org.jupnp:org.jupnp.support:3.0.5'
+    //api 'org.jupnp:org.jupnp.android:3.0.5'
+    // jUPnP fork carrying the AndroidNetworkAddressFactory logger fix (issue #1993), built by JitPack
+    api 'com.github.nova-video-player.jupnp:org.jupnp:3.0.5-nova3'
+    api 'com.github.nova-video-player.jupnp:org.jupnp.support:3.0.5-nova3'
+    api 'com.github.nova-video-player.jupnp:org.jupnp.android:3.0.5-nova3'
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
     implementation "org.eclipse.jetty:jetty-server:${jettyVersion}"
     implementation "org.eclipse.jetty:jetty-servlet:${jettyVersion}"
