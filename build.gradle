@@ -28,6 +28,12 @@ allprojects {
 configurations {
     configureEach {
         exclude group: 'org.json', module: 'json'
+        // jUPnP's "bundles" parent POM declares its BOMs as plain pom-typed dependencies, so Gradle
+        // keeps them on the runtime classpath while only a pom is published for them. That is
+        // harmless until something resolves the runtime classpath as files (Sentry instrumentation
+        // via -PbugReport, ART profile expansion), which then fails with "No variants ... match".
+        exclude group: 'com.github.nova-video-player.jupnp', module: 'org.jupnp.bom.compile'
+        exclude group: 'com.github.nova-video-player.jupnp', module: 'org.jupnp.bom.test'
     }
 }
 
