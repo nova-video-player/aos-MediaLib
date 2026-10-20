@@ -39,14 +39,6 @@ public class NovaUpnpService extends AndroidUpnpServiceImpl {
         final String version = getVersionName();
         return new AndroidUpnpServiceConfiguration() {
             @Override
-            protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort, int multicastResponsePort) {
-                // jUPnP's AndroidNetworkAddressFactory crashes while logging a failed interface
-                // enumeration because it logs through an instance field that is not initialized
-                // yet during NetworkAddressFactoryImpl's constructor.
-                return new NovaNetworkAddressFactory(streamListenPort, multicastResponsePort);
-            }
-
-            @Override
             public StreamClient createStreamClient() {
                 return new JettyStreamClientImpl(
                         new StreamClientConfigurationImpl(getSyncProtocolExecutorService()) {
