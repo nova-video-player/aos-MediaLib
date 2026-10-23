@@ -19,14 +19,9 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Parcel;
 
-import com.archos.mediacenter.utils.MediaUtils;
-
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -123,12 +118,15 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
         private final Object mMetadata;
         private final Custom mCustom = new Custom();
 
-        public MetadataDelegate(Object data, MediaPlayer mp, MediaPlayerProxy.Tracks tracks, String[] timedTextLangs) {
+        public MetadataDelegate(Object data, MediaPlayer mp, MediaPlayerProxy.Tracks tracks) {
             mMetadata = data;
             if (tracks != null) {
                 mCustom.addInt(METADATA_KEY_NB_VIDEO_TRACK, tracks.video == null ? 0 : 1);
                 mCustom.addInt(METADATA_KEY_NB_AUDIO_TRACK, tracks.audios.length);
-                mCustom.addInt(METADATA_KEY_NB_SUBTITLE_TRACK, tracks.timedTexts.length);
+                // Subtitles are not supported with the Android backend: timed-text delivery
+                // was removed along with the AVOS subtitle listener, so never advertise tracks
+                // that would be selectable but display nothing.
+                mCustom.addInt(METADATA_KEY_NB_SUBTITLE_TRACK, 0);
 
                 if (tracks.video != null) {
                     int gapKey = METADATA_KEY_VIDEO_TRACK;
@@ -140,15 +138,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
                     int gapKey = METADATA_KEY_AUDIO_TRACK + (i * METADATA_KEY_AUDIO_TRACK_MAX);
                     mCustom.addString(gapKey + METADATA_KEY_AUDIO_TRACK_NAME, tracks.audios[i].lang);
                     mCustom.addBoolean(gapKey + METADATA_KEY_AUDIO_TRACK_SUPPORTED, true);
-                }
-                for (int i = 0; i < tracks.timedTexts.length; ++i) {
-                    int gapKey = METADATA_KEY_SUBTITLE_TRACK + (i * METADATA_KEY_SUBTITLE_TRACK_MAX);
-                    String lang = null;
-                    if (tracks.timedTexts[i].lang.equals("und") && timedTextLangs != null && timedTextLangs.length > i)
-                        lang = timedTextLangs[i];
-                    else
-                        lang = tracks.timedTexts[i].lang;
-                    mCustom.addString(gapKey + METADATA_KEY_SUBTITLE_TRACK_NAME, lang);
                 }
             }
         }
@@ -309,14 +298,11 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
     private IMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = null;
 
     private final Context mContext;
-    private String mVideoPath;
 
     private SmbProxy mProxy = null;
 
-    private String[] mTimedTextLangs;
     private MediaPlayerProxy.Tracks mTracks = null;
     private MediaPlayerProxy.Track mLastAudioSelected = null;
-    private MediaPlayerProxy.Track mLastSubSelected = null;
 
     public AndroidMediaPlayer(Context context) {
         super();
@@ -325,67 +311,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
 
     public int getType() {
         return IMediaPlayer.TYPE_ANDROID;
-    }
-
-    private void addAllTimedTextsInDir(File dir, String videoPath, ArrayList<String> langList) {
-        if (dir == null || !dir.isDirectory() || !dir.canRead() || !dir.canExecute())
-            return;
-        int i = videoPath.lastIndexOf('.');
-        if (i > 0) {
-            final String videoCmp = videoPath.substring(0, i);
-
-            FileFilter fileFilter = new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    String path = file.getName();
-                    int i = path.lastIndexOf(".srt");
-                    if (i > 0) {
-                        path = path.substring(0, i);
-
-                        if (videoCmp.equals(path))
-                            return true;
-                        i = path.lastIndexOf('.');
-                        if (i > 0) {
-                            path = path.substring(0, i);
-                            if (videoCmp.equals(path))
-                                return true;
-                        }
-
-                        return false;
-                    }
-                    return false;
-                }
-            };
-            for (File file : dir.listFiles(fileFilter)) {
-                MediaPlayerProxy.addTimedTextSource(this, file.getAbsolutePath());
-                String path = file.getName();
-                String lang = "SRT";
-                int endIdx = path.lastIndexOf('.');
-                if (endIdx > 0) {
-                    int startIdx = path.lastIndexOf('.', endIdx - 1);
-                    if (startIdx > 0)
-                        lang = path.substring(startIdx + 1, endIdx);
-                }
-                langList.add(lang);
-            }
-        }
-    }
-
-    private void addAllTimedTexts() {
-        File videoFile;
-        try {
-            videoFile = new File(mVideoPath);
-        } catch (NullPointerException e) {
-            videoFile = null;
-        }
-        if (videoFile != null) {
-            ArrayList<String> timedTextLangList = new ArrayList<String>();
-            String videoPath = videoFile.getName();
-
-            addAllTimedTextsInDir(videoFile.getParentFile(), videoPath, timedTextLangList);
-            addAllTimedTextsInDir(MediaUtils.getSubsDir(mContext), videoPath, timedTextLangList);
-            mTimedTextLangs = timedTextLangList.toArray(new String[timedTextLangList.size()]);
-        }
     }
 
     public MediaMetadata getMediaMetadata(boolean update_only, boolean apply_filter) {
@@ -407,7 +332,7 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
         if (mm != null) {
             if (MediaPlayerProxy.isValid())
                 mTracks = MediaPlayerProxy.getTracks(this);
-            return new MetadataDelegate(mm, this, mTracks, mTimedTextLangs);
+            return new MetadataDelegate(mm, this, mTracks);
         }
         return null;
     }
@@ -441,7 +366,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
             mProxy = SmbProxy.setDataSource(Uri.parse(path), this, null);
             return;
         }
-        mVideoPath = path;
         super.setDataSource(path);
     }
 
@@ -452,7 +376,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
             mProxy = SmbProxy.setDataSource(Uri.parse(path), this, headers);
             return;
         }
-        mVideoPath = path;
         Class paramsType[] = new Class[2];
         paramsType[0] = String.class;
         paramsType[1] = Map.class;
@@ -485,7 +408,6 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
         mOnPreparedListener = listener;
     }
     public void onPrepared(MediaPlayer mp) {
-        addAllTimedTexts();
         mOnPreparedListener.onPrepared(this);
     }
 
@@ -570,21 +492,15 @@ public class AndroidMediaPlayer extends MediaPlayer implements IMediaPlayer,
     public void checkSubtitles() {
     }
 
+    /**
+     * Subtitles are unsupported with the Android backend (no timed-text delivery path),
+     * so no subtitle tracks are advertised and selection always fails.
+     */
     public boolean setSubtitleTrack(int stream) throws IllegalStateException {
-        if (mTracks != null) {
-            if (stream >= 0 && stream < mTracks.timedTexts.length) {
-                mLastSubSelected = mTracks.timedTexts[stream];
-                return MediaPlayerProxy.selectTrack(this, mLastSubSelected);
-            } else if (mLastSubSelected != null) {
-                MediaPlayerProxy.deselectTrack(this, mLastSubSelected);
-                mLastSubSelected = null;
-                return true;
-            }
-        }
         return false;
     }
 
-    public void setSubtitleDelay(int delay) throws IllegalStateException {   
+    public void setSubtitleDelay(int delay) throws IllegalStateException {
     }
 
     public void setSubtitleRatio(int n, int d) throws IllegalStateException {
