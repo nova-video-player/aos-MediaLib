@@ -187,7 +187,7 @@ dependencies {
     api ('org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.2') {
         exclude group:'org.apache.oltu.oauth2' , module: 'org.apache.oltu.oauth2.common'
     }
-    implementation 'commons-codec:commons-codec:1.22.1'
+    implementation 'commons-codec:commons-codec:1.23.0'
     implementation 'org.apache.commons:commons-text:1.15.0'
     // version aligned with external dependencies trakt-java tmdb-java (check pom.xml)
     implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
@@ -204,7 +204,7 @@ dependencies {
     implementation "org.eclipse.jetty:jetty-server:${jettyVersion}"
     implementation "org.eclipse.jetty:jetty-servlet:${jettyVersion}"
     implementation "org.eclipse.jetty:jetty-client:${jettyVersion}"
-    implementation 'io.sentry:sentry:8.59.0'
+    implementation 'io.sentry:sentry:8.61.0'
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:core:1.7.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
