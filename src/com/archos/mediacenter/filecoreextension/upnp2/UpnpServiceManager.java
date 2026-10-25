@@ -322,8 +322,14 @@ public class UpnpServiceManager {
                     mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
                     synchronized (UpnpServiceManager.this) {
                         // Devices discovered before listener attachment have no add callback for us.
+                        boolean added = false;
                         for (Device device : mAndroidUpnpService.getRegistry().getDevices()) {
-                            mRegistryListener.deviceAdded(device);
+                            if (mRegistryListener.addDeviceLocked(device)) {
+                                added = true;
+                            }
+                        }
+                        if (added) {
+                            informListenersOfDeviceListUpdate(mListeners);
                         }
                     }
                 } catch (Exception e) {
@@ -440,31 +446,36 @@ public class UpnpServiceManager {
         public void localDeviceRemoved(Registry registry, LocalDevice device)  {  deviceRemoved(device); }
 
         private void deviceAdded(final Device device) {
+            synchronized (UpnpServiceManager.this) {
+                if (addDeviceLocked(device)) {
+                    informListenersOfDeviceListUpdate(mListeners);
+                }
+            }
+        }
+
+        private boolean addDeviceLocked(final Device device) {
             // Do not list devices with no mane, or with no content service
             String deviceName = device.getDisplayString();
-            if (deviceName == null) return;
+            if (deviceName == null) return false;
             Service service = device.findService(new UDAServiceId("ContentDirectory"));
-            if (service == null) return;
+            if (service == null) return false;
             Action action = service.getAction("Browse");
-            if (action == null) return;
+            if (action == null) return false;
 
             if (log.isDebugEnabled()) log.debug("deviceAdded: {} {} {} {}", device.getDisplayString(), device.getDetails().getFriendlyName(),
                     device.getDetails().getSerialNumber(), device.getDetails().getManufacturerDetails().getManufacturer());
             if (log.isDebugEnabled()) log.debug("deviceAdded: addDevice with hash code {}", device.hashCode());
-            synchronized (UpnpServiceManager.this) {
-                // Add to list
-                mDevices.put(Integer.valueOf(device.hashCode()), device);
-                // Each time a new device is found, we check if there is an on-going blocking request for this device
-                Iterator<BlockingDeviceRequest> iterator = mDeviceRequests.iterator();
-                while (iterator.hasNext()) {
-                    boolean found = iterator.next().checkIfDeviceIsFound(mDevices);
-                    if (found) {
-                        iterator.remove();
-                    }
+            // Add to list
+            mDevices.put(Integer.valueOf(device.hashCode()), device);
+            // Each time a new device is found, we check if there is an on-going blocking request for this device
+            Iterator<BlockingDeviceRequest> iterator = mDeviceRequests.iterator();
+            while (iterator.hasNext()) {
+                boolean found = iterator.next().checkIfDeviceIsFound(mDevices);
+                if (found) {
+                    iterator.remove();
                 }
-                informListenersOfDeviceListUpdate(mListeners);
             }
-
+            return true;
         }
 
         private void deviceRemoved(Device device) {

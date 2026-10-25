@@ -39,6 +39,7 @@ import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -105,6 +106,20 @@ public class UpnpServiceManagerRegistryReplayTest {
         assertSame(server, manager.getDeviceByKey(server.hashCode()));
         shadowOf(Looper.getMainLooper()).idle();
         assertEquals(Collections.singletonList(server), publications.get(publications.size() - 1));
+    }
+
+    @Test
+    public void replayPublishesOneListForMultipleServers() {
+        shadowOf(Looper.getMainLooper()).idle();
+        publications.clear();
+        RemoteDevice first = server();
+        RemoteDevice second = server();
+        when(registry.getDevices()).thenReturn(Arrays.<Device>asList(first, second));
+        connect();
+        assertEquals(2, manager.getDevices().size());
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(1, publications.size());
+        assertEquals(new HashSet<>(Arrays.asList(first, second)), new HashSet<>(publications.get(0)));
     }
 
     @Test
