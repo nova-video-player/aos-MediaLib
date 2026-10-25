@@ -37,7 +37,6 @@ import org.jupnp.model.types.UDADeviceType;
 import org.jupnp.model.types.UDAServiceId;
 import org.jupnp.registry.DefaultRegistryListener;
 import org.jupnp.registry.Registry;
-import org.jupnp.registry.RegistryListener;
 import org.jupnp.android.AndroidUpnpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -321,6 +320,12 @@ public class UpnpServiceManager {
                 try {
                     mAndroidUpnpService.get().startup(); // need to start UpnpService (was not the case with cling)
                     mAndroidUpnpService.getRegistry().addListener(mRegistryListener);
+                    synchronized (UpnpServiceManager.this) {
+                        // Devices discovered before listener attachment have no add callback for us.
+                        for (Device device : mAndroidUpnpService.getRegistry().getDevices()) {
+                            mRegistryListener.deviceAdded(device);
+                        }
+                    }
                 } catch (Exception e) {
                     log.error("onServiceConnected: failed to start UPnP service", e);
                     mState = State.ERROR;
@@ -421,7 +426,9 @@ public class UpnpServiceManager {
     /**
      * The listener to the Cling service
      */
-    final RegistryListener mRegistryListener = new DefaultRegistryListener() {
+    final DeviceRegistryListener mRegistryListener = new DeviceRegistryListener();
+
+    final class DeviceRegistryListener extends DefaultRegistryListener {
 
         @Override
         public void remoteDeviceAdded(Registry registry, RemoteDevice device)  { deviceAdded(device); }
@@ -444,7 +451,7 @@ public class UpnpServiceManager {
             if (log.isDebugEnabled()) log.debug("deviceAdded: {} {} {} {}", device.getDisplayString(), device.getDetails().getFriendlyName(),
                     device.getDetails().getSerialNumber(), device.getDetails().getManufacturerDetails().getManufacturer());
             if (log.isDebugEnabled()) log.debug("deviceAdded: addDevice with hash code {}", device.hashCode());
-            synchronized (this) {
+            synchronized (UpnpServiceManager.this) {
                 // Add to list
                 mDevices.put(Integer.valueOf(device.hashCode()), device);
                 // Each time a new device is found, we check if there is an on-going blocking request for this device
@@ -455,19 +462,19 @@ public class UpnpServiceManager {
                         iterator.remove();
                     }
                 }
+                informListenersOfDeviceListUpdate(mListeners);
             }
-            informListenersOfDeviceListUpdate(mListeners);
 
         }
 
         private void deviceRemoved(Device device) {
-            synchronized (this) {
-                mDevices.remove(device);
+            synchronized (UpnpServiceManager.this) {
+                mDevices.remove(Integer.valueOf(device.hashCode()));
+                informListenersOfDeviceListUpdate(mListeners);
             }
-            informListenersOfDeviceListUpdate(mListeners);
 
         }
-    };
+    }
 
     private void informListenersOfDeviceListUpdate(final List<Listener> listeners) {
         // Make a copy of the list to avoid concurrency issues
