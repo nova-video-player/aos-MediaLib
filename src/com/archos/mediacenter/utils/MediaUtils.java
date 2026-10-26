@@ -198,17 +198,32 @@ public static int restoreBestPosition(GridView view, int selectedPosition,
     /*
      * returns the path of local subtitles directory
      */
-    // TODO MARC change and align with FileUtilsQ and FileUtils...
-    public static File getSubsDir(Context context){
-        StringBuilder sb = new StringBuilder();
-        if(context.getExternalCacheDir()!=null) //seems that some devices haven't external cache
-            sb.append(context.getExternalCacheDir().getAbsolutePath()).append("/subtitles");
-        else
-            sb.append(STORAGE_PATH).append("/Android/data/").append(context.getPackageName()).append("/cache/subtitles");
-        File subsDir = new File(sb.toString());
-        if (!subsDir.exists())
-            subsDir.mkdirs();
+    public static File getSubsDir(Context context) {
+        File externalCacheDir = context.getExternalCacheDir();
+        if (externalCacheDir != null) {
+            File subsDir = new File(externalCacheDir, "subtitles");
+            if (prepareSubsDir(subsDir)) return subsDir;
+            Log.w(TAG, "External subtitle cache is unavailable: " + subsDir);
+        }
+
+        // Keep downloads and subtitle discovery on the same app-owned fallback path.
+        File subsDir = new File(context.getCacheDir(), "subtitles");
+        if (!prepareSubsDir(subsDir)) {
+            Log.w(TAG, "Internal subtitle cache is unavailable: " + subsDir);
+        }
         return subsDir;
+    }
+
+    private static boolean prepareSubsDir(File directory) {
+        try {
+            if (!directory.isDirectory() && !directory.mkdirs() && !directory.isDirectory()) {
+                return false;
+            }
+            return directory.canWrite();
+        } catch (SecurityException e) {
+            Log.w(TAG, "Cannot access subtitle cache: " + directory, e);
+            return false;
+        }
     }
 
     public static File getTorrentsDir(Context context){
