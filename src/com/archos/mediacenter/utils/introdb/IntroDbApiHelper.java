@@ -152,20 +152,21 @@ public class IntroDbApiHelper {
         return null;
     }
 
-    private static IntroDbResult parseMedia(JSONObject json) {
+    static IntroDbResult parseMedia(JSONObject json) {
         IntroDbResult result = new IntroDbResult();
         result.setType(json.optString("type", null));
         if (json.has("tvdb_id") && !json.isNull("tvdb_id")) result.setTvdbId(json.optInt("tvdb_id"));
         if (json.has("season") && !json.isNull("season")) result.setSeason(json.optInt("season"));
         if (json.has("episode") && !json.isNull("episode")) result.setEpisode(json.optInt("episode"));
-        parseSegments(json, "intro", result.getIntro());
-        parseSegments(json, "recap", result.getRecap());
-        parseSegments(json, "credits", result.getCredits());
-        parseSegments(json, "preview", result.getPreview());
+        parseSegments(json, "intro", result.getIntro(), true);
+        parseSegments(json, "recap", result.getRecap(), true);
+        parseSegments(json, "credits", result.getCredits(), false);
+        parseSegments(json, "preview", result.getPreview(), false);
         return result;
     }
 
-    private static void parseSegments(JSONObject root, String key, List<IntroDbResult.Segment> out) {
+    private static void parseSegments(JSONObject root, String key, List<IntroDbResult.Segment> out,
+                                      boolean introOrRecap) {
         if (!root.has(key) || root.isNull(key)) return;
         JSONArray array = root.optJSONArray(key);
         if (array == null) return;
@@ -174,10 +175,30 @@ public class IntroDbApiHelper {
             if (segment == null) continue;
             Long startMs = optNullableLong(segment, "start_ms");
             Long endMs = optNullableLong(segment, "end_ms");
-            // v4 uses end_ms == 0 as the "no segment" marker: not a skip.
-            if (endMs != null && endMs <= 0) continue;
+            // v4 encodes "no segment" as a zero-length marker: end_ms 0 for
+            // intro/recap, start_ms 0 for credits/preview, both bounds 0, or
+            // both null. In particular, credits with start_ms 0 are not skips:
+            // the old end_ms-only check turned {start_ms:0,end_ms:null} into a
+            // prompt covering the whole episode (issue #2008).
+            if (!isUsableSegment(startMs, endMs, introOrRecap)) {
+                if (log.isDebugEnabled())
+                    log.debug("parseSegments: dropping invalid {} segment {} -> {}", key, startMs, endMs);
+                continue;
+            }
             out.add(new IntroDbResult.Segment(startMs, endMs));
         }
+    }
+
+    private static boolean isUsableSegment(Long startMs, Long endMs, boolean introOrRecap) {
+        if (startMs != null && startMs < 0) return false;
+        if (endMs != null && endMs <= 0) return false;
+        if (introOrRecap) {
+            // intro/recap: start is optional (null = beginning), end is required.
+            return endMs != null && (startMs == null || endMs > startMs);
+        }
+        // credits/preview: start is required and 0 is the "no segment" marker;
+        // end is optional (null = end of media).
+        return startMs != null && startMs > 0 && (endMs == null || endMs > startMs);
     }
 
     private static Long optNullableLong(JSONObject object, String key) {

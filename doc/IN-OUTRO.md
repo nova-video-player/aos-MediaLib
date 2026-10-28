@@ -73,7 +73,16 @@ removed on 2027-01-18.
 - `endMs == null` → "runs to end of media" (treated as +infinity).
 - introdb.app always supplies concrete `start_ms`/`end_ms`; a segment is
   dropped at parse time if `start < 0 || end < 0 || end <= start`.
-- theintrodb.org may omit either bound (e.g. credits with `end_ms == null`).
+- theintrodb.org has nullable bounds, but not every omission is valid:
+  intro/recap may omit `start_ms` (start of media) and require `end_ms`;
+  credits/preview require `start_ms` and may omit `end_ms` (end of media).
+- v4 also uses zero/null values as **"no segment"** markers: intro/recap with
+  no positive `end_ms`, credits/preview with no positive `start_ms`, both
+  bounds `0`, or both bounds `null`. These are dropped during parsing, not
+  treated as skips.
+- In particular, `credits: [{start_ms: 0, end_ms: null}]` is **not** a
+  whole-episode skip (issue #2008). Valid open-ended credits start after the
+  beginning of the media and have `end_ms == null`.
 
 ### Outputs — `IntroSegments` (normalized model)
 
@@ -176,7 +185,10 @@ helpers:
 
 - theintrodb.org: response `tvdb_id` is the identity; `intro`/`recap`/
   `credits`/`preview` are JSON **arrays**; each element yields a
-  `Segment(start_ms, end_ms)` with nullable longs.
+  `Segment(start_ms, end_ms)` with nullable longs. Bounds are validated by
+  type: intro/recap require a positive `end_ms`; credits/preview require a
+  positive `start_ms` and allow a null `end_ms`; negative, zero-length, and
+  reversed ranges are dropped.
 - introdb.app: `intro`/`recap`/`outro` are single JSON **objects**; each yields
   a `Segment(start_ms, end_ms, confidence, submission_count)` or null if the
   bounds are missing/invalid.
