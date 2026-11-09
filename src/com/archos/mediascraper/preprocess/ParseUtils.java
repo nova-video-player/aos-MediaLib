@@ -35,6 +35,22 @@ public class ParseUtils {
 
     private static final Logger log = LoggerFactory.getLogger(ParseUtils.class);
 
+    // Scraper title suffixes, shared by filename detection and title cleanup. This is not
+    // the broader playback/MIME registry or the list of release-name garbage tokens.
+    private static final Pattern VIDEO_EXTENSION = Pattern.compile(
+            "\\.(mkv|avi|mp4|mov|wmv|flv|mpg|mpeg|vob|asf|divx|f4v|ts|m2ts|m4v|webm|ogv|3gp)$",
+            Pattern.CASE_INSENSITIVE);
+
+    static boolean hasVideoExtension(String name) {
+        if (name == null) return false;
+        Matcher matcher = VIDEO_EXTENSION.matcher(name);
+        return matcher.find() && matcher.start() > 0 && matcher.end() == name.length();
+    }
+
+    static String stripVideoExtension(String name) {
+        return VIDEO_EXTENSION.matcher(name).replaceFirst("");
+    }
+
     /* ( whitespace | punctuation)+, matches dots, spaces, brackets etc */
     private static final String NON_CHARACTER_SEPARATOR = "[\\s\\p{Punct}&&[^']]+";
     private static final Pattern MULTI_NON_CHARACTER_PATTERN = Pattern.compile(NON_CHARACTER_SEPARATOR);

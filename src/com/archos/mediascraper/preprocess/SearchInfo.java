@@ -48,6 +48,12 @@ public abstract class SearchInfo {
      * produces confident-looking wrong results (see MediaLib/doc/scraper_improvements.md).
      */
     public boolean skipScraping = false;
+    /**
+     * Set by {@link SearchPreprocessor} when the winning matcher was the catch-all
+     * {@code MovieDefaultMatcher} (or no matcher matched at all). This also includes readable
+     * movie names; it is not by itself evidence that a metadata-title retry is appropriate.
+     */
+    private boolean mFallbackMatch = false;
     private Uri mOriginalUri = null;
 
     /** package private so outside can't construct these */
@@ -64,6 +70,18 @@ public abstract class SearchInfo {
     public final void setUserInput(String userInput) {
         mUserInput = userInput;
 
+    }
+
+    final void setFallbackMatch(boolean fallbackMatch) {
+        mFallbackMatch = fallbackMatch;
+    }
+
+    /**
+     * @return true when the parse only reached the catch-all default matcher, i.e. the input had
+     * no recognizable TV-show or scene movie structure.
+     */
+    public final boolean isFallbackMatch() {
+        return mFallbackMatch;
     }
 
     protected final String getUserInput() {

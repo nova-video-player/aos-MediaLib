@@ -916,7 +916,6 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                 //Get the information we need about the current file, for use later in the scrape.
                                 String title = cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.TITLE));
                                 Uri fileUri = Uri.parse(cursor.getString(cursor.getColumnIndexOrThrow(VideoStore.MediaColumns.DATA)));
-                                Uri scrapUri = title == null || title.isEmpty() || title.equalsIgnoreCase("null") ? fileUri : Uri.parse("/" + title + ".mp4") ;
 
                                 //This get the info to reparse for UPNP, and grab the correct details.
                                 boolean reparseInfo = fileUri.toString().toLowerCase().startsWith("upnp");
@@ -1030,7 +1029,11 @@ public class AutoScrapeService extends Service implements DefaultLifecycleObserv
                                         result = MovieScraper3.getDetails(searchResult, null);
                                     } else {
                                         if (log.isTraceEnabled()) log.trace("startScraping: searching online " + title);
-                                        SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBased(fileUri, scrapUri);
+                                        // Prefer the real file name/folder over the stored metadata title:
+                                        // the title may be a localized on-screen title rather than a release
+                                        // name (see #1987), while the file name/path is what the matchers and
+                                        // folder-based show detection expect.
+                                        SearchInfo searchInfo = SearchPreprocessor.instance().parseFileBasedWithTitleFallback(fileUri, title);
                                         if (reparseInfo) searchInfo.setForceReParse(true);
                                         Scraper scraper = new Scraper(AutoScrapeService.this);
                                         searchInfo.setOriginalUri(fileUri);

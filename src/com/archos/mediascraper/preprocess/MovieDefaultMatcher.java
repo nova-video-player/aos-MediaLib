@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
-import java.util.regex.Pattern;
 
 import static com.archos.mediascraper.preprocess.ParseUtils.BRACKETS;
 import static com.archos.mediascraper.preprocess.ParseUtils.extractYearAnywhere;
@@ -73,11 +72,9 @@ class MovieDefaultMatcher implements InputMatcher {
         return getMatch(userInput, file);
     }
 
-    private static final Pattern KNOWN_EXTENSIONS = Pattern.compile("\\.(mkv|avi|mp4|mov|wmv|flv|mpg|mpeg|vob|asf|divx|f4v|ts|m2ts|m4v|webm|ogv|3gp)$", Pattern.CASE_INSENSITIVE);
-
     private static SearchInfo getMatch(String input, Uri file) {
         // Strip known video extensions (input may still have one from getUserInputMatch or tests)
-        String name = KNOWN_EXTENSIONS.matcher(input).replaceFirst("");
+        String name = ParseUtils.stripVideoExtension(input);
         if (log.isDebugEnabled()) log.debug("getMatch input: {}", name);
         final int currentYear = Calendar.getInstance().get(Calendar.YEAR);
 
