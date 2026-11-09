@@ -19,4 +19,5 @@ import com.archos.medialib.MediaMetadata;
 interface IMediaRetrieverService
 {
     com.archos.medialib.MediaMetadata getMetadata(String path);
+    com.archos.medialib.MediaMetadata getMetadataWithNameResolution(String path, String shareName, String shareIp);
 }

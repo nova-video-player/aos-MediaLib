@@ -121,6 +121,15 @@ public class MediaRetrieverServiceClient {
      */
     public MediaMetadata getMetadata(String path) throws InterruptedException,
             ServiceManagementException, RemoteException {
+        return getMetadata(path, null, null);
+    }
+
+    /**
+     * Same as {@link #getMetadata(String)} but passes a share name -> IP mapping to the service
+     * so the original URI (and therefore its credentials) is preserved.
+     */
+    public MediaMetadata getMetadata(String path, String shareName, String shareIp)
+            throws InterruptedException, ServiceManagementException, RemoteException {
 
         // this method can not be called from the main thread or it would ANR
         assertWorkerThread();
@@ -155,6 +164,9 @@ public class MediaRetrieverServiceClient {
             // there is still a chance that we're calling the method while we unbind from the
             // service. No idea what exactly happens then.
             try {
+                if (shareName != null && shareIp != null) {
+                    return delegate.getMetadataWithNameResolution(path, shareName, shareIp);
+                }
                 return delegate.getMetadata(path);
             } catch (RemoteException e) {
                 if (DBG) Log.d(TAG, "getMetadata KILLED service");

@@ -36,6 +36,7 @@ import android.text.TextUtils;
 
 import com.archos.filecorelibrary.ExtStorageManager;
 import com.archos.filecorelibrary.FileEditor;
+import com.archos.filecorelibrary.samba.SambaDiscovery;
 import com.archos.mediacenter.filecoreextension.upnp2.FileEditorFactoryWithUpnp;
 import com.archos.mediacenter.utils.trakt.TraktService;
 import com.archos.medialib.IMediaMetadataRetriever;
@@ -1178,10 +1179,19 @@ public class VideoStoreImportImpl {
 
     /** get MediaMetadata object or null for a path */
     private MediaMetadata getMetadata(String path) throws RemoteException, InterruptedException, MediaRetrieverServiceClient.ServiceManagementException {
+        String shareName = null;
+        String shareIp = null;
         if(path.startsWith("file://")) {
             path = path.substring("file://".length()); //we need to remove "file://"
+        } else if (path.startsWith("smb://")) {
+            // MediaRetrieverService runs in the :scanner process, which does not run Samba
+            // discovery anymore. Pass the mapping separately: the service registers it in its
+            // own resolver, while the original share-name URI keeps matching its credentials.
+            Uri uri = Uri.parse(path);
+            shareName = uri.getHost();
+            shareIp = SambaDiscovery.getIpFromShareName(shareName);
         }
-        return mMediaRetrieverServiceClient.getMetadata(path);
+        return mMediaRetrieverServiceClient.getMetadata(path, shareName, shareIp);
     }
 
     /** creates ContentValues via MediaRetrieverService, can't be null */

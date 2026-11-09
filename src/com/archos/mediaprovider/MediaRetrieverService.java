@@ -22,6 +22,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import com.archos.filecorelibrary.samba.SambaDiscovery;
 import com.archos.medialib.IMediaMetadataRetriever;
 import com.archos.medialib.MediaFactory;
 import com.archos.medialib.MediaMetadata;
@@ -59,6 +60,14 @@ public class MediaRetrieverService extends Service {
 
     private final IBinder mBinder = new IMediaRetrieverService.Stub() {
         public MediaMetadata getMetadata(String path) {
+            return MediaRetrieverService.this.getMetadata(path);
+        }
+
+        public MediaMetadata getMetadataWithNameResolution(String path, String shareName, String shareIp) {
+            // This process does not run Samba discovery (see CustomApplication). Register the
+            // mapping provided by the main process so the original share-name URI can still be
+            // resolved to an IP internally, while credentials keep matching that same URI.
+            SambaDiscovery.registerShareNameIP(shareName, shareIp);
             return MediaRetrieverService.this.getMetadata(path);
         }
     };
