@@ -1003,7 +1003,7 @@ public class Trakt {
         return handleRet(null, null, lists, ObjectType.LIST);
     }
 
-    public Result getListContent(int trial, int listId) {
+    public Result getListContent(int trial, long listId) {
         if (log.isDebugEnabled()) log.debug("getListContent");
         List<ListEntry> result = new ArrayList<>();
         String id = String.valueOf(listId);
@@ -1019,7 +1019,7 @@ public class Trakt {
         return handleRet(null, null, result, ObjectType.LIST);
     }
 
-    public Result removeVideoFromList(int trial, int listId, ListEntry onlineItem) {
+    public Result removeVideoFromList(int trial, long listId, ListEntry onlineItem) {
         if (log.isDebugEnabled()) log.debug("removeVideoFromLit");
         SyncItems syncItems = new SyncItems();
         if(onlineItem.episode!=null) {
@@ -1040,7 +1040,7 @@ public class Trakt {
             return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
     }
 
-    public Result addVideoToList(int trial, int listId, VideoStore.VideoList.VideoItem videoItem) {
+    public Result addVideoToList(int trial, long listId, VideoStore.VideoList.VideoItem videoItem) {
         if (log.isDebugEnabled()) log.debug("addVideoToList");
         SyncResponse ret = null;
         if (videoItem.episodeId > 0) {

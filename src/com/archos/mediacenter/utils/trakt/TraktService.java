@@ -1850,7 +1850,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
             int syncStatusCol = cursor.getColumnIndex(VideoStore.List.Columns.SYNC_STATUS);
             int idCol = cursor.getColumnIndex(VideoStore.List.Columns.ID);
             while(cursor.moveToNext()){
-                localLists.add(new VideoStore.List.ListObj(cursor.getInt(idCol), cursor.getString(titleCol), cursor.getInt(traktIdCol), cursor.getInt(syncStatusCol)));
+                localLists.add(new VideoStore.List.ListObj(cursor.getInt(idCol), cursor.getString(titleCol), cursor.getLong(traktIdCol), cursor.getInt(syncStatusCol)));
             }
         }
         cursor.close();
@@ -1947,7 +1947,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
             int listIdCol = cursor.getColumnIndex(VideoStore.List.Columns.ID);
             int syncStatusCol = cursor.getColumnIndex(VideoStore.List.Columns.SYNC_STATUS);
             while(cursor.moveToNext()){
-                int traktId = cursor.getInt(traktIdCol);
+                long traktId = cursor.getLong(traktIdCol);
                 int localId = cursor.getInt(listIdCol);
                 if(traktId>0){
                     Uri listUri = VideoStore.List.getListUri(localId);

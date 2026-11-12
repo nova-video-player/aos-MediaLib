@@ -690,15 +690,15 @@ public final class VideoStore {
 
         public static class ListObj {
             public String title;
-            public int traktId;
+            public long traktId;
             public int syncStatus = SyncStatus.STATUS_NOT_SYNC;
             public int id;
 
-            public ListObj(String title, int traktId, int syncStatus){
+            public ListObj(String title, long traktId, int syncStatus){
                 this(-1, title, traktId, syncStatus);
             }
 
-            public ListObj(int id, String title, int traktId, int syncStatus){
+            public ListObj(int id, String title, long traktId, int syncStatus){
                 this.id = id;
                 this.title = title;
                 this.traktId = traktId;
