@@ -36,7 +36,7 @@ import com.uwetrottmann.trakt5.entities.BaseMovie;
 import com.uwetrottmann.trakt5.entities.BaseShow;
 import com.uwetrottmann.trakt5.entities.EpisodeIds;
 import com.uwetrottmann.trakt5.entities.HistoryEntry;
-import com.uwetrottmann.trakt5.entities.LastActivities;
+import com.uwetrottmann.trakt5.entities.LastActivities2;
 import com.uwetrottmann.trakt5.entities.ListEntry;
 import com.uwetrottmann.trakt5.entities.MovieIds;
 import com.uwetrottmann.trakt5.entities.PlaybackResponse;
@@ -958,10 +958,9 @@ public class Trakt {
         return handleRet(null, null, result, ObjectType.MOVIES);
     }
 
-    @SuppressWarnings("deprecation") // Trakt v2 lastActivities API
     public Result getLastActivity(int trial) {
         if (log.isDebugEnabled()) log.debug("getLastActivity");
-        LastActivities ret = exec(mTraktV2.sync().lastActivities());
+        LastActivities2 ret = exec(mTraktV2.sync().lastActivities2());
         if(ret == null)
             return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
         return handleRet(null, null, ret, ObjectType.LAST_ACTIVITY);
@@ -994,13 +993,19 @@ public class Trakt {
          */
     }
 
-    @SuppressWarnings("deprecation") // Trakt v2 users().lists API
     public Result getLists(int trial) {
         if (log.isDebugEnabled()) log.debug("getLists");
-        List<TraktList> lists = exec(mTraktV2.users().lists(UserSlug.ME));
-        if (lists == null)
-            return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
-        return handleRet(null, null, lists, ObjectType.LIST);
+        List<TraktList> result = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            List<TraktList> pageData = exec(mTraktV2.users().lists(UserSlug.ME, page, PAGE_LIMIT, null));
+            if (pageData == null)
+                return handleRet(null, mLastExecException != null ? mLastExecException : new Exception(), null, ObjectType.NULL);
+            result.addAll(pageData);
+            if (pageData.size() < PAGE_LIMIT) break;
+            page++;
+        }
+        return handleRet(null, null, result, ObjectType.LIST);
     }
 
     public Result getListContent(int trial, long listId) {
