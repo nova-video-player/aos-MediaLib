@@ -922,7 +922,7 @@ public class VideoStoreImportImpl {
     private void handleScanCursor(Cursor c, ContentResolver cr, Context context, Blacklist blacklist) {
         // for some reasons doScan passes a a cursor with size > WINDOW_SIZE
         // thus only process WINDOW_SIZE entries
-        int remaining = c.getCount();
+        int remaining = c != null ? c.getCount() : 0;
         if (c == null || remaining == 0) {
             if (c != null) c.close();
             if (log.isDebugEnabled()) log.debug("handleScanCursor: no media to scan");
@@ -958,10 +958,12 @@ public class VideoStoreImportImpl {
                     //we silently ignore empty lines - it means content has been deleted while scanning
                     continue;
                 }
-                if (context instanceof VideoStoreImportService) {
+                Job job = new Job(path, id, blacklist);
+                // MediaStore.Files also contains images and other non-video rows. Classify
+                // and mark them scanned, but only show progress for video metadata retrieval.
+                if (job.mRetrieve && context instanceof VideoStoreImportService) {
                     ((VideoStoreImportService) context).updateScanNotification(remaining, path);
                 }
-                Job job = new Job(path, id, blacklist);
                 if (log.isDebugEnabled()) log.debug("handleScanCursor: scanning {}", job.mPath);
                 // update property with current file
                 ContentValues cv = null;

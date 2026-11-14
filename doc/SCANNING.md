@@ -424,6 +424,13 @@ identity. It requires schema migration, backfill, and I/O-cost analysis before u
 
 ### 8.8 Local-import invariants
 
+- `MediaStore.Files` includes non-video rows (including PNG screenshots). They
+  still receive a media type and scan timestamp, but do not invoke the video
+  metadata retriever or post an importing notification. Filtering these rows out
+  of discovery would change the existing file/parent bookkeeping.
+- Import progress uses `NotificationManager.notify()`. Completion must explicitly
+  cancel that notification, including after an empty scan, while the observer
+  service remains alive; `stopForeground()` alone does not remove it.
 - Absence of a removable volume never means its files were deleted.
 - `files._id`, `files.remote_id`, and `files_import._id` remain equal for imported
   rows; a new-id remap updates all three atomically.

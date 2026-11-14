@@ -424,10 +424,11 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 // this service used to be created through bind. So it couldn't be killed with stopself unless it was unbind
                 // (which wasn't done). To have the same behavior, do not stop service for now
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_KILL -> leaving foreground");
-                // Always clear the foreground notification when processing has finished. Some
-                // commands (remove file, metadata update, etc.) do not go through doImport()
-                // and were previously leaving the foreground notification visible forever.
+                // Progress is posted with NotificationManager.notify(), not startForeground().
+                // stopForeground alone cannot remove it while this service stays alive.
+                // Clear it even when the last command had no files to process.
                 ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
+                if (nm != null) nm.cancel(NOTIFICATION_ID);
                 if (msg.arg1 != DONT_KILL_SELF){
                     if (log.isDebugEnabled()) log.debug("handleMessage: stopSelf");
                     ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.handleMessage", "MESSAGE_KILL: stopSelf");
