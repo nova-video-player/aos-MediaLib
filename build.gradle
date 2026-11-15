@@ -59,7 +59,7 @@ android {
             resources.srcDirs = ['src']
             aidl.srcDirs = ['src']
             res.srcDirs = ['res']
-            assets.srcDirs = ['assets']
+            assets.srcDirs = ['assets', layout.buildDirectory.dir('generated/fasttextAssets')]
             //tmp prebuilt jni
             jniLibs.srcDirs = ['libs']
         }
@@ -152,6 +152,25 @@ tasks.register('ndkBuild', Exec) {
     myCmd.add("native_avos_full")
     myCmd.add("native_torrentd")
     commandLine = myCmd
+}
+
+// One canonical model in the native prebuilt, staged into library assets for APK merging.
+def subtitleLanguageAssets = tasks.register('prepareSubtitleLanguageAssets', Sync) {
+    dependsOn tasks.named('ndkBuild')
+    from('../native/prebuilt/fastText/share/fastText') { include 'lid.176.ftz' }
+    from('../native/prebuilt/fastText') { include 'LICENSE.model', 'LICENSE.fastText', 'NOTICE' }
+    into layout.buildDirectory.dir('generated/fasttextAssets/fasttext')
+    doFirst {
+        if (!file('../native/prebuilt/fastText/share/fastText/lid.176.ftz').isFile()) {
+            throw new GradleException('Missing subtitle language model: build native/fastText-android-builder first')
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn subtitleLanguageAssets }
+tasks.configureEach { task ->
+    if (task.name.startsWith('merge') && task.name.endsWith('Assets')) {
+        task.dependsOn subtitleLanguageAssets
+    }
 }
 
 tasks.register('ndkClean', Exec) {

@@ -214,6 +214,9 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
 
     public native String extractMetadata(int keyCode);
 
+    @Override public native boolean guessSubtitleLanguages();
+    @Override public native void cancel();
+
     private native final byte[] getMetadata();
 
     public MediaMetadata getMediaMetadata() {

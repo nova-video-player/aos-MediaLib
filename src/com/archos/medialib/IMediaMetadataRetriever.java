@@ -107,6 +107,12 @@ public interface IMediaMetadataRetriever {
 
     public MediaMetadata getMediaMetadata();
 
+    /** Bounded synchronous analysis; callers must use a background thread. */
+    default boolean guessSubtitleLanguages() { return false; }
+
+    /** Nonblocking cancellation of current and subsequent operations. */
+    default void cancel() { }
+
     /**
      * Call this method after setDataSource(). This method finds a
      * representative frame close to the given time position by considering
@@ -441,4 +447,6 @@ public interface IMediaMetadataRetriever {
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE    = 4;
     public static final int METADATA_KEY_SUBTITLE_TRACK_DISPOSITION = 5;
     public static final int METADATA_KEY_SUBTITLE_TRACK_MAX         = 6;
+    public static final int METADATA_KEY_SUBTITLE_LANGUAGE_SOURCE = 40000;
+    public static final int METADATA_KEY_SUBTITLE_LANGUAGE_CONFIDENCE = 41000;
 }
