@@ -28,6 +28,7 @@ import com.archos.mediascraper.Scraper;
 import com.archos.mediascraper.ScraperCache;
 import com.archos.mediascraper.SearchResult;
 import com.archos.mediascraper.TagsFactory;
+import com.archos.mediascraper.preprocess.EmbeddedTmdbId;
 import com.archos.mediascraper.preprocess.MovieSearchInfo;
 import com.archos.mediascraper.preprocess.SearchInfo;
 import com.archos.mediascraper.preprocess.SearchPreprocessor;
@@ -130,6 +131,22 @@ public class MovieScraper3 extends BaseScraper2 {
         }
         MovieSearchInfo searchInfo = (MovieSearchInfo) info;
         if (log.isDebugEnabled()) log.debug("getMatches2: movie search:{}", searchInfo.getName());
+
+        // A file that carries its own TMDB id does not have to be guessed from
+        // the name: go straight to that entry. Only for the automatic path
+        // (one match), the manual dialog still shows what TMDB suggests.
+        if (maxItems == 1) {
+            Integer embeddedId = EmbeddedTmdbId.fromFile(mContext, searchInfo.getFile());
+            if (embeddedId != null) {
+                if (log.isDebugEnabled()) log.debug("getMatches2: using TMDB id {} from the file itself", embeddedId);
+                List<SearchResult> single = new ArrayList<>(1);
+                SearchResult direct = new SearchResult(SearchResult.movie, searchInfo.getName(), embeddedId);
+                direct.setScraper(this);
+                direct.setFile(searchInfo.getFile());
+                single.add(direct);
+                return new ScrapeSearchResult(single, true, ScrapeStatus.OKAY, null);
+            }
+        }
 
         // get configured language
         String language = Scraper.getLanguage(mContext);
