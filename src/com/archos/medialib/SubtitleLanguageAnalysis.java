@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.os.CancellationSignal;
 import android.os.SystemClock;
 import com.archos.filecorelibrary.NetworkInitialization;
-import java.io.IOException;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,13 +46,17 @@ public final class SubtitleLanguageAnalysis {
             openForAnalysis(retriever, context, uri, headers);
             log.info("stage=native-sampling elapsed_ms={}", SystemClock.elapsedRealtime() - started);
             cancel.throwIfCanceled();
-            if (!retriever.guessSubtitleLanguages())
-                throw new IOException("Subtitle analysis could not complete");
+            if (!retriever.guessSubtitleLanguages()) {
+                cancel.throwIfCanceled();
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.ANALYSIS,
+                        "Subtitle analysis could not complete");
+            }
             String fingerprint = retriever.extractMetadata(IMediaMetadataRetriever.METADATA_KEY_SUBTITLE_FINGERPRINT);
             int count = integer(retriever, IMediaMetadataRetriever.METADATA_KEY_NB_SUBTITLE_TRACK);
             JSONArray entries = mkv.getJSONArray("tracks");
             if (count != entries.length())
-                throw new IOException("Subtitle track mapping does not match Matroska headers");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.METADATA,
+                        "Subtitle track mapping does not match Matroska headers");
             JSONArray tracks = new JSONArray();
             int identified = 0;
             for (int i = 0; i < count; i++) {

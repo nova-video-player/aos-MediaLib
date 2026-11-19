@@ -49,6 +49,6 @@ public final class MatroskaHeader {
             if (length <= cap)
                 break;
         }
-        throw last == null ? new IOException("Cannot inspect MKV") : last;
+        throw new SubtitleLanguageException(SubtitleLanguageException.Code.METADATA, "Cannot inspect MKV", last);
     }
 }

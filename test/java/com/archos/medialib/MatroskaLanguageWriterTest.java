@@ -59,6 +59,7 @@ public class MatroskaLanguageWriterTest {
                 MatroskaLanguageWriter.prepare(doc);
                 fail("Must refuse unsafe edit");
             } catch (IOException expected) {
+                assertEquals(SubtitleLanguageException.Code.EDIT_UNSUPPORTED, SubtitleLanguageException.codeOf(expected));
             }
         }
     }
@@ -70,6 +71,7 @@ public class MatroskaLanguageWriterTest {
             MatroskaLanguageWriter.prepare(doc);
             fail();
         } catch (IOException expected) {
+            assertEquals(SubtitleLanguageException.Code.FILE_CHANGED, SubtitleLanguageException.codeOf(expected));
         }
     }
     @Test

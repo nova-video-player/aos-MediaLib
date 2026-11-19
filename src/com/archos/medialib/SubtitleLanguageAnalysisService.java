@@ -51,7 +51,7 @@ public final class SubtitleLanguageAnalysisService extends Service {
             } catch (Exception | LinkageError e) {
                 log.error("Explicit language analysis failed after "
                         + (SystemClock.elapsedRealtime() - started) + " ms", e);
-                send(reply, ERROR, e.getMessage() == null ? "Analysis failed" : e.getMessage());
+                send(reply, ERROR, SubtitleLanguageException.codeOf(e).name());
             } finally {
                 new Handler(Looper.getMainLooper()).post(() -> cancellation = null);
             }

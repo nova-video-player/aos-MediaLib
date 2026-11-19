@@ -23,11 +23,11 @@ public class SubtitleLanguageTest {
     private static final String ABC_SHA = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
 
     @Test public void onlyInferenceGetsAnAnnotation() {
-        assertEquals("Français (AI 94%)", SubtitleLanguage.annotate("Français", SubtitleLanguage.FASTTEXT, 94));
-        assertEquals("Français", SubtitleLanguage.annotate("Français", SubtitleLanguage.DESCRIPTION, 94));
-        assertEquals("Français", SubtitleLanguage.annotate("Français", SubtitleLanguage.METADATA, 0));
-        assertEquals("TEXT", SubtitleLanguage.annotate("TEXT", SubtitleLanguage.UNKNOWN, 0));
-        assertEquals("French (AI 100%)", SubtitleLanguage.annotate("French", SubtitleLanguage.FASTTEXT, 101));
+        assertEquals("Français (AI 94%)", SubtitleLanguage.annotate(org.robolectric.RuntimeEnvironment.getApplication(), "Français", SubtitleLanguage.FASTTEXT, 94));
+        assertEquals("Français", SubtitleLanguage.annotate(org.robolectric.RuntimeEnvironment.getApplication(), "Français", SubtitleLanguage.DESCRIPTION, 94));
+        assertEquals("Français", SubtitleLanguage.annotate(org.robolectric.RuntimeEnvironment.getApplication(), "Français", SubtitleLanguage.METADATA, 0));
+        assertEquals("TEXT", SubtitleLanguage.annotate(org.robolectric.RuntimeEnvironment.getApplication(), "TEXT", SubtitleLanguage.UNKNOWN, 0));
+        assertEquals("French (AI 100%)", SubtitleLanguage.annotate(org.robolectric.RuntimeEnvironment.getApplication(), "French", SubtitleLanguage.FASTTEXT, 101));
     }
 
     @Test public void modelInstallIsVerifiedAndAtomic() throws Exception {

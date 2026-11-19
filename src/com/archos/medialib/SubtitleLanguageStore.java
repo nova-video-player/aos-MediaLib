@@ -44,7 +44,7 @@ public final class SubtitleLanguageStore {
         if (db(context).insertWithOnConflict(
                 "subtitle_language_analysis", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             < 0)
-            throw new java.io.IOException("Cannot persist analysis");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.STORAGE, "Cannot persist analysis");
     }
     private static android.util.AtomicFile journalFile(Context context, String uri) throws Exception {
         byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(

@@ -33,7 +33,7 @@ public final class MatroskaLanguageWriter {
     private static void beginEdit() throws IOException {
         synchronized (GUARD) {
             if (playing || editing)
-                throw new IOException("Stop playback or wait for the current metadata edit");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.BUSY, "Stop playback or wait for the current metadata edit");
             editing = true;
         }
     }
@@ -65,7 +65,7 @@ public final class MatroskaLanguageWriter {
     private static void put(byte[] b, int at, int n, String language) throws Exception {
         byte[] value = language.getBytes(StandardCharsets.US_ASCII);
         if (at <= 0 || value.length != n || at > b.length - n || !language.matches("[a-z]{2,3}"))
-            throw new IOException("Language field requires resizing");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.EDIT_UNSUPPORTED, "Language field requires resizing");
         System.arraycopy(value, 0, b, at, n);
     }
     public static boolean canSave(JSONObject analysis) {
@@ -81,12 +81,12 @@ public final class MatroskaLanguageWriter {
         byte[] before = bytes(mkv, "before"), after = before.clone();
         JSONArray entries = mkv.getJSONArray("tracks"), tracks = analysis.getJSONArray("tracks");
         if (entries.length() != tracks.length())
-            throw new IOException("Track identities changed");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "Track identities changed");
         int changed = 0;
         for (int i = 0; i < tracks.length(); i++) {
             JSONObject t = tracks.getJSONObject(i), e = entries.getJSONObject(i);
             if (!t.getString("uid").equals(e.getString("uid")))
-                throw new IOException("Track identities changed");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "Track identities changed");
             if (t.optInt("source") != SubtitleLanguage.FASTTEXT || t.optInt("score") < 90)
                 continue;
             String lang = t.getString("language"), oldCode;
@@ -107,16 +107,16 @@ public final class MatroskaLanguageWriter {
             changed++;
         }
         if (changed == 0)
-            throw new IOException("No confident languages fit the existing metadata fields");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.EDIT_UNSUPPORTED, "No confident languages fit the existing metadata fields");
         JSONArray crcs = mkv.getJSONArray("checksums");
         List<JSONObject> ordered = new ArrayList<>();
         Set<Integer> parents = new HashSet<>();
         for (int i = 0; i < crcs.length(); i++) {
             JSONObject c = crcs.getJSONObject(i);
             if (!parents.add(c.getInt("start")))
-                throw new IOException("Duplicate metadata checksum");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.METADATA, "Duplicate metadata checksum");
             if (checksum(before, c) != stored(before, c.getInt("offset")))
-                throw new IOException("Existing metadata checksum is invalid");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.METADATA, "Existing metadata checksum is invalid");
             ordered.add(c);
         }
         ordered.sort(Comparator.comparingInt(c -> c.optInt("end") - c.optInt("start")));
@@ -129,7 +129,7 @@ public final class MatroskaLanguageWriter {
     }
     private static long stored(byte[] b, int at) throws IOException {
         if (at < 0 || at > b.length - 4)
-            throw new IOException("Invalid checksum bounds");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.METADATA, "Invalid checksum bounds");
         long value = 0;
         for (int i = 0; i < 4; i++) value |= (long) (b[at + i] & 255) << (8 * i);
         return value;
@@ -137,7 +137,7 @@ public final class MatroskaLanguageWriter {
     private static long checksum(byte[] b, JSONObject c) throws Exception {
         int start = c.getInt("start"), end = c.getInt("end"), element = c.getInt("element"), at = c.getInt("offset");
         if (start < 0 || start > element || element > at || at > end - 4 || end > b.length)
-            throw new IOException("Invalid checksum coverage");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.METADATA, "Invalid checksum coverage");
         CRC32 crc = new CRC32();
         crc.update(b, start, element - start);
         crc.update(b, at + 4, end - at - 4);
@@ -148,7 +148,7 @@ public final class MatroskaLanguageWriter {
         try {
             JSONObject previous = SubtitleLanguageStore.journal(context, uri.toString());
             if (previous != null && "PENDING".equals(previous.getString("state")))
-                throw new IOException("Restore the interrupted edit first");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.PENDING_EDIT, "Restore the interrupted edit first");
             byte[] before = bytes(analysis.getJSONObject("mkv"), "before"), after = prepare(analysis);
             JSONObject journal = new JSONObject()
                                      .put("before", Base64.encodeToString(before, Base64.NO_WRAP))
@@ -158,11 +158,11 @@ public final class MatroskaLanguageWriter {
             try (RandomAccessMediaFile file = RandomAccessMediaFile.open(context, uri)) {
                 if (file.length() != journal.getLong("size")
                     || !Arrays.equals(before, file.readFully(0, before.length)))
-                    throw new IOException("The file changed since analysis; analyze it again");
+                    throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "The file changed since analysis; analyze it again");
                 SubtitleLanguageStore.journal(context, uri.toString(), journal, "PENDING");
                 patches(file, before, after);
                 if (file.length() != journal.getLong("size") || !Arrays.equals(after, file.readFully(0, after.length)))
-                    throw new IOException("Metadata verification failed");
+                    throw new SubtitleLanguageException(SubtitleLanguageException.Code.VERIFY, "Metadata verification failed");
                 MatroskaHeader.inspect(after, file.length());
             }
             // A fresh metadata fingerprint includes our own edit. Preserve unresolved results and provenance.
@@ -182,19 +182,19 @@ public final class MatroskaLanguageWriter {
         try {
             JSONObject journal = SubtitleLanguageStore.journal(context, uri.toString());
             if (journal == null || "UNDONE".equals(journal.optString("state")))
-                throw new IOException("No edit to restore");
+                throw new SubtitleLanguageException(SubtitleLanguageException.Code.NO_EDIT, "No edit to restore");
             byte[] before = bytes(journal, "before"), after = bytes(journal, "after");
             try (RandomAccessMediaFile file = RandomAccessMediaFile.open(context, uri)) {
                 if (file.length() != journal.getLong("size"))
-                    throw new IOException("File size changed");
+                    throw new SubtitleLanguageException(SubtitleLanguageException.Code.RESTORE_CHANGED, "File size changed");
                 byte[] current = file.readFully(0, before.length);
                 for (int i = 0; i < current.length; i++)
                     if (current[i] != before[i] && current[i] != after[i])
-                        throw new IOException("File changed outside the recorded edit");
+                        throw new SubtitleLanguageException(SubtitleLanguageException.Code.RESTORE_CHANGED, "File changed outside the recorded edit");
                 SubtitleLanguageStore.journal(context, uri.toString(), journal, "PENDING");
                 patches(file, current, before);
                 if (!Arrays.equals(before, file.readFully(0, before.length)))
-                    throw new IOException("Restore verification failed");
+                    throw new SubtitleLanguageException(SubtitleLanguageException.Code.VERIFY, "Restore verification failed");
             }
             SubtitleLanguageStore.save(context, uri.toString(), journal.getJSONObject("analysis"));
             SubtitleLanguageStore.journal(context, uri.toString(), journal, "UNDONE");
@@ -205,7 +205,7 @@ public final class MatroskaLanguageWriter {
     }
     static void patches(RandomAccessMediaFile file, byte[] before, byte[] after) throws Exception {
         if (before.length != after.length)
-            throw new IOException("Resizing is forbidden");
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.EDIT_UNSUPPORTED, "Resizing is forbidden");
         for (int at = 0; at < after.length;) {
             if (before[at] == after[at]) {
                 at++;

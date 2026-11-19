@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- %1$s is the full track label; %2$d is a model confidence score, not measured accuracy. -->
+    <string name="subtitle_language_ai_label">%1$s (AI %2$d%%)</string>
+    <string name="subtitle_language_error_failed">Could not complete this operation. Try again.</string>
+    <string name="subtitle_language_error_analysis">Could not finish identifying subtitle languages. Check that the file is available and try again.</string>
+    <string name="subtitle_language_error_metadata">This MKV has invalid or unsupported track information. Nova cannot safely process it.</string>
+    <string name="subtitle_language_error_edit">No high-confidence language results can be saved in this MKV’s existing language fields.</string>
+    <string name="subtitle_language_error_changed">The file has changed. Identify its subtitle languages again before saving.</string>
+    <string name="subtitle_language_error_restore_changed">The file has changed since the edit. Nova cannot safely restore its previous language metadata.</string>
+    <string name="subtitle_language_error_pending">Saving was interrupted. Restore the previous language metadata before saving again.</string>
+    <string name="subtitle_language_error_no_edit">No previous language metadata is available to restore.</string>
+    <string name="subtitle_language_error_busy">Stop playback or wait for the current save to finish, then try again.</string>
+    <string name="subtitle_language_error_verify">Could not verify the changes. Restore the previous language metadata before saving again.</string>
+    <string name="subtitle_language_error_access">Could not access the file. Check your connection and file permissions, then try again.</string>
+    <string name="subtitle_language_error_storage">Could not save results in Nova. Check the available device storage and try again.</string>
+    <string name="subtitle_language_error_cancelled">Analysis cancelled. Previously saved results are still available.</string>
+</resources>
