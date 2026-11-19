@@ -102,7 +102,12 @@ public class SmbProxy extends Proxy{
     }
 
     public static SmbProxy setDataSource(Uri uri, IMediaMetadataRetriever mr, Map<String, String> headers) throws IllegalArgumentException {
-        SmbProxy proxy = new SmbProxy(uri);
+        return setDataSource(uri, mr, headers, StreamOverHttp.ReadMode.DEFAULT);
+    }
+
+    static SmbProxy setDataSource(Uri uri, IMediaMetadataRetriever mr, Map<String, String> headers,
+            StreamOverHttp.ReadMode readMode) throws IllegalArgumentException {
+        SmbProxy proxy = new SmbProxy(uri, readMode);
         boolean installed = false;
         try {
             Uri local = proxy.start();

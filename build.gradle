@@ -61,7 +61,7 @@ android {
             res.srcDirs = ['res']
             assets.srcDirs = ['assets', layout.buildDirectory.dir('generated/fasttextAssets')]
             //tmp prebuilt jni
-            jniLibs.srcDirs = ['libs']
+            jniLibs.srcDirs = ['libs', '../native/prebuilt/libmatroska/lib']
         }
         androidTest {
             manifest.srcFile 'androidTest/AndroidManifest.xml'
@@ -144,6 +144,11 @@ androidComponents {
 }
 
 tasks.register('ndkBuild', Exec) {
+    doFirst {
+        // Remove the former in-module inspector output when upgrading this checkout.
+        // The current library is packaged directly from native/prebuilt/libmatroska.
+        delete fileTree('libs') { include '**/libnova_matroska.so' }
+    }
     workingDir = "../"
     // Let GNU Make manage native C/C++ dependency checking
     List<String> myCmd = new ArrayList<String>()
@@ -151,6 +156,7 @@ tasks.register('ndkBuild', Exec) {
     myCmd.add("native_libnativehelper")
     myCmd.add("native_avos_full")
     myCmd.add("native_torrentd")
+    myCmd.add("native_build_native/libmatroska-android-builder")
     commandLine = myCmd
 }
 
@@ -235,3 +241,5 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.17'
     testImplementation 'androidx.test:core:1.7.0'
 }
+
+android.sourceSets.main.assets.srcDir('../native/prebuilt/libmatroska/share')

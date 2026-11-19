@@ -383,6 +383,7 @@ public interface IMediaPlayer {
     // Independent ranges keep the six-field subtitle metadata stride unchanged.
     public static final int METADATA_KEY_SUBTITLE_LANGUAGE_SOURCE = 40000;
     public static final int METADATA_KEY_SUBTITLE_LANGUAGE_CONFIDENCE = 41000;
+    int METADATA_KEY_SUBTITLE_FINGERPRINT = 42000;
     public static final int METADATA_UPDATE_SUBTITLE_LANGUAGES = 1;
 
     public static final int METADATA_KEY_SUBTITLE_TRACK_LANGUAGE = 4;

@@ -7,4 +7,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" android:minSdkVersion="34"/>
+    <application>
+        <service android:name="com.archos.medialib.SubtitleLanguageAnalysisService"
+            android:exported="false" android:process=":subtitle_languages" />
+    </application>
 </manifest>

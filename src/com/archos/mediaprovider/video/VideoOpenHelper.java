@@ -47,7 +47,7 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
     // that is what onCreate creates
     private static final int DATABASE_CREATE_VERSION = 36; // initial version for v1.0 of nova (archos was 10)
     // that is the current version
-    private static final int DATABASE_VERSION = 62;
+    private static final int DATABASE_VERSION = 63;
     private static final String DATABASE_NAME = "media.db";
 
     // (Integer.MAX_VALUE / 2) rounded to human readable form
@@ -2000,6 +2000,9 @@ public class VideoOpenHelper extends DeleteOnDowngradeSQLiteOpenHelper {
         if (oldVersion < 61 && newVersion >= 61) {
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - cleaning orphan movie collections", 61);
             ScraperTables.upgradeTo(db, 61);
+        }
+        if (oldVersion < 63 && newVersion >= 63) {
+            com.archos.medialib.SubtitleLanguageStore.createTables(db);
         }
         if (oldVersion < 62 && newVersion >= 62) {
             if (log.isDebugEnabled()) log.debug("onUpgrade: {} - adding language-independent genre ids", 62);

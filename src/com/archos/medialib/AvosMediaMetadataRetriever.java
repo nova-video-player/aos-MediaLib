@@ -86,10 +86,22 @@ public class AvosMediaMetadataRetriever implements IMediaMetadataRetriever
 
     public void setDataSource(String uri,  Map<String, String> headers)
             throws IllegalArgumentException {
+        setDataSourceWithReadMode(uri, headers, com.archos.filecorelibrary.StreamOverHttp.ReadMode.DEFAULT);
+    }
+
+    /** Opt in only for the explicit language-analysis job; no global read-policy change. */
+    void setSubtitleAnalysisDataSource(String uri, Map<String, String> headers) {
+        setDataSourceWithReadMode(uri, headers, com.archos.filecorelibrary.StreamOverHttp.ReadMode.SUBTITLE_ANALYSIS);
+    }
+
+    private void setDataSourceWithReadMode(String uri, Map<String, String> headers,
+            com.archos.filecorelibrary.StreamOverHttp.ReadMode readMode) {
         synchronized (mSourceLock) {
             ensureOpen();
             if (Proxy.needToStream(Uri.parse(uri).getScheme())) {
-                replaceProxy(Proxy.setDataSource(Uri.parse(uri), this, headers));
+                replaceProxy("upnp".equalsIgnoreCase(Uri.parse(uri).getScheme())
+                        ? Proxy.setDataSource(Uri.parse(uri), this, headers)
+                        : SmbProxy.setDataSource(Uri.parse(uri), this, headers, readMode));
                 return;
             }
 

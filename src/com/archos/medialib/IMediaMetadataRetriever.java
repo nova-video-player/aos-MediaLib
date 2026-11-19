@@ -449,4 +449,5 @@ public interface IMediaMetadataRetriever {
     public static final int METADATA_KEY_SUBTITLE_TRACK_MAX         = 6;
     public static final int METADATA_KEY_SUBTITLE_LANGUAGE_SOURCE = 40000;
     public static final int METADATA_KEY_SUBTITLE_LANGUAGE_CONFIDENCE = 41000;
+    int METADATA_KEY_SUBTITLE_FINGERPRINT = 42000;
 }

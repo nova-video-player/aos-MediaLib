@@ -344,8 +344,6 @@ public class LibAvos {
             nativeInit(ctx.getPackageName(), sIsPluginAvailable);
             nativeLoadLibraryRTLDGlobal("libsfdec.core.21.so");
             sIsAvailable = true;
-            nativeSetSubtitleLanguageCache(new java.io.File(ctx.getNoBackupFilesDir(), "subtitle-languages").getAbsolutePath());
-            SubtitleLanguageModel.prepare(ctx, LibAvos::nativeSetSubtitleLanguageModel);
         } else {
             sIsAvailable = false;
         }
@@ -486,8 +484,12 @@ public class LibAvos {
 
     private static native void nativeSetSubtitlePath(String path);
 
+    /** Called only by the explicit analysis worker, never at playback startup. */
+    public static void prepareSubtitleLanguageModel(Context context) throws java.io.IOException {
+        nativeSetSubtitleLanguageModel(SubtitleLanguageModel.prepareBlocking(context));
+    }
+
     private static native void nativeSetSubtitleLanguageModel(String path);
-    private static native void nativeSetSubtitleLanguageCache(String path);
 
     private static native void nativeSetDecoder(int decoder);
 
