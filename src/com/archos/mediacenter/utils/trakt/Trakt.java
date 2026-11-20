@@ -154,6 +154,23 @@ public class Trakt {
                 builder.addNetworkInterceptor(logging).addInterceptor(logging);
             }
         }
+
+        // trakt-java's TraktV2Authenticator refreshes expired tokens by itself on a 401 and keeps the rotated
+        // tokens in memory only: persist them, otherwise the next Trakt instance reloads the already used
+        // refresh token from preferences, Trakt rejects it and the user gets signed out.
+        @Override
+        public synchronized retrofit2.Response<AccessToken> refreshAccessToken(String refreshToken) throws IOException {
+            retrofit2.Response<AccessToken> response = super.refreshAccessToken(refreshToken);
+            AccessToken body = response.body();
+            if (response.isSuccessful() && body != null) {
+                SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ArchosUtils.getGlobalContext());
+                setAccessToken(pref, body.access_token);
+                setRefreshToken(pref, body.refresh_token);
+                accessToken(body.access_token);
+                refreshToken(body.refresh_token);
+            }
+            return response;
+        }
     }
 
     private static MyTraktV2 mTraktV2;
@@ -683,9 +700,7 @@ public class Trakt {
             try {
                 retrofit2.Response<AccessToken> token = mTraktV2.refreshAccessToken(refreshToken);
                 if (token.isSuccessful() && token.body() != null) {
-                    mTraktV2.accessToken(token.body().access_token);
-                    setAccessToken(pref, token.body().access_token);
-                    setRefreshToken(pref, token.body().refresh_token);
+                    // new tokens already stored by MyTraktV2.refreshAccessToken
                     return true;
                 } else {
                     log.error("Failed refreshing token code={}, message={}", token.code(), token.message());
