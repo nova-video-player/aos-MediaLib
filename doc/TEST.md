@@ -235,6 +235,22 @@ list, but performs live TMDB searches. It therefore requires working network
 access and can fail because of API availability or changing upstream search
 results. Review the CSV when changing scraper matching behavior.
 
+### Trakt token refresh
+
+Class command:
+
+```bash
+./gradlew --offline :MediaLib:testDebugUnitTest \
+  --tests 'com.archos.mediacenter.utils.trakt.TraktTokenRefreshTest'
+```
+
+- `com.archos.mediacenter.utils.trakt.TraktTokenRefreshTest.tokensRotatedByTraktJavaAuthenticatorArePersisted`
+
+Answers the Trakt token endpoint locally with an OkHttp interceptor and does not
+contact Trakt. It verifies that tokens rotated by trakt-java's authenticator are
+stored in SharedPreferences; it does not cover the sign-in flow or a real token
+expiry.
+
 ## Required checks by change type
 
 - Any MediaLib change: run the full suite.
@@ -246,6 +262,7 @@ results. Review the CSV when changing scraper matching behavior.
 - Filename parsing or scraper change: run `MovieScraperFileTest`,
   `ScraperIntegrationTest`, and `TrackNamingTest` as applicable, then the full
   suite.
+- Trakt authentication change: run `TraktTokenRefreshTest` before the full suite.
 
 Do not treat Robolectric as proof of behavior specific to old platform SQLite,
 real storage exhaustion, process death, or actual network servers. Keep the unit
