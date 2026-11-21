@@ -71,10 +71,10 @@ import io.sentry.SentryLevel;
 public class VideoStoreImportService extends Service implements Handler.Callback, DefaultLifecycleObserver {
     private static final Logger log = LoggerFactory.getLogger(VideoStoreImportService.class);
 
-    // handler message ids
+    // handler message ids (package-visible for unit tests)
     private static final int MESSAGE_KILL = 1;
-    private static final int MESSAGE_IMPORT_FULL = 2;
-    private static final int MESSAGE_IMPORT_INCR = 3;
+    static final int MESSAGE_IMPORT_FULL = 2;
+    static final int MESSAGE_IMPORT_INCR = 3;
     private static final int MESSAGE_UPDATE_METADATA = 4;
     private static final int MESSAGE_REMOVE_FILE = 5;
     private static final int MESSAGE_HIDE_VOLUME = 6;
@@ -108,7 +108,23 @@ public class VideoStoreImportService extends Service implements Handler.Callback
 
     private static final int WINDOW_SIZE = 2000;
 
+    /** delay before running the import scheduled when the app returns to foreground */
+    private static final int RESUME_IMPORT_DELAY_MS = 1000;
+
     private final static boolean CRASH_ON_ERROR = false;
+
+    /**
+     * Picks which import message to schedule when the app returns to foreground.
+     * A full import is used when the db is dirty or on pre-Android-P devices, otherwise an
+     * incremental import is enough: it still re-evaluates the volume visibility flags
+     * (unhiding files of volumes that are mounted again) and imports new MediaStore rows.
+     * Package-visible for unit tests.
+     */
+    static int importMessageOnForeground(boolean dirty) {
+        if (dirty || Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
+            return MESSAGE_IMPORT_FULL;
+        return MESSAGE_IMPORT_INCR;
+    }
 
     private static volatile boolean isForeground = true;
 
@@ -909,12 +925,23 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         mVolumeState.registerReceiver();
         mVolumeState.updateState();
 
-        // Always trigger an import when returning to foreground to check volume states
-        // (checkDatabaseForUnmountedVolumes() is called during import via updateVolumeHiddenStatesByPath())
+        // Always trigger an import when returning to foreground to re-check the volume
+        // states (updateVolumeHiddenStates*() runs during every import): files that were
+        // hidden while a volume was unmounted (e.g. a USB drive powered off during device
+        // sleep) must be unhidden again when the volume is mounted, and MediaStore changes
+        // must be imported. Without this, after a sleep/wake cycle the video list could stay
+        // empty until a manual rescan when the db was not marked dirty (issue #1403).
         if (ImportState.VIDEO.isDirty()) {
             if (log.isDebugEnabled()) log.debug("onStart: onForeGround && ImportState.isDirty MESSAGE_IMPORT_FULL");
             ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStart", "app is foreground ImportState.isDirty MESSAGE_IMPORT_FULL");
             mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0).sendToTarget();
+        } else if (!mHandler.hasMessages(MESSAGE_IMPORT_FULL) && !mHandler.hasMessages(MESSAGE_IMPORT_INCR)) {
+            // no import already pending (e.g. the initial one from onStartCommand): schedule
+            // a (cheap) resume import so volume visibility is re-evaluated on every resume
+            int what = importMessageOnForeground(false);
+            if (log.isDebugEnabled()) log.debug("onStart: onForeGround, scheduling resume import what={}", what);
+            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStart", "app is foreground scheduling resume import what=" + what);
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(what, DONT_KILL_SELF, 0), RESUME_IMPORT_DELAY_MS);
         }
     }
 
