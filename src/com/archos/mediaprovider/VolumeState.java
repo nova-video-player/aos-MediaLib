@@ -30,6 +30,10 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /** volume mount state */
@@ -163,26 +167,8 @@ public class VolumeState {
         @Override
         public void onReceive(Context context, Intent intent) {
             String path = intent.getData().getPath();
-            ensureVolumes();
             if (log.isDebugEnabled()) log.debug("mUnMountReceiver: path={}", path);
-            boolean found = false;
-            for (Volume volume : mVolumes) {
-                if (volume.getMountPoint().equals(path)
-                        && volume.setMountState(false)) {
-                    handleChange(volume);
-                    found = true;
-                }
-            }
-
-            // If volume not in our tracked list (e.g., USB unmounted after app restart),
-            // create a temporary Volume object and notify observers
-            if (!found) {
-                if (log.isDebugEnabled()) log.debug("mUnMountReceiver: volume not in tracked list, creating temporary volume for: {}", path);
-                // Use a high index for temporary volumes to avoid conflicts
-                Volume tempVolume = new Volume(path, 1000);
-                tempVolume.setMountState(false);
-                handleChange(tempVolume);
-            }
+            handleMountBroadcast(path, false);
         }
     };
     private final BroadcastReceiver mMountReceiver = new BroadcastReceiver() {
@@ -190,27 +176,47 @@ public class VolumeState {
         public void onReceive(Context context, Intent intent) {
             String path = intent.getData().getPath();
             if (log.isDebugEnabled()) log.debug("mMountReceiver: path={}", path);
-            ensureVolumes();
-            boolean found = false;
-            for (Volume volume : mVolumes) {
-                if (volume.getMountPoint().equals(path)
-                        && volume.setMountState(true)) {
-                    handleChange(volume);
-                    found = true;
-                }
-            }
-
-            // If volume not in our tracked list (e.g., new USB mounted after app restart),
-            // create a temporary Volume object and notify observers
-            if (!found) {
-                if (log.isDebugEnabled()) log.debug("mMountReceiver: volume not in tracked list, creating temporary volume for: {}", path);
-                // Use a high index for temporary volumes to avoid conflicts
-                Volume tempVolume = new Volume(path, 1000);
-                tempVolume.setMountState(true);
-                handleChange(tempVolume);
-            }
+            handleMountBroadcast(path, true);
         }
     };
+
+    /**
+     * Handles a mount/unmount broadcast for a given path: refreshes the tracked volume
+     * list from the live ExtStorageManager lists, applies the broadcast state to the
+     * matching volume (even if it was not tracked yet, e.g. a USB drive that mounted
+     * while the app was in background during device sleep) and notifies observers of
+     * every volume whose mount state changed.
+     */
+    private void handleMountBroadcast(String path, boolean mounted) {
+        if (path == null || path.isEmpty()) return;
+        ensureVolumes();
+        List<Volume> tracked = new ArrayList<>(Arrays.asList(mVolumes));
+        Set<String> mountedNow = currentMountedVolumePaths();
+        // the broadcast is ground truth for this path even if the volume lists are not up to date yet
+        if (mounted) mountedNow.add(path); else mountedNow.remove(path);
+        List<Volume> changed = reconcileVolumeStates(tracked, mountedNow, true);
+        mVolumes = tracked.toArray(new Volume[0]);
+        // keep the old fallback: a broadcast path that is still not tracked (e.g. unmounted
+        // while the app was in background) must still notify observers
+        boolean pathTracked = false;
+        for (Volume volume : tracked) {
+            if (volume != null && volume.getMountPoint().equals(path)) {
+                pathTracked = true;
+                break;
+            }
+        }
+        if (!pathTracked) {
+            if (log.isDebugEnabled()) log.debug("handleMountBroadcast: {} not in tracked list, using temporary volume", path);
+            Volume tempVolume = new Volume(path, 1000);
+            tempVolume.mMounted = -1; // force the state change to be reported
+            tempVolume.setMountState(mounted);
+            changed.add(tempVolume);
+        }
+        if (!changed.isEmpty()) {
+            if (log.isDebugEnabled()) log.debug("handleMountBroadcast: path={} mounted={} -> {} changed volumes", path, mounted, changed.size());
+            handleChange(changed.toArray(new Volume[0]));
+        }
+    }
 
     public void registerReceiver() {
         if (!mMountReceiversRegistered) {
@@ -285,21 +291,118 @@ public class VolumeState {
 
     public void updateState() {
         ensureVolumes();
+        List<Volume> tracked = new ArrayList<>(Arrays.asList(mVolumes));
         ArrayList<Volume> updates = new ArrayList<Volume>();
-        for (Volume volume : mVolumes) {
-            boolean update;
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
-                update = volume.setMountState(evaluateMountState(ExtStorageManager.getVolumeState(volume.getMountPoint())));
-            else
-                update = volume.setMountState(true);
-
-            if (update)
-                updates.add(volume);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            for (Volume volume : tracked) {
+                if (volume.setMountState(evaluateMountState(ExtStorageManager.getVolumeState(volume.getMountPoint()))))
+                    updates.add(volume);
+            }
+        } else {
+            // M+: reconcile the tracked volumes against the live volume lists instead of
+            // assuming every volume is mounted. Assuming mounted used to hide the fact that
+            // a volume was unmounted during device sleep, and prevented the re-mount (USB
+            // drive back after wake) from being reported to observers when the mount
+            // broadcast was missed while the app was in background. As a result no import
+            // was triggered and files stayed hidden: the video library appeared empty until
+            // a manual rescan (issue #1403).
+            Set<String> mountedNow = currentMountedVolumePaths();
+            boolean scanConclusive = isScanConclusive(mountedNow, tracked);
+            updates.addAll(reconcileVolumeStates(tracked, mountedNow, scanConclusive));
         }
+        mVolumes = tracked.toArray(new Volume[0]);
         if (updates.size() > 0) {
             Volume[] updateArray = updates.toArray(new Volume[updates.size()]);
             handleChange(updateArray);
         }
+    }
+
+    /**
+     * @return the set of volume paths that are currently mounted: the primary external
+     * storage plus every volume currently listed by ExtStorageManager (the lists are
+     * refreshed from the system on each call). Overridable for tests.
+     */
+    protected Set<String> currentMountedVolumePaths() {
+        Set<String> mounted = new HashSet<>();
+        mounted.add(Environment.getExternalStorageDirectory().getPath());
+        ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager(); // refreshes the volume lists
+        addAllTo(mounted, storageManager.getExtSdcards());
+        addAllTo(mounted, storageManager.getExtUsbStorages());
+        addAllTo(mounted, storageManager.getExtOtherStorages());
+        return mounted;
+    }
+
+    private static void addAllTo(Set<String> target, List<String> paths) {
+        if (paths == null) return;
+        for (String path : paths) {
+            if (path != null && !path.isEmpty()) target.add(path);
+        }
+    }
+
+    /**
+     * A volume scan is conclusive when it lists at least one non-primary volume, or when
+     * no non-primary volume is tracked. If the scan comes back with only the primary
+     * storage while external volumes are tracked, the scan most likely failed (or all
+     * removable media is gone but we cannot tell the difference): in that case we must
+     * NOT mass-unmount the tracked volumes, otherwise the whole library of a USB drive
+     * would be hidden (empty video list, issue #1403).
+     */
+    private static boolean isScanConclusive(Set<String> mountedNow, List<Volume> tracked) {
+        String primary = Environment.getExternalStorageDirectory().getPath();
+        boolean onlyPrimaryMounted = true;
+        for (String path : mountedNow) {
+            if (!path.equals(primary)) {
+                onlyPrimaryMounted = false;
+                break;
+            }
+        }
+        if (!onlyPrimaryMounted) return true;
+        for (Volume volume : tracked) {
+            if (volume != null && !volume.getMountPoint().equals(primary))
+                return false; // external volume tracked but scan lists nothing: inconclusive
+        }
+        return true;
+    }
+
+    /**
+     * Reconciles the tracked volumes with the set of currently mounted volume paths.
+     * <ul>
+     * <li>volumes present in {@code currentlyMounted} but not tracked yet are appended to
+     * {@code tracked} and reported as mounted (this is how a volume that re-appeared after
+     * a device sleep/wake cycle is discovered even if its mount broadcast was missed);</li>
+     * <li>tracked volumes present in {@code currentlyMounted} are marked mounted;</li>
+     * <li>tracked volumes absent from {@code currentlyMounted} are marked unmounted when
+     * {@code scanConclusive} is true, otherwise their state is left untouched.</li>
+     * </ul>
+     *
+     * @return the volumes whose mount state changed, in order. Package-visible for tests.
+     */
+    static List<Volume> reconcileVolumeStates(List<Volume> tracked, Set<String> currentlyMounted, boolean scanConclusive) {
+        List<Volume> changed = new ArrayList<>();
+        if (tracked == null || currentlyMounted == null) return changed;
+        Set<String> trackedPaths = new HashSet<>();
+        for (Volume volume : tracked) {
+            if (volume != null) trackedPaths.add(volume.getMountPoint());
+        }
+        // discover newly mounted volumes first so they get tracked
+        for (String path : currentlyMounted) {
+            if (!trackedPaths.contains(path)) {
+                Volume volume = new Volume(path, tracked.size());
+                volume.mMounted = -1; // unknown until reconciled: guarantees the change is reported
+                tracked.add(volume);
+                if (volume.setMountState(true)) changed.add(volume);
+            }
+        }
+        // then update the state of every tracked volume
+        for (Volume volume : tracked) {
+            if (volume == null) continue;
+            if (currentlyMounted.contains(volume.getMountPoint())) {
+                if (volume.setMountState(true)) changed.add(volume);
+            } else if (scanConclusive) {
+                if (volume.setMountState(false)) changed.add(volume);
+            }
+        }
+        return changed;
     }
 
     private static boolean evaluateMountState(String state) {
