@@ -209,11 +209,7 @@ public class TraktService extends Service implements DefaultLifecycleObserver {
                 String traktAction = null;
                 int lastActivityFlag = 0;
 
-                if (mTrakt == null) {
-                    Trakt trakt = new Trakt(TraktService.this);
-                    if (trakt.isTraktV2Enabled(TraktService.this, PreferenceManager.getDefaultSharedPreferences(mContext)))
-                        mTrakt = trakt;
-                }
+                mTrakt = Trakt.currentLogin(mContext, mTrakt);
 
                 if (mTrakt != null) {
                 if (action.equals(INTENT_ACTION_WATCHING)) {

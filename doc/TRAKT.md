@@ -30,23 +30,13 @@ The sync state is stored in the video database with these key fields:
 ## Authentication Flow
 
 ### OAuth2 Implementation
-1. **Authorization**: User initiated via `TraktSigninDialogPreference`
-2. **Token Exchange**: Authorization code exchanged for access token via `Trakt.getAccessToken()`
-3. **Token Storage**: Access and refresh tokens stored in SharedPreferences
-4. **Token Refresh**: On a 401, trakt-java's `TraktV2Authenticator` refreshes the access token and retries the call. If that fails, `Trakt.exec()` calls `refreshAccessToken()` on 401/409 and retries once. Every refresh returns a new refresh token, so `MyTraktV2.refreshAccessToken()` stores the new access and refresh tokens in SharedPreferences and in the shared `TraktV2` instance for both paths; each new `Trakt` instance reloads them from SharedPreferences. Enforced by `TraktTokenRefreshTest`.
-5. **Refresh Failure**: If Trakt rejects the stored refresh token (400/401), `refreshAccessToken()` wipes the Trakt credentials and broadcasts `TRAKT_ISSUE_REFRESH_TOKEN` so the user is asked to sign in again. A network error (`IOException`) keeps the credentials.
+Phone sign-in exchanges an authorization code. TV sign-in polls with a device code. Both flows finish in `Trakt.completeSignIn()`, which stores the access and refresh tokens in a single preferences edit. Explicitly replacing a linked login clears its sync timestamps and queues a local Trakt flags wipe before the next sync. Settings observes whether credentials are present. Rotating a token for the same login preserves watched flags, collection flags and sync timestamps.
 
-### Authentication State Management
-```java
-// Check if Trakt is enabled
-boolean isEnabled = Trakt.isTraktV2Enabled(context, preferences);
+Each login has its own shared Trakt client. On a 401, trakt-java’s authenticator can refresh and retry the request. If Nova receives a 401 or 409, `Trakt.exec()` can refresh and retry once. Both paths persist the rotated pair together. Sign-out, account lock and explicit sign-in retire the previous client. A late refresh for that client cannot install tokens, clear the newer login, or prompt it to sign in again.
 
-// Refresh token automatically on auth errors
-if (response.code() == 401 || response.code() == 409) {
-    refreshAccessToken();
-    retry();
-}
-```
+For the current login, an unsuccessful HTTP response to Nova’s fallback refresh sends `TRAKT_ISSUE_REFRESH_TOKEN`. A 400 or 401 also clears credentials. A 503 keeps them. A missing refresh token sends the same prompt. An `IOException` keeps credentials and sends no prompt from the fallback.
+
+The regression tests in `TraktTokenRefreshTest` exercise both refresh callers with a local token endpoint. The Video module’s `TraktSettingsTest` rotates stored credentials while the Settings activity is open.
 
 ## Multi-Device Synchronization Strategy
 

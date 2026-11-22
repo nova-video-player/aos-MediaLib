@@ -244,12 +244,14 @@ Class command:
   --tests 'com.archos.mediacenter.utils.trakt.TraktTokenRefreshTest'
 ```
 
-- `com.archos.mediacenter.utils.trakt.TraktTokenRefreshTest.tokensRotatedByTraktJavaAuthenticatorArePersisted`
+The class uses a local token endpoint. It covers the following cases:
 
-Answers the Trakt token endpoint locally with an OkHttp interceptor and does not
-contact Trakt. It verifies that tokens rotated by trakt-java's authenticator are
-stored in SharedPreferences; it does not cover the sign-in flow or a real token
-expiry.
+- `tokensRotatedByTraktJavaAuthenticatorArePersisted` checks both stored tokens and preserved sync state.
+- `logoutDuringAutomaticRefreshKeepsCredentialsCleared` signs out before the successful response arrives.
+- `explicitReplacementWipesBeforeSyncAndRejectsOldSuccess` replaces the login during refresh and checks the order of service requests.
+- `rejectedFallbackCannotClearReplacementLoginOrPrompt` delivers a 400 for the previous login.
+- `rejectedCurrentRefreshClearsCredentialsAndPrompts` delivers a 401 for the current login.
+- `unavailableRefreshEndpointKeepsCredentialsAndPrompts` delivers a 503 for the current login.
 
 ## Required checks by change type
 

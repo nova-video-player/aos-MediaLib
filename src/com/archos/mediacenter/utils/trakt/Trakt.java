@@ -31,6 +31,7 @@ import com.archos.medialib.R;
 import com.archos.mediaprovider.video.VideoStore;
 import com.archos.mediascraper.AutoScrapeService;
 import com.uwetrottmann.trakt5.TraktV2;
+import com.uwetrottmann.trakt5.TraktV2Authenticator;
 import com.uwetrottmann.trakt5.entities.AccessToken;
 import com.uwetrottmann.trakt5.entities.BaseMovie;
 import com.uwetrottmann.trakt5.entities.BaseShow;
@@ -135,7 +136,11 @@ public class Trakt {
 
     private Exception mLastExecException = null;
 
+    // Only an explicit login or credential removal changes the session. Routine rotation keeps it.
+    private static volatile long sLoginGeneration;
+
     static class MyTraktV2 extends TraktV2 {
+        final long loginGeneration = sLoginGeneration;
 
         public MyTraktV2(String apiKey) {
             super(apiKey);
@@ -148,6 +153,13 @@ public class Trakt {
         @Override
         protected void setOkHttpClientDefaults(OkHttpClient.Builder builder) {
             super.setOkHttpClientDefaults(builder);
+            // The library writes its in-memory tokens after refreshAccessToken() returns.
+            // Serialize that write with other refreshes on this client.
+            builder.authenticator((route, response) -> {
+                synchronized (this) {
+                    return TraktV2Authenticator.handleAuthenticate(response, this);
+                }
+            });
             if (log.isTraceEnabled()) {
                 HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                 logging.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -155,25 +167,38 @@ public class Trakt {
             }
         }
 
-        // trakt-java's TraktV2Authenticator refreshes expired tokens by itself on a 401 and keeps the rotated
-        // tokens in memory only: persist them, otherwise the next Trakt instance reloads the already used
-        // refresh token from preferences, Trakt rejects it and the user gets signed out.
         @Override
         public synchronized retrofit2.Response<AccessToken> refreshAccessToken(String refreshToken) throws IOException {
+            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ArchosUtils.getGlobalContext());
+            synchronized (Trakt.class) {
+                checkRefreshOwner(pref, refreshToken);
+            }
             retrofit2.Response<AccessToken> response = super.refreshAccessToken(refreshToken);
-            AccessToken body = response.body();
-            if (response.isSuccessful() && body != null) {
-                SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ArchosUtils.getGlobalContext());
-                setAccessToken(pref, body.access_token);
-                setRefreshToken(pref, body.refresh_token);
-                accessToken(body.access_token);
-                refreshToken(body.refresh_token);
+            synchronized (Trakt.class) {
+                checkRefreshOwner(pref, refreshToken);
+                AccessToken body = response.body();
+                if (response.isSuccessful() && body != null) {
+                    accessToken(body.access_token);
+                    refreshToken(body.refresh_token);
+                    pref.edit().putString(KEY_TRAKT_ACCESS_TOKEN, body.access_token)
+                            .putString(KEY_TRAKT_REFRESH_TOKEN, body.refresh_token).apply();
+                }
             }
             return response;
         }
+
+        private void checkRefreshOwner(SharedPreferences pref, String refreshToken) throws SessionChangedException {
+            if (loginGeneration != sLoginGeneration || refreshToken == null
+                    || !refreshToken.equals(pref.getString(KEY_TRAKT_REFRESH_TOKEN, null))) {
+                throw new SessionChangedException();
+            }
+        }
     }
 
-    private static MyTraktV2 mTraktV2;
+    private static class SessionChangedException extends IOException {}
+
+    private static MyTraktV2 sSharedClient;
+    private final MyTraktV2 mTraktV2;
 
     public static void initApiKeys(Context context){
         API_KEY = context.getString(R.string.trakt_api_key);
@@ -272,25 +297,33 @@ public class Trakt {
         public void onResult(Result result);
     }
 
-    private static MyTraktV2 getTraktV2() {
-        if(mTraktV2 == null)
-            mTraktV2 = new MyTraktV2(API_KEY, API_SECRET, REDIRECT_URI);
-        return  mTraktV2;
+    private static synchronized MyTraktV2 getTraktV2() {
+        if (sSharedClient == null || sSharedClient.loginGeneration != sLoginGeneration) {
+            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ArchosUtils.getGlobalContext());
+            sSharedClient = new MyTraktV2(API_KEY, API_SECRET, REDIRECT_URI);
+            sSharedClient.accessToken(getAccessTokenFromPreferences(pref));
+            sSharedClient.refreshToken(pref.getString(KEY_TRAKT_REFRESH_TOKEN, null));
+        }
+        return sSharedClient;
     }
 
     public Trakt(Context context) {
-        mContext = context;
-        mTraktV2 = getTraktV2();
-        mTraktV2.accessToken(
-                getAccessTokenFromPreferences(
-                        PreferenceManager.getDefaultSharedPreferences(context)));
-        mTraktV2.refreshToken(
-                getRefreshTokenFromPreferences(
-                        PreferenceManager.getDefaultSharedPreferences(context)));
+        this(context, getTraktV2());
+    }
 
-        //test
-        //mTraktV2.setAccessToken("911cfb2e98258328fd95a12d593f6e72e5412cff3f4ce9772e2b3a7b8af121fd");
-        //setRefreshToken(PreferenceManager.getDefaultSharedPreferences(context),"");
+    Trakt(Context context, MyTraktV2 client) {
+        mContext = context;
+        mTraktV2 = client;
+    }
+
+    static synchronized Trakt currentLogin(Context context, Trakt previous) {
+        if (previous != null && previous.isCurrentLogin()) return previous;
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+        return isTraktV2Enabled(context, pref) ? new Trakt(context) : null;
+    }
+
+    private boolean isCurrentLogin() {
+        return mTraktV2.loginGeneration == sLoginGeneration;
     }
 
     public void setListener(Listener listener) {
@@ -672,50 +705,27 @@ public class Trakt {
         return handleRet(null, null, playbackResponse, ObjectType.PLAYBACK_RESPONSE);
     }
 
-    public static void setRefreshToken(SharedPreferences sharedPreferences, String refreshToken) {
-        Editor editor = sharedPreferences.edit();
-        if (log.isDebugEnabled()) log.debug("setRefreshToken: refresh token {}", refreshToken != null ? "updated" : "cleared");
-        if (refreshToken != null) {
-            editor.putString(KEY_TRAKT_REFRESH_TOKEN, refreshToken);
-        } else {
-            editor.remove(KEY_TRAKT_REFRESH_TOKEN);
-        }
-        editor.apply();
-    }
-
-    private String getRefreshTokenFromPreferences(SharedPreferences defaultSharedPreferences) {
-        return defaultSharedPreferences.getString(KEY_TRAKT_REFRESH_TOKEN,"");
-    }
-
     private boolean refreshAccessToken() {
-        if (log.isDebugEnabled()) log.debug("refreshAccessToken()");
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
-        String refreshToken = getRefreshTokenFromPreferences(pref);
-        if(refreshToken==null|| refreshToken.isEmpty()){
-            Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
-            intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
-            mContext.sendBroadcast(intent);
-        }
-        else {
+        synchronized (mTraktV2) {
+            String refreshToken = mTraktV2.refreshToken();
             try {
-                retrofit2.Response<AccessToken> token = mTraktV2.refreshAccessToken(refreshToken);
-                if (token.isSuccessful() && token.body() != null) {
-                    // new tokens already stored by MyTraktV2.refreshAccessToken
-                    return true;
-                } else {
-                    log.error("Failed refreshing token code={}, message={}", token.code(), token.message());
-                    // If refresh token is definitively invalid (400 Bad Request or 401 Unauthorized), clear it
-                    if (token.code() == 400 || token.code() == 401) {
-                        wipePreferences(pref, false);
-                    }
+                boolean rejected = false;
+                if (refreshToken != null && !refreshToken.isEmpty()) {
+                    retrofit2.Response<AccessToken> token = mTraktV2.refreshAccessToken(refreshToken);
+                    if (token.isSuccessful() && token.body() != null) return true;
+                    rejected = token.code() == 400 || token.code() == 401;
+                    log.error("Failed refreshing token code={}", token.code());
+                }
+                synchronized (Trakt.class) {
+                    if (!isCurrentLogin()) return false;
+                    if (rejected) wipePreferences(pref, false);
                     Intent intent = new Intent(TRAKT_ISSUE_REFRESH_TOKEN);
-                    intent.setPackage(ArchosUtils.getGlobalContext().getPackageName());
+                    intent.setPackage(mContext.getPackageName());
                     mContext.sendBroadcast(intent);
-                    return false;
                 }
             } catch (IOException ioe) {
-                log.error("getAccessToken: caught IOException {}", ioe);
-                return false;
+                log.debug("Trakt token refresh did not complete", ioe);
             }
         }
         return false;
@@ -915,7 +925,9 @@ public class Trakt {
     public <T> T exec(retrofit2.Call<T> call, int remaining) {
         if (log.isDebugEnabled()) log.debug("exec: call, remaining trials={}", remaining);
         try {
+            if (!isCurrentLogin()) throw new AuthentificationError();
             retrofit2.Response<T> res = call.execute();
+            if (!isCurrentLogin()) throw new AuthentificationError();
             if (!res.isSuccessful()) {
                 log.error("exec request error code is {}", res.code(), new Throwable());
                     // TODO check this new retry case with 409
@@ -941,6 +953,9 @@ public class Trakt {
                 }
             }
             return res.body();
+        } catch (SessionChangedException e) {
+            mLastExecException = new AuthentificationError();
+            return null;
         } catch(AuthentificationError e) {
             mLastExecException = e;
             return null;
@@ -1116,14 +1131,38 @@ public class Trakt {
         editor.apply();
     }
 
-    public static void setAccessToken(SharedPreferences pref, String accessToken) {
-        Editor editor = pref.edit();
-        if (accessToken != null) {
-            editor.putString(KEY_TRAKT_ACCESS_TOKEN, accessToken);
-        } else {
-            editor.remove(KEY_TRAKT_ACCESS_TOKEN);
-        }
+    /** Legacy callers store login credentials separately. New callers use completeSignIn. */
+    @Deprecated
+    public static synchronized void setAccessToken(SharedPreferences pref, String token) {
+        sLoginGeneration++;
+        Editor editor = pref.edit().putString(KEY_TRAKT_ACCESS_TOKEN, token);
+        if (token == null) editor.remove(KEY_TRAKT_REFRESH_TOKEN);
         editor.apply();
+    }
+
+    @Deprecated
+    public static synchronized void setRefreshToken(SharedPreferences pref, String token) {
+        sLoginGeneration++;
+        pref.edit().putString(KEY_TRAKT_REFRESH_TOKEN, token).apply();
+    }
+
+    /** Complete an explicit OAuth login. Replacing an existing link starts a fresh sync. */
+    public static synchronized void completeSignIn(Context context, accessToken token) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+        Editor editor = pref.edit();
+        boolean replacingLogin = getAccessTokenFromPreferences(pref) != null;
+        if (replacingLogin) {
+            clearTraktSyncState(editor);
+            editor.remove(TraktService.PREFERENCE_TRAKT_FIRST_SYNC_DONE);
+            new TraktService.Client(context, null, false).wipe();
+        }
+        sLoginGeneration++;
+        editor.putString(KEY_TRAKT_ACCESS_TOKEN, token.access_token)
+                .putString(KEY_TRAKT_REFRESH_TOKEN, token.refresh_token)
+                .putBoolean(KEY_TRAKT_ACCOUNT_LOCKED, false)
+                .putBoolean(KEY_TRAKT_SYNC_COLLECTION, false)
+                .apply();
+        if (replacingLogin) new TraktService.Client(context, null, false).sync(0);
     }
 
     public static String getAccessTokenFromPreferences(SharedPreferences pref) {
@@ -1204,9 +1243,10 @@ public class Trakt {
      * Disables Trakt by clearing all authentication tokens and marking account as locked.
      * User must re-authenticate to enable Trakt again.
      */
-    public static void disableTraktOnAccountLock(Context context, SharedPreferences preferences) {
+    public static synchronized void disableTraktOnAccountLock(Context context, SharedPreferences preferences) {
         log.warn("disableTraktOnAccountLock: Disabling Trakt due to account lock (423)");
         Editor editor = preferences.edit();
+        sLoginGeneration++;
         // Clear authentication tokens
         editor.remove(KEY_TRAKT_ACCESS_TOKEN);
         editor.remove(KEY_TRAKT_REFRESH_TOKEN);
@@ -1274,9 +1314,10 @@ public class Trakt {
         return preferences.getBoolean(KEY_TRAKT_SYNC_COLLECTION, false);
     }
 
-    public static void wipePreferences(SharedPreferences pref, boolean userChanged) {
+    public static synchronized void wipePreferences(SharedPreferences pref, boolean userChanged) {
         Editor editor = pref.edit();
         if (!userChanged) {
+            sLoginGeneration++;
             editor.remove(Trakt.KEY_TRAKT_USER);
             editor.remove(Trakt.KEY_TRAKT_SHA1);
             editor.remove(Trakt.KEY_TRAKT_LIVE_SCROBBLING);
