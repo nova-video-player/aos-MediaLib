@@ -1911,7 +1911,7 @@ public class VideoStoreImportImpl {
 
         // Hide files from unmounted volumes
         if (!unmountedVolumePaths.isEmpty()) {
-            hideFilesFromVolumes(unmountedVolumePaths, now);
+            hideFilesFromVolumes(mCr, unmountedVolumePaths, now);
         }
 
         // Unhide files from mounted volumes, but only those MediaStore currently confirms are
@@ -1938,24 +1938,20 @@ public class VideoStoreImportImpl {
     }
 
 
-    private void hideFilesFromVolumes(List<String> volumePaths, long timestamp) {
-        if (volumePaths.isEmpty()) return;
+    static int hideFilesFromVolumes(ContentResolver cr, List<String> volumePaths, long timestamp) {
+        if (volumePaths.isEmpty()) return 0;
 
         ContentValues cv = new ContentValues();
         cv.put("volume_hidden", timestamp);
-
-        StringBuilder where = new StringBuilder("volume_hidden = 0 AND (");
-        boolean first = true;
+        List<String> matches = new ArrayList<>();
+        List<String> prefixes = new ArrayList<>();
         for (String path : volumePaths) {
-            if (!first) where.append(" OR ");
-            where.append("_data LIKE '").append(path).append("/%'");
-            first = false;
+            // Include the slash so a volume with the same leading characters is untouched.
+            matches.add("instr(_data, ?) = 1");
+            prefixes.add(path + "/");
         }
-        where.append(")");
-
-        // Direct UPDATE is efficient; no need for windowing (UPDATE doesn't return cursors)
-        int hidden = mCr.update(VideoStoreInternal.FILES_IMPORT, cv, where.toString(), null);
-        if (log.isDebugEnabled()) log.debug("hideFilesFromVolumes: hidden {} files from unmounted volumes", hidden);
+        String where = "volume_hidden = 0 AND (" + TextUtils.join(" OR ", matches) + ")";
+        return cr.update(VideoStoreInternal.FILES_IMPORT, cv, where, prefixes.toArray(new String[0]));
     }
 
     static void unhideFilesFromVolumes(ContentResolver cr, List<String> volumePaths, String existingFiles) {

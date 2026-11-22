@@ -15,7 +15,11 @@
 package com.archos.mediaprovider;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
@@ -30,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
 
 /**
  * Regression tests for issue #1403: after a device sleep/wake cycle the USB volume is
@@ -133,41 +139,39 @@ public class VolumeStateTest {
     }
 
     @Test
-    public void updateStateNotifiesObserversOnSleepAndWake() {
+    public void startupWithUsbAndEjectDuringPartialScanLeaveOtherDriveMounted() {
         Context context = ApplicationProvider.getApplicationContext();
-        final String primary = Environment.getExternalStorageDirectory().getPath();
-        final Set<String> mountedNow = new HashSet<>(Collections.singleton(primary));
-        VolumeState volumeState = new VolumeState(context) {
+        String primary = Environment.getExternalStorageDirectory().getPath();
+        String secondUsb = "/storage/ABCD-1234";
+        Set<String> paths = new LinkedHashSet<>(Arrays.asList(primary, USB, secondUsb));
+        VolumeState state = new VolumeState(context) {
             @Override
             protected Set<String> currentMountedVolumePaths() {
-                return new HashSet<>(mountedNow);
+                return paths;
             }
         };
-        Volume primaryVolume = new Volume(primary, 0);
-        Volume usbVolume = new Volume(USB, 1);
-        volumeState.mVolumes = new Volume[]{primaryVolume, usbVolume};
+        List<Volume> changes = new ArrayList<>();
+        VolumeState.Observer observer = volumes -> Collections.addAll(changes, volumes);
+        state.addObserver(observer);
+        state.registerReceiver(new Handler(Looper.getMainLooper()));
+        try {
+            state.updateState();
+            assertTrue("initial snapshot must not trigger an import", changes.isEmpty());
+            assertEquals(primary, state.mVolumes[0].getMountPoint());
+            Volume second = state.mVolumes[2];
 
-        final List<Volume[]> events = new ArrayList<>();
-        volumeState.addObserver(volumes -> events.add(volumes));
-
-        // device sleeps: USB disappears from the mounted lists -> unmount notification
-        volumeState.updateState();
-        assertEquals("unmount during sleep must notify observers", 1, events.size());
-        assertEquals(1, events.get(0).length);
-        assertSame(usbVolume, events.get(0)[0]);
-        assertFalse(events.get(0)[0].getMountState());
-
-        // device wakes: USB is back -> mount notification driving the unhide import
-        mountedNow.add(USB);
-        volumeState.updateState();
-        assertEquals("re-mount after wake must notify observers (issue #1403)", 2, events.size());
-        assertEquals(1, events.get(1).length);
-        assertSame(usbVolume, events.get(1)[0]);
-        assertTrue(events.get(1)[0].getMountState());
-
-        // nothing changed anymore -> no further notification
-        volumeState.updateState();
-        assertEquals(2, events.size());
+            paths.clear();
+            paths.add(primary);
+            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_EJECT, Uri.parse("file://" + USB)));
+            shadowOf(Looper.getMainLooper()).idle();
+            assertEquals(1, changes.size());
+            assertEquals(USB, changes.get(0).getMountPoint());
+            assertFalse(changes.get(0).getMountState());
+            assertTrue(second.getMountState());
+        } finally {
+            state.unregisterReceiver();
+            state.removeObserver(observer);
+        }
     }
 
     @Test

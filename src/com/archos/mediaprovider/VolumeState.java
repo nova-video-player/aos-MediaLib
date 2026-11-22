@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.storage.StorageManager;
 
 import com.archos.filecorelibrary.ExtStorageManager;
@@ -32,6 +33,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -56,7 +58,7 @@ public class VolumeState {
             mMountPoint = mountPoint;
             Integer storageId = storageManager.getStorageId(mountPoint);
             if (storageId == null) {
-                mStorageId = getStorageId(volumeIndex);;
+                mStorageId = getStorageId(volumeIndex);
             } else {
                 mStorageId = storageId;
             }
@@ -143,93 +145,63 @@ public class VolumeState {
     }
 
     // -------------------------BROADCAST RECEIVER STUFF ------------------- //
-    private static final IntentFilter INTENT_FILTER_UNMOUNT = new IntentFilter();
+    private static final IntentFilter MOUNT_EVENTS = new IntentFilter();
     static {
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_CHECKING);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_EJECT);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_NOFS);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_REMOVED);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_SHARED);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_UNMOUNTABLE);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
-        INTENT_FILTER_UNMOUNT.addDataScheme("file");
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_MOUNTED);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_CHECKING);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_EJECT);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_NOFS);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_REMOVED);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_SHARED);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_UNMOUNTABLE);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
+        MOUNT_EVENTS.addDataScheme("file");
     }
 
-    private static final IntentFilter INTENT_FILTER_MOUNT = new IntentFilter();
-    static {
-        INTENT_FILTER_MOUNT.addAction(Intent.ACTION_MEDIA_MOUNTED);
-        INTENT_FILTER_MOUNT.addDataScheme("file");
-    }
+    private BroadcastReceiver mMountReceiver;
 
-    private boolean mMountReceiversRegistered;
-    private final BroadcastReceiver mUnMountReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String path = intent.getData().getPath();
-            if (log.isDebugEnabled()) log.debug("mUnMountReceiver: path={}", path);
-            handleMountBroadcast(path, false);
-        }
-    };
-    private final BroadcastReceiver mMountReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String path = intent.getData().getPath();
-            if (log.isDebugEnabled()) log.debug("mMountReceiver: path={}", path);
-            handleMountBroadcast(path, true);
-        }
-    };
-
-    /**
-     * Handles a mount/unmount broadcast for a given path: refreshes the tracked volume
-     * list from the live ExtStorageManager lists, applies the broadcast state to the
-     * matching volume (even if it was not tracked yet, e.g. a USB drive that mounted
-     * while the app was in background during device sleep) and notifies observers of
-     * every volume whose mount state changed.
-     */
     private void handleMountBroadcast(String path, boolean mounted) {
         if (path == null || path.isEmpty()) return;
         ensureVolumes();
-        List<Volume> tracked = new ArrayList<>(Arrays.asList(mVolumes));
-        Set<String> mountedNow = currentMountedVolumePaths();
-        // the broadcast is ground truth for this path even if the volume lists are not up to date yet
-        if (mounted) mountedNow.add(path); else mountedNow.remove(path);
-        List<Volume> changed = reconcileVolumeStates(tracked, mountedNow, true);
-        mVolumes = tracked.toArray(new Volume[0]);
-        // keep the old fallback: a broadcast path that is still not tracked (e.g. unmounted
-        // while the app was in background) must still notify observers
-        boolean pathTracked = false;
-        for (Volume volume : tracked) {
-            if (volume != null && volume.getMountPoint().equals(path)) {
-                pathTracked = true;
-                break;
+        for (Volume volume : mVolumes) {
+            if (path.equals(volume.getMountPoint())) {
+                volume.setMountState(mounted);
+                // A missed eject can leave the cache mounted while the database is hidden.
+                // Forward an explicit mount even when the cached state already matches.
+                handleChange(volume);
+                return;
             }
         }
-        if (!pathTracked) {
-            if (log.isDebugEnabled()) log.debug("handleMountBroadcast: {} not in tracked list, using temporary volume", path);
-            Volume tempVolume = new Volume(path, 1000);
-            tempVolume.mMounted = -1; // force the state change to be reported
-            tempVolume.setMountState(mounted);
-            changed.add(tempVolume);
+
+        Volume volume = new Volume(path, mVolumes.length);
+        volume.setMountState(mounted);
+        if (mounted) {
+            mVolumes = Arrays.copyOf(mVolumes, mVolumes.length + 1);
+            mVolumes[mVolumes.length - 1] = volume;
         }
-        if (!changed.isEmpty()) {
-            if (log.isDebugEnabled()) log.debug("handleMountBroadcast: path={} mounted={} -> {} changed volumes", path, mounted, changed.size());
-            handleChange(changed.toArray(new Volume[0]));
-        }
+        handleChange(volume);
     }
 
-    public void registerReceiver() {
-        if (!mMountReceiversRegistered) {
-            mContext.registerReceiver(mMountReceiver, INTENT_FILTER_MOUNT);
-            mContext.registerReceiver(mUnMountReceiver, INTENT_FILTER_UNMOUNT);
-            mMountReceiversRegistered = true;
-        }
+    public void registerReceiver(Handler worker) {
+        if (mMountReceiver != null) return;
+        mMountReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getData() == null) return;
+                String path = intent.getData().getPath();
+                boolean mounted = Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction());
+                // Finish broadcast delivery promptly even if the worker is busy importing.
+                worker.post(() -> handleMountBroadcast(path, mounted));
+            }
+        };
+        mContext.registerReceiver(mMountReceiver, MOUNT_EVENTS);
     }
+
     public void unregisterReceiver() {
-        if (mMountReceiversRegistered) {
+        if (mMountReceiver != null) {
             mContext.unregisterReceiver(mMountReceiver);
-            mContext.unregisterReceiver(mUnMountReceiver);
-            mMountReceiversRegistered = false;
+            mMountReceiver = null;
         }
     }
 
@@ -260,37 +232,20 @@ public class VolumeState {
     private boolean ensureVolumesV23() {
         if (mVolumes != null) return false;
 
-        ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager();
-        int i = 0;
-        ArrayList<Volume> vols = new ArrayList<>();
-        for(String s : storageManager.getExtSdcards()) {
-            vols.add(new Volume(s, i));
-            if (log.isDebugEnabled()) log.debug("ensureVolumesV23: add volume {}", s);
-            i++;
-        }
-        for(String s : storageManager.getExtUsbStorages()) {
-            vols.add(new Volume(s, i));
-            if (log.isDebugEnabled()) log.debug("ensureVolumesV23: add volume {}", s);
-            i++;
-        }
-        for(String s : storageManager.getExtOtherStorages()) {
-            vols.add(new Volume(s, i));
-            if (log.isDebugEnabled()) log.debug("ensureVolumesV23: add volume {}", s);
-            i++;
-        }
-        if (vols.size() > 0) {
-            mVolumes = new Volume[vols.size()];
-            mVolumes = vols.toArray(mVolumes);
-        }
-        else {
-            mVolumes = new Volume[1];
-            mVolumes[0] = new Volume(Environment.getExternalStorageDirectory().getPath(), 0);
+        // Use the same ordered snapshot for initialization and subsequent refreshes.
+        // Primary storage occupies index zero even when USB is attached at startup.
+        Set<String> mounted = currentMountedVolumePaths();
+        mVolumes = new Volume[mounted.size()];
+        int index = 0;
+        for (String path : mounted) {
+            mVolumes[index] = new Volume(path, index);
+            index++;
         }
         return true;
     }
 
     public void updateState() {
-        ensureVolumes();
+        if (ensureVolumes() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) return;
         List<Volume> tracked = new ArrayList<>(Arrays.asList(mVolumes));
         ArrayList<Volume> updates = new ArrayList<Volume>();
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
@@ -323,7 +278,7 @@ public class VolumeState {
      * refreshed from the system on each call). Overridable for tests.
      */
     protected Set<String> currentMountedVolumePaths() {
-        Set<String> mounted = new HashSet<>();
+        Set<String> mounted = new LinkedHashSet<>();
         mounted.add(Environment.getExternalStorageDirectory().getPath());
         ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager(); // refreshes the volume lists
         addAllTo(mounted, storageManager.getExtSdcards());
