@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.storage.StorageManager;
 
 import com.archos.filecorelibrary.ExtStorageManager;
@@ -30,6 +31,11 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /** volume mount state */
@@ -52,7 +58,7 @@ public class VolumeState {
             mMountPoint = mountPoint;
             Integer storageId = storageManager.getStorageId(mountPoint);
             if (storageId == null) {
-                mStorageId = getStorageId(volumeIndex);;
+                mStorageId = getStorageId(volumeIndex);
             } else {
                 mStorageId = storageId;
             }
@@ -139,91 +145,63 @@ public class VolumeState {
     }
 
     // -------------------------BROADCAST RECEIVER STUFF ------------------- //
-    private static final IntentFilter INTENT_FILTER_UNMOUNT = new IntentFilter();
+    private static final IntentFilter MOUNT_EVENTS = new IntentFilter();
     static {
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_CHECKING);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_EJECT);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_NOFS);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_REMOVED);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_SHARED);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_UNMOUNTABLE);
-        INTENT_FILTER_UNMOUNT.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
-        INTENT_FILTER_UNMOUNT.addDataScheme("file");
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_MOUNTED);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_CHECKING);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_EJECT);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_NOFS);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_REMOVED);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_SHARED);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_UNMOUNTABLE);
+        MOUNT_EVENTS.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
+        MOUNT_EVENTS.addDataScheme("file");
     }
 
-    private static final IntentFilter INTENT_FILTER_MOUNT = new IntentFilter();
-    static {
-        INTENT_FILTER_MOUNT.addAction(Intent.ACTION_MEDIA_MOUNTED);
-        INTENT_FILTER_MOUNT.addDataScheme("file");
+    private BroadcastReceiver mMountReceiver;
+
+    private void handleMountBroadcast(String path, boolean mounted) {
+        if (path == null || path.isEmpty()) return;
+        ensureVolumes();
+        for (Volume volume : mVolumes) {
+            if (path.equals(volume.getMountPoint())) {
+                volume.setMountState(mounted);
+                // A missed eject can leave the cache mounted while the database is hidden.
+                // Forward an explicit mount even when the cached state already matches.
+                handleChange(volume);
+                return;
+            }
+        }
+
+        Volume volume = new Volume(path, mVolumes.length);
+        volume.setMountState(mounted);
+        if (mounted) {
+            mVolumes = Arrays.copyOf(mVolumes, mVolumes.length + 1);
+            mVolumes[mVolumes.length - 1] = volume;
+        }
+        handleChange(volume);
     }
 
-    private boolean mMountReceiversRegistered;
-    private final BroadcastReceiver mUnMountReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String path = intent.getData().getPath();
-            ensureVolumes();
-            if (log.isDebugEnabled()) log.debug("mUnMountReceiver: path={}", path);
-            boolean found = false;
-            for (Volume volume : mVolumes) {
-                if (volume.getMountPoint().equals(path)
-                        && volume.setMountState(false)) {
-                    handleChange(volume);
-                    found = true;
-                }
+    public void registerReceiver(Handler worker) {
+        if (mMountReceiver != null) return;
+        mMountReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getData() == null) return;
+                String path = intent.getData().getPath();
+                boolean mounted = Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction());
+                // Finish broadcast delivery promptly even if the worker is busy importing.
+                worker.post(() -> handleMountBroadcast(path, mounted));
             }
-
-            // If volume not in our tracked list (e.g., USB unmounted after app restart),
-            // create a temporary Volume object and notify observers
-            if (!found) {
-                if (log.isDebugEnabled()) log.debug("mUnMountReceiver: volume not in tracked list, creating temporary volume for: {}", path);
-                // Use a high index for temporary volumes to avoid conflicts
-                Volume tempVolume = new Volume(path, 1000);
-                tempVolume.setMountState(false);
-                handleChange(tempVolume);
-            }
-        }
-    };
-    private final BroadcastReceiver mMountReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String path = intent.getData().getPath();
-            if (log.isDebugEnabled()) log.debug("mMountReceiver: path={}", path);
-            ensureVolumes();
-            boolean found = false;
-            for (Volume volume : mVolumes) {
-                if (volume.getMountPoint().equals(path)
-                        && volume.setMountState(true)) {
-                    handleChange(volume);
-                    found = true;
-                }
-            }
-
-            // If volume not in our tracked list (e.g., new USB mounted after app restart),
-            // create a temporary Volume object and notify observers
-            if (!found) {
-                if (log.isDebugEnabled()) log.debug("mMountReceiver: volume not in tracked list, creating temporary volume for: {}", path);
-                // Use a high index for temporary volumes to avoid conflicts
-                Volume tempVolume = new Volume(path, 1000);
-                tempVolume.setMountState(true);
-                handleChange(tempVolume);
-            }
-        }
-    };
-
-    public void registerReceiver() {
-        if (!mMountReceiversRegistered) {
-            mContext.registerReceiver(mMountReceiver, INTENT_FILTER_MOUNT);
-            mContext.registerReceiver(mUnMountReceiver, INTENT_FILTER_UNMOUNT);
-            mMountReceiversRegistered = true;
-        }
+        };
+        mContext.registerReceiver(mMountReceiver, MOUNT_EVENTS);
     }
+
     public void unregisterReceiver() {
-        if (mMountReceiversRegistered) {
+        if (mMountReceiver != null) {
             mContext.unregisterReceiver(mMountReceiver);
-            mContext.unregisterReceiver(mUnMountReceiver);
-            mMountReceiversRegistered = false;
+            mMountReceiver = null;
         }
     }
 
@@ -254,52 +232,132 @@ public class VolumeState {
     private boolean ensureVolumesV23() {
         if (mVolumes != null) return false;
 
-        ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager();
-        int i = 0;
-        ArrayList<Volume> vols = new ArrayList<>();
-        for(String s : storageManager.getExtSdcards()) {
-            vols.add(new Volume(s, i));
-            if (log.isDebugEnabled()) log.debug("ensureVolumesV23: add volume {}", s);
-            i++;
-        }
-        for(String s : storageManager.getExtUsbStorages()) {
-            vols.add(new Volume(s, i));
-            if (log.isDebugEnabled()) log.debug("ensureVolumesV23: add volume {}", s);
-            i++;
-        }
-        for(String s : storageManager.getExtOtherStorages()) {
-            vols.add(new Volume(s, i));
-            if (log.isDebugEnabled()) log.debug("ensureVolumesV23: add volume {}", s);
-            i++;
-        }
-        if (vols.size() > 0) {
-            mVolumes = new Volume[vols.size()];
-            mVolumes = vols.toArray(mVolumes);
-        }
-        else {
-            mVolumes = new Volume[1];
-            mVolumes[0] = new Volume(Environment.getExternalStorageDirectory().getPath(), 0);
+        // Use the same ordered snapshot for initialization and subsequent refreshes.
+        // Primary storage occupies index zero even when USB is attached at startup.
+        Set<String> mounted = currentMountedVolumePaths();
+        mVolumes = new Volume[mounted.size()];
+        int index = 0;
+        for (String path : mounted) {
+            mVolumes[index] = new Volume(path, index);
+            index++;
         }
         return true;
     }
 
     public void updateState() {
-        ensureVolumes();
+        if (ensureVolumes() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) return;
+        List<Volume> tracked = new ArrayList<>(Arrays.asList(mVolumes));
         ArrayList<Volume> updates = new ArrayList<Volume>();
-        for (Volume volume : mVolumes) {
-            boolean update;
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
-                update = volume.setMountState(evaluateMountState(ExtStorageManager.getVolumeState(volume.getMountPoint())));
-            else
-                update = volume.setMountState(true);
-
-            if (update)
-                updates.add(volume);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            for (Volume volume : tracked) {
+                if (volume.setMountState(evaluateMountState(ExtStorageManager.getVolumeState(volume.getMountPoint()))))
+                    updates.add(volume);
+            }
+        } else {
+            // M+: reconcile the tracked volumes against the live volume lists instead of
+            // assuming every volume is mounted. Assuming mounted used to hide the fact that
+            // a volume was unmounted during device sleep, and prevented the re-mount (USB
+            // drive back after wake) from being reported to observers when the mount
+            // broadcast was missed while the app was in background. As a result no import
+            // was triggered and files stayed hidden: the video library appeared empty until
+            // a manual rescan (issue #1403).
+            Set<String> mountedNow = currentMountedVolumePaths();
+            boolean scanConclusive = isScanConclusive(mountedNow, tracked);
+            updates.addAll(reconcileVolumeStates(tracked, mountedNow, scanConclusive));
         }
+        mVolumes = tracked.toArray(new Volume[0]);
         if (updates.size() > 0) {
             Volume[] updateArray = updates.toArray(new Volume[updates.size()]);
             handleChange(updateArray);
         }
+    }
+
+    /**
+     * @return the set of volume paths that are currently mounted: the primary external
+     * storage plus every volume currently listed by ExtStorageManager (the lists are
+     * refreshed from the system on each call). Overridable for tests.
+     */
+    protected Set<String> currentMountedVolumePaths() {
+        Set<String> mounted = new LinkedHashSet<>();
+        mounted.add(Environment.getExternalStorageDirectory().getPath());
+        ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager(); // refreshes the volume lists
+        addAllTo(mounted, storageManager.getExtSdcards());
+        addAllTo(mounted, storageManager.getExtUsbStorages());
+        addAllTo(mounted, storageManager.getExtOtherStorages());
+        return mounted;
+    }
+
+    private static void addAllTo(Set<String> target, List<String> paths) {
+        if (paths == null) return;
+        for (String path : paths) {
+            if (path != null && !path.isEmpty()) target.add(path);
+        }
+    }
+
+    /**
+     * A volume scan is conclusive when it lists at least one non-primary volume, or when
+     * no non-primary volume is tracked. If the scan comes back with only the primary
+     * storage while external volumes are tracked, the scan most likely failed (or all
+     * removable media is gone but we cannot tell the difference): in that case we must
+     * NOT mass-unmount the tracked volumes, otherwise the whole library of a USB drive
+     * would be hidden (empty video list, issue #1403).
+     */
+    private static boolean isScanConclusive(Set<String> mountedNow, List<Volume> tracked) {
+        String primary = Environment.getExternalStorageDirectory().getPath();
+        boolean onlyPrimaryMounted = true;
+        for (String path : mountedNow) {
+            if (!path.equals(primary)) {
+                onlyPrimaryMounted = false;
+                break;
+            }
+        }
+        if (!onlyPrimaryMounted) return true;
+        for (Volume volume : tracked) {
+            if (volume != null && !volume.getMountPoint().equals(primary))
+                return false; // external volume tracked but scan lists nothing: inconclusive
+        }
+        return true;
+    }
+
+    /**
+     * Reconciles the tracked volumes with the set of currently mounted volume paths.
+     * <ul>
+     * <li>volumes present in {@code currentlyMounted} but not tracked yet are appended to
+     * {@code tracked} and reported as mounted (this is how a volume that re-appeared after
+     * a device sleep/wake cycle is discovered even if its mount broadcast was missed);</li>
+     * <li>tracked volumes present in {@code currentlyMounted} are marked mounted;</li>
+     * <li>tracked volumes absent from {@code currentlyMounted} are marked unmounted when
+     * {@code scanConclusive} is true, otherwise their state is left untouched.</li>
+     * </ul>
+     *
+     * @return the volumes whose mount state changed, in order. Package-visible for tests.
+     */
+    static List<Volume> reconcileVolumeStates(List<Volume> tracked, Set<String> currentlyMounted, boolean scanConclusive) {
+        List<Volume> changed = new ArrayList<>();
+        if (tracked == null || currentlyMounted == null) return changed;
+        Set<String> trackedPaths = new HashSet<>();
+        for (Volume volume : tracked) {
+            if (volume != null) trackedPaths.add(volume.getMountPoint());
+        }
+        // discover newly mounted volumes first so they get tracked
+        for (String path : currentlyMounted) {
+            if (!trackedPaths.contains(path)) {
+                Volume volume = new Volume(path, tracked.size());
+                volume.mMounted = -1; // unknown until reconciled: guarantees the change is reported
+                tracked.add(volume);
+                if (volume.setMountState(true)) changed.add(volume);
+            }
+        }
+        // then update the state of every tracked volume
+        for (Volume volume : tracked) {
+            if (volume == null) continue;
+            if (currentlyMounted.contains(volume.getMountPoint())) {
+                if (volume.setMountState(true)) changed.add(volume);
+            } else if (scanConclusive) {
+                if (volume.setMountState(false)) changed.add(volume);
+            }
+        }
+        return changed;
     }
 
     private static boolean evaluateMountState(String state) {
