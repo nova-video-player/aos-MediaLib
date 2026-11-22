@@ -18,29 +18,23 @@ public final class SubtitleLanguageStore {
         return helper.getWritableDatabase();
     }
     public static void createTables(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS subtitle_language_analysis (uri TEXT PRIMARY KEY, fingerprint TEXT NOT "
-                   + "NULL, result TEXT NOT NULL, updated INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS subtitle_language_analysis (uri TEXT PRIMARY KEY, "
+                   + "languages TEXT NOT NULL, confidences TEXT NOT NULL)");
     }
-    public static JSONObject load(Context context, String uri, String fingerprint) {
-        if (fingerprint == null || fingerprint.isEmpty())
-            return null;
-        try (Cursor cursor = db(context).query("subtitle_language_analysis", new String[] {"result"},
-                 "uri=? AND fingerprint=?", new String[] {uri, fingerprint}, null, null, null)) {
-            return cursor.moveToFirst() ? new JSONObject(cursor.getString(0)) : null;
+    public static SubtitleLanguageResult load(Context context, String uri) {
+        try (Cursor cursor = db(context).query("subtitle_language_analysis", new String[] {"languages", "confidences"},
+                 "uri=?", new String[] {uri}, null, null, null)) {
+            return cursor.moveToFirst() ? SubtitleLanguageResult.fromCsv(cursor.getString(0), cursor.getString(1)) : null;
         } catch (Exception e) {
             android.util.Log.w("SubtitleLanguages", "Cannot read analysis", e);
             return null;
         }
     }
-    public static void save(Context context, String uri, JSONObject result) throws Exception {
-        String fingerprint = result.getString("fingerprint");
-        if (!fingerprint.matches("[a-f0-9]{64}"))
-            throw new java.io.IOException("Missing file fingerprint");
+    public static void save(Context context, String uri, SubtitleLanguageResult result) throws Exception {
         ContentValues values = new ContentValues();
         values.put("uri", uri);
-        values.put("fingerprint", fingerprint);
-        values.put("result", result.toString());
-        values.put("updated", System.currentTimeMillis());
+        values.put("languages", result.languagesCsv());
+        values.put("confidences", result.confidencesCsv());
         if (db(context).insertWithOnConflict(
                 "subtitle_language_analysis", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             < 0)
@@ -71,6 +65,7 @@ public final class SubtitleLanguageStore {
             output = file.startWrite();
             output.write(new JSONObject(journal.toString())
                     .put("state", state)
+                    .put("uri", uri)
                     .toString()
                     .getBytes(java.nio.charset.StandardCharsets.UTF_8));
             output.getFD().sync();
@@ -83,5 +78,43 @@ public final class SubtitleLanguageStore {
     }
     public static void invalidate(Context context, String uri) {
         db(context).delete("subtitle_language_analysis", "uri=?", new String[] {uri});
+    }
+
+    /** Called only after physical deletion succeeds, never on scanner/library removal. */
+    public static void removeDeleted(Context context, android.net.Uri uri, boolean folder) throws Exception {
+        if (uri.getScheme() == null || "file".equals(uri.getScheme()))
+            uri = android.net.Uri.fromFile(new java.io.File(uri.getPath()));
+        String key = uri.toString();
+        if (!folder) {
+            invalidate(context, key);
+            journalFile(context, key).delete();
+            return;
+        }
+        String prefix = key.endsWith("/") ? key : key + "/";
+        java.util.List<String> removed = new java.util.ArrayList<>();
+        // substr avoids interpreting percent/underscore characters in URIs as SQL wildcards.
+        try (Cursor cursor = db(context).query("subtitle_language_analysis", new String[]{"uri"},
+                "uri=? OR substr(uri,1,?)=?", new String[]{key, Integer.toString(prefix.length()), prefix},
+                null, null, null)) {
+            while (cursor.moveToNext()) removed.add(cursor.getString(0));
+        }
+        for (String value : removed) {
+            invalidate(context, value);
+            journalFile(context, value).delete();
+        }
+        // A fully saved file may have a recovery journal but no remaining cached guesses.
+        java.io.File directory = new java.io.File(context.getNoBackupFilesDir(), "subtitle-language-edits");
+        java.io.File[] journals = directory.listFiles((dir, name) -> name.endsWith(".json"));
+        if (journals == null) return;
+        for (java.io.File path : journals) {
+            android.util.AtomicFile file = new android.util.AtomicFile(path);
+            try {
+                JSONObject doc = new JSONObject(new String(file.readFully(), java.nio.charset.StandardCharsets.UTF_8));
+                String value = doc.optString("uri");
+                if (value.equals(key) || value.startsWith(prefix)) file.delete();
+            } catch (Exception e) {
+                android.util.Log.w("SubtitleLanguages", "Cannot inspect recovery journal for deleted folder", e);
+            }
+        }
     }
 }

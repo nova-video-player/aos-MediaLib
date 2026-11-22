@@ -4,6 +4,8 @@ package com.archos.medialib;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.CancellationSignal;
+import com.archos.filecorelibrary.NetworkInitialization;
 import android.util.Base64;
 import com.archos.filecorelibrary.RandomAccessMediaFile;
 import java.io.IOException;
@@ -68,28 +70,27 @@ public final class MatroskaLanguageWriter {
             throw new SubtitleLanguageException(SubtitleLanguageException.Code.EDIT_UNSUPPORTED, "Language field requires resizing");
         System.arraycopy(value, 0, b, at, n);
     }
-    public static boolean canSave(JSONObject analysis) {
-        try {
-            prepare(analysis);
-            return true;
-        } catch (Exception e) {
-            return false;
+    /** Eligibility only: current MKV field sizes and contents are checked after Save is pressed. */
+    public static boolean canSave(SubtitleLanguageResult result) {
+        for (int i = 0; i < result.size(); i++) {
+            if (result.isIdentified(i) && result.confidence(i) >= 90) return true;
         }
+        return false;
     }
-    static byte[] prepare(JSONObject analysis) throws Exception {
-        JSONObject mkv = analysis.getJSONObject("mkv");
+    static byte[] prepare(JSONObject mkv, SubtitleLanguageResult result) throws Exception {
+        return prepare(mkv, result, new BitSet());
+    }
+    private static byte[] prepare(JSONObject mkv, SubtitleLanguageResult result, BitSet written) throws Exception {
         byte[] before = bytes(mkv, "before"), after = before.clone();
-        JSONArray entries = mkv.getJSONArray("tracks"), tracks = analysis.getJSONArray("tracks");
-        if (entries.length() != tracks.length())
-            throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "Track identities changed");
+        JSONArray entries = mkv.getJSONArray("tracks");
+        if (entries.length() != result.size())
+            throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "Subtitle track count changed");
         int changed = 0;
-        for (int i = 0; i < tracks.length(); i++) {
-            JSONObject t = tracks.getJSONObject(i), e = entries.getJSONObject(i);
-            if (!t.getString("uid").equals(e.getString("uid")))
-                throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "Track identities changed");
-            if (t.optInt("source") != SubtitleLanguage.FASTTEXT || t.optInt("score") < 90)
+        for (int i = 0; i < result.size(); i++) {
+            JSONObject e = entries.getJSONObject(i);
+            if (!result.isIdentified(i) || result.confidence(i) < 90)
                 continue;
-            String lang = t.getString("language"), oldCode;
+            String lang = result.language(i), oldCode;
             try {
                 oldCode = legacy(lang);
             } catch (MissingResourceException ex) {
@@ -104,6 +105,7 @@ public final class MatroskaLanguageWriter {
             put(after, at, len, oldCode);
             if (ietf > 0)
                 put(after, ietf, ietfLen, lang);
+            written.set(i);
             changed++;
         }
         if (changed == 0)
@@ -143,34 +145,35 @@ public final class MatroskaLanguageWriter {
         crc.update(b, at + 4, end - at - 4);
         return crc.getValue();
     }
-    public static void save(Context context, Uri uri, JSONObject analysis) throws Exception {
+    public static void save(Context context, Uri uri, SubtitleLanguageResult result) throws Exception {
         beginEdit();
         try {
             JSONObject previous = SubtitleLanguageStore.journal(context, uri.toString());
             if (previous != null && "PENDING".equals(previous.getString("state")))
                 throw new SubtitleLanguageException(SubtitleLanguageException.Code.PENDING_EDIT, "Restore the interrupted edit first");
-            byte[] before = bytes(analysis.getJSONObject("mkv"), "before"), after = prepare(analysis);
+            NetworkInitialization.awaitReady(context);
+            JSONObject mkv = MatroskaHeader.read(context, uri, new CancellationSignal());
+            BitSet written = new BitSet();
+            byte[] before = bytes(mkv, "before"), after = prepare(mkv, result, written);
             JSONObject journal = new JSONObject()
                                      .put("before", Base64.encodeToString(before, Base64.NO_WRAP))
                                      .put("after", Base64.encodeToString(after, Base64.NO_WRAP))
-                                     .put("size", analysis.getJSONObject("mkv").getLong("size"))
-                                     .put("analysis", analysis);
+                                     .put("size", mkv.getLong("size"))
+                                     .put("languages", result.languagesCsv())
+                                     .put("confidences", result.confidencesCsv());
             try (RandomAccessMediaFile file = RandomAccessMediaFile.open(context, uri)) {
                 if (file.length() != journal.getLong("size")
                     || !Arrays.equals(before, file.readFully(0, before.length)))
-                    throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "The file changed since analysis; analyze it again");
+                    throw new SubtitleLanguageException(SubtitleLanguageException.Code.FILE_CHANGED, "The file changed while preparing the metadata edit");
                 SubtitleLanguageStore.journal(context, uri.toString(), journal, "PENDING");
                 patches(file, before, after);
                 if (file.length() != journal.getLong("size") || !Arrays.equals(after, file.readFully(0, after.length)))
                     throw new SubtitleLanguageException(SubtitleLanguageException.Code.VERIFY, "Metadata verification failed");
                 MatroskaHeader.inspect(after, file.length());
             }
-            // A fresh metadata fingerprint includes our own edit. Preserve unresolved results and provenance.
-            JSONObject updated = new JSONObject(analysis.toString());
-            updated.getJSONObject("mkv").put("before", Base64.encodeToString(after, Base64.NO_WRAP));
-            updated.put("fingerprint", SubtitleLanguageAnalysis.fingerprint(context, uri))
-                .put("writtenAt", System.currentTimeMillis());
-            SubtitleLanguageStore.save(context, uri.toString(), updated);
+            SubtitleLanguageResult remaining = result.withoutTracks(written);
+            if (remaining.hasIdentifiedTracks()) SubtitleLanguageStore.save(context, uri.toString(), remaining);
+            else SubtitleLanguageStore.invalidate(context, uri.toString());
             SubtitleLanguageStore.journal(context, uri.toString(), journal, "APPLIED");
 
         } finally {
@@ -196,7 +199,8 @@ public final class MatroskaLanguageWriter {
                 if (!Arrays.equals(before, file.readFully(0, before.length)))
                     throw new SubtitleLanguageException(SubtitleLanguageException.Code.VERIFY, "Restore verification failed");
             }
-            SubtitleLanguageStore.save(context, uri.toString(), journal.getJSONObject("analysis"));
+            SubtitleLanguageStore.save(context, uri.toString(), SubtitleLanguageResult.fromCsv(
+                    journal.getString("languages"), journal.getString("confidences")));
             SubtitleLanguageStore.journal(context, uri.toString(), journal, "UNDONE");
 
         } finally {

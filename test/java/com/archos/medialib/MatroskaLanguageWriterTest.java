@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 23)
 public class MatroskaLanguageWriterTest {
-    private JSONObject analysis(int score, String original, int ietfLength) throws Exception {
+    private JSONObject header(String original, int ietfLength) throws Exception {
         byte[] prefix = new byte[80];
         Arrays.fill(prefix, (byte) 42);
         System.arraycopy(original.getBytes("US-ASCII"), 0, prefix, 20, 3);
@@ -28,24 +28,19 @@ public class MatroskaLanguageWriterTest {
                                .put("length", 3)
                                .put("ietfOffset", ietfLength > 0 ? 30 : 0)
                                .put("ietfLength", ietfLength);
-        JSONObject result = new JSONObject()
-                                .put("uid", field.getString("uid"))
-                                .put("source", 3)
-                                .put("score", score)
-                                .put("language", "fr");
         return new JSONObject()
-            .put("mkv",
-                new JSONObject()
-                    .put("before", Base64.encodeToString(prefix, Base64.NO_WRAP))
-                    .put("tracks", new JSONArray().put(field))
-                    .put("checksums", new JSONArray()))
-            .put("tracks", new JSONArray().put(result));
+                .put("before", Base64.encodeToString(prefix, Base64.NO_WRAP))
+                .put("tracks", new JSONArray().put(field))
+                .put("checksums", new JSONArray());
+    }
+    private SubtitleLanguageResult result(int score) {
+        return SubtitleLanguageResult.fromCsv("fr", Integer.toString(score));
     }
     @Test
     public void onlyLanguageBytesChangeAndFrenchUsesBibliographicCode() throws Exception {
-        JSONObject doc = analysis(94, "und", 0);
-        byte[] old = Base64.decode(doc.getJSONObject("mkv").getString("before"), Base64.DEFAULT);
-        byte[] edited = MatroskaLanguageWriter.prepare(doc);
+        JSONObject doc = header("und", 0);
+        byte[] old = Base64.decode(doc.getString("before"), Base64.DEFAULT);
+        byte[] edited = MatroskaLanguageWriter.prepare(doc, result(94));
         assertEquals("fre", new String(edited, 20, 3, "US-ASCII"));
         for (int i = 0; i < old.length; i++)
             if (i < 20 || i >= 23)
@@ -54,25 +49,30 @@ public class MatroskaLanguageWriterTest {
     }
     @Test
     public void uncertainKnownAndResizingChangesAreRefused() throws Exception {
-        for (JSONObject doc : Arrays.asList(analysis(89, "und", 0), analysis(99, "eng", 0), analysis(99, "und", 3))) {
+        JSONObject[] headers = {header("und", 0), header("eng", 0), header("und", 3)};
+        int[] scores = {89, 99, 99};
+        for (int i = 0; i < headers.length; i++) {
             try {
-                MatroskaLanguageWriter.prepare(doc);
+                MatroskaLanguageWriter.prepare(headers[i], result(scores[i]));
                 fail("Must refuse unsafe edit");
             } catch (IOException expected) {
                 assertEquals(SubtitleLanguageException.Code.EDIT_UNSUPPORTED, SubtitleLanguageException.codeOf(expected));
             }
         }
+        assertFalse(MatroskaLanguageWriter.canSave(result(89)));
+        assertTrue(MatroskaLanguageWriter.canSave(result(90)));
     }
     @Test
-    public void trackIdentityMismatchIsRefused() throws Exception {
-        JSONObject doc = analysis(99, "und", 0);
-        doc.getJSONArray("tracks").getJSONObject(0).put("uid", "other");
+    public void trackCountMismatchIsRefusedWithoutPersistedTrackUids() throws Exception {
+        JSONObject doc = header("und", 0);
         try {
-            MatroskaLanguageWriter.prepare(doc);
+            MatroskaLanguageWriter.prepare(doc, SubtitleLanguageResult.fromCsv("fr,en", "99,99"));
             fail();
         } catch (IOException expected) {
             assertEquals(SubtitleLanguageException.Code.FILE_CHANGED, SubtitleLanguageException.codeOf(expected));
         }
+        doc.getJSONArray("tracks").getJSONObject(0).put("uid", "new-current-file-uid");
+        assertEquals("fre", new String(MatroskaLanguageWriter.prepare(doc, result(99)), 20, 3, "US-ASCII"));
     }
     @Test
     public void partialWriteFailureDoesNotTouchUnrelatedRanges() throws Exception {
@@ -105,7 +105,7 @@ public class MatroskaLanguageWriterTest {
 
     @Test
     public void checksumsAreVerifiedAndRecomputed() throws Exception {
-        JSONObject doc = analysis(95, "und", 0), mkv = doc.getJSONObject("mkv");
+        JSONObject mkv = header("und", 0);
         byte[] before = Base64.decode(mkv.getString("before"), Base64.DEFAULT);
         java.util.zip.CRC32 crc = new java.util.zip.CRC32();
         crc.update(before, 16, before.length - 16);
@@ -113,7 +113,7 @@ public class MatroskaLanguageWriterTest {
         mkv.put("before", Base64.encodeToString(before, Base64.NO_WRAP));
         mkv.getJSONArray("checksums")
             .put(new JSONObject().put("start", 10).put("end", 80).put("element", 10).put("offset", 12));
-        byte[] after = MatroskaLanguageWriter.prepare(doc);
+        byte[] after = MatroskaLanguageWriter.prepare(mkv, result(95));
         crc.reset();
         crc.update(after, 16, after.length - 16);
         long actual = 0;
@@ -122,7 +122,7 @@ public class MatroskaLanguageWriterTest {
         before[79] ^= 1;
         mkv.put("before", Base64.encodeToString(before, Base64.NO_WRAP));
         try {
-            MatroskaLanguageWriter.prepare(doc);
+            MatroskaLanguageWriter.prepare(mkv, result(95));
             fail("Corrupt checksum must refuse writing");
         } catch (IOException expected) {
         }
@@ -134,14 +134,11 @@ public class MatroskaLanguageWriterTest {
         JSONObject plan =
             new JSONObject(new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(fixture)), "UTF-8"));
         byte[] before = Base64.decode(plan.getString("before"), Base64.DEFAULT);
-        JSONArray tracks = new JSONArray();
-        for (int i = 0; i < plan.getJSONArray("tracks").length(); i++)
-            tracks.put(new JSONObject()
-                    .put("uid", plan.getJSONArray("tracks").getJSONObject(i).getString("uid"))
-                    .put("source", 3)
-                    .put("score", 99)
-                    .put("language", "fr"));
-        byte[] after = MatroskaLanguageWriter.prepare(new JSONObject().put("mkv", plan).put("tracks", tracks));
+        String[] languages = new String[plan.getJSONArray("tracks").length()];
+        int[] scores = new int[languages.length];
+        Arrays.fill(languages, "fr");
+        Arrays.fill(scores, 99);
+        byte[] after = MatroskaLanguageWriter.prepare(plan, new SubtitleLanguageResult(languages, scores));
         // Disposable copy produced by the caller, never the source movie.
         try (java.io.RandomAccessFile raw = new java.io.RandomAccessFile(plan.getString("copy"), "rw")) {
             RandomAccessMediaFile file = new RandomAccessMediaFile() {

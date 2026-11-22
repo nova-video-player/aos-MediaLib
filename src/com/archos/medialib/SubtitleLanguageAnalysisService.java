@@ -9,7 +9,6 @@ import android.os.*;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,7 @@ public final class SubtitleLanguageAnalysisService extends Service {
                 Bundle values = args.getBundle("headers");
                 if (values != null)
                     for (String key : values.keySet()) headers.put(key, values.getString(key));
-                JSONObject result =
+                SubtitleLanguageResult result =
                     SubtitleLanguageAnalysis.analyze(this, Uri.parse(args.getString("uri")), headers, signal,
                             stage -> send(reply, PROGRESS, stage));
                 // Persist in the worker before replying: leaving the screen cannot lose completed analysis.
