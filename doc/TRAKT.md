@@ -33,7 +33,8 @@ The sync state is stored in the video database with these key fields:
 1. **Authorization**: User initiated via `TraktSigninDialogPreference`
 2. **Token Exchange**: Authorization code exchanged for access token via `Trakt.getAccessToken()`
 3. **Token Storage**: Access and refresh tokens stored in SharedPreferences
-4. **Token Refresh**: Automatic refresh when API calls return 401/409 errors
+4. **Token Refresh**: On a 401, trakt-java's `TraktV2Authenticator` refreshes the access token and retries the call. If that fails, `Trakt.exec()` calls `refreshAccessToken()` on 401/409 and retries once. Every refresh returns a new refresh token, so `MyTraktV2.refreshAccessToken()` stores the new access and refresh tokens in SharedPreferences and in the shared `TraktV2` instance for both paths; each new `Trakt` instance reloads them from SharedPreferences. Enforced by `TraktTokenRefreshTest`.
+5. **Refresh Failure**: If Trakt rejects the stored refresh token (400/401), `refreshAccessToken()` wipes the Trakt credentials and broadcasts `TRAKT_ISSUE_REFRESH_TOKEN` so the user is asked to sign in again. A network error (`IOException`) keeps the credentials.
 
 ### Authentication State Management
 ```java
