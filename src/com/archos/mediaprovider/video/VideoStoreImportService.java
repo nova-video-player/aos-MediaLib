@@ -274,9 +274,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             } else if (Intent.ACTION_MEDIA_SCANNER_STARTED.equals(action)) {
                 if (log.isDebugEnabled()) log.debug("ACTION_MEDIA_SCANNER_STARTED {}", intent.getData());
                 ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "ACTION_MEDIA_SCANNER_STARTED " + intent.getData());
-                removeAllMessages(mHandler);
-                if (log.isTraceEnabled()) log.trace("onStartCommand: ImportState.VIDEO.setAndroidScanning(true)");
-                ImportState.VIDEO.setAndroidScanning(true);
+                pauseCleanImportsForAndroidScan(mHandler);
             } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_METADATA_UPDATE.equals(action)) {
                 if (log.isDebugEnabled()) log.debug("onStartCommand: ACTION_VIDEO_SCANNER_METADATA_UPDATE {}", intent.getData());
                 ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "ACTION_MEDIA_SCANNER_STARTED " + intent.getData());
@@ -708,11 +706,22 @@ public class VideoStoreImportService extends Service implements Handler.Callback
     // Foreground commands arrive on the main thread, mount and MediaStore changes on the worker.
     // A full remount refresh also covers any incremental requests received before it runs.
     private static synchronized void scheduleImport(Handler handler, int what, int startId, int arg) {
+        // A dirty full import owns progress even if Android never reports scanner-finished.
+        if (what == MESSAGE_IMPORT_FULL && ImportState.VIDEO.isDirty()) {
+            ImportState.VIDEO.setAndroidScanning(false);
+        }
         handler.removeMessages(MESSAGE_KILL);
         handler.removeMessages(MESSAGE_IMPORT_INCR);
         if (!handler.hasMessages(MESSAGE_IMPORT_FULL)) {
             handler.sendMessageDelayed(handler.obtainMessage(what, startId, arg), 1000);
         }
+    }
+
+    private static synchronized void pauseCleanImportsForAndroidScan(Handler handler) {
+        // A scanner-start racing a USB mount must leave the required full import queued.
+        if (ImportState.VIDEO.isDirty()) return;
+        removeAllMessages(handler);
+        ImportState.VIDEO.setAndroidScanning(true);
     }
 
     /** removes all messages from handler */

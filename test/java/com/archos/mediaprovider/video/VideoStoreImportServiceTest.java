@@ -25,19 +25,32 @@ import android.os.Looper;
 import com.archos.mediaprovider.ArchosMediaIntent;
 import com.archos.mediaprovider.ImportState;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.util.ReflectionHelpers;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 public class VideoStoreImportServiceTest {
+    @Before
+    @After
+    public void resetImportState() {
+        ReflectionHelpers.setStaticField(VideoStoreImportService.class, "sActive", false);
+        ImportState.VIDEO.setAndroidScanning(false);
+        ImportState.VIDEO.setState(ImportState.State.UNKNOWN);
+        ImportState.VIDEO.setDirty(false);
+    }
+
     @Test
     @Config(sdk = 34)
     public void foregroundCommandOwnsTheImportAndHonorsDirtyState() {
@@ -63,7 +76,6 @@ public class VideoStoreImportServiceTest {
                     VideoStoreImportService.MESSAGE_IMPORT_FULL), imports);
         } finally {
             service.mVolumeState.unregisterReceiver();
-            ImportState.VIDEO.setDirty(false);
         }
     }
 
@@ -80,5 +92,42 @@ public class VideoStoreImportServiceTest {
         shadowOf(looper).idleFor(Duration.ofSeconds(2));
         assertEquals(Arrays.asList(VideoStoreImportService.MESSAGE_IMPORT_FULL,
                 VideoStoreImportService.MESSAGE_IMPORT_FULL), imports);
+    }
+
+    @Test
+    @Config(sdk = 28)
+    public void dirtyFullImportRunsWhenScannerFinishIsMissed() {
+        VideoStoreImportService service = Robolectric.buildService(VideoStoreImportService.class).get();
+        Looper looper = Looper.getMainLooper();
+        List<Integer> imports = new ArrayList<>();
+        service.mHandler = new Handler(looper, message -> imports.add(message.what));
+
+        Intent scannerStarted = new Intent(Intent.ACTION_MEDIA_SCANNER_STARTED);
+        service.onStartCommand(scannerStarted, 0, 1);
+        ImportState.VIDEO.setDirty(true);
+        service.onStartCommand(new Intent(), 0, 2);
+        service.onStartCommand(scannerStarted, 0, 3);
+        shadowOf(looper).idleFor(Duration.ofSeconds(2));
+
+        assertEquals(Collections.singletonList(VideoStoreImportService.MESSAGE_IMPORT_FULL), imports);
+        ImportState.VIDEO.setState(ImportState.State.REGULAR_IMPORT);
+        assertEquals(ImportState.State.REGULAR_IMPORT, ImportState.VIDEO.getState());
+    }
+
+    @Test
+    @Config(sdk = 34)
+    public void cleanScanDefersIncrementalImportUntilScannerFinishes() {
+        VideoStoreImportService service = Robolectric.buildService(VideoStoreImportService.class).get();
+        Looper looper = Looper.getMainLooper();
+        List<Integer> imports = new ArrayList<>();
+        service.mHandler = new Handler(looper, message -> imports.add(message.what));
+
+        service.onStartCommand(new Intent(ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR), 0, 1);
+        service.onStartCommand(new Intent(Intent.ACTION_MEDIA_SCANNER_STARTED), 0, 2);
+        shadowOf(looper).idleFor(Duration.ofSeconds(2));
+        assertTrue(imports.isEmpty());
+        service.onStartCommand(new Intent(Intent.ACTION_MEDIA_SCANNER_FINISHED), 0, 3);
+        shadowOf(looper).idleFor(Duration.ofSeconds(2));
+        assertEquals(Collections.singletonList(VideoStoreImportService.MESSAGE_IMPORT_FULL), imports);
     }
 }

@@ -251,6 +251,7 @@ public class VolumeHiddenFilesReconciliationTest {
             assertEquals(1L, queryLong("SELECT count(*) FROM files WHERE _id=10 AND volume_hidden=0"
                     + " AND Archos_traktSeen=1 AND ArchosMediaScraper_id=42"));
             assertEquals(12345L, queryLong("SELECT volume_hidden FROM files WHERE _id=11"));
+            service.onStartCommand(new Intent(Intent.ACTION_MEDIA_SCANNER_STARTED), 0, 1);
             assertTrue(service.mHandler.hasMessages(VideoStoreImportService.MESSAGE_IMPORT_FULL));
         } finally {
             state.unregisterReceiver();
