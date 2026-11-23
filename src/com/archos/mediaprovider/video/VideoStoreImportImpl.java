@@ -84,8 +84,9 @@ public class VideoStoreImportImpl {
     static final int DELETE_BATCH_SIZE = 50;
     // Rows hidden longer than this are purged from files_import instead of kept forever (see #1909)
     private static final long HIDDEN_FILES_RETENTION_SECONDS = 30L * 24 * 3600;
-    private static String BLACKLIST;
+    private static volatile String BLACKLIST = "";
     private static String sdCardPath = "";
+    private boolean mImportPathsInitialized;
 
     private final static boolean CRASH_ON_ERROR = false;
     private final static boolean CHECK_NFO = true;
@@ -94,32 +95,32 @@ public class VideoStoreImportImpl {
 
     public VideoStoreImportImpl(Context context) {
         mContext = context;
-        // sdCardPath resolution needs a filesystem stat that can block for a long time on some
-        // devices (seen causing main thread ANR on Android 15, issue 1860): defer it to
-        // ensureSdCardPath() called from the background ImportWorker thread instead of doing it
-        // here since this constructor runs on the main thread (VideoStoreImportService.onCreate).
         mCr = mContext.getContentResolver();
         mBlackList = Blacklist.getInstance(context);
         mMediaRetrieverServiceClient = new MediaRetrieverServiceClient(context);
-        String [] blacklistCamDirs = mBlackList.getBlackListCamDirs();
-        BLACKLIST = "";
-        for (String blacklisted : mBlackList.getBlackListCamera())
-            BLACKLIST += " AND _data NOT LIKE '%" + blacklisted + "%'";
-        List<String> extPathList = ExtStorageManager.getExtStorageManager().getExtSdcards();
-        extPathList.add(Environment.getExternalStorageDirectory().getPath());
-        for (String extPath: extPathList)
-            for (String blacklistedDir : blacklistCamDirs)
-                BLACKLIST += " AND _data NOT LIKE '%" + extPath+blacklistedDir + "%'";
-        if (log.isDebugEnabled()) log.debug("VideoStoreImportImpl: BLACKLIST {}", BLACKLIST);
     }
 
     public void destroy() {
         mMediaRetrieverServiceClient.unbindAndDestroy();
     }
 
-    // resolves sdCardPath once, must be called from the background ImportWorker thread only
-    // (getExternalFilesDir can block on filesystem canonicalization on some devices)
-    private void ensureSdCardPath() {
+    // Both storage enumeration and filesystem lookup can block during USB spin-up.
+    // Initialize the import filter once per service instance on the import worker.
+    private void initializeImportPaths() {
+        if (mImportPathsInitialized) return;
+        StringBuilder filter = new StringBuilder();
+        for (String path : mBlackList.getBlackListCamera()) {
+            filter.append(" AND _data NOT LIKE '%").append(path).append("%'");
+        }
+        List<String> roots = ExtStorageManager.getExtStorageManager().getExtSdcards();
+        roots.add(Environment.getExternalStorageDirectory().getPath());
+        for (String root : roots) {
+            for (String dir : mBlackList.getBlackListCamDirs()) {
+                filter.append(" AND _data NOT LIKE '%").append(root).append(dir).append("%'");
+            }
+        }
+        BLACKLIST = filter.toString();
+        if (log.isDebugEnabled()) log.debug("VideoStoreImportImpl: BLACKLIST {}", BLACKLIST);
         if (sdCardPath.isEmpty()) {
             File sdCardFile = mContext.getExternalFilesDir(null);
             // sdCardFile seen on sentry (3744020792) to be null on MIBOX4 android 9
@@ -130,6 +131,7 @@ public class VideoStoreImportImpl {
                 sdCardPath = "/storage/emulated/0";
             }
         }
+        mImportPathsInitialized = true;
     }
 
     public void doFullImport() {
@@ -140,7 +142,7 @@ public class VideoStoreImportImpl {
 
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            ensureSdCardPath();
+            initializeImportPaths();
             LocalReconciliationResult reconciliation;
             int copy;
             if (countStart == 0) {
@@ -191,7 +193,7 @@ public class VideoStoreImportImpl {
 
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            ensureSdCardPath();
+            initializeImportPaths();
             // Capture the old maximum before remapping; a remapped high id must not cause
             // copyData to skip lower new MediaStore ids from the same import pass.
             String maxLocal = getMaxId(mCr);
@@ -1873,11 +1875,11 @@ public class VideoStoreImportImpl {
      * Post-Android P: Hide files from unmounted volumes, unhide files from mounted volumes
      * Enhanced with recent mount detection for aggressive deletion of missing files
      */
-    private void updateVolumeHiddenStatesByPath(String existingFiles) {
+    void updateVolumeHiddenStatesByPath(String existingFiles) {
         ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager();
         List<String> mountedVolumePaths = new ArrayList<>();
         List<String> unmountedVolumePaths = new ArrayList<>();
-        List<String> recentlyMountedVolumePaths = new ArrayList<>();  // NEW
+        List<String> recentlyMountedVolumePaths = new ArrayList<>();
 
         // Check primary storage
         String primaryPath = Environment.getExternalStorageDirectory().getPath();
@@ -1885,20 +1887,16 @@ public class VideoStoreImportImpl {
         if (isMountedReadable(primaryState)) {
             mountedVolumePaths.add(primaryPath);
             // Primary storage is rarely unmounted, so don't check for recent mount
-        } else {
+        } else if (VolumeState.isConfirmedOffline(primaryPath)) {
             unmountedVolumePaths.add(primaryPath);
         }
 
-        // Build list of all currently mounted external volumes once
-        List<String> allMountedExternal = new ArrayList<>();
-        allMountedExternal.addAll(storageManager.getExtSdcards());
-        allMountedExternal.addAll(storageManager.getExtUsbStorages());
-        allMountedExternal.addAll(storageManager.getExtOtherStorages());
-
-        // Check all external volumes and detect recently mounted ones
-        checkVolumeStatesWithRecentMount(storageManager.getExtSdcards(), allMountedExternal, mountedVolumePaths, unmountedVolumePaths, recentlyMountedVolumePaths);
-        checkVolumeStatesWithRecentMount(storageManager.getExtUsbStorages(), allMountedExternal, mountedVolumePaths, unmountedVolumePaths, recentlyMountedVolumePaths);
-        checkVolumeStatesWithRecentMount(storageManager.getExtOtherStorages(), allMountedExternal, mountedVolumePaths, unmountedVolumePaths, recentlyMountedVolumePaths);
+        Set<String> removable = collectDiscoveredRemovableStoragePaths(primaryPath,
+                storageManager.getExtSdcards(), storageManager.getExtUsbStorages(), storageManager.getExtOtherStorages());
+        for (String path : removable) {
+            mountedVolumePaths.add(path);
+            if (wasVolumeRecentlyHidden(path)) recentlyMountedVolumePaths.add(path);
+        }
 
         // Also check for volumes in database that are no longer mounted (e.g., USB removed while app was in background)
         checkDatabaseForUnmountedVolumes(mountedVolumePaths, unmountedVolumePaths);
@@ -1911,7 +1909,7 @@ public class VideoStoreImportImpl {
 
         // Hide files from unmounted volumes
         if (!unmountedVolumePaths.isEmpty()) {
-            hideFilesFromVolumes(unmountedVolumePaths, now);
+            hideFilesFromVolumes(mCr, unmountedVolumePaths, now);
         }
 
         // Unhide files from mounted volumes, but only those MediaStore currently confirms are
@@ -1924,7 +1922,7 @@ public class VideoStoreImportImpl {
 
         // For recently mounted volumes: Delete missing files more aggressively
         if (!recentlyMountedVolumePaths.isEmpty() && !TextUtils.isEmpty(existingFiles)) {
-            hideDeletedFilesFromRecentlyMountedVolumes(recentlyMountedVolumePaths, existingFiles, now);
+            hideDeletedFilesFromMountedVolumes(recentlyMountedVolumePaths, existingFiles, now);
         }
 
         // Additionally delete files from other mounted volumes that are missing from MediaStore
@@ -1938,24 +1936,22 @@ public class VideoStoreImportImpl {
     }
 
 
-    private void hideFilesFromVolumes(List<String> volumePaths, long timestamp) {
-        if (volumePaths.isEmpty()) return;
+    static int hideFilesFromVolumes(ContentResolver cr, List<String> volumePaths, long timestamp) {
+        if (volumePaths.isEmpty()) return 0;
 
         ContentValues cv = new ContentValues();
         cv.put("volume_hidden", timestamp);
+        String where = "volume_hidden = 0 AND " + volumePathSelection(volumePaths);
+        return cr.update(VideoStoreInternal.FILES_IMPORT, cv, where, null);
+    }
 
-        StringBuilder where = new StringBuilder("volume_hidden = 0 AND (");
-        boolean first = true;
-        for (String path : volumePaths) {
-            if (!first) where.append(" OR ");
-            where.append("_data LIKE '").append(path).append("/%'");
-            first = false;
+    // Match a literal directory prefix. Mount names can contain SQL LIKE wildcards.
+    private static String volumePathSelection(List<String> paths) {
+        List<String> matches = new ArrayList<>();
+        for (String path : paths) {
+            matches.add("instr(_data, " + DatabaseUtils.sqlEscapeString(path + "/") + ") = 1");
         }
-        where.append(")");
-
-        // Direct UPDATE is efficient; no need for windowing (UPDATE doesn't return cursors)
-        int hidden = mCr.update(VideoStoreInternal.FILES_IMPORT, cv, where.toString(), null);
-        if (log.isDebugEnabled()) log.debug("hideFilesFromVolumes: hidden {} files from unmounted volumes", hidden);
+        return "(" + TextUtils.join(" OR ", matches) + ")";
     }
 
     static void unhideFilesFromVolumes(ContentResolver cr, List<String> volumePaths, String existingFiles) {
@@ -1966,125 +1962,36 @@ public class VideoStoreImportImpl {
 
         // Only unhide rows MediaStore currently confirms are present; rows missing from
         // existingFiles are left untouched here and handled by verifyAndHideDeletedFiles below.
-        StringBuilder where = new StringBuilder("volume_hidden != 0 AND _id IN (")
-                .append(existingFiles).append(") AND (");
-        boolean first = true;
-        for (String path : volumePaths) {
-            if (!first) where.append(" OR ");
-            where.append("_data LIKE '").append(path).append("/%'");
-            first = false;
-        }
-        where.append(")");
-
-        // Direct UPDATE is efficient; no need for windowing (UPDATE doesn't return cursors)
-        int unhidden = cr.update(VideoStoreInternal.FILES_IMPORT, cv, where.toString(), null);
+        String where = "volume_hidden != 0 AND _id IN (" + existingFiles + ") AND " + volumePathSelection(volumePaths);
+        int unhidden = cr.update(VideoStoreInternal.FILES_IMPORT, cv, where, null);
         if (log.isDebugEnabled()) log.debug("unhideFilesFromVolumes: unhidden {} files from mounted volumes", unhidden);
     }
 
     private void checkDatabaseForUnmountedVolumes(List<String> mountedVolumePaths, List<String> unmountedVolumePaths) {
-        // Query database for distinct volume paths from file paths
-        // Only check files that are currently visible (volume_hidden = 0)
-        if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: checking database for unmounted volumes");
-        if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: currently mounted: {}", mountedVolumePaths);
-        Cursor c = null;
-        try {
-            // Get all distinct file paths and extract volume paths in Java (safer than complex SQL)
-            c = mCr.query(VideoStoreInternal.FILES_IMPORT,
-                    new String[]{"DISTINCT _data"},
-                    "volume_hidden = 0 AND _data LIKE '/storage/%'",
-                    null,
-                    null);
-
-            java.util.Set<String> volumePaths = new java.util.HashSet<>();
-            if (c != null) {
-                if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: found {} distinct file paths in database", c.getCount());
-                while (c.moveToNext()) {
-                    String filePath = c.getString(0);
-                    if (filePath != null && filePath.startsWith("/storage/")) {
-                        // Extract volume path: /storage/XXXXX or /storage/emulated/0
-                        String[] parts = filePath.split("/");
-                        if (parts.length >= 3) {
-                            String volumePath;
-                            if (parts[2].equals("emulated") && parts.length >= 4) {
-                                // Handle /storage/emulated/0
-                                volumePath = "/storage/emulated/" + parts[3];
-                            } else {
-                                // Handle /storage/39F3-140A
-                                volumePath = "/storage/" + parts[2];
-                            }
-                            volumePaths.add(volumePath);
-                        }
-                    }
-                }
+        Set<String> candidates = new HashSet<>();
+        try (Cursor c = mCr.query(VideoStoreInternal.FILES_IMPORT, new String[]{"DISTINCT _data"},
+                "volume_hidden = 0 AND _data LIKE '/storage/%'", null, null)) {
+            if (c == null) return;
+            while (c.moveToNext()) {
+                String path = getStoragePath(c.getString(0));
+                if (path != null) candidates.add(path);
             }
-
-            // Build list of all currently mounted volumes from ExtStorageManager
-            ExtStorageManager storageManager = ExtStorageManager.getExtStorageManager();
-            List<String> allCurrentlyMounted = new ArrayList<>();
-            allCurrentlyMounted.addAll(storageManager.getExtSdcards());
-            allCurrentlyMounted.addAll(storageManager.getExtUsbStorages());
-            allCurrentlyMounted.addAll(storageManager.getExtOtherStorages());
-            allCurrentlyMounted.add(Environment.getExternalStorageDirectory().getPath()); // Primary storage
-
-            // Check each volume path to see if it's unmounted
-            if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: extracted {} distinct volume paths from database", volumePaths.size());
-            for (String volumePath : volumePaths) {
-                if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: checking volume {}", volumePath);
-                // If this volume is not in mounted list and not already in unmounted list, check if it's really unmounted
-                if (!mountedVolumePaths.contains(volumePath) && !unmountedVolumePaths.contains(volumePath)) {
-                    // Check if volume is in ExtStorageManager's current mounted list
-                    boolean isMounted = allCurrentlyMounted.contains(volumePath);
-                    if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: volume {} isMounted={}", volumePath, isMounted);
-                    if (!isMounted) {
-                        if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: found unmounted volume in database: {}", volumePath);
-                        unmountedVolumePaths.add(volumePath);
-                    }
-                } else {
-                    if (log.isDebugEnabled()) log.debug("checkDatabaseForUnmountedVolumes: volume {} is in mounted list or already in unmounted list", volumePath);
-                }
-            }
-        } catch (Exception e) {
-            log.error("checkDatabaseForUnmountedVolumes: error querying database", e);
-        } finally {
-            if (c != null) c.close();
+        } catch (RuntimeException e) {
+            log.warn("Could not read library volume paths", e);
+            return;
+        }
+        candidates.removeAll(mountedVolumePaths);
+        candidates.removeAll(unmountedVolumePaths);
+        for (String path : candidates) {
+            if (VolumeState.isConfirmedOffline(path)) unmountedVolumePaths.add(path);
         }
     }
 
     private void hideDeletedFilesFromMountedVolumes(List<String> volumePaths, String existingFiles, long timestamp) {
         if (volumePaths.isEmpty() || TextUtils.isEmpty(existingFiles)) return;
 
-        StringBuilder where = new StringBuilder("_id NOT IN (").append(existingFiles).append(") AND (");
-        boolean first = true;
-        for (String path : volumePaths) {
-            if (!first) where.append(" OR ");
-            where.append("_data LIKE '").append(path).append("/%'");
-            first = false;
-        }
-        where.append(")");
-
-        // For mounted volumes, verify files truly don't exist before hiding them
-        // This prevents data loss when USB drives have MediaStore indexing delays
-        verifyAndHideDeletedFiles(mCr, where.toString(), timestamp, "hideDeletedFilesFromMountedVolumes");
-    }
-
-    /**
-     * More careful handling for recently remounted volumes
-     */
-    private void hideDeletedFilesFromRecentlyMountedVolumes(List<String> volumePaths, String existingFiles, long timestamp) {
-        if (volumePaths.isEmpty() || TextUtils.isEmpty(existingFiles)) return;
-
-        StringBuilder where = new StringBuilder("_id NOT IN (").append(existingFiles).append(") AND (");
-        boolean first = true;
-        for (String path : volumePaths) {
-            if (!first) where.append(" OR ");
-            where.append("_data LIKE '").append(path).append("/%'");
-            first = false;
-        }
-        where.append(")");
-
-        // For recently mounted volumes, verify files truly don't exist before hiding
-        // This prevents data loss from USB drives with MediaStore indexing delays or power saving
-        verifyAndHideDeletedFiles(mCr, where.toString(), timestamp, "hideDeletedFilesFromRecentlyMountedVolumes");
+        String where = "_id NOT IN (" + existingFiles + ") AND " + volumePathSelection(volumePaths);
+        verifyAndHideDeletedFiles(mCr, where, timestamp, "hideDeletedFilesFromMountedVolumes");
     }
 
     /**
@@ -2146,39 +2053,12 @@ public class VideoStoreImportImpl {
     }
 
     /**
-     * Enhanced volume state checking that detects recently mounted volumes
-     * @param volumePaths List of volume paths to check
-     * @param allMountedVolumes Pre-built list of all currently mounted volumes (for efficiency)
-     * @param mounted Output list for mounted volumes
-     * @param unmounted Output list for unmounted volumes
-     * @param recentlyMounted Output list for volumes that were recently hidden and are now mounted
-     */
-    private void checkVolumeStatesWithRecentMount(List<String> volumePaths, List<String> allMountedVolumes,
-                                                List<String> mounted, List<String> unmounted,
-                                                List<String> recentlyMounted) {
-        for (String path : volumePaths) {
-            // Check if volume is in ExtStorageManager's mounted lists
-            boolean isMounted = allMountedVolumes.contains(path);
-            if (log.isDebugEnabled()) log.debug("checkVolumeStatesWithRecentMount: path={}, isMounted={}", path, isMounted);
-            if (isMounted) {
-                mounted.add(path);
-                // Check if this volume was recently hidden (within last 5 minutes)
-                if (wasVolumeRecentlyHidden(path)) {
-                    recentlyMounted.add(path);
-                }
-            } else {
-                unmounted.add(path);
-            }
-        }
-    }
-
-    /**
      * Check if volume was recently hidden using windowed cursor approach
      */
     private boolean wasVolumeRecentlyHidden(String volumePath) {
         long fiveMinutesAgo = (System.currentTimeMillis() / 1000) - 300; // 5 minutes
-        String selection = "volume_hidden > ? AND _data LIKE ?";
-        String[] args = {String.valueOf(fiveMinutesAgo), volumePath + "/%"};
+        String selection = "volume_hidden > ? AND instr(_data, ?) = 1";
+        String[] args = {String.valueOf(fiveMinutesAgo), volumePath + "/"};
 
         // Use windowed approach with small limit since we only need to check existence
         Cursor c = null;

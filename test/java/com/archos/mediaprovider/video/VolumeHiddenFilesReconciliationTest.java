@@ -15,25 +15,38 @@
 package com.archos.mediaprovider.video;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
+import static org.robolectric.shadows.ShadowEnvironment.setExternalStorageState;
 
 import android.app.Application;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.ContextWrapper;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
+import com.archos.filecorelibrary.ExtStorageManager;
 import com.archos.mediaprovider.DbHolder;
+import com.archos.mediaprovider.ImportState;
+import com.archos.mediaprovider.VolumeState;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,11 +54,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Covers the three #1909 fixes on top of a real SQLite-backed files_import table (via
@@ -133,6 +151,113 @@ public class VolumeHiddenFilesReconciliationTest {
                 12345L, queryLong("SELECT volume_hidden FROM files_import WHERE _id=11"));
         // propagation trigger must have mirrored the unhide onto the files table too
         assertEquals(0L, queryLong("SELECT volume_hidden FROM files WHERE _id=10"));
+    }
+
+    @Test
+    @Config(sdk = 28)
+    public void staggeredWakeKeepsSecondDriveVisibleUntilAndroidConfirmsItIsOffline() {
+        String driveA = "/storage/USB_1";
+        String driveB = "/storage/USBX1";
+        insertRow(10, driveA + "/first.mkv", 0);
+        insertRow(11, driveB + "/second.mkv", 0);
+        database.execSQL("UPDATE files SET Archos_traktSeen=1 WHERE _id=11");
+        ExtStorageManager storage = mock(ExtStorageManager.class);
+        when(storage.getExtUsbStorages()).thenReturn(Collections.singletonList(driveA));
+        when(storage.getExtSdcards()).thenAnswer(invocation -> new ArrayList<>());
+        try (MockedStatic<ExtStorageManager> manager = mockStatic(ExtStorageManager.class)) {
+            manager.when(ExtStorageManager::getExtStorageManager).thenReturn(storage);
+            VideoStoreImportImpl importer = new VideoStoreImportImpl(new ContextWrapper(application) {
+                @Override
+                public ContentResolver getContentResolver() {
+                    return resolver;
+                }
+            });
+            try {
+                // A is enumerated. B has yet to spin up, and Android has no state for it.
+                setExternalStorageState(new File(driveB), Environment.MEDIA_UNKNOWN);
+                importer.updateVolumeHiddenStatesByPath("10");
+                assertEquals(1L, queryLong("SELECT count(*) FROM files WHERE _id=11"
+                        + " AND volume_hidden=0 AND Archos_traktSeen=1"));
+
+                setExternalStorageState(new File(driveB), Environment.MEDIA_UNMOUNTED);
+                importer.updateVolumeHiddenStatesByPath("10");
+                assertTrue(queryLong("SELECT volume_hidden FROM files WHERE _id=11") > 0);
+                assertEquals(0L, queryLong("SELECT volume_hidden FROM files WHERE _id=10"));
+
+                // A subsequent import sees both disks, even if the mount broadcast was missed.
+                setExternalStorageState(new File(driveB), Environment.MEDIA_MOUNTED);
+                when(storage.getExtUsbStorages()).thenReturn(Arrays.asList(driveA, driveB));
+                importer.updateVolumeHiddenStatesByPath("10,11");
+                assertEquals(1L, queryLong("SELECT count(*) FROM files WHERE _id=11"
+                        + " AND volume_hidden=0 AND Archos_traktSeen=1"));
+            } finally {
+                importer.destroy();
+            }
+        }
+    }
+
+    @Test
+    public void ejectOnlyHidesFilesOnTheNamedVolume() {
+        String drive = "/storage/usb_1";
+        insertRow(10, drive + "/movie.mkv", 0);
+        insertRow(11, drive + "0/movie.mkv", 0);
+        insertRow(12, "/storage/usbX1/movie.mkv", 0);
+
+        assertEquals(1, VideoStoreImportImpl.hideFilesFromVolumes(resolver,
+                Collections.singletonList(drive), 12345L));
+        assertEquals(12345L, queryLong("SELECT volume_hidden FROM files WHERE _id=10"));
+        assertEquals(2L, queryLong("SELECT count(*) FROM files WHERE _id IN (11,12) AND volume_hidden=0"));
+    }
+
+    @Test
+    @Config(sdk = 28)
+    public void lateMountRestoresHiddenMovieWithWatchedStateAfterEarlyVisibilityCheck() {
+        String primary = Environment.getExternalStorageDirectory().getPath();
+        Set<String> mounted = new LinkedHashSet<>(Arrays.asList(primary, STORAGE));
+        VolumeState state = new VolumeState(application) {
+            @Override
+            protected Set<String> currentMountedVolumePaths() {
+                return mounted;
+            }
+        };
+        VideoStoreImportService service = new VideoStoreImportService() {
+            @Override
+            public ContentResolver getContentResolver() {
+                return resolver;
+            }
+        };
+        Looper looper = Looper.getMainLooper();
+        service.mHandler = new Handler(looper, service);
+        boolean wasDirty = ImportState.VIDEO.isDirty();
+        service.watchVolumes(state);
+        try {
+            shadowOf(looper).idle();
+            int storageId = new VolumeState.Volume(STORAGE, 1).getStorageId();
+            insertRow(10, STORAGE + "/movie.mkv", 0);
+            insertRow(11, STORAGE + "-OTHER/movie.mkv", 0);
+            database.execSQL("UPDATE files_import SET storage_id=?, volume_hidden=12345 WHERE _id IN (10,11)",
+                    new Object[]{storageId});
+            database.execSQL("UPDATE files SET Archos_traktSeen=1, ArchosMediaScraper_id=42 WHERE _id=10");
+
+            // Wake before the USB disk is readable. The visibility pass sees only primary
+            // storage, and the inconclusive volume scan leaves USB cached as mounted.
+            mounted.remove(STORAGE);
+            state.updateState();
+            VideoStoreImportImpl.unhideFilesFromVolumes(resolver, Collections.singletonList(primary), "10");
+            assertEquals(12345L, queryLong("SELECT volume_hidden FROM files WHERE _id=10"));
+
+            application.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://" + STORAGE)));
+            shadowOf(looper).idle();
+            assertEquals(1L, queryLong("SELECT count(*) FROM files WHERE _id=10 AND volume_hidden=0"
+                    + " AND Archos_traktSeen=1 AND ArchosMediaScraper_id=42"));
+            assertEquals(12345L, queryLong("SELECT volume_hidden FROM files WHERE _id=11"));
+            assertTrue(service.mHandler.hasMessages(VideoStoreImportService.MESSAGE_IMPORT_FULL));
+        } finally {
+            state.unregisterReceiver();
+            state.removeObserver(service.mVolumeStateObserver);
+            service.mHandler.removeCallbacksAndMessages(null);
+            ImportState.VIDEO.setDirty(wasDirty);
+        }
     }
 
     @Test

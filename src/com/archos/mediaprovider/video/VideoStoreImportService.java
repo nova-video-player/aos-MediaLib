@@ -63,6 +63,8 @@ import com.archos.mediaprovider.ImportState.State;
 import com.archos.mediaprovider.VolumeState.Volume;
 import com.archos.mediascraper.Scraper;
 
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,10 +73,10 @@ import io.sentry.SentryLevel;
 public class VideoStoreImportService extends Service implements Handler.Callback, DefaultLifecycleObserver {
     private static final Logger log = LoggerFactory.getLogger(VideoStoreImportService.class);
 
-    // handler message ids
+    // handler message ids (package-visible for unit tests)
     private static final int MESSAGE_KILL = 1;
-    private static final int MESSAGE_IMPORT_FULL = 2;
-    private static final int MESSAGE_IMPORT_INCR = 3;
+    static final int MESSAGE_IMPORT_FULL = 2;
+    static final int MESSAGE_IMPORT_INCR = 3;
     private static final int MESSAGE_UPDATE_METADATA = 4;
     private static final int MESSAGE_REMOVE_FILE = 5;
     private static final int MESSAGE_HIDE_VOLUME = 6;
@@ -202,30 +204,6 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // associate content observer that reports in background thread
         mContentObserver = new ContentChangeObserver(mHandler);
 
-        // handles changes to mounted / unmounted volumes, needs to exist before foreground state
-        // handler because it's used in there
-        mVolumeState = new VolumeState(this);
-        mVolumeStateObserver = volumes -> {
-            for (Volume volume : volumes) {
-                if (log.isDebugEnabled()) log.debug("Change:{} to {}", volume.getMountPoint(), volume.getMountState());
-                if (!volume.getMountState()) {
-                    mHandler
-                        .obtainMessage(MESSAGE_HIDE_VOLUME, DONT_KILL_SELF, volume.getStorageId())
-                        .sendToTarget();
-                } else {
-                    mHandler
-                        .obtainMessage(MESSAGE_VOLUME_MOUNTED, DONT_KILL_SELF, volume.getStorageId())
-                        .sendToTarget();
-                }
-            }
-        };
-        mVolumeState.addObserver(mVolumeStateObserver);
-        // fetch initial state
-        mVolumeState.updateState();
-        // we are most likely started in foreground but won't get a notification
-        // on the listener so register receiver manually.
-        if (isForeground) mVolumeState.registerReceiver();
-
         // register contentobserver for files and videos, on change we import them
         try {
             getContentResolver().registerContentObserver(MediaStore.Files.getContentUri("external"),
@@ -269,33 +247,15 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (log.isDebugEnabled()) log.debug("onStartCommand:{} flags:{} startId:{} getAction {}", intent, flags, startId, ((intent != null) ? intent.getAction() : "null"));
         ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "created notification + startService " + NOTIFICATION_ID + " notification null? " + (n == null));
         if (intent == null || intent.getAction() == null) {
-            removeAllMessages(mHandler);
-            Message m;
-            if (sActive) { // not first start
-                // Post-Android P: Use incremental import since our enhanced volume management handles external storage properly
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                    if (log.isDebugEnabled()) log.debug("onStartCommand: intent == null || intent.getAction() == null, sActive == true, do MESSAGE_IMPORT_INCR (post-Android P)");
-                    ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "intent null, sActive true do MESSAGE_IMPORT_INCR (post-Android P)");
-                    m = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, DONT_KILL_SELF, 0);
-                } else {
-                    // Pre-Android P: Keep full import for external USB storage compatibility
-                    if (log.isDebugEnabled()) log.debug("onStartCommand: intent == null || intent.getAction() == null, sActive == true, do MESSAGE_IMPORT_FULL (pre-Android P)");
-                    ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "intent null, sActive true do MESSAGE_IMPORT_FULL (pre-Android P)");
-                    m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0);
-                }
-                ImportState.VIDEO.setState(State.REGULAR_IMPORT);
-            } else {
-                // do a full import here to make sure that we have initial data
-                if (log.isDebugEnabled()) log.debug("onStartCommand: intent == null || intent.getAction() == null, sActive == false, do MESSAGE_IMPORT_FULL");
-                ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "intent null, sActive false do MESSAGE_IMPORT_FULL");
-                m = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0);
-                sActive = true;
-                ImportState.VIDEO.setState(State.INITIAL_IMPORT);
-            }
-            // assume this is the initial import although there could be data in the db already.
-            // we also may need to init scraper default content
+            // VideoProvider sends an actionless start on each foreground transition.
+            // A dirty database and Android 9 or earlier always require a full import.
+            boolean initial = !sActive;
+            boolean full = initial || ImportState.VIDEO.isDirty() || Build.VERSION.SDK_INT <= Build.VERSION_CODES.P;
+            int what = full ? MESSAGE_IMPORT_FULL : MESSAGE_IMPORT_INCR;
+            sActive = true;
+            ImportState.VIDEO.setState(initial ? State.INITIAL_IMPORT : State.REGULAR_IMPORT);
             mNeedToInitScraper = true;
-            mHandler.sendMessageDelayed(m, 1000);
+            scheduleImport(mHandler, what, DONT_KILL_SELF, 0);
         } else {
             // forward startId to handler thread
             // /!\ if an action is added CHECK in startIfHandles if action is listed /!\
@@ -337,9 +297,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             } else if (ArchosMediaIntent.ACTION_VIDEO_SCANNER_IMPORT_INCR.equals(action)) {
                 if (log.isDebugEnabled()) log.debug("onStartCommand: ACTION_VIDEO_SCANNER_IMPORT_INCR {}", intent.getData());
                 ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "ACTION_VIDEO_SCANNER_IMPORT_INCR " + intent.getData());
-                removeAllMessages(mHandler);
-                Message m = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, startId, flags);
-                mHandler.sendMessageDelayed(m, 1000);
+                scheduleImport(mHandler, MESSAGE_IMPORT_INCR, startId, flags);
             } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
                 if (log.isDebugEnabled()) log.debug("onStartCommand: ACTION_MEDIA_SCANNER_SCAN_FILE {}", intent.getData());
                 ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStartCommand", "ACTION_MEDIA_SCANNER_SCAN_FILE " + intent.getData());
@@ -473,17 +431,14 @@ public class VideoStoreImportService extends Service implements Handler.Callback
                 break;
             case MESSAGE_HIDE_VOLUME:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_HIDE_VOLUME storageId={}", msg.arg2);
-                // Trigger import to hide files using path-based volume checking
-                // This ensures volume state is properly checked and files are hidden
-                // while other mounted volumes remain visible
-                mHandler.obtainMessage(MESSAGE_IMPORT_INCR, DONT_KILL_SELF, msg.arg2).sendToTarget();
+                if (VideoStoreImportImpl.hideFilesFromVolumes(getContentResolver(),
+                        Collections.singletonList((String) msg.obj), System.currentTimeMillis() / 1000) > 0) {
+                    getContentResolver().notifyChange(VideoStore.ALL_CONTENT_URI, null);
+                }
                 break;
             case MESSAGE_VOLUME_MOUNTED:
                 if (log.isDebugEnabled()) log.debug("handleMessage: MESSAGE_VOLUME_MOUNTED storageId={}", msg.arg2);
-                handleVolumeMounted(msg.arg2);
-                // After restoring visibility trigger a new import to refresh metadata
-                Message importMsg = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, msg.arg2);
-                mHandler.sendMessageDelayed(importMsg, 1000);
+                handleVolumeMounted(msg.arg2, (String) msg.obj);
                 break;
             default:
                 log.warn("ImportBgHandler - unknown msg.what: {} stopSelf", msg.what);
@@ -725,7 +680,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         // don't db.close() - shared connection
     }
 
-    private void handleVolumeMounted(int storageId) {
+    private void handleVolumeMounted(int storageId, String mountPoint) {
         if (log.isDebugEnabled()) log.debug("handleVolumeMounted: storageId={}", storageId);
 
         // For post-Android P, we use path-based unhiding in updateVolumeHiddenStates()
@@ -733,36 +688,31 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             if (log.isDebugEnabled()) log.debug("handleVolumeMounted: post-Android P, skipping storage_id-based unhiding");
         } else {
-            // Pre-Android P: use existing storage_id-based unhiding
+            // Legacy storage IDs can be reused when disks return in a different order.
             ContentValues cv = new ContentValues();
             cv.put("volume_hidden", 0);
             int updated = getContentResolver().update(
                     VideoStoreInternal.FILES_IMPORT,
                     cv,
-                    "storage_id=? AND volume_hidden != 0",
-                    new String[]{String.valueOf(storageId)});
+                    "storage_id=? AND volume_hidden != 0 AND instr(_data, ?) = 1",
+                    new String[]{String.valueOf(storageId), mountPoint + "/"});
             if (log.isDebugEnabled()) log.debug("handleVolumeMounted: cleared volume_hidden for {} rows", updated);
         }
 
-        // Key change: Use incremental import instead of full import for remounts
-        // Files are already unhidden by updateVolumeHiddenStates(), so incremental scan will pick them up
-        Message importMsg;
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            // Post-Android P: Use incremental import (much faster)
-            importMsg = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, DONT_KILL_SELF, storageId);
-            if (log.isDebugEnabled()) log.debug("handleVolumeMounted: triggering incremental import for post-Android P");
-        } else {
-            // Pre-Android P: Keep existing full import behavior
-            importMsg = mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, storageId);
-            if (log.isDebugEnabled()) log.debug("handleVolumeMounted: triggering full import for pre-Android P");
-        }
+        // A remounted disk can contain older MediaStore IDs than the incremental
+        // watermark. Keep the full refresh and queue it once for a burst of mounts.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) ImportState.VIDEO.setDirty(true);
+        scheduleImport(mHandler, MESSAGE_IMPORT_FULL, DONT_KILL_SELF, storageId);
+    }
 
-        // Don't mark as dirty for post-Android P since we're doing incremental
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            ImportState.VIDEO.setDirty(true);
+    // Foreground commands arrive on the main thread, mount and MediaStore changes on the worker.
+    // A full remount refresh also covers any incremental requests received before it runs.
+    private static synchronized void scheduleImport(Handler handler, int what, int startId, int arg) {
+        handler.removeMessages(MESSAGE_KILL);
+        handler.removeMessages(MESSAGE_IMPORT_INCR);
+        if (!handler.hasMessages(MESSAGE_IMPORT_FULL)) {
+            handler.sendMessageDelayed(handler.obtainMessage(what, startId, arg), 1000);
         }
-
-        mHandler.sendMessageDelayed(importMsg, 1000);
     }
 
     /** removes all messages from handler */
@@ -791,9 +741,7 @@ public class VideoStoreImportService extends Service implements Handler.Callback
             // happens really often
             if (importOk() && mHandler != null) {
                 if (log.isDebugEnabled()) log.debug("onChange: triggering VIDEO_SCANNER_IMPORT_INCR");
-                removeAllMessages(mHandler);
-                Message msg = mHandler.obtainMessage(MESSAGE_IMPORT_INCR, DONT_KILL_SELF, 0);
-                mHandler.sendMessageDelayed(msg, 1000);
+                scheduleImport(mHandler, MESSAGE_IMPORT_INCR, DONT_KILL_SELF, 0);
             } else {
                 if (log.isDebugEnabled()) log.debug("onChange: NOT triggering import - importOk={}, mHandler is {}", importOk(), (mHandler == null ? "null" : "not null"));
             }
@@ -883,39 +831,26 @@ public class VideoStoreImportService extends Service implements Handler.Callback
         startService(mediaRetrieverIntent);
         if (log.isDebugEnabled()) log.debug("onStart: MediaRetrieverService restart requested");
         
-        // when switching to foreground state and db
-        // has potentially changed: trigger db import
         if (mVolumeState == null) {
-            if (log.isDebugEnabled()) log.debug("onStart: onForeGround && mVolumeState == null, recreating VolumeState");
-            // Recreate VolumeState if it was cleaned up (e.g., after background)
-            mVolumeState = new VolumeState(this);
-            mVolumeStateObserver = volumes -> {
-                for (Volume volume : volumes) {
-                    if (log.isDebugEnabled()) log.debug("Change:{} to {}", volume.getMountPoint(), volume.getMountState());
-                    if (!volume.getMountState()) {
-                        mHandler
-                            .obtainMessage(MESSAGE_HIDE_VOLUME, DONT_KILL_SELF, volume.getStorageId())
-                            .sendToTarget();
-                    } else {
-                        mHandler
-                            .obtainMessage(MESSAGE_VOLUME_MOUNTED, DONT_KILL_SELF, volume.getStorageId())
-                            .sendToTarget();
-                    }
-                }
-            };
-            mVolumeState.addObserver(mVolumeStateObserver);
+            watchVolumes(new VolumeState(this));
+        } else {
+            mHandler.post(mVolumeState::updateState);
         }
-        if (log.isDebugEnabled()) log.debug("onStart: onForeGround, registering VolumeState receiver and updating state");
-        mVolumeState.registerReceiver();
-        mVolumeState.updateState();
+    }
 
-        // Always trigger an import when returning to foreground to check volume states
-        // (checkDatabaseForUnmountedVolumes() is called during import via updateVolumeHiddenStatesByPath())
-        if (ImportState.VIDEO.isDirty()) {
-            if (log.isDebugEnabled()) log.debug("onStart: onForeGround && ImportState.isDirty MESSAGE_IMPORT_FULL");
-            ArchosUtils.addBreadcrumb(SentryLevel.INFO, "VideoStoreImportService.onStart", "app is foreground ImportState.isDirty MESSAGE_IMPORT_FULL");
-            mHandler.obtainMessage(MESSAGE_IMPORT_FULL, DONT_KILL_SELF, 0).sendToTarget();
-        }
+    void watchVolumes(VolumeState volumeState) {
+        mVolumeState = volumeState;
+        mVolumeStateObserver = volumes -> {
+            if (mCleanupCalled) return;
+            for (Volume volume : volumes) {
+                int what = volume.getMountState() ? MESSAGE_VOLUME_MOUNTED : MESSAGE_HIDE_VOLUME;
+                mHandler.obtainMessage(what, DONT_KILL_SELF, volume.getStorageId(), volume.getMountPoint()).sendToTarget();
+            }
+        };
+        volumeState.addObserver(mVolumeStateObserver);
+        // HDD spin-up can block enumeration. Serialize scans and broadcasts on ImportWorker.
+        volumeState.registerReceiver(mHandler);
+        mHandler.post(volumeState::updateState);
     }
 
 }
