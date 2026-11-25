@@ -147,7 +147,7 @@ public class ShowScraper4 extends BaseScraper2 {
         SearchShowResult searchResult = null;
         if (searchInfo.scrapeFromDB) {
             //Check the Database for this Movie, we may have scraped it already on a different URI.
-            searchResult = ShowTags.getEpisodeResultIfAlreadyKnown(mContext, searchInfo.getShowName(), String.valueOf(searchInfo.getSeason()), String.valueOf(searchInfo.getEpisode()), searchInfo.getOriginalUri());
+            searchResult = ShowTags.getEpisodeResultIfAlreadyKnown(mContext, searchInfo.getShowName(), String.valueOf(searchInfo.getSeason()), String.valueOf(searchInfo.getEpisode()), searchInfo.getFirstAiredYear(), searchInfo.getOriginalUri());
             if (searchResult != null) {
                 for (SearchResult result : searchResult.result) {
                     result.setScraper(this);

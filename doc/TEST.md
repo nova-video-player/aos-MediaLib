@@ -176,6 +176,26 @@ concurrent show insertion recovery, and idempotent show/collection inserts.
 They do not inject a real mid-scrape SQLite failure; the retry-round tests
 exercise the deterministic coordination and state decisions directly.
 
+### Episode reuse from the scraper database
+
+Class command:
+
+```bash
+./gradlew --offline :MediaLib:testDebugUnitTest \
+  --tests 'com.archos.mediaprovider.video.EpisodeDbReuseTest'
+```
+
+- `com.archos.mediaprovider.video.EpisodeDbReuseTest.yearSelectsTheShowPremieredThatYear`
+- `com.archos.mediaprovider.video.EpisodeDbReuseTest.yearOfAnotherShowIsNotReused`
+- `com.archos.mediaprovider.video.EpisodeDbReuseTest.noYearWithSeveralShowsSearchesOnline`
+- `com.archos.mediaprovider.video.EpisodeDbReuseTest.noYearWithSingleShowIsReused`
+
+These tests run `ShowTags.getEpisodeResultIfAlreadyKnown()` against a real
+`ScraperProvider` database holding two shows with the same title (Avatar: The
+Last Airbender 2005 and 2024). They cover the scrape-from-database shortcut
+described in `doc/SCRAPE.md` section 7.6, which `ScraperIntegrationTest` does not
+exercise because it never enables `scrapeFromDB`.
+
 ### Movie filename preprocessing
 
 Class command:
@@ -262,8 +282,8 @@ The class uses a local token endpoint. It covers the following cases:
   `AutoScrapeServiceNetworkScanTest`, and the auto-scrape persistence classes
   before the full suite.
 - Filename parsing or scraper change: run `MovieScraperFileTest`,
-  `ScraperIntegrationTest`, and `TrackNamingTest` as applicable, then the full
-  suite.
+  `ScraperIntegrationTest`, `EpisodeDbReuseTest`, and `TrackNamingTest` as
+  applicable, then the full suite.
 - Trakt authentication change: run `TraktTokenRefreshTest` before the full suite.
 
 Do not treat Robolectric as proof of behavior specific to old platform SQLite,

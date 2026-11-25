@@ -31,6 +31,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 
 import com.archos.mediaprovider.video.ScraperStore;
+import com.archos.mediaprovider.video.ScraperTables;
 import com.archos.mediacenter.utils.ISO639codes;
 import com.archos.mediascraper.ScraperImage.Type;
 
@@ -673,6 +674,15 @@ public class ShowTags extends VideoTags {
         return isKnown;
     }
 
+    private static int getYear(Cursor cursor, int column) {
+        if (cursor.isNull(column)) return 0;
+        long time = cursor.getLong(column);
+        if (time <= 0) return 0;
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(time);
+        return cal.get(Calendar.YEAR);
+    }
+
     public int getPremieredYear() {
         if (mPremiered != null) {
             Calendar cal = Calendar.getInstance();
@@ -750,9 +760,18 @@ public class ShowTags extends VideoTags {
         }
     }
 
-    public static SearchShowResult getEpisodeResultIfAlreadyKnown(Context context, String searchQuery, String season, String episode, Uri fileUri) {
+    public static SearchShowResult getEpisodeResultIfAlreadyKnown(Context context, String searchQuery, String season, String episode, String firstAiredYear, Uri fileUri) {
         ContentResolver contentResolver = context.getContentResolver();
-        String[] baseProjection = {ScraperStore.EpisodeShowCombined.SCRAPER_ID, ScraperStore.EpisodeShowCombined.SHOW_NAME, ScraperStore.EpisodeShowCombined.EPISODE_NAME};
+        String[] baseProjection = {ScraperStore.EpisodeShowCombined.SCRAPER_ID, ScraperStore.EpisodeShowCombined.SHOW_NAME, ScraperStore.EpisodeShowCombined.EPISODE_NAME,
+                ScraperTables.SHOW_TABLE_NAME + "." + ScraperStore.Show.ONLINE_ID, ScraperTables.SHOW_TABLE_NAME + "." + ScraperStore.Show.PREMIERED};
+        int requestedYear = 0;
+        if (!TextUtils.isEmpty(firstAiredYear)) {
+            try {
+                requestedYear = Integer.parseInt(firstAiredYear.trim());
+            } catch (NumberFormatException e) {
+                requestedYear = 0;
+            }
+        }
 
         //No Slash on the Query, i AM NOT tmdb!
         if (searchQuery.startsWith("/"))
@@ -763,18 +782,41 @@ public class ShowTags extends VideoTags {
         Cursor cursor = contentResolver.query(mediaUri ,
                 baseProjection, "REPLACE(REPLACE(REPLACE(" + ScraperStore.Show.NAME+",'''',''),'.',''),':','') LIKE ? COLLATE NOCASE AND " + ScraperStore.EpisodeShowCombined.EPISODE_SEASON + " LIKE ? AND " + ScraperStore.EpisodeShowCombined.EPISODE_NUMBER + " LIKE ?" , new String[] { searchQuery+"%", season, episode },null);
 
-        //Check cursor count and return if positive.
+        // The name match is a prefix match that ignores the year, so shows sharing a title (e.g. a
+        // classic show and its remake, saved as "Title" and "Title YYYY") all match. Only reuse a row
+        // when it belongs to the show premiered in the requested year, or, without a year, when every
+        // matching row belongs to the same show: otherwise let the online search ranking decide.
         if (cursor != null) {
             try {
-                if (cursor.moveToFirst()) {
+                long matchedEpisodeId = -1;
+                String matchedEpisodeName = null;
+                long matchedOnlineId = 0;
+                boolean ambiguous = false;
+                while (cursor.moveToNext()) {
+                    if (requestedYear > 0 && getYear(cursor, 4) != requestedYear) continue;
+                    long onlineId = cursor.isNull(3) ? 0 : cursor.getLong(3);
+                    if (matchedEpisodeId == -1) {
+                        matchedEpisodeId = cursor.getLong(0);
+                        matchedEpisodeName = cursor.getString(2);
+                        matchedOnlineId = onlineId;
+                    } else if (onlineId <= 0 || onlineId != matchedOnlineId) {
+                        ambiguous = true;
+                        break;
+                    }
+                }
+                if (ambiguous) {
+                    if (log.isDebugEnabled()) log.debug("getEpisodeResultIfAlreadyKnown: several shows match {} S{}E{}, searching online", searchQuery, season, episode);
+                    return null;
+                }
+                if (matchedEpisodeId != -1) {
                     //Create a Search Result and populate it.
                     SearchShowResult myResult = new SearchShowResult();
                     SearchResult result = new SearchResult();
                     result.setTvShow();
                     result.setFile(fileUri);
-                    result.setId((int) cursor.getLong(0));
-                    result.setOriginalTitle(cursor.getString(2));
-                    result.setTitle(cursor.getString(2));
+                    result.setId((int) matchedEpisodeId);
+                    result.setOriginalTitle(matchedEpisodeName);
+                    result.setTitle(matchedEpisodeName);
                     result.setOriginSearchEpisode(Integer.parseInt(episode));
                     result.setOriginSearchSeason(Integer.parseInt(season));
                     result.fromDB = true;

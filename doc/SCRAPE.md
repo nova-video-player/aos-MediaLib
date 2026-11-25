@@ -294,6 +294,22 @@ After `buildTag()` returns its empty-placeholder tag (no title/plot, indicating 
 
 This fallback only triggers when the requested season is not already `0` (avoiding redundant work when the `SxxE00` remap already handled it) and only after both the direct lookup and the within-season fuzzy match have failed, so it adds no extra TMDb cost for the overwhelming majority of episodes that resolve normally.
 
+
+### 7.6 Scrape-From-Database Shortcut and Title Collisions
+When auto-scraping with `scrapeFromDB` enabled, `ShowScraper4.getMatches2()` first calls `ShowTags.getEpisodeResultIfAlreadyKnown()` to reuse an episode already in the scraper database (same show name, season and episode, e.g. the same episode stored under another URI) instead of querying TMDb. The show-name match is a case-insensitive prefix match that ignores `'`, `.` and `:`, so shows sharing a title all match, including a colliding show saved under the disambiguated `Title YYYY` name (see `ShowTags.save()`).
+
+Example:
+
+- `Avatar_The_Last_Airbender_(2024)/…-s02/Avatar.The.Last.Airbender.2024.S02E01…mkv` is scraped first as the 2024 live-action show (TMDb id `82452`, "Somewhere Safe", aired 2026-06-25).
+- `Avatar_The_Last_Airbender_(2005)/…-s02/Avatar_The_Last_Airbender-S02E01-The_Avatar_State…mkv` then matched that row and was given the live-action episode and its date instead of the 2005 animated show (id `246`, "The Avatar State", aired 2006-03-17).
+
+A database row is therefore only reused when:
+
+- the search carries a first-aired year (filename or path, Section 2.4) and the row's show premiered that year, or
+- the search has no year and every matching row belongs to the same TMDb show.
+
+Otherwise the shortcut is skipped and the normal online search and ranking (Section 5) decide.
+
 ---
 
 ## 8. The Preprocessing Pipeline (Sequence)
