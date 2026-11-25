@@ -172,3 +172,9 @@ Star Wars The Clone Wars 2008 Multi-VF2 1080p BluRay x264-PopHD.mkv|Movie|Star W
 # date, a separate franchise-chronology feature.
 # Star.Wars.V.[1080p].MULTi.(1980).BluRay.x264-PopHD(L.empire.contre.attaque.5).mkv|Movie|The Empire Strikes Back|1891|en
 # Star.Wars.VI.[1080p].MULTi.(1983).BluRay.x264-PopHD(Le.retour.du.Jedi.6).mkv|Movie|Return of the Jedi|1892|en
+# Avatar: The Last Airbender exists as the 2005 animated show (246) and the 2024 live-action remake (82452),
+# both with the same title. The (YYYY) show/season folders and the filename year must select the right show
+# for each season, including the remake's S02 whose episodes air in 2026, long after the show premiered.
+/volume1/video/serie/Avatar_The_Last_Airbender_(2005)/Avatar_The_Last_Airbender_(2005)-s02/Avatar_The_Last_Airbender-S02E01-The_Avatar_State-1080p-HEVC-AAC-2.0-MULTI.mkv|Show|Avatar: The Last Airbender|246|en
+/volume1/video/serie/Avatar_The_Last_Airbender_(2024)/Avatar_The_Last_Airbender_(2024)-s01/Avatar.The.Last.Airbender.2024.S01E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv|Show|Avatar: The Last Airbender|82452|en
+/volume1/video/serie/Avatar_The_Last_Airbender_(2024)/Avatar_The_Last_Airbender_(2024)-s02/Avatar.The.Last.Airbender.2024.S02E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv|Show|Avatar: The Last Airbender|82452|en
