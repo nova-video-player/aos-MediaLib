@@ -243,7 +243,12 @@ public class ScraperIntegrationTest {
                         } else if (info.isTvShow()) {
                             if (autoResult.tag instanceof com.archos.mediascraper.EpisodeTags) {
                                 com.archos.mediascraper.EpisodeTags autoEpTag = (com.archos.mediascraper.EpisodeTags) autoResult.tag;
-                                System.out.println(String.format(Locale.ROOT, "  -> AUTO-DETAILS: ShowId=%d Title='%s'", autoEpTag.getShowId(), autoEpTag.getTitle()));
+                                java.text.SimpleDateFormat dayFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
+                                java.util.Date aired = autoEpTag.getAired();
+                                java.util.Date premiered = autoEpTag.getShowTags() != null ? autoEpTag.getShowTags().getPremiered() : null;
+                                System.out.println(String.format(Locale.ROOT, "  -> AUTO-DETAILS: ShowId=%d Title='%s' S%02dE%02d Aired=%s ShowPremiered=%s",
+                                    autoEpTag.getShowId(), autoEpTag.getTitle(), autoEpTag.getSeason(), autoEpTag.getEpisode(),
+                                    aired != null ? dayFormat.format(aired) : "null", premiered != null ? dayFormat.format(premiered) : "null"));
                                 if (autoEpTag.getShowId() != expectedAutoDetailId) {
                                     errors.add("AUTO-DETAILS SHOW ID MISMATCH for " + uriString + ". Expected " + expectedAutoDetailId + " but got " + autoEpTag.getShowId());
                                 }
