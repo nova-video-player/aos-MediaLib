@@ -187,6 +187,7 @@ Class command:
 
 - `com.archos.mediaprovider.video.EpisodeDbReuseTest.yearSelectsTheShowPremieredThatYear`
 - `com.archos.mediaprovider.video.EpisodeDbReuseTest.yearOfAnotherShowIsNotReused`
+- `com.archos.mediaprovider.video.EpisodeDbReuseTest.pre1970PremieredYearIsMatched`
 - `com.archos.mediaprovider.video.EpisodeDbReuseTest.noYearWithSeveralShowsSearchesOnline`
 - `com.archos.mediaprovider.video.EpisodeDbReuseTest.noYearWithSingleShowIsReused`
 

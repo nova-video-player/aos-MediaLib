@@ -674,21 +674,22 @@ public class ShowTags extends VideoTags {
         return isKnown;
     }
 
-    private static int getYear(Cursor cursor, int column) {
-        if (cursor.isNull(column)) return 0;
-        long time = cursor.getLong(column);
-        if (time <= 0) return 0;
+    private static int yearOf(long time) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(time);
         return cal.get(Calendar.YEAR);
     }
 
+    // Premiered date stored in the db: NULL or 0 (setPremiered default) means unknown, negative
+    // values are genuine pre-1970 dates.
+    private static int getYear(Cursor cursor, int column) {
+        if (cursor.isNull(column)) return 0;
+        long time = cursor.getLong(column);
+        return time == 0 ? 0 : yearOf(time);
+    }
+
     public int getPremieredYear() {
-        if (mPremiered != null) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(mPremiered);
-            return cal.get(Calendar.YEAR);
-        } else return 0;
+        return mPremiered != null ? yearOf(mPremiered.getTime()) : 0;
     }
 
     private void updateInfo(String selection, String[] selectionArgs, ContentResolver contentResolver) {

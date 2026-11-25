@@ -103,7 +103,11 @@ public class EpisodeDbReuseTest {
     }
 
     private SearchShowResult lookup(String year) {
-        return ShowTags.getEpisodeResultIfAlreadyKnown(context, QUERY, "2", "1", year,
+        return lookup(QUERY, year);
+    }
+
+    private SearchShowResult lookup(String query, String year) {
+        return ShowTags.getEpisodeResultIfAlreadyKnown(context, query, "2", "1", year,
                 Uri.parse("file:///volume1/video/serie/episode.mkv"));
     }
 
@@ -129,6 +133,17 @@ public class EpisodeDbReuseTest {
 
         assertNull(lookup("2005"));
         assertNotNull(lookup("2024"));
+    }
+
+    @Test
+    public void pre1970PremieredYearIsMatched() {
+        // Star Trek (TMDb 253) premiered 1966-09-08: a negative timestamp, not a missing date.
+        insertShow(1, "Star Trek", 253, 1966);
+        insertEpisode(11, 1, "Who Mourns for Adonais?");
+
+        SearchShowResult result = lookup("Star Trek", "1966");
+        assertNotNull(result);
+        assertEquals(11, result.result.get(0).getId());
     }
 
     @Test
